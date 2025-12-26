@@ -52,10 +52,10 @@ export default async function TeamPage() {
                                         <td className="px-8 py-6">
                                             <div className={cn(
                                                 "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border",
-                                                member.role === 'ADMIN' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-gray-50 text-gray-600 border-gray-100'
+                                                member.role === 'OWNER' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-gray-50 text-gray-600 border-gray-100'
                                             )}>
                                                 <Shield className="w-3 h-3" />
-                                                {member.role === 'ADMIN' ? 'Administrador' : 'Miembro'}
+                                                {member.role === 'OWNER' ? 'Administrador' : 'Miembro'}
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
