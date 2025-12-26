@@ -4,9 +4,10 @@ import { getUserWorkspace } from '@/lib/actions/dashboard'
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { agentId: string } }
+    { params }: { params: Promise<{ agentId: string }> }
 ) {
     try {
+        const { agentId } = await params
         const workspace = await getUserWorkspace()
         if (!workspace) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -14,7 +15,7 @@ export async function GET(
 
         const agent = await prisma.agent.findFirst({
             where: {
-                id: params.agentId,
+                id: agentId,
                 workspaceId: workspace.id
             },
             include: {
@@ -37,9 +38,10 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { agentId: string } }
+    { params }: { params: Promise<{ agentId: string }> }
 ) {
     try {
+        const { agentId } = await params
         const workspace = await getUserWorkspace()
         if (!workspace) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -47,7 +49,7 @@ export async function POST(
 
         const agent = await prisma.agent.findFirst({
             where: {
-                id: params.agentId,
+                id: agentId,
                 workspaceId: workspace.id
             }
         })

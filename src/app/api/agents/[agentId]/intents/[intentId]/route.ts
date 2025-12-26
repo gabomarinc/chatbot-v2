@@ -4,9 +4,10 @@ import { getUserWorkspace } from '@/lib/actions/dashboard'
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { agentId: string; intentId: string } }
+    { params }: { params: Promise<{ agentId: string; intentId: string }> }
 ) {
     try {
+        const { agentId, intentId } = await params
         const workspace = await getUserWorkspace()
         if (!workspace) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -14,7 +15,7 @@ export async function PUT(
 
         const agent = await prisma.agent.findFirst({
             where: {
-                id: params.agentId,
+                id: agentId,
                 workspaceId: workspace.id
             }
         })
@@ -27,7 +28,7 @@ export async function PUT(
         const { name, description, trigger, actionType, actionUrl, enabled } = body
 
         const intent = await prisma.intent.update({
-            where: { id: params.intentId },
+            where: { id: intentId },
             data: {
                 name,
                 description: description || null,
@@ -47,9 +48,10 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { agentId: string; intentId: string } }
+    { params }: { params: Promise<{ agentId: string; intentId: string }> }
 ) {
     try {
+        const { agentId, intentId } = await params
         const workspace = await getUserWorkspace()
         if (!workspace) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -57,7 +59,7 @@ export async function DELETE(
 
         const agent = await prisma.agent.findFirst({
             where: {
-                id: params.agentId,
+                id: agentId,
                 workspaceId: workspace.id
             }
         })
@@ -67,7 +69,7 @@ export async function DELETE(
         }
 
         await prisma.intent.delete({
-            where: { id: params.intentId }
+            where: { id: intentId }
         })
 
         return NextResponse.json({ success: true })

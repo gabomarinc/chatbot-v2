@@ -4,9 +4,10 @@ import { getUserWorkspace } from '@/lib/actions/dashboard'
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { agentId: string; intentId: string } }
+    { params }: { params: Promise<{ agentId: string; intentId: string }> }
 ) {
     try {
+        const { agentId, intentId } = await params
         const workspace = await getUserWorkspace()
         if (!workspace) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -14,7 +15,7 @@ export async function PATCH(
 
         const agent = await prisma.agent.findFirst({
             where: {
-                id: params.agentId,
+                id: agentId,
                 workspaceId: workspace.id
             }
         })
@@ -27,7 +28,7 @@ export async function PATCH(
         const { enabled } = body
 
         const intent = await prisma.intent.update({
-            where: { id: params.intentId },
+            where: { id: intentId },
             data: { enabled }
         })
 

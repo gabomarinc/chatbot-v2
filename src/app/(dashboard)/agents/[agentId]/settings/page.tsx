@@ -2,8 +2,9 @@ import { getAgent } from '@/lib/actions/dashboard';
 import { AgentSettingsForm } from '@/components/agents/AgentSettingsForm';
 import { redirect } from 'next/navigation';
 
-export default async function AgentSettingsPage({ params }: { params: { agentId: string } }) {
-    const agent = await getAgent(params.agentId);
+export default async function AgentSettingsPage({ params }: { params: Promise<{ agentId: string }> }) {
+    const { agentId } = await params
+    const agent = await getAgent(agentId);
 
     if (!agent) {
         redirect('/agents');
