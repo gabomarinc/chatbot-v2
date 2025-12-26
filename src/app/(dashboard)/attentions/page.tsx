@@ -1,5 +1,5 @@
 import { getAttentions } from '@/lib/actions/dashboard';
-import { Clock, Search, Filter, MessageSquare, Send, WhatsApp, Globe, Smartphone, User, Bot, AlertCircle } from 'lucide-react';
+import { Clock, Search, Filter, MessageSquare, Send, Globe, Smartphone, User, Bot, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
