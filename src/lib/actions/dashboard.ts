@@ -2,7 +2,8 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
-import { startOfMonth, subMonths, format } from 'date-fns'
+import { startOfMonth, subMonths, format, startOfWeek, endOfWeek, eachDayOfInterval, subWeeks, addWeeks } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { revalidatePath } from 'next/cache'
 import { cache } from 'react'
 
@@ -101,6 +102,61 @@ export const getChartData = cache(async () => {
     }
 
     return data
+})
+
+export const getWeeklyConversationsData = cache(async (weekOffset: number = 0) => {
+    const workspace = await getUserWorkspace()
+    if (!workspace) return { data: [], weekStart: new Date(), weekEnd: new Date() }
+
+    const today = new Date()
+    const targetWeek = addWeeks(today, weekOffset)
+    const weekStart = startOfWeek(targetWeek, { weekStartsOn: 1, locale: es }) // Monday
+    const weekEnd = endOfWeek(targetWeek, { weekStartsOn: 1, locale: es }) // Sunday
+
+    // Get all conversations in this week
+    const conversations = await prisma.conversation.findMany({
+        where: {
+            agent: { workspaceId: workspace.id },
+            createdAt: {
+                gte: weekStart,
+                lte: weekEnd
+            }
+        },
+        select: { createdAt: true }
+    })
+
+    // Get all days in the week
+    const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd })
+
+    // Group conversations by day
+    const data = daysInWeek.map(day => {
+        const dayStart = new Date(day)
+        dayStart.setHours(0, 0, 0, 0)
+        const dayEnd = new Date(day)
+        dayEnd.setHours(23, 59, 59, 999)
+
+        const count = conversations.filter(c => {
+            const convDate = new Date(c.createdAt)
+            return convDate >= dayStart && convDate <= dayEnd
+        }).length
+
+        const dayNameFull = format(day, 'EEE', { locale: es });
+        const dayName = dayNameFull.toLowerCase().replace(/\./g, '').substring(0, 3); // "lun", "mar", etc.
+        
+        return {
+            date: day,
+            dayName: dayName,
+            dayNumber: format(day, 'd'),
+            fullDayName: format(day, 'EEEE', { locale: es }), // "lunes", "martes", etc.
+            count: count
+        }
+    })
+
+    return {
+        data,
+        weekStart,
+        weekEnd
+    }
 })
 
 export async function getDashboardChannels() {

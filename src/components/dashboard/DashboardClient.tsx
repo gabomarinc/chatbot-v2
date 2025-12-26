@@ -1,7 +1,9 @@
 'use client'
 
-import { TrendingUp, TrendingDown, CheckCircle, Coins, Users, Calendar, Filter, ChevronDown, Bot, Sparkles, Globe, Instagram, MessageCircle, BarChart as BarChartIcon } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, TrendingDown, CheckCircle, Coins, Users, Calendar, Filter, ChevronDown, Bot, Sparkles, Globe, Instagram, MessageCircle, BarChart as BarChartIcon, MessageSquare } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface DashboardClientProps {
     stats: {
@@ -13,9 +15,35 @@ interface DashboardClientProps {
     chartData: any[];
     channels: any[];
     topAgents: any[];
+    weeklyConversations: {
+        data: Array<{
+            date: Date;
+            dayName: string;
+            dayNumber: string;
+            count: number;
+        }>;
+        weekStart: Date;
+        weekEnd: Date;
+    };
 }
 
-export default function DashboardClient({ stats, chartData, channels, topAgents }: DashboardClientProps) {
+export default function DashboardClient({ stats, chartData, channels, topAgents, weeklyConversations }: DashboardClientProps) {
+    // Convert date strings to Date objects
+    const weeklyData = {
+        ...weeklyConversations,
+        weekStart: new Date(weeklyConversations.weekStart),
+        weekEnd: new Date(weeklyConversations.weekEnd),
+        data: weeklyConversations.data.map(item => ({
+            ...item,
+            date: new Date(item.date)
+        }))
+    };
+
+    const formatWeekRange = (start: Date, end: Date) => {
+        const startStr = format(start, 'd MMM', { locale: es });
+        const endStr = format(end, 'd MMM', { locale: es });
+        return `${startStr} - ${endStr}`;
+    };
     const statCards = [
         { label: 'Total de Conversaciones', value: stats.conversaciones.toLocaleString(), change: '0%', isPositive: true, icon: CheckCircle },
         { label: 'Créditos Disponibles', value: stats.creditos.toLocaleString(), change: '0%', isPositive: true, icon: Coins },
@@ -72,35 +100,44 @@ export default function DashboardClient({ stats, chartData, channels, topAgents 
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-                {/* Line Chart */}
+                {/* Weekly Conversations Chart */}
                 <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)]">
-                    <div className="flex items-center justify-between mb-10">
+                    <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-gray-900 font-extrabold text-xl tracking-tight mb-1">Consumo de Créditos</h3>
-                            <p className="text-sm text-gray-400 font-medium">Uso energético de tus agentes por período</p>
-                        </div>
-                        <div className="p-1 px-4 py-2 bg-gray-50 rounded-xl flex gap-1">
-                            <button className="px-4 py-1.5 bg-white shadow-sm rounded-lg text-xs font-bold text-[#21AC96]">Mensual</button>
-                            <button className="px-4 py-1.5 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">Semanal</button>
+                            <h3 className="text-gray-900 font-extrabold text-xl tracking-tight mb-1">Conversaciones Iniciadas</h3>
+                            <p className="text-sm text-gray-400 font-medium">Total de conversaciones iniciadas por día</p>
                         </div>
                     </div>
-                    <div className="h-[320px] w-full flex items-center justify-center">
-                        {chartData.length > 0 ? (
+                    
+                    {/* Week Navigation */}
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="px-4 py-2 bg-gray-50 rounded-xl">
+                                <span className="text-sm font-bold text-gray-700">
+                                    {formatWeekRange(weeklyData.weekStart, weeklyData.weekEnd)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="h-[280px] w-full">
+                        {weeklyData.data.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData}>
-                                    <defs>
-                                        <linearGradient id="colorCreditos" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#21AC96" stopOpacity={0.8} />
-                                            <stop offset="95%" stopColor="#21AC96" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
+                                <BarChart data={weeklyData.data} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis
-                                        dataKey="name"
+                                        dataKey="dayName"
                                         axisLine={false}
                                         tickLine={false}
                                         tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
                                         dy={10}
+                                        tickFormatter={(value, index) => {
+                                            const day = weeklyData.data[index];
+                                            if (day) {
+                                                return `${value} ${day.dayNumber}`;
+                                            }
+                                            return value;
+                                        }}
                                     />
                                     <YAxis
                                         axisLine={false}
@@ -108,23 +145,41 @@ export default function DashboardClient({ stats, chartData, channels, topAgents 
                                         tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
                                     />
                                     <Tooltip
-                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}
-                                        itemStyle={{ color: '#21AC96', fontWeight: 700 }}
+                                        content={({ active, payload }) => {
+                                            if (active && payload && payload.length) {
+                                                const data = payload[0].payload;
+                                                return (
+                                                    <div className="bg-gray-900 text-white px-4 py-3 rounded-2xl shadow-xl border-none">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <Calendar className="w-4 h-4" />
+                                                            <span className="text-xs font-bold text-gray-300">
+                                                                {format(data.date, 'd MMM', { locale: es })}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <MessageSquare className="w-4 h-4 text-[#21AC96]" />
+                                                            <span className="text-sm font-bold">
+                                                                {data.count} conversaciones iniciadas
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        }}
                                     />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="creditos"
-                                        stroke="#21AC96"
-                                        strokeWidth={4}
-                                        dot={{ fill: '#21AC96', stroke: '#fff', strokeWidth: 2, r: 6 }}
-                                        activeDot={{ r: 8, strokeWidth: 0 }}
+                                    <Bar
+                                        dataKey="count"
+                                        fill="#21AC96"
+                                        radius={[8, 8, 0, 0]}
+                                        maxBarSize={60}
                                     />
-                                </LineChart>
+                                </BarChart>
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center p-10 bg-gray-50/50 rounded-[2rem] w-full h-full border-2 border-dashed border-gray-100">
-                                <TrendingUp className="w-12 h-12 text-gray-200 mb-4" />
-                                <p className="text-sm text-gray-400 font-bold max-w-xs">Aún no hay suficientes datos para generar el gráfico de consumo.</p>
+                                <MessageSquare className="w-12 h-12 text-gray-200 mb-4" />
+                                <p className="text-sm text-gray-400 font-bold max-w-xs">Aún no hay conversaciones en esta semana.</p>
                             </div>
                         )}
                     </div>

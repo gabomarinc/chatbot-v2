@@ -1,5 +1,5 @@
 import DashboardClient from '@/components/dashboard/DashboardClient';
-import { getDashboardStats, getChartData, getDashboardChannels, getTopAgents } from '@/lib/actions/dashboard';
+import { getDashboardStats, getChartData, getDashboardChannels, getTopAgents, getWeeklyConversationsData } from '@/lib/actions/dashboard';
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -12,11 +12,12 @@ export default async function DashboardPage() {
         redirect('/admin/dashboard');
     }
 
-    const [stats, chartData, channels, topAgents] = await Promise.all([
+    const [stats, chartData, channels, topAgents, weeklyConversations] = await Promise.all([
         getDashboardStats(),
         getChartData(),
         getDashboardChannels(),
-        getTopAgents()
+        getTopAgents(),
+        getWeeklyConversationsData(0)
     ]);
 
     return (
@@ -25,6 +26,7 @@ export default async function DashboardPage() {
             chartData={chartData}
             channels={channels}
             topAgents={topAgents}
+            weeklyConversations={weeklyConversations}
         />
     );
 }
