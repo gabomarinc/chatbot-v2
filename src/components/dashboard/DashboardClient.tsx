@@ -35,6 +35,7 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
     const [conversations, setConversations] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+    const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
     // Convert date strings to Date objects
     const weeklyData = {
@@ -214,15 +215,32 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                                         radius={[8, 8, 0, 0]}
                                         maxBarSize={60}
                                     >
-                                        {weeklyData.data.map((entry, index) => (
-                                            <Cell 
-                                                key={`cell-${index}`} 
-                                                fill={entry.count > 0 ? "#21AC96" : "#e5e7eb"}
-                                                style={{ 
-                                                    cursor: entry.count > 0 ? 'pointer' : 'default'
-                                                }}
-                                            />
-                                        ))}
+                                        {weeklyData.data.map((entry, index) => {
+                                            const hasData = entry.count > 0;
+                                            return (
+                                                <Cell 
+                                                    key={`cell-${index}`} 
+                                                    fill={hasData ? "#21AC96" : "#e5e7eb"}
+                                                    style={{ 
+                                                        cursor: hasData ? 'pointer' : 'default',
+                                                        filter: hasData ? 'drop-shadow(0 1px 2px rgba(33, 172, 150, 0.06))' : 'none',
+                                                        transition: 'filter 0.2s ease, opacity 0.2s ease'
+                                                    }}
+                                                    onMouseEnter={(e: any) => {
+                                                        if (hasData && e.target) {
+                                                            e.target.style.filter = 'drop-shadow(0 4px 8px rgba(33, 172, 150, 0.15))';
+                                                            e.target.style.opacity = '0.93';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e: any) => {
+                                                        if (hasData && e.target) {
+                                                            e.target.style.filter = 'drop-shadow(0 1px 2px rgba(33, 172, 150, 0.06))';
+                                                            e.target.style.opacity = '1';
+                                                        }
+                                                    }}
+                                                />
+                                            );
+                                        })}
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
