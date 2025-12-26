@@ -392,12 +392,19 @@ INSTRUCCIONES DE EJECUCIÓN:
 
     } catch (error) {
         console.error("AI Error:", error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error("Error details:", errorMessage);
+        
         // Fallback message if AI fails
         const fallbackMsg = await prisma.message.create({
             data: {
                 conversationId: conversation.id,
                 role: 'AGENT',
-                content: "Lo siento, estoy teniendo problemas de conexión en este momento."
+                content: errorMessage.includes('credits') 
+                    ? "Lo siento, no hay créditos disponibles en este momento. Por favor, contacta al administrador."
+                    : errorMessage.includes('API Key')
+                    ? "Error de configuración del servidor. Por favor, contacta al administrador."
+                    : "Lo siento, estoy teniendo problemas de conexión en este momento. Por favor, intenta de nuevo."
             }
         });
         return { userMsg, agentMsg: fallbackMsg };

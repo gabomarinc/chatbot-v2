@@ -104,7 +104,18 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         } catch (error) {
             console.error('Error sending message:', error);
             setIsLoading(false);
-            // Optionally remove optimistic message or show error
+            
+            // Remove the optimistic message on error
+            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            
+            // Show error message to user
+            const errorMsg: Message = {
+                id: `error-${Date.now()}`,
+                role: 'AGENT',
+                content: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.',
+                createdAt: new Date()
+            };
+            setMessages(prev => [...prev, errorMsg]);
         }
     };
 
