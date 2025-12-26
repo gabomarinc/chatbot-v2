@@ -2,9 +2,13 @@ import OpenAI from 'openai';
 import { prisma } from './prisma';
 import { retrieveRelevantChunks } from './retrieval';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY environment variable is not set');
+  }
+  return new OpenAI({ apiKey });
+}
 
 export interface AgentReplyResult {
   reply: string;
@@ -66,6 +70,7 @@ export async function generateAgentReply(
   ];
 
   // Call OpenAI API
+  const openai = getOpenAIClient();
   const completion = await openai.chat.completions.create({
     model: agent.model,
     messages: openaiMessages,
