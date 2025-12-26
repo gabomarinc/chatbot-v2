@@ -1,9 +1,12 @@
 'use client'
 
+import { useState } from 'react';
 import { TrendingUp, TrendingDown, CheckCircle, Coins, Users, Calendar, Filter, ChevronDown, Bot, Sparkles, Globe, Instagram, MessageCircle, BarChart as BarChartIcon, MessageSquare } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ConversationsDayModal } from './ConversationsDayModal';
+import { getConversationsByDate } from '@/lib/actions/dashboard';
 
 interface DashboardClientProps {
     stats: {
@@ -28,6 +31,11 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ stats, chartData, channels, topAgents, weeklyConversations }: DashboardClientProps) {
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [conversations, setConversations] = useState<any[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+
     // Convert date strings to Date objects
     const weeklyData = {
         ...weeklyConversations,
@@ -43,6 +51,31 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
         const startStr = format(start, 'd MMM', { locale: es });
         const endStr = format(end, 'd MMM', { locale: es });
         return `${startStr} - ${endStr}`;
+    };
+
+    const handleBarClick = async (data: any) => {
+        if (data.count === 0) return;
+        
+        const date = typeof data.date === 'string' ? new Date(data.date) : data.date;
+        setSelectedDate(date);
+        setIsLoadingConversations(true);
+        setIsModalOpen(true);
+
+        try {
+            const convs = await getConversationsByDate(date);
+            setConversations(convs);
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+            setConversations([]);
+        } finally {
+            setIsLoadingConversations(false);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedDate(null);
+        setConversations([]);
     };
     const statCards = [
         { label: 'Total de Conversaciones', value: stats.conversaciones.toLocaleString(), change: '0%', isPositive: true, icon: CheckCircle },
@@ -123,7 +156,15 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                     <div className="h-[280px] w-full">
                         {weeklyData.data.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={weeklyData.data} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+                                <BarChart 
+                                    data={weeklyData.data} 
+                                    margin={{ top: 20, right: 10, left: 10, bottom: 5 }}
+                                    onClick={(data: any) => {
+                                        if (data && data.activePayload && data.activePayload[0]) {
+                                            handleBarClick(data.activePayload[0].payload);
+                                        }
+                                    }}
+                                >
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis
                                         dataKey="dayName"
@@ -170,10 +211,20 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                                     />
                                     <Bar
                                         dataKey="count"
-                                        fill="#21AC96"
                                         radius={[8, 8, 0, 0]}
                                         maxBarSize={60}
-                                    />
+                                    >
+                                        {weeklyData.data.map((entry, index) => (
+                                            <Cell 
+                                                key={`cell-${index}`} 
+                                                fill={entry.count > 0 ? "#21AC96" : "#e5e7eb"}
+                                                style={{ 
+                                                    cursor: entry.count > 0 ? 'pointer' : 'default',
+                                                    filter: entry.count > 0 ? 'drop-shadow(0 2px 4px rgba(33, 172, 150, 0.1))' : 'none'
+                                                }}
+                                            />
+                                        ))}
+                                    </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
@@ -270,6 +321,17 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                     </div>
                 )}
             </div>
+
+            {/* Conversations Day Modal */}
+            {selectedDate && (
+                <ConversationsDayModal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    conversations={conversations}
+                    date={selectedDate}
+                    isLoading={isLoadingConversations}
+                />
+            )}
         </div>
     );
 }

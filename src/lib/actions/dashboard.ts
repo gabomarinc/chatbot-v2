@@ -159,6 +159,44 @@ export const getWeeklyConversationsData = cache(async (weekOffset: number = 0) =
     }
 })
 
+export async function getConversationsByDate(date: Date) {
+    const workspace = await getUserWorkspace()
+    if (!workspace) return []
+
+    const dayStart = new Date(date)
+    dayStart.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(date)
+    dayEnd.setHours(23, 59, 59, 999)
+
+    return prisma.conversation.findMany({
+        where: {
+            agent: { workspaceId: workspace.id },
+            createdAt: {
+                gte: dayStart,
+                lte: dayEnd
+            }
+        },
+        include: {
+            agent: {
+                select: {
+                    id: true,
+                    name: true
+                }
+            },
+            channel: {
+                select: {
+                    type: true,
+                    displayName: true
+                }
+            },
+            _count: {
+                select: { messages: true }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    })
+}
+
 export async function getDashboardChannels() {
     const workspace = await getUserWorkspace()
     if (!workspace) return []

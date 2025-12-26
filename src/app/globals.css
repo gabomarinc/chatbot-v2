@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Custom styles for bar chart hover */
+.recharts-bar-rectangle {
+  transition: all 0.2s ease;
+}
+
+.recharts-bar-rectangle:hover {
+  filter: drop-shadow(0 4px 8px rgba(33, 172, 150, 0.2));
+  opacity: 0.9;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
