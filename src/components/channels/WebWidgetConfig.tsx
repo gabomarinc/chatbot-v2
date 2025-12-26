@@ -41,6 +41,7 @@ export function WebWidgetConfig({ agents, existingChannel, defaultAgentId }: Web
                 agentId: formData.agentId,
                 displayName: formData.displayName,
                 type: 'WEBCHAT' as const,
+                isActive: true, // Activate the channel by default
                 configJson: {
                     color: formData.color,
                     title: formData.title,
@@ -53,7 +54,8 @@ export function WebWidgetConfig({ agents, existingChannel, defaultAgentId }: Web
             if (existingChannel) {
                 await updateChannel(existingChannel.id, {
                     displayName: formData.displayName,
-                    configJson: payload.configJson
+                    configJson: payload.configJson,
+                    isActive: true // Ensure channel is active when saving
                 });
             } else {
                 await createChannel(payload);

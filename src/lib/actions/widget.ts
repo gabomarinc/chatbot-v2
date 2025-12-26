@@ -44,8 +44,12 @@ export async function sendWidgetMessage(data: {
         }
     })
 
-    if (!channel || !channel.isActive) {
-        throw new Error("Channel not active")
+    if (!channel) {
+        throw new Error("Channel not found")
+    }
+    
+    if (!channel.isActive) {
+        throw new Error("Channel is not active. Please activate the channel in the channel settings.")
     }
 
     const workspace = channel.agent.workspace;
