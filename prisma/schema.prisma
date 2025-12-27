@@ -19,6 +19,7 @@ model User {
   role         AppRole           @default(USER)
   workspaces   Workspace[]
   memberships  WorkspaceMember[]
+  assignedConversations Conversation[]
 }
 
 model GlobalConfig {
@@ -138,9 +139,12 @@ model Conversation {
   contactEmail  String?
   status        ConversationStatus @default(OPEN)
   lastMessageAt DateTime?
+  assignedTo    String?            // User ID who is assigned to this conversation
+  assignedAt    DateTime?          // When the conversation was assigned
   createdAt     DateTime           @default(now())
   agent         Agent              @relation(fields: [agentId], references: [id])
   channel       Channel?           @relation(fields: [channelId], references: [id])
+  assignedUser  User?              @relation(fields: [assignedTo], references: [id])
   messages      Message[]
 }
 
