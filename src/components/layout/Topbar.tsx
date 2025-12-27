@@ -4,6 +4,7 @@ import { Search, Bell, ChevronDown, Coins, LogOut, User, Settings, CreditCard } 
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { getDashboardStats, getCreditsDetails } from '@/lib/actions/dashboard';
 import { CreditsDetailsModal } from '@/components/dashboard/CreditsDetailsModal';
@@ -40,7 +41,14 @@ export function Topbar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     return (
+        <>
         <div className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-30 transition-all duration-300">
             {/* Left side */}
             <div className="flex items-center gap-6">
@@ -164,15 +172,19 @@ export function Topbar() {
                     )}
                 </div>
             </div>
-
-            {/* Credits Details Modal */}
+        </div>
+        
+        {/* Credits Details Modal - Rendered via Portal */}
+        {mounted && createPortal(
             <CreditsDetailsModal
                 isOpen={isCreditsModalOpen}
                 onClose={() => setIsCreditsModalOpen(false)}
                 creditsData={creditsData}
                 isLoading={isLoadingCredits}
-            />
-        </div>
+            />,
+            document.body
+        )}
+        </>
     );
 }
 
