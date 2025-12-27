@@ -10,7 +10,9 @@ import { getDashboardStats, getCreditsDetails, getNotifications, getNotification
 import { CreditsDetailsModal } from '@/components/dashboard/CreditsDetailsModal';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { SearchDropdown } from './SearchDropdown';
+import { WorkspaceDropdown } from './WorkspaceDropdown';
 import { globalSearch } from '@/lib/actions/search';
+import { getWorkspaceInfo } from '@/lib/actions/workspace';
 
 export function Topbar() {
     const { data: session } = useSession();
@@ -41,6 +43,12 @@ export function Topbar() {
     const [isSearching, setIsSearching] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Workspace dropdown state
+    const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
+    const [workspaceInfo, setWorkspaceInfo] = useState<any>(null);
+    const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
+    const workspaceRef = useRef<HTMLDivElement>(null);
 
     const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'U';
     const userName = session?.user?.name || 'Usuario';
@@ -129,10 +137,32 @@ export function Topbar() {
             if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
                 setIsSearchOpen(false);
             }
+            if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) {
+                setIsWorkspaceOpen(false);
+            }
         }
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Load workspace info when dropdown opens
+    useEffect(() => {
+        const fetchWorkspaceInfo = async () => {
+            if (isWorkspaceOpen) {
+                setIsLoadingWorkspace(true);
+                try {
+                    const info = await getWorkspaceInfo();
+                    setWorkspaceInfo(info);
+                } catch (error) {
+                    console.error('Error loading workspace info:', error);
+                    setWorkspaceInfo(null);
+                } finally {
+                    setIsLoadingWorkspace(false);
+                }
+            }
+        };
+        fetchWorkspaceInfo();
+    }, [isWorkspaceOpen]);
 
     const [mounted, setMounted] = useState(false);
 
@@ -145,10 +175,24 @@ export function Topbar() {
         <div className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-30 transition-all duration-300">
             {/* Left side */}
             <div className="flex items-center gap-6">
-                <button className="flex items-center gap-2.5 px-4 py-2 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-md hover:border-gray-200 transition-all duration-300 cursor-pointer group active:scale-95">
-                    <span className="text-sm text-gray-700 font-bold tracking-tight group-hover:text-[#21AC96] transition-colors">Mi Workspace</span>
-                    <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96] group-hover:rotate-180 transition-all duration-300" />
-                </button>
+                <div className="relative" ref={workspaceRef}>
+                    <button 
+                        onClick={() => setIsWorkspaceOpen(!isWorkspaceOpen)}
+                        className="flex items-center gap-2.5 px-4 py-2 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-md hover:border-gray-200 transition-all duration-300 cursor-pointer group active:scale-95"
+                    >
+                        <span className="text-sm text-gray-700 font-bold tracking-tight group-hover:text-[#21AC96] transition-colors">Mi Workspace</span>
+                        <ChevronDown className={cn(
+                            "w-4 h-4 text-gray-400 group-hover:text-[#21AC96] transition-all duration-300",
+                            isWorkspaceOpen && "rotate-180 text-[#21AC96]"
+                        )} />
+                    </button>
+                    <WorkspaceDropdown
+                        isOpen={isWorkspaceOpen}
+                        workspaceInfo={workspaceInfo}
+                        isLoading={isLoadingWorkspace}
+                        onClose={() => setIsWorkspaceOpen(false)}
+                    />
+                </div>
 
                 <div className="relative group" ref={searchRef}>
                     <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#21AC96] group-focus-within:scale-110 transition-all duration-300" />
