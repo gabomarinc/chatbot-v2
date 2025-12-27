@@ -57,8 +57,9 @@ function LoginForm() {
                         setError('Contraseña establecida, pero hubo un error al iniciar sesión. Por favor, intenta iniciar sesión manualmente.');
                         setPasswordSet(false);
                     } else {
+                        // Refresh session to get updated user data
+                        await update();
                         router.push('/dashboard');
-                        router.refresh();
                     }
                 }, 1500);
             }
