@@ -447,6 +447,22 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                 memberName={memberToDelete?.name || ''}
                 isLoading={isLoading}
             />
+
+            {/* Member Details Modal */}
+            {selectedMemberForDetails && (
+                <MemberDetailsModal
+                    isOpen={isMemberDetailsModalOpen}
+                    onClose={() => {
+                        setIsMemberDetailsModalOpen(false);
+                        setSelectedMemberForDetails(null);
+                    }}
+                    memberId={selectedMemberForDetails.user.id}
+                    memberName={selectedMemberForDetails.user.name || selectedMemberForDetails.user.email}
+                    memberEmail={selectedMemberForDetails.user.email}
+                    memberRole={selectedMemberForDetails.role}
+                    currentUserRole={userRole}
+                />
+            )}
         </>
     );
 }
