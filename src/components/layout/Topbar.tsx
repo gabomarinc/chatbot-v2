@@ -50,8 +50,32 @@ export function Topbar() {
     const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
     const workspaceRef = useRef<HTMLDivElement>(null);
 
-    const userInitial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'U';
-    const userName = session?.user?.name || 'Usuario';
+    const [userName, setUserName] = useState<string>('Usuario');
+    const [userInitial, setUserInitial] = useState<string>('U');
+
+    useEffect(() => {
+        const fetchUserName = async () => {
+            if (session?.user?.id) {
+                try {
+                    const name = await getCurrentUserName();
+                    if (name) {
+                        setUserName(name);
+                        setUserInitial(name.charAt(0).toUpperCase());
+                    } else if (session?.user?.name) {
+                        setUserName(session.user.name);
+                        setUserInitial(session.user.name.charAt(0).toUpperCase());
+                    }
+                } catch (error) {
+                    console.error('Error fetching user name:', error);
+                    if (session?.user?.name) {
+                        setUserName(session.user.name);
+                        setUserInitial(session.user.name.charAt(0).toUpperCase());
+                    }
+                }
+            }
+        };
+        fetchUserName();
+    }, [session]);
 
     useEffect(() => {
         const fetchCredits = async () => {
