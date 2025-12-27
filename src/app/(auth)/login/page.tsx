@@ -88,8 +88,9 @@ function LoginForm() {
                 setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
                 setLoading(false);
             } else {
+                // Refresh session to get updated user data
+                await update();
                 router.push('/dashboard');
-                router.refresh();
             }
         } catch (err) {
             setError('Ocurrió un error al iniciar sesión. Inténtalo de nuevo.');
