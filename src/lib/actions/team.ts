@@ -6,6 +6,7 @@ import { auth } from '@/auth'
 import bcrypt from 'bcryptjs'
 import { sendTeamInvitationEmail } from '@/lib/email'
 import { revalidatePath } from 'next/cache'
+import { subDays, startOfDay, endOfDay } from 'date-fns'
 
 // Get user's role in workspace
 async function getUserWorkspaceRole(workspaceId: string) {
@@ -74,6 +75,257 @@ export async function canViewSettings(): Promise<boolean> {
     return role === 'OWNER'
 }
 
+/**
+ * Get detailed statistics for a specific team member
+ */
+export async function getMemberStats(memberUserId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { error: 'No autorizado' }
+        }
+
+        const workspace = await getUserWorkspace()
+        if (!workspace) {
+            return { error: 'Workspace no encontrado' }
+        }
+
+        // Verify user is a member of the workspace
+        const membership = await prisma.workspaceMember.findFirst({
+            where: {
+                userId: memberUserId,
+                workspaceId: workspace.id
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        createdAt: true,
+                        lastLoginAt: true
+                    }
+                }
+            }
+        })
+
+        if (!membership) {
+            return { error: 'Miembro no encontrado' }
+        }
+
+        const now = new Date()
+        const todayStart = startOfDay(now)
+        const todayEnd = endOfDay(now)
+        const weekStart = startOfDay(subDays(now, 7))
+        const monthStart = startOfDay(subDays(now, 30))
+
+        // Get conversation counts
+        const [
+            totalAssigned,
+            assignedToday,
+            assignedThisWeek,
+            assignedThisMonth,
+            activeConversations,
+            pendingConversations,
+            closedConversations,
+            conversationsWithResponses
+        ] = await Promise.all([
+            // Total assigned
+            prisma.conversation.count({
+                where: {
+                    assignedTo: memberUserId,
+                    agent: { workspaceId: workspace.id }
+                }
+            }),
+            // Assigned today
+            prisma.conversation.count({
+                where: {
+                    assignedTo: memberUserId,
+                    agent: { workspaceId: workspace.id },
+                    assignedAt: { gte: todayStart, lte: todayEnd }
+                }
+            }),
+            // Assigned this week
+            prisma.conversation.count({
+                where: {
+                    assignedTo: memberUserId,
+                    agent: { workspaceId: workspace.id },
+                    assignedAt: { gte: weekStart }
+                }
+            }),
+            // Assigned this month
+            prisma.conversation.count({
+                where: {
+                    assignedTo: memberUserId,
+                    agent: { workspaceId: workspace.id },
+                    assignedAt: { gte: monthStart }
+                }
+            }),
+            // Active conversations
+            prisma.conversation.count({
+                where: {
+                    assignedTo: memberUserId,
+                    agent: { workspaceId: workspace.id },
+                    status: 'OPEN'
+                }
+            }),
+            // Pending conversations
+            prisma.conversation.count({
+                where: {
+                    assignedTo: memberUserId,
+                    agent: { workspaceId: workspace.id },
+                    status: 'PENDING'
+                }
+            }),
+            // Closed conversations
+            prisma.conversation.count({
+                where: {
+                    assignedTo: memberUserId,
+                    agent: { workspaceId: workspace.id },
+                    status: 'CLOSED'
+                }
+            }),
+            // Conversations with responses
+            prisma.conversation.count({
+                where: {
+                    assignedTo: memberUserId,
+                    agent: { workspaceId: workspace.id },
+                    messages: { some: { role: 'HUMAN' } }
+                }
+            })
+        ])
+
+        // Calculate response rate
+        const responseRate = totalAssigned > 0
+            ? Math.round((conversationsWithResponses / totalAssigned) * 100)
+            : 0
+
+        // Get average response time
+        const conversationsWithHumanMessages = await prisma.conversation.findMany({
+            where: {
+                assignedTo: memberUserId,
+                agent: { workspaceId: workspace.id },
+                messages: { some: { role: 'HUMAN' } }
+            },
+            include: {
+                messages: {
+                    orderBy: { createdAt: 'asc' },
+                    take: 100
+                }
+            },
+            take: 50
+        })
+
+        let totalResponseTime = 0
+        let responseCount = 0
+
+        for (const conv of conversationsWithHumanMessages) {
+            const firstUserMessage = conv.messages.find(m => m.role === 'USER')
+            const firstHumanMessage = conv.messages.find(m => m.role === 'HUMAN')
+            
+            if (firstUserMessage && firstHumanMessage && firstHumanMessage.createdAt > firstUserMessage.createdAt) {
+                const responseTime = firstHumanMessage.createdAt.getTime() - firstUserMessage.createdAt.getTime()
+                totalResponseTime += responseTime
+                responseCount++
+            }
+        }
+
+        const averageResponseTimeMs = responseCount > 0 ? totalResponseTime / responseCount : 0
+        const averageResponseTimeMinutes = Math.round(averageResponseTimeMs / (1000 * 60))
+
+        // Get recent assigned conversations
+        const recentConversations = await prisma.conversation.findMany({
+            where: {
+                assignedTo: memberUserId,
+                agent: { workspaceId: workspace.id }
+            },
+            include: {
+                agent: {
+                    select: { id: true, name: true }
+                },
+                channel: {
+                    select: { id: true, type: true, displayName: true }
+                },
+                _count: {
+                    select: { messages: true }
+                }
+            },
+            orderBy: { lastMessageAt: 'desc' },
+            take: 10
+        })
+
+        // Calculate peak activity (day and hour with most conversations)
+        const conversationsForPeak = await prisma.conversation.findMany({
+            where: {
+                assignedTo: memberUserId,
+                agent: { workspaceId: workspace.id },
+                assignedAt: { gte: weekStart }
+            },
+            select: { assignedAt: true }
+        })
+
+        const dayCounts: Record<number, number> = {}
+        const hourCounts: Record<number, number> = {}
+
+        conversationsForPeak.forEach(conv => {
+            if (conv.assignedAt) {
+                const date = new Date(conv.assignedAt)
+                const day = date.getDay()
+                const hour = date.getHours()
+                dayCounts[day] = (dayCounts[day] || 0) + 1
+                hourCounts[hour] = (hourCounts[hour] || 0) + 1
+            }
+        })
+
+        const peakDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
+        const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]
+
+        const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+        const peakDayName = peakDay ? dayNames[parseInt(peakDay[0])] : null
+        const peakHourRange = peakHour ? `${peakHour[0]}:00 - ${parseInt(peakHour[0]) + 1}:00` : null
+
+        return {
+            success: true,
+            member: {
+                id: membership.user.id,
+                name: membership.user.name,
+                email: membership.user.email,
+                role: membership.role,
+                joinedAt: membership.user.createdAt,
+                lastLoginAt: membership.user.lastLoginAt
+            },
+            stats: {
+                totalAssigned,
+                assignedToday,
+                assignedThisWeek,
+                assignedThisMonth,
+                activeConversations,
+                pendingConversations,
+                closedConversations,
+                responseRate,
+                averageResponseTimeMinutes
+            },
+            peakActivity: {
+                day: peakDayName,
+                hour: peakHourRange
+            },
+            recentConversations: recentConversations.map(conv => ({
+                id: conv.id,
+                contactName: conv.contactName || conv.externalId,
+                channelType: conv.channel?.type || 'UNKNOWN',
+                channelName: conv.channel?.displayName || 'Sin canal',
+                status: conv.status,
+                lastMessageAt: conv.lastMessageAt,
+                messageCount: conv._count.messages,
+                assignedAt: conv.assignedAt
+            }))
+        }
+    } catch (error: any) {
+        console.error('Error getting member stats:', error)
+        return { error: error.message || 'Error al obtener estadísticas del miembro' }
+    }
+}
+
 // Invite team member
 export async function inviteTeamMember(name: string, email: string, role: 'MANAGER' | 'AGENT') {
     try {
@@ -90,43 +342,31 @@ export async function inviteTeamMember(name: string, email: string, role: 'MANAG
         // Check permissions
         const canInvite = await canInviteMembers(workspace.id)
         if (!canInvite) {
-            return { error: 'No tienes permisos para invitar miembros' }
+            return { error: 'No tienes permiso para invitar miembros' }
         }
 
-        // Get subscription and plan
-        const subscription = await prisma.subscription.findUnique({
+        // Get subscription plan to check max members
+        const subscription = await prisma.subscription.findFirst({
             where: { workspaceId: workspace.id },
             include: { plan: true }
         })
 
-        if (!subscription?.plan) {
-            return { error: 'No se encontró el plan de suscripción' }
-        }
+        const maxMembers = subscription?.plan?.maxMembers || 2
 
-        // Check current member count
+        // Count current members
         const currentMemberCount = await prisma.workspaceMember.count({
             where: { workspaceId: workspace.id }
         })
 
-        // Check if we're at the limit
-        if (currentMemberCount >= subscription.plan.maxMembers) {
-            return { 
-                error: `Has alcanzado el límite de miembros para tu plan (${subscription.plan.maxMembers} miembros). Por favor, actualiza tu plan para invitar más miembros.`
-            }
+        if (currentMemberCount >= maxMembers) {
+            return { error: `Has alcanzado el límite de ${maxMembers} miembros para tu plan` }
         }
-
-        // Get inviter info
-        const inviter = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { name: true, email: true }
-        })
 
         // Check if user already exists
         let user = await prisma.user.findUnique({
-            where: { email: email.toLowerCase().trim() }
+            where: { email }
         })
 
-        let isNewUser = false
         if (!user) {
             // Create new user with temporary password
             const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12)
@@ -134,30 +374,18 @@ export async function inviteTeamMember(name: string, email: string, role: 'MANAG
 
             user = await prisma.user.create({
                 data: {
-                    name: name.trim(),
-                    email: email.toLowerCase().trim(),
-                    passwordHash: hashedPassword,
-                    // User will need to set password on first login
+                    email,
+                    name,
+                    passwordHash: hashedPassword
                 }
             })
-            isNewUser = true
-        } else {
-            // Update existing user's name if provided and different
-            if (name.trim() && user.name !== name.trim()) {
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { name: name.trim() }
-                })
-            }
         }
 
         // Check if user is already a member
-        const existingMember = await prisma.workspaceMember.findUnique({
+        const existingMember = await prisma.workspaceMember.findFirst({
             where: {
-                userId_workspaceId: {
-                    userId: user.id,
-                    workspaceId: workspace.id
-                }
+                userId: user.id,
+                workspaceId: workspace.id
             }
         })
 
@@ -174,18 +402,14 @@ export async function inviteTeamMember(name: string, email: string, role: 'MANAG
             }
         })
 
-        // Send invitation email (don't block on error)
+        // Send invitation email
         try {
-            await sendTeamInvitationEmail(
-                email,
-                workspace.name,
-                inviter?.name || inviter?.email || 'Un administrador',
-                role,
-                isNewUser
-            )
+            const session = await auth()
+            const inviterName = session?.user?.name || 'Un administrador'
+            await sendTeamInvitationEmail(email, workspace.name, inviterName, role, true)
         } catch (emailError) {
             console.error('Error sending invitation email:', emailError)
-            // Continue even if email fails - user is already added
+            // Don't fail the entire operation if email fails
         }
 
         revalidatePath('/team')
@@ -209,22 +433,14 @@ export async function removeTeamMember(memberId: string) {
             return { error: 'Workspace no encontrado' }
         }
 
-        // Check permissions
-        const canInvite = await canInviteMembers(workspace.id)
-        if (!canInvite) {
-            return { error: 'No tienes permisos para eliminar miembros' }
-        }
-
-        // Get member to remove
+        // Get the member to remove
         const member = await prisma.workspaceMember.findFirst({
             where: {
                 id: memberId,
                 workspaceId: workspace.id
             },
             include: {
-                user: {
-                    select: { id: true }
-                }
+                user: true
             }
         })
 
@@ -232,35 +448,53 @@ export async function removeTeamMember(memberId: string) {
             return { error: 'Miembro no encontrado' }
         }
 
-        // Cannot remove workspace owner
-        if (workspace.ownerId === member.user.id) {
-            return { error: 'No puedes eliminar al propietario del workspace' }
+        // Prevent removing owner
+        if (member.role === 'OWNER') {
+            return { error: 'No se puede eliminar al propietario del workspace' }
         }
 
-        // Cannot remove yourself
-        if (member.user.id === session.user.id) {
-            return { error: 'No puedes eliminar tu propia cuenta. Contacta a otro administrador.' }
+        // Prevent removing yourself (though this shouldn't be possible in UI)
+        if (member.userId === session.user.id) {
+            return { error: 'No puedes eliminarte a ti mismo' }
         }
 
-        // Remove member from workspace
+        // Check if user is member of any other workspace
+        const otherMemberships = await prisma.workspaceMember.findMany({
+            where: {
+                userId: member.userId,
+                workspaceId: { not: workspace.id }
+            }
+        })
+
+        // Remove workspace membership
         await prisma.workspaceMember.delete({
             where: { id: memberId }
         })
 
-        // Check if user has any other workspace memberships
-        const otherMemberships = await prisma.workspaceMember.count({
-            where: { userId: member.user.id }
-        })
+        // If user is not a member of any other workspace, delete the user account
+        if (otherMemberships.length === 0) {
+            // Also unassign all conversations assigned to this user
+            await prisma.conversation.updateMany({
+                where: { assignedTo: member.userId },
+                data: { assignedTo: null, assignedAt: null }
+            })
 
-        // If user has no other memberships, delete the user account
-        if (otherMemberships === 0) {
+            // Delete the user
             await prisma.user.delete({
-                where: { id: member.user.id }
+                where: { id: member.userId }
+            })
+        } else {
+            // Just unassign conversations in this workspace
+            await prisma.conversation.updateMany({
+                where: {
+                    assignedTo: member.userId,
+                    agent: { workspaceId: workspace.id }
+                },
+                data: { assignedTo: null, assignedAt: null }
             })
         }
 
         revalidatePath('/team')
-        revalidatePath('/dashboard')
         return { success: true }
     } catch (error: any) {
         console.error('Error removing team member:', error)
@@ -269,7 +503,7 @@ export async function removeTeamMember(memberId: string) {
 }
 
 // Update team member role
-export async function updateTeamMemberRole(memberId: string, newRole: 'OWNER' | 'MANAGER' | 'AGENT') {
+export async function updateTeamMemberRole(memberId: string, newRole: 'MANAGER' | 'AGENT') {
     try {
         const session = await auth()
         if (!session?.user?.id) {
@@ -281,22 +515,11 @@ export async function updateTeamMemberRole(memberId: string, newRole: 'OWNER' | 
             return { error: 'Workspace no encontrado' }
         }
 
-        // Check permissions (only OWNER can change roles)
-        const role = await getUserWorkspaceRole(workspace.id)
-        if (role !== 'OWNER') {
-            return { error: 'Solo el propietario puede cambiar roles' }
-        }
-
-        // Get member to update
+        // Get the member
         const member = await prisma.workspaceMember.findFirst({
             where: {
                 id: memberId,
                 workspaceId: workspace.id
-            },
-            include: {
-                user: {
-                    select: { id: true }
-                }
             }
         })
 
@@ -304,9 +527,9 @@ export async function updateTeamMemberRole(memberId: string, newRole: 'OWNER' | 
             return { error: 'Miembro no encontrado' }
         }
 
-        // Cannot change owner role
-        if (workspace.ownerId === member.user.id && newRole !== 'OWNER') {
-            return { error: 'No puedes cambiar el rol del propietario del workspace' }
+        // Prevent changing owner role
+        if (member.role === 'OWNER') {
+            return { error: 'No se puede cambiar el rol del propietario' }
         }
 
         // Update role
@@ -322,4 +545,3 @@ export async function updateTeamMemberRole(memberId: string, newRole: 'OWNER' | 
         return { error: error.message || 'Error al actualizar rol' }
     }
 }
-

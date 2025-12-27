@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { InviteMemberModal } from './InviteMemberModal';
 import { MaxMembersModal } from './MaxMembersModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { MemberDetailsModal } from './MemberDetailsModal';
 import { removeTeamMember, updateTeamMemberRole } from '@/lib/actions/team';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -44,6 +45,8 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null);
     const [isActionMenuOpen, setIsActionMenuOpen] = useState<string | null>(null);
+    const [isMemberDetailsModalOpen, setIsMemberDetailsModalOpen] = useState(false);
+    const [selectedMemberForDetails, setSelectedMemberForDetails] = useState<TeamMember | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
     const actionMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -119,6 +122,20 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
         }
         
         return format(date, 'dd/MM/yyyy HH:mm', { locale: es });
+    };
+
+    const handleMemberClick = (member: TeamMember, event: React.MouseEvent) => {
+        // Don't open modal if clicking on action button or menu
+        const target = event.target as HTMLElement;
+        if (target.closest('button') || target.closest('[role="button"]')) {
+            return;
+        }
+        
+        // Only allow OWNER and MANAGER to view details
+        if (userRole === 'OWNER' || userRole === 'MANAGER') {
+            setSelectedMemberForDetails(member);
+            setIsMemberDetailsModalOpen(true);
+        }
     };
 
     const handleRemoveMemberClick = (memberId: string, memberName: string) => {
@@ -264,7 +281,12 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                         const status = getUserStatus(member);
                                         const buttonRect = buttonRefs.current[member.id]?.getBoundingClientRect();
                                         return (
-                                            <tr key={member.id} className="hover:bg-gray-50/50 transition-colors group">
+                                            <tr 
+                                                key={member.id} 
+                                                className="hover:bg-gray-50/50 transition-colors group"
+                                                onClick={(e) => handleMemberClick(member, e)}
+                                                style={{ cursor: (userRole === 'OWNER' || userRole === 'MANAGER') ? 'pointer' : 'default' }}
+                                            >
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-12 h-12 rounded-2xl bg-[#21AC96]/5 flex items-center justify-center text-[#21AC96] group-hover:scale-110 transition-transform shadow-sm">
