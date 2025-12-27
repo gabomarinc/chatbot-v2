@@ -5,6 +5,8 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { getDashboardStats, getCreditsDetails, getNotifications, getNotificationCount } from '@/lib/actions/dashboard';
 import { CreditsDetailsModal } from '@/components/dashboard/CreditsDetailsModal';
@@ -283,7 +285,7 @@ export function Topbar() {
                         </div>
                         <div className="flex flex-col items-start translate-x-0 group-hover:translate-x-1 transition-transform duration-300">
                             <span className="text-sm text-gray-900 font-bold tracking-tight">{displayText}</span>
-                            <span className="text-[10px] text-gray-400 font-medium">Menú de usuario</span>
+                            <span className="text-[10px] text-gray-400 font-medium">{currentDate}</span>
                         </div>
                         <ChevronDown className={cn(
                             "w-4 h-4 text-gray-400 transition-all duration-300 ml-1",
