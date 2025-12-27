@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
@@ -10,6 +10,7 @@ import { setInitialPassword } from '@/lib/actions/auth';
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { update } = useSession();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isSettingPassword, setIsSettingPassword] = useState(false);
