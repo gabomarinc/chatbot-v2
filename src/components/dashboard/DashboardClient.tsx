@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { TrendingUp, TrendingDown, CheckCircle, Coins, Users, Calendar, Filter, ChevronDown, Bot, Sparkles, Globe, Instagram, MessageCircle, BarChart as BarChartIcon, MessageSquare } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ConversationsDayModal } from './ConversationsDayModal';
@@ -30,12 +30,46 @@ interface DashboardClientProps {
     };
 }
 
+// Custom clickable dot component
+const ClickableDot = ({ cx, cy, payload, onClick }: any) => {
+    if (!payload || payload.count === 0) return null;
+    
+    return (
+        <g>
+            <circle
+                cx={cx}
+                cy={cy}
+                r={6}
+                fill="#21AC96"
+                stroke="#fff"
+                strokeWidth={2}
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onClick(payload);
+                }}
+                onMouseEnter={(e) => {
+                    if (e.currentTarget) {
+                        e.currentTarget.setAttribute('r', '8');
+                        e.currentTarget.style.filter = 'drop-shadow(0 4px 8px rgba(33, 172, 150, 0.4))';
+                    }
+                }}
+                onMouseLeave={(e) => {
+                    if (e.currentTarget) {
+                        e.currentTarget.setAttribute('r', '6');
+                        e.currentTarget.style.filter = 'none';
+                    }
+                }}
+            />
+        </g>
+    );
+};
+
 export default function DashboardClient({ stats, chartData, channels, topAgents, weeklyConversations }: DashboardClientProps) {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [conversations, setConversations] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoadingConversations, setIsLoadingConversations] = useState(false);
-    const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
     // Convert date strings to Date objects
     const weeklyData = {
@@ -54,8 +88,8 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
         return `${startStr} - ${endStr}`;
     };
 
-    const handleBarClick = async (data: any) => {
-        if (data.count === 0) return;
+    const handlePointClick = async (data: any) => {
+        if (!data || data.count === 0) return;
         
         const date = typeof data.date === 'string' ? new Date(data.date) : data.date;
         setSelectedDate(date);
@@ -157,14 +191,9 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                     <div className="h-[280px] w-full">
                         {weeklyData.data.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart 
+                                <LineChart 
                                     data={weeklyData.data} 
                                     margin={{ top: 20, right: 10, left: 10, bottom: 5 }}
-                                    onClick={(data: any) => {
-                                        if (data && data.activePayload && data.activePayload[0]) {
-                                            handleBarClick(data.activePayload[0].payload);
-                                        }
-                                    }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis
@@ -210,39 +239,37 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                                             return null;
                                         }}
                                     />
-                                    <Bar
+                                    <Line
+                                        type="monotone"
                                         dataKey="count"
-                                        radius={[8, 8, 0, 0]}
-                                        maxBarSize={60}
-                                    >
-                                        {weeklyData.data.map((entry, index) => {
-                                            const hasData = entry.count > 0;
+                                        stroke="#21AC96"
+                                        strokeWidth={3}
+                                        dot={(props: any) => <ClickableDot {...props} onClick={handlePointClick} />}
+                                        activeDot={(props: any) => {
+                                            const { cx, cy, payload } = props;
                                             return (
-                                                <Cell 
-                                                    key={`cell-${index}`} 
-                                                    fill={hasData ? "#21AC96" : "#e5e7eb"}
-                                                    style={{ 
-                                                        cursor: hasData ? 'pointer' : 'default',
-                                                        filter: hasData ? 'drop-shadow(0 1px 2px rgba(33, 172, 150, 0.06))' : 'none',
-                                                        transition: 'filter 0.2s ease, opacity 0.2s ease'
-                                                    }}
-                                                    onMouseEnter={(e: any) => {
-                                                        if (hasData && e.target) {
-                                                            e.target.style.filter = 'drop-shadow(0 4px 8px rgba(33, 172, 150, 0.15))';
-                                                            e.target.style.opacity = '0.93';
-                                                        }
-                                                    }}
-                                                    onMouseLeave={(e: any) => {
-                                                        if (hasData && e.target) {
-                                                            e.target.style.filter = 'drop-shadow(0 1px 2px rgba(33, 172, 150, 0.06))';
-                                                            e.target.style.opacity = '1';
-                                                        }
-                                                    }}
-                                                />
+                                                <g>
+                                                    <circle
+                                                        cx={cx}
+                                                        cy={cy}
+                                                        r={8}
+                                                        fill="#21AC96"
+                                                        stroke="#fff"
+                                                        strokeWidth={3}
+                                                        style={{ 
+                                                            cursor: 'pointer',
+                                                            filter: 'drop-shadow(0 4px 8px rgba(33, 172, 150, 0.4))'
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handlePointClick(payload);
+                                                        }}
+                                                    />
+                                                </g>
                                             );
-                                        })}
-                                    </Bar>
-                                </BarChart>
+                                        }}
+                                    />
+                                </LineChart>
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center p-10 bg-gray-50/50 rounded-[2rem] w-full h-full border-2 border-dashed border-gray-100">

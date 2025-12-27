@@ -64,3 +64,4 @@ Ahora el widget mostrará mensajes más claros cuando haya errores:
 - Si falta la API key: "Error de configuración del servidor..."
 - Otros errores: "Problemas de conexión. Por favor, intenta de nuevo."
 
+

@@ -78,3 +78,4 @@ Tu app debería estar funcionando en `https://tu-app.vercel.app`
 
 Para más detalles, consulta `VERCEL_DEPLOYMENT.md`
 
+
