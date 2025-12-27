@@ -32,14 +32,14 @@ export function Sidebar() {
                 { id: 'channels', href: '/channels', label: 'Canales', icon: Radio, color: 'orange' },
             ]
         },
-        {
-            title: 'COMUNICACIÓN',
-            items: [
-                { id: 'chat', href: '/chat', label: 'Chat', icon: MessageSquare, color: 'indigo' },
-                { id: 'prospects', href: '/prospects', label: 'Prospectos', icon: UserCircle, color: 'pink' },
-                { id: 'attentions', href: '/attentions', label: 'Atenciones', icon: Clock, color: 'cyan' },
-            ]
-        }
+              {
+                  title: 'COMUNICACIÓN',
+                  items: [
+                      { id: 'chat', href: '/chat', label: 'Chats', icon: MessageSquare, color: 'indigo' },
+                      { id: 'prospects', href: '/prospects', label: 'Prospectos', icon: UserCircle, color: 'pink' },
+                      { id: 'attentions', href: '/attentions', label: 'Atenciones', icon: Clock, color: 'cyan' },
+                  ]
+              }
     ];
 
     const getColorClasses = (color: string, isActive: boolean) => {
@@ -56,6 +56,29 @@ export function Sidebar() {
         };
         return colors[color] || 'bg-gray-50 text-gray-500';
     };
+
+    // Filter menu sections based on user role
+    const filteredMenuSections = userRole === 'AGENT' 
+        ? [
+            {
+                title: 'VISIÓN GENERAL',
+                items: [
+                    { id: 'dashboard', href: '/dashboard', label: 'Mi Panel', icon: LayoutDashboard, color: 'blue' },
+                ]
+            },
+            {
+                title: 'COMUNICACIÓN',
+                items: [
+                    { id: 'chat', href: '/chat', label: 'Chats', icon: MessageSquare, color: 'indigo' },
+                ]
+            }
+        ]
+        : menuSections.map(section => ({
+            ...section,
+            items: section.items.map(item => 
+                item.id === 'chat' ? { ...item, label: 'Chats' } : item
+            )
+        }));
 
     return (
         <div className="w-72 bg-white border-r border-gray-100 flex flex-col h-full shadow-[20px_0_30px_rgba(0,0,0,0.01)] transition-all duration-500">
@@ -74,7 +97,7 @@ export function Sidebar() {
 
             {/* Menu */}
             <nav className="flex-1 overflow-y-auto px-6 pb-4 scrollbar-hide">
-                {menuSections.map((section, sectionIndex) => (
+                {filteredMenuSections.map((section, sectionIndex) => (
                     <div key={sectionIndex} className="mb-8">
                         <div className="text-[10px] text-gray-400 mb-4 px-2 tracking-[0.2em] font-bold uppercase opacity-60">
                             {section.title}
@@ -208,27 +231,29 @@ export function Sidebar() {
                 )}
             </nav>
 
-            {/* Referral Card */}
-            <div className="p-6">
-                <div className="bg-gradient-to-br from-white to-[#F8FAFB] rounded-3xl p-6 border border-gray-100 shadow-xl shadow-gray-200/20 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/10 transition-all duration-500 cursor-pointer active:scale-[0.98]">
-                    <div className="absolute -top-12 -right-12 w-24 h-24 bg-[#21AC96]/10 rounded-full blur-2xl group-hover:bg-[#21AC96]/20 transition-all duration-500"></div>
+            {/* Referral Card - Only for OWNER and MANAGER */}
+            {userRole !== 'AGENT' && (
+                <div className="p-6">
+                    <div className="bg-gradient-to-br from-white to-[#F8FAFB] rounded-3xl p-6 border border-gray-100 shadow-xl shadow-gray-200/20 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/10 transition-all duration-500 cursor-pointer active:scale-[0.98]">
+                        <div className="absolute -top-12 -right-12 w-24 h-24 bg-[#21AC96]/10 rounded-full blur-2xl group-hover:bg-[#21AC96]/20 transition-all duration-500"></div>
 
-                    <div className="relative">
-                        <div className="w-10 h-10 bg-white shadow-md rounded-xl flex items-center justify-center mb-4 transform group-hover:-rotate-12 transition-all duration-300">
-                            <Gift className="w-5 h-5 text-[#21AC96]" />
+                        <div className="relative">
+                            <div className="w-10 h-10 bg-white shadow-md rounded-xl flex items-center justify-center mb-4 transform group-hover:-rotate-12 transition-all duration-300">
+                                <Gift className="w-5 h-5 text-[#21AC96]" />
+                            </div>
+
+                            <div className="space-y-1 mb-4">
+                                <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#21AC96] transition-colors">Programa VIP</h3>
+                                <p className="text-xs text-gray-500 leading-relaxed">Invita a tus amigos y gana créditos ilimitados.</p>
+                            </div>
+
+                            <button className="w-full bg-[#21AC96] text-white rounded-2xl py-3 text-xs font-bold hover:bg-[#1a8a78] transition-all duration-300 shadow-lg shadow-[#21AC96]/20 group-hover:shadow-[#21AC96]/40 cursor-pointer">
+                                Invitar ahora
+                            </button>
                         </div>
-
-                        <div className="space-y-1 mb-4">
-                            <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#21AC96] transition-colors">Programa VIP</h3>
-                            <p className="text-xs text-gray-500 leading-relaxed">Invita a tus amigos y gana créditos ilimitados.</p>
-                        </div>
-
-                        <button className="w-full bg-[#21AC96] text-white rounded-2xl py-3 text-xs font-bold hover:bg-[#1a8a78] transition-all duration-300 shadow-lg shadow-[#21AC96]/20 group-hover:shadow-[#21AC96]/40 cursor-pointer">
-                            Invitar ahora
-                        </button>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
