@@ -134,15 +134,22 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
             const result = await removeTeamMember(memberToDelete.id);
             if (result.error) {
                 alert(result.error);
-            } else {
-                setMembers(members.filter(m => m.id !== memberToDelete.id));
-                router.refresh();
-                setIsDeleteModalOpen(false);
-                setMemberToDelete(null);
+                setIsLoading(false);
+                return;
             }
+            
+            // Remove from local state
+            setMembers(members.filter(m => m.id !== memberToDelete.id));
+            setIsDeleteModalOpen(false);
+            setMemberToDelete(null);
+            
+            // Refresh to get updated data from server
+            router.refresh();
+            
+            setIsLoading(false);
         } catch (error) {
-            alert('Error al eliminar miembro');
-        } finally {
+            console.error('Error al eliminar miembro:', error);
+            alert('Error al eliminar miembro. Por favor, intenta de nuevo.');
             setIsLoading(false);
         }
     };

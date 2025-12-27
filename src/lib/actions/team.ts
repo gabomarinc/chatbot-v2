@@ -224,12 +224,13 @@ export async function removeTeamMember(memberId: string) {
             return { error: 'No puedes eliminar tu propia cuenta. Contacta a otro administrador.' }
         }
 
-        // Remove member
+        // Remove member from workspace
         await prisma.workspaceMember.delete({
             where: { id: memberId }
         })
 
         revalidatePath('/team')
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (error: any) {
         console.error('Error removing team member:', error)
