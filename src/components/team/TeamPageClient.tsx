@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { Plus, User, Mail, Shield, MoreVertical, Trash2, Edit } from 'lucide-react';
+import { Plus, User, Mail, Shield, MoreVertical, Trash2, Edit, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InviteMemberModal } from './InviteMemberModal';
 import { removeTeamMember, updateTeamMemberRole } from '@/lib/actions/team';
@@ -105,12 +105,18 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers 
             <div className="max-w-[1600px] mx-auto animate-fade-in">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-                    <div>
-                        <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight mb-2">Equipo</h1>
+                <div>
+                    <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight mb-3">Equipo</h1>
+                    <div className="flex items-center gap-3 flex-wrap">
                         <p className="text-gray-500 font-medium">
-                            Gestiona los permisos y accesos de tus colaboradores ({currentMemberCount}/{maxMembers} miembros)
+                            Gestiona los permisos y accesos de tus colaboradores
                         </p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold border bg-blue-50 text-blue-600 border-blue-100">
+                            <Users className="w-4 h-4" />
+                            <span>{currentMemberCount}/{maxMembers} miembros</span>
+                        </div>
                     </div>
+                </div>
                     <button 
                         onClick={() => setIsInviteModalOpen(true)}
                         disabled={!canInvite}
