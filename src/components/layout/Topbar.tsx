@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Bell, ChevronDown, Coins, LogOut, User, Settings, CreditCard } from 'lucide-react';
+import { Search, Bell, ChevronDown, Coins, LogOut, User, Settings, CreditCard, Sparkles } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
@@ -50,8 +50,8 @@ export function Topbar() {
     const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
     const workspaceRef = useRef<HTMLDivElement>(null);
 
-    const userName = session?.user?.name || 'Usuario';
-    const userInitial = userName ? userName.charAt(0).toUpperCase() : 'U';
+    // Always show "Mi cuenta" instead of waiting for user name
+    const displayText = 'Mi cuenta';
 
     useEffect(() => {
         const fetchCredits = async () => {
@@ -279,11 +279,11 @@ export function Topbar() {
                     >
                         <div className="w-10 h-10 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-2xl flex items-center justify-center text-white font-bold shadow-lg shadow-[#21AC96]/20 transform group-hover:rotate-6 group-hover:scale-105 transition-all duration-300 overflow-hidden relative">
                             <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            {userInitial}
+                            <Sparkles className="w-5 h-5" />
                         </div>
                         <div className="flex flex-col items-start translate-x-0 group-hover:translate-x-1 transition-transform duration-300">
-                            <span className="text-sm text-gray-900 font-bold tracking-tight">{userName}</span>
-                            <span className="text-[10px] text-gray-400 font-medium lowercase first-letter:uppercase">Administrador</span>
+                            <span className="text-sm text-gray-900 font-bold tracking-tight">{displayText}</span>
+                            <span className="text-[10px] text-gray-400 font-medium">Menú de usuario</span>
                         </div>
                         <ChevronDown className={cn(
                             "w-4 h-4 text-gray-400 transition-all duration-300 ml-1",
