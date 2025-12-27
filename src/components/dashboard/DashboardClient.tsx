@@ -455,9 +455,8 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
 
             {/* Bottom Row - Ranking */}
             <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)]">
-                <div className="flex items-center justify-between mb-8">
+                <div className="mb-8">
                     <h3 className="text-gray-900 font-extrabold text-xl tracking-tight">Top Desempeño por Agente</h3>
-                    <button className="text-[#21AC96] text-sm font-bold hover:underline">Ver reporte completo</button>
                 </div>
 
                 {topAgents.length > 0 ? (
