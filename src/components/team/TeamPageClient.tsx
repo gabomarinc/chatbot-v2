@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, User, Mail, Shield, MoreVertical, Trash2, Edit, Users, Clock, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InviteMemberModal } from './InviteMemberModal';
+import { MaxMembersModal } from './MaxMembersModal';
 import { removeTeamMember, updateTeamMemberRole } from '@/lib/actions/team';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -31,18 +32,17 @@ interface TeamPageClientProps {
     currentUserId?: string;
 }
 
-export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers, currentUserId }: TeamPageClientProps) {
+export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers, currentUserId, currentPlanName = 'Actual' }: TeamPageClientProps) {
     const router = useRouter();
     const { data: session } = useSession();
     const [members, setMembers] = useState(initialMembers);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [isMaxMembersModalOpen, setIsMaxMembersModalOpen] = useState(false);
     const [isActionMenuOpen, setIsActionMenuOpen] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [showTooltip, setShowTooltip] = useState(false);
     const actionMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-    const inviteButtonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -401,6 +401,13 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                 currentMemberCount={currentMemberCount}
                 maxMembers={maxMembers}
                 onSuccess={handleInviteSuccess}
+            />
+            
+            <MaxMembersModal
+                isOpen={isMaxMembersModalOpen}
+                onClose={() => setIsMaxMembersModalOpen(false)}
+                currentPlanName={currentPlanName}
+                currentMaxMembers={maxMembers}
             />
         </>
     );
