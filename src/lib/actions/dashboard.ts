@@ -520,6 +520,7 @@ export async function getTeamMembers() {
                     email: true,
                     createdAt: true,
                     updatedAt: true,
+                    lastLoginAt: true,
                 }
             }
         }

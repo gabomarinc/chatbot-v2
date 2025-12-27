@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, User, Mail, Shield, MoreVertical, Trash2, Edit, Users, Clock } from 'lucide-react';
+import { Plus, User, Mail, Shield, MoreVertical, Trash2, Edit, Users, Clock, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InviteMemberModal } from './InviteMemberModal';
 import { removeTeamMember, updateTeamMemberRole } from '@/lib/actions/team';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createPortal } from 'react-dom';
+import { format, formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface TeamMember {
     id: string;
@@ -18,6 +20,7 @@ interface TeamMember {
         email: string;
         createdAt: Date;
         updatedAt: Date;
+        lastLoginAt: Date | null;
     };
 }
 
@@ -48,23 +51,28 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
     // Get current user ID from session or prop
     const currentUser = currentUserId || session?.user?.id;
 
-    // Helper to check if user has logged in
-    // If it's the current user, always show as active
-    // Otherwise, check if updatedAt is significantly different from createdAt
-    const hasLoggedIn = (member: TeamMember) => {
+    // Helper to determine user status
+    const getUserStatus = (member: TeamMember): 'active' | 'pending' | 'offline' => {
         // Current user is always active
         if (currentUser && member.user.id === currentUser) {
-            return true;
+            return 'active';
         }
         
-        // For other users, check if they've updated their profile after creation
-        // This is a heuristic - if updatedAt is more than 1 hour after createdAt, assume they logged in
-        const createdAt = new Date(member.user.createdAt).getTime();
-        const updatedAt = new Date(member.user.updatedAt).getTime();
-        const diffMs = updatedAt - createdAt;
-        const oneHour = 60 * 60 * 1000;
+        // If no lastLoginAt, user has never logged in - Pending
+        if (!member.user.lastLoginAt) {
+            return 'pending';
+        }
         
-        return diffMs > oneHour;
+        // User has logged in before - check if it's recent (within last 30 minutes = active, otherwise offline)
+        const lastLogin = new Date(member.user.lastLoginAt).getTime();
+        const now = Date.now();
+        const thirtyMinutes = 30 * 60 * 1000;
+        
+        if (now - lastLogin < thirtyMinutes) {
+            return 'active';
+        }
+        
+        return 'offline';
     };
 
     const getRoleLabel = (role: string) => {
@@ -91,6 +99,21 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
             default:
                 return 'bg-gray-50 text-gray-600 border-gray-100';
         }
+    };
+
+    const formatLastLogin = (lastLoginAt: Date | null) => {
+        if (!lastLoginAt) return 'Nunca';
+        
+        const date = new Date(lastLoginAt);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const oneDay = 24 * 60 * 60 * 1000;
+        
+        if (diffMs < oneDay) {
+            return formatDistanceToNow(date, { addSuffix: true, locale: es });
+        }
+        
+        return format(date, 'dd/MM/yyyy HH:mm', { locale: es });
     };
 
     const handleRemoveMember = async (memberId: string) => {
@@ -185,34 +208,23 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                             </div>
                         </div>
                     </div>
-                    <div className="relative">
+                    <div className="relative group">
                         <button 
                             ref={inviteButtonRef}
                             onClick={() => setIsInviteModalOpen(true)}
-                            onMouseEnter={() => !canInvite && setShowTooltip(true)}
-                            onMouseLeave={() => setShowTooltip(false)}
                             disabled={!canInvite}
                             className="flex items-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Plus className="w-5 h-5" />
                             Invitar Colaborador
                         </button>
-                        {!canInvite && showTooltip && inviteButtonRef.current && mounted && (
-                            createPortal(
-                                <div 
-                                    className="fixed bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-[200] shadow-lg"
-                                    style={{
-                                        top: `${inviteButtonRef.current.getBoundingClientRect().top - 40}px`,
-                                        left: `${Math.min(inviteButtonRef.current.getBoundingClientRect().left, window.innerWidth - 300)}px`,
-                                    }}
-                                >
-                                    Has alcanzado el límite de miembros ({maxMembers}/{maxMembers}). Actualiza tu plan para invitar más.
-                                    <div className="absolute top-full left-4 -mt-1">
-                                        <div className="border-4 border-transparent border-t-gray-900"></div>
-                                    </div>
-                                </div>,
-                                document.body
-                            )
+                        {!canInvite && (
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                Has alcanzado el límite de miembros ({maxMembers}/{maxMembers}). Actualiza tu plan para invitar más.
+                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                                    <div className="border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -226,13 +238,14 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Usuario / Email</th>
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Rol del Sistema</th>
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Estado</th>
+                                    <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Último Login</th>
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {members.length > 0 ? (
                                     members.map((member) => {
-                                        const isActive = hasLoggedIn(member);
+                                        const status = getUserStatus(member);
                                         const buttonRect = buttonRefs.current[member.id]?.getBoundingClientRect();
                                         return (
                                             <tr key={member.id} className="hover:bg-gray-50/50 transition-colors group">
@@ -260,17 +273,29 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-6">
-                                                    {isActive ? (
+                                                    {status === 'active' && (
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                                                             <span className="text-sm text-gray-700 font-bold">Activo</span>
                                                         </div>
-                                                    ) : (
+                                                    )}
+                                                    {status === 'pending' && (
                                                         <div className="flex items-center gap-2">
                                                             <Clock className="w-4 h-4 text-amber-500" />
                                                             <span className="text-sm text-amber-600 font-bold">Pendiente</span>
                                                         </div>
                                                     )}
+                                                    {status === 'offline' && (
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                                                            <span className="text-sm text-gray-600 font-bold">Desconectado</span>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <span className="text-sm text-gray-700 font-medium">
+                                                        {formatLastLogin(member.user.lastLoginAt)}
+                                                    </span>
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <div className="flex justify-end">
@@ -340,7 +365,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan={4} className="px-8 py-20 text-center">
+                                        <td colSpan={5} className="px-8 py-20 text-center">
                                             <div className="flex flex-col items-center justify-center">
                                                 <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mb-6 border border-gray-100 shadow-inner">
                                                     <User className="w-10 h-10 text-gray-200" />
