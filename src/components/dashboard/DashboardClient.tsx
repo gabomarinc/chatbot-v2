@@ -305,7 +305,11 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                     </div>
 
                     <div className="h-[280px] w-full">
-                        {weeklyData.data.length > 0 ? (
+                        {isLoadingWeeklyData ? (
+                            <div className="flex items-center justify-center h-full">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21AC96]"></div>
+                            </div>
+                        ) : weeklyData.data.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart 
                                     data={weeklyData.data} 
