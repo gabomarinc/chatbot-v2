@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAgent } from '@/lib/actions/dashboard';
 import { redirect } from 'next/navigation';
 import { AgentLayoutClient } from '@/components/agents/AgentLayoutClient';
+import { getUserWorkspaceRole } from '@/lib/actions/workspace';
 
 export default async function AgentLayout({
     children,
@@ -12,7 +13,10 @@ export default async function AgentLayout({
     params: Promise<{ agentId: string }>;
 }) {
     const { agentId } = await params;
-    const agent = await getAgent(agentId);
+    const [agent, userRole] = await Promise.all([
+        getAgent(agentId),
+        getUserWorkspaceRole()
+    ]);
 
     if (!agent) {
         redirect('/agents');
@@ -100,7 +104,7 @@ export default async function AgentLayout({
             </div>
 
             {/* Navigation & Actions */}
-            <AgentLayoutClient agentId={agentId} agentName={agent.name} tabs={tabs} />
+            <AgentLayoutClient agentId={agentId} agentName={agent.name} tabs={tabs} userRole={userRole} />
 
             {/* Main Content Area */}
             <div className="mt-8">

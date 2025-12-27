@@ -16,10 +16,14 @@ interface Agent {
 
 interface AgentsPageClientProps {
     initialAgents: Agent[];
+    userRole: 'OWNER' | 'MANAGER' | 'AGENT' | null;
 }
 
-export function AgentsPageClient({ initialAgents }: AgentsPageClientProps) {
+export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientProps) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    
+    // Check if user can create agents (OWNER or MANAGER)
+    const canCreate = userRole === 'OWNER' || userRole === 'MANAGER';
 
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in text-gray-900">
@@ -29,13 +33,15 @@ export function AgentsPageClient({ initialAgents }: AgentsPageClientProps) {
                     <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight mb-2">Agentes</h1>
                     <p className="text-gray-500 font-medium">Crea, entrena y gestiona tus agentes de IA personalizados</p>
                 </div>
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer group active:scale-95"
-                >
-                    <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                    Crear Nuevo Agente
-                </button>
+                {canCreate && (
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="flex items-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer group active:scale-95"
+                    >
+                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                        Crear Nuevo Agente
+                    </button>
+                )}
             </div>
 
             {/* Agents Grid */}
@@ -116,13 +122,15 @@ export function AgentsPageClient({ initialAgents }: AgentsPageClientProps) {
                         <p className="text-gray-400 font-medium max-w-sm mx-auto mb-8">
                             Empieza creando tu primer agente para automatizar tus canales de comunicación.
                         </p>
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer active:scale-95"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Crear Agente
-                        </button>
+                        {canCreate && (
+                            <button
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer active:scale-95"
+                            >
+                                <Plus className="w-5 h-5" />
+                                Crear Agente
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

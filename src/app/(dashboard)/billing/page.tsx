@@ -2,12 +2,19 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import BillingClient from './BillingClient';
+import { canViewBilling } from '@/lib/actions/team';
 
 export default async function BillingPage() {
     const session = await auth();
 
     if (!session?.user?.id) {
         redirect('/login');
+    }
+
+    // Check permissions (only OWNER can view billing)
+    const canView = await canViewBilling();
+    if (!canView) {
+        redirect('/dashboard');
     }
 
     // Get user's workspace with subscription and credit balance

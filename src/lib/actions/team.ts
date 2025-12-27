@@ -56,6 +56,24 @@ export async function canAssumeConversations(): Promise<boolean> {
     return workspace !== null
 }
 
+// Check if user can view billing/subscriptions (only OWNER)
+export async function canViewBilling(): Promise<boolean> {
+    const workspace = await getUserWorkspace()
+    if (!workspace) return false
+
+    const role = await getUserWorkspaceRole(workspace.id)
+    return role === 'OWNER'
+}
+
+// Check if user can view settings (only OWNER)
+export async function canViewSettings(): Promise<boolean> {
+    const workspace = await getUserWorkspace()
+    if (!workspace) return false
+
+    const role = await getUserWorkspaceRole(workspace.id)
+    return role === 'OWNER'
+}
+
 // Invite team member
 export async function inviteTeamMember(name: string, email: string, role: 'MANAGER' | 'AGENT') {
     try {

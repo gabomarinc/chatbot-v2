@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { getUserWorkspace } from './dashboard'
 import { auth } from '@/auth'
+import { cache } from 'react'
 
 export async function getWorkspaceInfo() {
     const session = await auth()
@@ -66,4 +67,25 @@ export async function getWorkspaceInfo() {
         agentsCount,
     }
 }
+
+// Get current user's workspace role (cached)
+export const getUserWorkspaceRole = cache(async (): Promise<'OWNER' | 'MANAGER' | 'AGENT' | null> => {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    const workspace = await getUserWorkspace()
+    if (!workspace) return null
+
+    const membership = await prisma.workspaceMember.findFirst({
+        where: {
+            userId: session.user.id,
+            workspaceId: workspace.id
+        },
+        select: {
+            role: true
+        }
+    })
+
+    return membership?.role || null
+})
 

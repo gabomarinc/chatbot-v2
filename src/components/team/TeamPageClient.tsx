@@ -32,9 +32,10 @@ interface TeamPageClientProps {
     maxMembers: number;
     currentUserId?: string;
     currentPlanName?: string;
+    userRole: 'OWNER' | 'MANAGER' | 'AGENT' | null;
 }
 
-export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers, currentUserId, currentPlanName = 'Actual' }: TeamPageClientProps) {
+export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers, currentUserId, currentPlanName = 'Actual', userRole }: TeamPageClientProps) {
     const router = useRouter();
     const { data: session } = useSession();
     const [members, setMembers] = useState(initialMembers);
@@ -182,7 +183,8 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
         router.refresh();
     };
 
-    const canInvite = currentMemberCount < maxMembers;
+    // Check if user can invite (OWNER or MANAGER) and hasn't reached limit
+    const canInvite = (userRole === 'OWNER' || userRole === 'MANAGER') && currentMemberCount < maxMembers;
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -224,21 +226,23 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                             </div>
                         </div>
                     </div>
-                    <div className="relative">
-                        <button 
-                            onClick={() => {
-                                if (canInvite) {
-                                    setIsInviteModalOpen(true);
-                                } else {
-                                    setIsMaxMembersModalOpen(true);
-                                }
-                            }}
-                            className="flex items-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer active:scale-95"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Invitar Colaborador
-                        </button>
-                    </div>
+                    {(userRole === 'OWNER' || userRole === 'MANAGER') && (
+                        <div className="relative">
+                            <button 
+                                onClick={() => {
+                                    if (canInvite) {
+                                        setIsInviteModalOpen(true);
+                                    } else {
+                                        setIsMaxMembersModalOpen(true);
+                                    }
+                                }}
+                                className="flex items-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer active:scale-95"
+                            >
+                                <Plus className="w-5 h-5" />
+                                Invitar Colaborador
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* List */}

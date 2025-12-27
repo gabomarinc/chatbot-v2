@@ -5,10 +5,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import { getUserWorkspaceRole } from '@/lib/actions/workspace';
 
 export function Sidebar() {
     const pathname = usePathname();
     const { data: session } = useSession();
+    const [userRole, setUserRole] = useState<'OWNER' | 'MANAGER' | 'AGENT' | null>(null);
+
+    useEffect(() => {
+        getUserWorkspaceRole().then(setUserRole);
+    }, []);
 
     const menuSections = [
         {
@@ -108,6 +115,75 @@ export function Sidebar() {
                         </div>
                     </div>
                 ))}
+
+                {/* Configuración Section - Only for OWNER */}
+                {userRole === 'OWNER' && (
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                        <div className="text-[10px] text-gray-400 mb-4 px-2 tracking-[0.2em] font-bold uppercase opacity-60">
+                            CONFIGURACIÓN
+                        </div>
+                        <div className="space-y-1">
+                            <Link
+                                href="/billing"
+                                className={cn(
+                                    "w-full group relative rounded-2xl transition-all duration-300 block",
+                                    pathname.startsWith('/billing')
+                                        ? 'bg-gray-50 shadow-inner'
+                                        : 'hover:bg-gray-50/80 active:scale-95'
+                                )}
+                            >
+                                <div className="flex items-center gap-3.5 px-4 py-3">
+                                    <div className={cn(
+                                        "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg",
+                                        pathname.startsWith('/billing')
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-blue-50 text-blue-500'
+                                    )}>
+                                        <CreditCard className="w-5 h-5" />
+                                    </div>
+                                    <span className={cn(
+                                        "text-sm font-semibold tracking-tight transition-colors",
+                                        pathname.startsWith('/billing') ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-900'
+                                    )}>
+                                        Facturación
+                                    </span>
+                                </div>
+                                {pathname.startsWith('/billing') && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#21AC96] shadow-[0_0_10px_rgba(33,172,150,0.5)] animate-bounce"></div>
+                                )}
+                            </Link>
+                            <Link
+                                href="/settings"
+                                className={cn(
+                                    "w-full group relative rounded-2xl transition-all duration-300 block",
+                                    pathname.startsWith('/settings')
+                                        ? 'bg-gray-50 shadow-inner'
+                                        : 'hover:bg-gray-50/80 active:scale-95'
+                                )}
+                            >
+                                <div className="flex items-center gap-3.5 px-4 py-3">
+                                    <div className={cn(
+                                        "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg",
+                                        pathname.startsWith('/settings')
+                                            ? 'bg-purple-500 text-white'
+                                            : 'bg-purple-50 text-purple-500'
+                                    )}>
+                                        <Settings className="w-5 h-5" />
+                                    </div>
+                                    <span className={cn(
+                                        "text-sm font-semibold tracking-tight transition-colors",
+                                        pathname.startsWith('/settings') ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-900'
+                                    )}>
+                                        Configuración
+                                    </span>
+                                </div>
+                                {pathname.startsWith('/settings') && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#21AC96] shadow-[0_0_10px_rgba(33,172,150,0.5)] animate-bounce"></div>
+                                )}
+                            </Link>
+                        </div>
+                    </div>
+                )}
 
                 {/* Super Admin Section */}
                 {session?.user?.role === 'SUPER_ADMIN' && (

@@ -24,9 +24,10 @@ interface WorkspaceDropdownProps {
     } | null;
     isLoading?: boolean;
     onClose: () => void;
+    userRole?: 'OWNER' | 'MANAGER' | 'AGENT' | null;
 }
 
-export function WorkspaceDropdown({ isOpen, workspaceInfo, isLoading = false, onClose }: WorkspaceDropdownProps) {
+export function WorkspaceDropdown({ isOpen, workspaceInfo, isLoading = false, onClose, userRole }: WorkspaceDropdownProps) {
     const router = useRouter();
 
     if (!isOpen) return null;
@@ -134,27 +135,31 @@ export function WorkspaceDropdown({ isOpen, workspaceInfo, isLoading = false, on
                             <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96] group-hover:translate-x-1 transition-all" />
                         </button>
 
-                        <button
-                            onClick={() => handleAction('settings')}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer group transition-all"
-                        >
-                            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                                <Settings className="w-4 h-4 text-gray-600" />
-                            </div>
-                            <span className="flex-1 text-sm font-semibold text-gray-900 text-left">Configuración</span>
-                            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96] group-hover:translate-x-1 transition-all" />
-                        </button>
+                        {userRole === 'OWNER' && (
+                            <>
+                                <button
+                                    onClick={() => handleAction('settings')}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer group transition-all"
+                                >
+                                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                                        <Settings className="w-4 h-4 text-gray-600" />
+                                    </div>
+                                    <span className="flex-1 text-sm font-semibold text-gray-900 text-left">Configuración</span>
+                                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96] group-hover:translate-x-1 transition-all" />
+                                </button>
 
-                        <button
-                            onClick={() => handleAction('billing')}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer group transition-all"
-                        >
-                            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
-                                <CreditCard className="w-4 h-4 text-green-600" />
-                            </div>
-                            <span className="flex-1 text-sm font-semibold text-gray-900 text-left">Facturación</span>
-                            <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96] group-hover:translate-x-1 transition-all" />
-                        </button>
+                                <button
+                                    onClick={() => handleAction('billing')}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer group transition-all"
+                                >
+                                    <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                                        <CreditCard className="w-4 h-4 text-green-600" />
+                                    </div>
+                                    <span className="flex-1 text-sm font-semibold text-gray-900 text-left">Facturación</span>
+                                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96] group-hover:translate-x-1 transition-all" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             ) : (

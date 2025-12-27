@@ -1,5 +1,5 @@
 import { getTeamMembers, getUserWorkspace } from '@/lib/actions/dashboard';
-import { getWorkspaceInfo } from '@/lib/actions/workspace';
+import { getWorkspaceInfo, getUserWorkspaceRole } from '@/lib/actions/workspace';
 import { TeamPageClient } from '@/components/team/TeamPageClient';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -11,9 +11,10 @@ export default async function TeamPage() {
         return <div>Error: No workspace found</div>;
     }
     
-    const [members, workspaceInfo] = await Promise.all([
+    const [members, workspaceInfo, userRole] = await Promise.all([
         getTeamMembers(),
-        getWorkspaceInfo()
+        getWorkspaceInfo(),
+        getUserWorkspaceRole()
     ]);
 
     const maxMembers = workspaceInfo?.plan?.maxMembers || 1;
@@ -33,6 +34,7 @@ export default async function TeamPage() {
             maxMembers={maxMembers}
             currentUserId={session?.user?.id}
             currentPlanName={currentPlanName}
+            userRole={userRole}
         />
     );
 }

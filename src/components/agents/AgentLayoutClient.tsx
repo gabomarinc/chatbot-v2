@@ -18,9 +18,12 @@ interface AgentLayoutClientProps {
     agentId: string;
     agentName: string;
     tabs: Tab[];
+    userRole: 'OWNER' | 'MANAGER' | 'AGENT' | null;
 }
 
-export function AgentLayoutClient({ agentId, agentName, tabs }: AgentLayoutClientProps) {
+export function AgentLayoutClient({ agentId, agentName, tabs, userRole }: AgentLayoutClientProps) {
+    // Check if user can manage agents (OWNER or MANAGER)
+    const canManage = userRole === 'OWNER' || userRole === 'MANAGER';
     const pathname = usePathname();
     const [isTestModalOpen, setIsTestModalOpen] = useState(false);
 

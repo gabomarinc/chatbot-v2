@@ -14,7 +14,7 @@ import { NotificationsDropdown } from './NotificationsDropdown';
 import { SearchDropdown } from './SearchDropdown';
 import { WorkspaceDropdown } from './WorkspaceDropdown';
 import { globalSearch } from '@/lib/actions/search';
-import { getWorkspaceInfo } from '@/lib/actions/workspace';
+import { getWorkspaceInfo, getUserWorkspaceRole } from '@/lib/actions/workspace';
 
 export function Topbar() {
     const { data: session } = useSession();
@@ -51,6 +51,9 @@ export function Topbar() {
     const [workspaceInfo, setWorkspaceInfo] = useState<any>(null);
     const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
     const workspaceRef = useRef<HTMLDivElement>(null);
+    
+    // User role state
+    const [userRole, setUserRole] = useState<'OWNER' | 'MANAGER' | 'AGENT' | null>(null);
 
     // Always show "Mi cuenta" instead of waiting for user name
     const displayText = 'Mi cuenta';
@@ -62,6 +65,9 @@ export function Topbar() {
             setCredits(stats.creditos);
         };
         fetchCredits();
+        
+        // Fetch user role
+        getUserWorkspaceRole().then(setUserRole);
     }, []);
 
     useEffect(() => {
@@ -194,6 +200,7 @@ export function Topbar() {
                         workspaceInfo={workspaceInfo}
                         isLoading={isLoadingWorkspace}
                         onClose={() => setIsWorkspaceOpen(false)}
+                        userRole={userRole}
                     />
                 </div>
 
@@ -308,26 +315,30 @@ export function Topbar() {
                                     </div>
                                     <span className="text-sm font-semibold">Perfil</span>
                                 </Link>
-                                <Link
-                                    href="/billing"
-                                    onClick={() => setIsUserMenuOpen(false)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 group"
-                                >
-                                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                                        <CreditCard className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-sm font-semibold">Suscripción</span>
-                                </Link>
-                                <Link
-                                    href="/settings"
-                                    onClick={() => setIsUserMenuOpen(false)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 group"
-                                >
-                                    <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500 group-hover:scale-110 transition-transform">
-                                        <Settings className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-sm font-semibold">Ajustes</span>
-                                </Link>
+                                {userRole === 'OWNER' && (
+                                    <>
+                                        <Link
+                                            href="/billing"
+                                            onClick={() => setIsUserMenuOpen(false)}
+                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 group"
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                                                <CreditCard className="w-4 h-4" />
+                                            </div>
+                                            <span className="text-sm font-semibold">Suscripción</span>
+                                        </Link>
+                                        <Link
+                                            href="/settings"
+                                            onClick={() => setIsUserMenuOpen(false)}
+                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 group"
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500 group-hover:scale-110 transition-transform">
+                                                <Settings className="w-4 h-4" />
+                                            </div>
+                                            <span className="text-sm font-semibold">Ajustes</span>
+                                        </Link>
+                                    </>
+                                )}
                                 <div className="h-[1px] bg-gray-50 mx-4 my-2"></div>
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/login' })}
