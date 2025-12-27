@@ -89,18 +89,18 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                 {/* Total Asignadas - Large Card */}
                 <Link 
                     href="/chat"
-                    className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-[#21AC96]/5 hover:border-[#21AC96]/20 transition-all cursor-pointer group relative overflow-hidden"
+                    className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-[#1E9A86]/5 hover:border-[#1E9A86]/20 transition-all cursor-pointer group relative overflow-hidden"
                 >
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full -translate-y-20 translate-x-20 group-hover:bg-blue-100 transition-colors"></div>
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-[#1E9A86]/10 rounded-full -translate-y-20 translate-x-20 group-hover:bg-[#1E9A86]/20 transition-colors"></div>
                     <div className="relative">
                         <div className="flex items-center justify-between mb-6">
-                            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform bg-gradient-to-br from-[#1E9A86] to-[#158571]">
                                 <MessageSquare className="w-8 h-8 text-white" />
                             </div>
                         </div>
                         <div className="text-5xl font-extrabold text-gray-900 mb-2">{stats.totalAssigned}</div>
                         <div className="text-base text-gray-500 font-semibold mb-4">Total Asignadas</div>
-                        <div className="flex items-center gap-2 text-blue-600 font-bold text-sm group-hover:translate-x-2 transition-transform">
+                        <div className="flex items-center gap-2 font-bold text-sm group-hover:translate-x-2 transition-transform" style={{ color: '#1E9A86' }}>
                             <span>Ver todas</span>
                             <ArrowRight className="w-4 h-4" />
                         </div>
@@ -110,18 +110,18 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                 {/* Conversaciones Activas - Large Card */}
                 <Link 
                     href="/chat?status=OPEN"
-                    className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-[#21AC96]/5 hover:border-[#21AC96]/20 transition-all cursor-pointer group relative overflow-hidden"
+                    className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-[#1E9A86]/5 hover:border-[#1E9A86]/20 transition-all cursor-pointer group relative overflow-hidden"
                 >
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-green-50 rounded-full -translate-y-20 translate-x-20 group-hover:bg-green-100 transition-colors"></div>
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-[#1E9A86]/10 rounded-full -translate-y-20 translate-x-20 group-hover:bg-[#1E9A86]/20 transition-colors"></div>
                     <div className="relative">
                         <div className="flex items-center justify-between mb-6">
-                            <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:scale-110 transition-transform">
+                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform bg-gradient-to-br from-[#1E9A86] to-[#158571]">
                                 <CheckCircle className="w-8 h-8 text-white" />
                             </div>
                         </div>
                         <div className="text-5xl font-extrabold text-gray-900 mb-2">{stats.activeConversations}</div>
                         <div className="text-base text-gray-500 font-semibold mb-4">Conversaciones Activas</div>
-                        <div className="flex items-center gap-2 text-green-600 font-bold text-sm group-hover:translate-x-2 transition-transform">
+                        <div className="flex items-center gap-2 font-bold text-sm group-hover:translate-x-2 transition-transform" style={{ color: '#1E9A86' }}>
                             <span>Ver activas</span>
                             <ArrowRight className="w-4 h-4" />
                         </div>
@@ -134,10 +134,10 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                 {/* Pendientes */}
                 <Link 
                     href="/chat?status=PENDING"
-                    className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-yellow-500/5 hover:border-yellow-200 transition-all cursor-pointer group"
+                    className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-[#1E9A86]/5 hover:border-[#1E9A86]/20 transition-all cursor-pointer group"
                 >
                     <div className="flex items-center justify-between mb-6">
-                        <div className="w-14 h-14 bg-yellow-500 rounded-2xl flex items-center justify-center shadow-lg shadow-yellow-500/20 group-hover:scale-110 transition-transform">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform bg-gradient-to-br from-[#1E9A86] to-[#158571]">
                             <Clock className="w-7 h-7 text-white" />
                         </div>
                     </div>
@@ -148,7 +148,7 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                 {/* Tasa de Respuesta */}
                 <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)]">
                     <div className="flex items-center justify-between mb-6">
-                        <div className="w-14 h-14 bg-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-[#1E9A86] to-[#158571]">
                             <TrendingUp className="w-7 h-7 text-white" />
                         </div>
                     </div>
@@ -159,7 +159,7 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                 {/* Tiempo Promedio */}
                 <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)]">
                     <div className="flex items-center justify-between mb-6">
-                        <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-[#1E9A86] to-[#158571]">
                             <Zap className="w-7 h-7 text-white" />
                         </div>
                     </div>
@@ -172,63 +172,43 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                 </div>
             </div>
 
-            {/* Additional Metrics - Compact */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <div className="text-2xl font-extrabold text-gray-900 mb-1">{stats.handledThisWeek}</div>
-                    <div className="text-xs text-gray-500 font-semibold">Esta semana</div>
-                </div>
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <div className="text-2xl font-extrabold text-gray-900 mb-1">{stats.handledThisMonth}</div>
-                    <div className="text-xs text-gray-500 font-semibold">Este mes</div>
-                </div>
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <div className="text-2xl font-extrabold text-gray-900 mb-1">{stats.assignedToday}</div>
-                    <div className="text-xs text-gray-500 font-semibold">Hoy</div>
-                </div>
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <div className="text-2xl font-extrabold text-gray-900 mb-1">{stats.closedConversations}</div>
-                    <div className="text-xs text-gray-500 font-semibold">Cerradas</div>
-                </div>
-            </div>
-
             {/* Quick Actions */}
             <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] p-8">
                 <h2 className="text-xl font-extrabold text-gray-900 mb-6">Accesos Rápidos</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Link
                         href="/chat?status=PENDING"
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 hover:border-[#21AC96] hover:bg-[#21AC96]/5 transition-all group"
+                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 hover:border-[#1E9A86] hover:bg-[#1E9A86]/5 transition-all group"
                     >
-                        <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-3 group-hover:bg-yellow-500 transition-colors">
-                            <Clock className="w-6 h-6 text-yellow-600 group-hover:text-white transition-colors" />
+                        <div className="w-12 h-12 bg-[#1E9A86]/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-gradient-to-br group-hover:from-[#1E9A86] group-hover:to-[#158571] transition-all">
+                            <Clock className="w-6 h-6 text-[#1E9A86] group-hover:text-white transition-colors" />
                         </div>
                         <span className="text-sm font-bold text-gray-900">Pendientes</span>
                     </Link>
                     <Link
                         href="/prospects"
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 hover:border-[#21AC96] hover:bg-[#21AC96]/5 transition-all group"
+                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 hover:border-[#1E9A86] hover:bg-[#1E9A86]/5 transition-all group"
                     >
-                        <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mb-3 group-hover:bg-pink-500 transition-colors">
-                            <UserCircle className="w-6 h-6 text-pink-600 group-hover:text-white transition-colors" />
+                        <div className="w-12 h-12 bg-[#1E9A86]/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-gradient-to-br group-hover:from-[#1E9A86] group-hover:to-[#158571] transition-all">
+                            <UserCircle className="w-6 h-6 text-[#1E9A86] group-hover:text-white transition-colors" />
                         </div>
                         <span className="text-sm font-bold text-gray-900">Prospectos</span>
                     </Link>
                     <Link
                         href="/team"
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 hover:border-[#21AC96] hover:bg-[#21AC96]/5 transition-all group"
+                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 hover:border-[#1E9A86] hover:bg-[#1E9A86]/5 transition-all group"
                     >
-                        <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-3 group-hover:bg-green-500 transition-colors">
-                            <Users className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" />
+                        <div className="w-12 h-12 bg-[#1E9A86]/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-gradient-to-br group-hover:from-[#1E9A86] group-hover:to-[#158571] transition-all">
+                            <Users className="w-6 h-6 text-[#1E9A86] group-hover:text-white transition-colors" />
                         </div>
                         <span className="text-sm font-bold text-gray-900">Equipo</span>
                     </Link>
                     <Link
                         href="/profile"
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 hover:border-[#21AC96] hover:bg-[#21AC96]/5 transition-all group"
+                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 hover:border-[#1E9A86] hover:bg-[#1E9A86]/5 transition-all group"
                     >
-                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-500 transition-colors">
-                            <User className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
+                        <div className="w-12 h-12 bg-[#1E9A86]/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-gradient-to-br group-hover:from-[#1E9A86] group-hover:to-[#158571] transition-all">
+                            <User className="w-6 h-6 text-[#1E9A86] group-hover:text-white transition-colors" />
                         </div>
                         <span className="text-sm font-bold text-gray-900">Perfil</span>
                     </Link>
@@ -249,7 +229,7 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                                 <Link
                                     key={conv.id}
                                     href={`/chat?conversationId=${conv.id}`}
-                                    className="block p-6 rounded-2xl border-2 border-gray-100 hover:border-[#21AC96] hover:shadow-lg hover:shadow-[#21AC96]/5 transition-all group"
+                                    className="block p-6 rounded-2xl border-2 border-gray-100 hover:border-[#1E9A86] hover:shadow-lg hover:shadow-[#1E9A86]/5 transition-all group"
                                 >
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
@@ -257,7 +237,7 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                                                 <div className="text-3xl">{getChannelIcon(conv.channelType)}</div>
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-3 mb-2">
-                                                        <h3 className="text-xl font-extrabold text-gray-900 group-hover:text-[#21AC96] transition-colors">
+                                                        <h3 className="text-xl font-extrabold text-gray-900 group-hover:text-[#1E9A86] transition-colors">
                                                             {conv.contactName}
                                                         </h3>
                                                         {getStatusBadge(conv.status)}
@@ -283,7 +263,7 @@ export function AgentDashboardClient({ stats, recentConversations }: AgentDashbo
                                                 </span>
                                             </div>
                                         </div>
-                                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#21AC96] group-hover:translate-x-2 transition-all" />
+                                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#1E9A86] group-hover:translate-x-2 transition-all" />
                                     </div>
                                 </Link>
                             ))}
