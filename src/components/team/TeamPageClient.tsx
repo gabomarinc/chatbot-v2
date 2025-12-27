@@ -403,6 +403,17 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                 currentPlanName={currentPlanName}
                 currentMaxMembers={maxMembers}
             />
+            
+            <ConfirmDeleteModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setMemberToDelete(null);
+                }}
+                onConfirm={handleConfirmDelete}
+                memberName={memberToDelete?.name || ''}
+                isLoading={isLoading}
+            />
         </>
     );
 }
