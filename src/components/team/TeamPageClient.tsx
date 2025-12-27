@@ -8,7 +8,6 @@ import { MaxMembersModal } from './MaxMembersModal';
 import { removeTeamMember, updateTeamMemberRole } from '@/lib/actions/team';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { createPortal } from 'react-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
