@@ -417,6 +417,13 @@ export async function createAgent(data: any) {
     const workspace = await getUserWorkspace()
     if (!workspace) throw new Error("Unauthorized")
 
+    // Check permissions
+    const { canCreateAgents } = await import('./team')
+    const canCreate = await canCreateAgents()
+    if (!canCreate) {
+        throw new Error("No tienes permisos para crear agentes")
+    }
+
     const agent = await prisma.agent.create({
         data: {
             ...data,
@@ -457,6 +464,13 @@ export async function updateAgent(agentId: string, data: any) {
     const workspace = await getUserWorkspace()
     if (!workspace) throw new Error("Unauthorized")
 
+    // Check permissions
+    const { canManageAgents } = await import('./team')
+    const canManage = await canManageAgents()
+    if (!canManage) {
+        throw new Error("No tienes permisos para gestionar agentes")
+    }
+
     const agent = await prisma.agent.update({
         where: {
             id: agentId,
@@ -473,6 +487,13 @@ export async function updateAgent(agentId: string, data: any) {
 export async function deleteAgent(agentId: string) {
     const workspace = await getUserWorkspace()
     if (!workspace) throw new Error("Unauthorized")
+
+    // Check permissions
+    const { canManageAgents } = await import('./team')
+    const canManage = await canManageAgents()
+    if (!canManage) {
+        throw new Error("No tienes permisos para gestionar agentes")
+    }
 
     await prisma.agent.delete({
         where: {

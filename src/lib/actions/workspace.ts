@@ -32,7 +32,8 @@ export async function getWorkspaceInfo() {
                     type: true,
                     monthlyPrice: true,
                     creditsPerMonth: true,
-                    maxAgents: true
+                    maxAgents: true,
+                    maxMembers: true
                 }
             }
         }
@@ -58,7 +59,8 @@ export async function getWorkspaceInfo() {
             type: subscription.plan.type,
             price: subscription.plan.monthlyPrice,
             creditsPerMonth: subscription.plan.creditsPerMonth,
-            maxAgents: subscription.plan.maxAgents
+            maxAgents: subscription.plan.maxAgents,
+            maxMembers: subscription.plan.maxMembers
         } : null,
         membersCount,
         agentsCount,

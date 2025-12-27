@@ -34,6 +34,7 @@ async function main() {
         monthlyPrice: 135,
         creditsPerMonth: 5000,
         maxAgents: 2,
+        maxMembers: 2,
       },
       {
         name: "Money Honey",
@@ -41,6 +42,7 @@ async function main() {
         monthlyPrice: 315,
         creditsPerMonth: 20000,
         maxAgents: 5,
+        maxMembers: 5,
       },
       {
         name: "Wolf of Wallstreet",
@@ -48,6 +50,7 @@ async function main() {
         monthlyPrice: 575,
         creditsPerMonth: 50000,
         maxAgents: 10,
+        maxMembers: 12,
       },
     ],
     skipDuplicates: true,
