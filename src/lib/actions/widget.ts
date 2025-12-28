@@ -12,6 +12,11 @@ export async function sendWidgetMessage(data: {
     content: string;
     visitorId: string; // Used as externalId
     metadata?: any; // Optional metadata for file attachments
+    imageUrl?: string; // URL of uploaded image
+    imageBase64?: string; // Base64 encoded image for AI processing
+    fileUrl?: string; // URL of uploaded file (PDF or image)
+    fileType?: 'pdf' | 'image'; // Type of uploaded file
+    extractedText?: string; // Extracted text from PDF
 }) {
     try {
     // 0. Resolve API Keys (Env vs DB)
@@ -102,12 +107,51 @@ export async function sendWidgetMessage(data: {
         })
     }
 
-    // 4. Save User Message
+    // 3.5. Handle file uploads (images or PDFs)
+    // Use fileUrl if provided (newer), otherwise fall back to imageUrl (backward compatibility)
+    const fileUrl = data.fileUrl || data.imageUrl;
+    const fileType = data.fileType || (data.imageUrl ? 'image' : undefined);
+    
+    // Use provided base64 or convert URL to base64 for AI processing (images only)
+    let imageBase64: string | undefined = data.imageBase64;
+    if (fileUrl && fileType === 'image' && !imageBase64) {
+        try {
+            // Download image and convert to base64
+            const response = await fetch(fileUrl);
+            if (response.ok) {
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const contentType = response.headers.get('content-type') || 'image/jpeg';
+                imageBase64 = `data:${contentType};base64,${buffer.toString('base64')}`;
+            }
+        } catch (error) {
+            console.error('Error converting image URL to base64:', error);
+            // Continue without image if conversion fails
+        }
+    }
+
+    // For PDFs, include extracted text in the message content
+    let messageContent = data.content;
+    if (fileType === 'pdf' && data.extractedText) {
+        // Prepend extracted text to the message
+        messageContent = data.content 
+            ? `${data.content}\n\n--- Contenido del PDF ---\n${data.extractedText}`
+            : `--- Contenido del PDF ---\n${data.extractedText}`;
+    }
+
+    // 4. Save User Message (with file metadata if present)
+    const messageMetadata = fileUrl ? {
+        type: fileType || 'image',
+        url: fileUrl,
+        ...(data.metadata || {})
+    } : data.metadata;
+
     const userMsg = await prisma.message.create({
         data: {
             conversationId: conversation.id,
             role: 'USER',
-            content: data.content
+            content: messageContent, // Use messageContent which includes PDF text if applicable
+            metadata: messageMetadata ? messageMetadata : undefined
         }
     })
 
@@ -280,18 +324,46 @@ INSTRUCCIONES DE EJECUCIÓN:
                 tools: geminiTools as any
             });
 
-            const chatHistory = history.reverse().map((m: Message) => ({
-                role: m.role === 'USER' ? 'user' : 'model',
-                parts: [{ text: m.role === 'HUMAN' 
+            const chatHistory = history.reverse().map((m: Message) => {
+                const parts: any[] = [{ text: m.role === 'HUMAN' 
                     ? `[Intervención humana]: ${m.content}`
-                    : m.content }]
-            }));
+                    : m.content }];
+                
+                // Add image if present in metadata
+                if (m.metadata && typeof m.metadata === 'object' && (m.metadata as any).type === 'image' && (m.metadata as any).url) {
+                    // For history, we'll just reference the image in text since we can't load old images easily
+                    parts.push({ text: `[Imagen adjunta: ${(m.metadata as any).url}]` });
+                }
+                
+                return {
+                    role: m.role === 'USER' ? 'user' : 'model',
+                    parts
+                };
+            });
 
             const chat = googleModel.startChat({
                 history: chatHistory,
             });
 
-            let result = await chat.sendMessage(data.content);
+            // Prepare message parts (text + image if present)
+            // For PDFs, the text is already included in messageContent, so just send text
+            const messageParts: any[] = [{ text: messageContent }];
+            
+            if (fileType === 'image' && imageBase64) {
+                // Convert base64 to FileData format for Gemini
+                const base64Data = imageBase64.split(',')[1] || imageBase64; // Remove data:image/...;base64, prefix if present
+                const mimeMatch = imageBase64.match(/data:image\/([^;]+)/);
+                const mimeType = mimeMatch ? mimeMatch[1] : 'jpeg';
+                
+                messageParts.push({
+                    inlineData: {
+                        data: base64Data,
+                        mimeType: `image/${mimeType}`
+                    }
+                });
+            }
+
+            let result = await chat.sendMessage(messageParts);
 
             // Handle tool calls for Gemini
             let call = result.response.functionCalls()?.[0];
@@ -324,13 +396,44 @@ INSTRUCCIONES DE EJECUCIÓN:
 
             const openAiMessages: any[] = [
                 { role: 'system', content: systemPrompt },
-                ...history.reverse().map((m: Message) => ({
-                    role: m.role === 'USER' ? 'user' : 'assistant',
-                    content: m.role === 'HUMAN' 
-                        ? `[Intervención humana]: ${m.content}`
-                        : m.content
-                })),
-                { role: 'user', content: data.content }
+                ...history.reverse().map((m: Message) => {
+                    const baseMessage: any = {
+                        role: m.role === 'USER' ? 'user' : 'assistant',
+                        content: m.role === 'HUMAN' 
+                            ? `[Intervención humana]: ${m.content}`
+                            : m.content
+                    };
+                    
+                    // If message has image metadata, reference it (can't load old images in history easily)
+                    if (m.metadata && typeof m.metadata === 'object' && (m.metadata as any).type === 'image') {
+                        baseMessage.content = `${baseMessage.content}\n[Imagen adjunta anteriormente]`;
+                    }
+                    
+                    return baseMessage;
+                }),
+                (() => {
+                    // If image is present, use multimodal format
+                    if (fileType === 'image' && imageBase64) {
+                        return {
+                            role: 'user',
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: data.content || 'Describe esta imagen'
+                                },
+                                {
+                                    type: 'image_url',
+                                    image_url: {
+                                        url: imageBase64 // OpenAI accepts data URLs directly
+                                    }
+                                }
+                            ]
+                        };
+                    }
+                    
+                    // For PDFs or text only, use simple text format (PDF text is already in messageContent)
+                    return { role: 'user', content: messageContent };
+                })()
             ];
 
             const openAiTools = hasCalendar ? tools.map(t => ({

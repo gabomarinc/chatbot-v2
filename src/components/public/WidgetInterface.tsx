@@ -10,6 +10,11 @@ interface Message {
     role: 'USER' | 'AGENT' | 'HUMAN';
     content: string;
     createdAt: Date;
+    metadata?: {
+        type?: string;
+        url?: string;
+        fileName?: string;
+    };
 }
 
 interface WidgetInterfaceProps {
@@ -27,6 +32,11 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [filePreview, setFilePreview] = useState<string | null>(null);
+    const [fileType, setFileType] = useState<'image' | 'pdf' | null>(null);
+    const [isUploadingFile, setIsUploadingFile] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const config = channel.configJson || {};
@@ -52,12 +62,63 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         scrollToBottom();
     }, [messages]);
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const isImage = file.type.startsWith('image/');
+        const isPDF = file.type === 'application/pdf';
+
+        // Validate file type
+        if (!isImage && !isPDF) {
+            alert('Por favor selecciona una imagen o un PDF');
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('El archivo debe ser menor a 10MB');
+            return;
+        }
+
+        setSelectedFile(file);
+        setFileType(isPDF ? 'pdf' : 'image');
+
+        // Create preview (only for images)
+        if (isImage) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setFilePreview(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // For PDFs, just show the filename
+            setFilePreview(null);
+        }
+    };
+
+    const removeFile = () => {
+        setSelectedFile(null);
+        setFilePreview(null);
+        setFileType(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() && !selectedFile) return;
 
-        const content = newMessage;
+        const content = newMessage || (fileType === 'pdf' ? 'Revisa este documento' : 'Mira esta imagen');
+        const file = selectedFile;
         setNewMessage('');
+        setSelectedFile(null);
+        setFilePreview(null);
+        setFileType(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
 
         // 1. Visitor ID Management
         let visitorId = localStorage.getItem('konsul_visitor_id');
@@ -72,25 +133,77 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
             id: tempId,
             role: 'USER',
             content: content,
-            createdAt: new Date()
+            createdAt: new Date(),
+            metadata: filePreview ? { type: fileType || 'image', url: filePreview, fileName: file?.name } : 
+                      (file && fileType === 'pdf' ? { type: 'pdf', fileName: file.name, url: '' } : undefined)
         };
 
         setMessages(prev => [...prev, userMsg]);
         setIsLoading(true);
+        setIsUploadingFile(!!file);
 
         try {
-            // 3. Send to Server
-            // Dynamically import to avoid server-only issues if any (though Next.js handles this)
+            // 3. Upload file if present
+            let fileUrl: string | undefined;
+            let fileTypeUploaded: 'pdf' | 'image' | undefined;
+            let imageBase64: string | undefined;
+            let extractedText: string | undefined;
+            
+            if (file) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file); // Use 'file' instead of 'image'
+
+                    const uploadResponse = await fetch('/api/widget/upload-image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!uploadResponse.ok) {
+                        const errorData = await uploadResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || 'Error al subir el archivo');
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    fileUrl = uploadData.url;
+                    fileTypeUploaded = uploadData.type as 'pdf' | 'image';
+                    extractedText = uploadData.extractedText; // For PDFs
+
+                    // Convert to base64 for AI processing (images only)
+                    if (fileTypeUploaded === 'image') {
+                        const reader = new FileReader();
+                        imageBase64 = await new Promise<string>((resolve, reject) => {
+                            reader.onload = (e) => resolve(e.target?.result as string);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(file);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error uploading file:', error);
+                    setIsUploadingFile(false);
+                    setIsLoading(false);
+                    setMessages(prev => prev.filter(msg => msg.id !== tempId));
+                    alert(error instanceof Error ? error.message : 'Error al subir el archivo. Por favor, intenta de nuevo.');
+                    return;
+                }
+            }
+
+            setIsUploadingFile(false);
+
+            // 4. Send to Server
             const { sendWidgetMessage } = await import('@/lib/actions/widget');
 
             const { userMsg: savedUserMsg, agentMsg } = await sendWidgetMessage({
                 channelId: channel.id,
                 content: content,
-                visitorId
+                visitorId,
+                fileUrl,
+                fileType: fileTypeUploaded,
+                imageBase64: fileTypeUploaded === 'image' ? imageBase64 : undefined,
+                extractedText
             });
 
-            // 4. Update UI with Real Agent Reply (only if bot responded)
-            // If agentMsg is null, it means a human is handling the conversation
+            // 5. Update UI with Real Agent Reply (only if bot responded)
             if (agentMsg) {
                 const realAgentMsg: Message = {
                     id: agentMsg.id,
@@ -105,6 +218,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         } catch (error) {
             console.error('Error sending message:', error);
             setIsLoading(false);
+            setIsUploadingFile(false);
             
             // Remove the optimistic message on error
             setMessages(prev => prev.filter(msg => msg.id !== tempId));
@@ -153,6 +267,40 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                             )}
                                 style={!isUser ? { backgroundColor: primaryColor } : {}}
                             >
+                                {/* Show image if present */}
+                                {msg.metadata?.type === 'image' && msg.metadata?.url && (
+                                    <div className="mb-2 rounded-xl overflow-hidden max-w-xs">
+                                        <img 
+                                            src={msg.metadata.url} 
+                                            alt="Imagen adjunta"
+                                            className="w-full h-auto object-contain"
+                                        />
+                                    </div>
+                                )}
+                                
+                                {/* Show PDF link if present */}
+                                {msg.metadata?.type === 'pdf' && msg.metadata?.url && (
+                                    <div className="mb-2 p-3 bg-gray-50 rounded-xl border border-gray-200 max-w-xs">
+                                        <div className="flex items-center gap-2">
+                                            <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                            </svg>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-medium text-gray-700 truncate">
+                                                    {msg.metadata.fileName || 'Documento PDF'}
+                                                </p>
+                                                <a 
+                                                    href={msg.metadata.url} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                >
+                                                    Ver/Descargar PDF
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                 <span className={cn(
                                     "text-[10px] block mt-1 font-medium opacity-70",
@@ -178,7 +326,64 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
 
             {/* Input */}
             <div className="p-4 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+                {/* File Preview */}
+                {filePreview && fileType === 'image' && (
+                    <div className="mb-3 relative inline-block">
+                        <div className="relative rounded-xl overflow-hidden max-w-[200px] border-2" style={{ borderColor: primaryColor }}>
+                            <img 
+                                src={filePreview} 
+                                alt="Preview"
+                                className="w-full h-auto object-contain max-h-32"
+                            />
+                            <button
+                                type="button"
+                                onClick={removeFile}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                <span className="text-xs font-bold">×</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
+                {/* PDF Preview */}
+                {selectedFile && fileType === 'pdf' && (
+                    <div className="mb-3 p-3 bg-gray-50 rounded-xl border-2" style={{ borderColor: primaryColor }}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <svg className="w-5 h-5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm font-medium text-gray-700 truncate">{selectedFile.name}</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={removeFile}
+                                className="ml-2 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                                <span className="text-lg font-bold">×</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
                 <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        id="file-upload"
+                    />
+                    <label
+                        htmlFor="file-upload"
+                        className="p-3 text-gray-600 hover:text-gray-800 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                        title="Adjuntar imagen o PDF"
+                    >
+                        <Paperclip className="w-5 h-5" />
+                    </label>
                     <input
                         type="text"
                         value={newMessage}
@@ -189,11 +394,15 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                     />
                     <button
                         type="submit"
-                        disabled={!newMessage.trim() || isLoading}
+                        disabled={(!newMessage.trim() && !selectedFile) || isLoading || isUploadingFile}
                         className="p-3 text-white rounded-xl shadow-lg transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                         style={{ backgroundColor: primaryColor, boxShadow: `0 4px 12px ${primaryColor}40` }}
                     >
-                        <Send className="w-5 h-5" />
+                        {(isLoading || isUploadingFile) ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <Send className="w-5 h-5" />
+                        )}
                     </button>
                 </form>
                 <div className="text-center mt-3">
