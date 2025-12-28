@@ -65,3 +65,4 @@ Ahora el widget mostrará mensajes más claros cuando haya errores:
 - Otros errores: "Problemas de conexión. Por favor, intenta de nuevo."
 
 
+

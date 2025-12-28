@@ -121,3 +121,4 @@ ${isNewUser ? `Para comenzar, necesitas crear una contraseña. Visita: ${APP_URL
     }
 }
 
+

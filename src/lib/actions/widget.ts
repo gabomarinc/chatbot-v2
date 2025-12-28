@@ -62,12 +62,25 @@ export async function sendWidgetMessage(data: {
         throw new Error("Insufficient credits");
     }
 
-    // 3. Find or Create Conversation
+    // 3. Find or Create Conversation (include assignedTo to check if human is handling)
     let conversation = await prisma.conversation.findFirst({
         where: {
             channelId: channel.id,
             externalId: data.visitorId,
             status: { not: 'CLOSED' }
+        },
+        select: {
+            id: true,
+            agentId: true,
+            channelId: true,
+            externalId: true,
+            contactName: true,
+            contactEmail: true,
+            status: true,
+            lastMessageAt: true,
+            assignedTo: true,
+            assignedAt: true,
+            createdAt: true
         }
     })
 
@@ -111,6 +124,18 @@ export async function sendWidgetMessage(data: {
             userMessage: data.content
         });
         console.log(`[INTENT RESULT]`, intentResult);
+    }
+
+    // 4.6. Check if conversation is handled by human
+    // If assignedTo is not null, a human is handling it, so bot should NOT auto-respond
+    if (conversation.assignedTo !== null) {
+        console.log(`[HUMAN HANDLING] Conversation ${conversation.id} is handled by human ${conversation.assignedTo}, skipping bot response`);
+        
+        // Return without generating bot response
+        return {
+            userMsg: userMsg,
+            agentMsg: null as any, // No bot response when human is handling
+        };
     }
 
     // 5. Generate AI Response
@@ -257,7 +282,9 @@ INSTRUCCIONES DE EJECUCIÓN:
 
             const chatHistory = history.reverse().map((m: Message) => ({
                 role: m.role === 'USER' ? 'user' : 'model',
-                parts: [{ text: m.content }]
+                parts: [{ text: m.role === 'HUMAN' 
+                    ? `[Intervención humana]: ${m.content}`
+                    : m.content }]
             }));
 
             const chat = googleModel.startChat({
@@ -299,7 +326,9 @@ INSTRUCCIONES DE EJECUCIÓN:
                 { role: 'system', content: systemPrompt },
                 ...history.reverse().map((m: Message) => ({
                     role: m.role === 'USER' ? 'user' : 'assistant',
-                    content: m.content
+                    content: m.role === 'HUMAN' 
+                        ? `[Intervención humana]: ${m.content}`
+                        : m.content
                 })),
                 { role: 'user', content: data.content }
             ];

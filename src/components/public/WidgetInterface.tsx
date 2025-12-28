@@ -89,16 +89,17 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                 visitorId
             });
 
-            // 4. Update UI with Real Agent Reply
-            // Convert database Date strings to Date objects if needed (Next.js serializes dates)
-            const realAgentMsg: Message = {
-                id: agentMsg.id,
-                role: 'AGENT',
-                content: agentMsg.content,
-                createdAt: new Date(agentMsg.createdAt)
-            };
-
-            setMessages(prev => [...prev, realAgentMsg]);
+            // 4. Update UI with Real Agent Reply (only if bot responded)
+            // If agentMsg is null, it means a human is handling the conversation
+            if (agentMsg) {
+                const realAgentMsg: Message = {
+                    id: agentMsg.id,
+                    role: 'AGENT',
+                    content: agentMsg.content,
+                    createdAt: new Date(agentMsg.createdAt)
+                };
+                setMessages(prev => [...prev, realAgentMsg]);
+            }
             setIsLoading(false);
 
         } catch (error) {

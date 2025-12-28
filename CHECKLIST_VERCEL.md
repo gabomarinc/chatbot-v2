@@ -80,3 +80,4 @@ Asegúrate de que estas variables estén configuradas en Vercel:
    - Haz clic en "Deploy" o "Redeploy"
 
 
+

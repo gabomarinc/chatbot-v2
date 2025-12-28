@@ -206,3 +206,129 @@ export async function getUnassignedConversations() {
     return conversations
 }
 
+/**
+ * Assume conversation - Assign to current user and mark as handled by human
+ */
+export async function assumeConversation(conversationId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { error: 'No autorizado' }
+        }
+
+        const workspace = await getUserWorkspace()
+        if (!workspace) {
+            return { error: 'Workspace no encontrado' }
+        }
+
+        // Verify conversation belongs to workspace
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                id: conversationId,
+                agent: {
+                    workspaceId: workspace.id
+                }
+            }
+        })
+
+        if (!conversation) {
+            return { error: 'Conversación no encontrada' }
+        }
+
+        // Verify user is a member of the workspace
+        const membership = await prisma.workspaceMember.findFirst({
+            where: {
+                userId: session.user.id,
+                workspaceId: workspace.id
+            }
+        })
+
+        if (!membership) {
+            return { error: 'Usuario no es miembro del workspace' }
+        }
+
+        // Assign conversation to current user (this marks it as handled by human)
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: {
+                assignedTo: session.user.id,
+                assignedAt: new Date()
+            }
+        })
+
+        revalidatePath('/dashboard')
+        revalidatePath('/chat')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error assuming conversation:', error)
+        return { error: error.message || 'Error al asumir conversación' }
+    }
+}
+
+/**
+ * Delegate conversation to bot - Unassign so bot handles it automatically
+ */
+export async function delegateToBot(conversationId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { error: 'No autorizado' }
+        }
+
+        const workspace = await getUserWorkspace()
+        if (!workspace) {
+            return { error: 'Workspace no encontrado' }
+        }
+
+        // Verify conversation belongs to workspace
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                id: conversationId,
+                agent: {
+                    workspaceId: workspace.id
+                }
+            }
+        })
+
+        if (!conversation) {
+            return { error: 'Conversación no encontrada' }
+        }
+
+        // Check if user has permission (must be assigned to them or be OWNER/MANAGER)
+        const membership = await prisma.workspaceMember.findFirst({
+            where: {
+                userId: session.user.id,
+                workspaceId: workspace.id
+            }
+        })
+
+        if (!membership) {
+            return { error: 'Usuario no es miembro del workspace' }
+        }
+
+        // Allow delegation if user is assigned OR is OWNER/MANAGER
+        if (conversation.assignedTo && conversation.assignedTo !== session.user.id) {
+            if (membership.role !== 'OWNER' && membership.role !== 'MANAGER') {
+                return { error: 'No tienes permiso para delegar esta conversación' }
+            }
+        }
+
+        // Unassign conversation (bot will handle automatically)
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: {
+                assignedTo: null,
+                assignedAt: null
+            }
+        })
+
+        revalidatePath('/dashboard')
+        revalidatePath('/chat')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error delegating to bot:', error)
+        return { error: error.message || 'Error al delegar conversación' }
+    }
+}
+
+

@@ -66,3 +66,4 @@ El email incluye:
 - Rol asignado (Propietario, Administrador, Agente)
 - Botón para iniciar sesión o establecer contraseña
 
+

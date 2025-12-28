@@ -64,7 +64,9 @@ export async function generateAgentReply(
     { role: 'system', content: systemPrompt },
     ...messages.map((msg) => ({
       role: msg.role === 'USER' ? 'user' : 'assistant',
-      content: msg.content,
+      content: msg.role === 'HUMAN' 
+        ? `[Intervención humana]: ${msg.content}`
+        : msg.content,
     }) as OpenAI.Chat.Completions.ChatCompletionMessageParam),
     { role: 'user', content: userMessage },
   ];
