@@ -129,13 +129,17 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
 
         // 2. Optimistic UI
         const tempId = Date.now().toString();
+        // Store initial metadata for images (base64 preview) or PDFs
+        const initialMetadata = filePreview && fileType === 'image' 
+            ? { type: 'image' as const, url: filePreview, fileName: file?.name } 
+            : (file && fileType === 'pdf' ? { type: 'pdf' as const, fileName: file.name, url: '' } : undefined);
+        
         const userMsg: Message = {
             id: tempId,
             role: 'USER',
             content: content,
             createdAt: new Date(),
-            metadata: filePreview ? { type: fileType || 'image', url: filePreview, fileName: file?.name } : 
-                      (file && fileType === 'pdf' ? { type: 'pdf', fileName: file.name, url: '' } : undefined)
+            metadata: initialMetadata
         };
 
         setMessages(prev => [...prev, userMsg]);
@@ -203,13 +207,22 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                 extractedText
             });
 
-            // 5. Update UI with Real User Message (with metadata from server) and Agent Reply
+            // 5. Update UI with Real User Message (update with real fileUrl from server)
+            // Update the optimistic message with the real URL from server (replace base64 preview with R2 URL)
+            const finalMetadata = fileUrl 
+                ? { 
+                    type: fileTypeUploaded || 'image', 
+                    url: fileUrl, // Use the real URL from R2, not the base64 preview
+                    fileName: file?.name 
+                }
+                : initialMetadata; // Fallback to initial metadata if no fileUrl
+            
             setMessages(prev => prev.map(msg => 
                 msg.id === tempId 
                     ? {
                         ...msg,
                         id: savedUserMsg.id,
-                        metadata: savedUserMsg.metadata ? savedUserMsg.metadata as any : msg.metadata
+                        metadata: finalMetadata // Update with real fileUrl from server
                     }
                     : msg
             ));
