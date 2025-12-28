@@ -441,9 +441,12 @@ INSTRUCCIONES DE EJECUCIÓN:
                 function: t
             })) : undefined;
 
+            // Use gpt-4o for images (has vision), gpt-4o-mini for text only
+            const modelToUse = (fileType === 'image' && imageBase64) ? 'gpt-4o' : 'gpt-4o-mini';
+            
             let completion = await currentOpenAI.chat.completions.create({
                 messages: openAiMessages as any,
-                model: 'gpt-4o-mini',
+                model: modelToUse,
                 temperature: agent.temperature,
                 tools: openAiTools as any,
             });
