@@ -473,7 +473,7 @@ INSTRUCCIONES DE EJECUCIÓN:
                 }
                 completion = await currentOpenAI.chat.completions.create({
                     messages: openAiMessages as any,
-                    model: 'gpt-4o-mini',
+                    model: modelToUse,
                     temperature: agent.temperature,
                     tools: openAiTools as any,
                 });
