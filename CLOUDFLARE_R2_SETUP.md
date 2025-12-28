@@ -30,21 +30,33 @@ Esta guía te ayudará a encontrar todas las credenciales necesarias para config
 
 ### 3. **R2_ACCESS_KEY_ID** y **R2_SECRET_ACCESS_KEY** (API Tokens)
 
-**Ubicación:**
-1. Ve a **R2** en el menú lateral izquierdo
-2. Haz clic en **"Manage R2 API Tokens"** (en la parte superior de la página)
-   - O ve directamente a: https://dash.cloudflare.com/?to=/:account/r2/api-tokens
-3. Haz clic en **"Create API token"**
+**⚠️ IMPORTANTE: No uses "Account API tokens", necesitas los tokens específicos de R2**
+
+**Ubicación correcta:**
+1. **Desde la barra lateral izquierda**, haz clic en **"R2"** (o busca "R2" en el menú)
+2. Una vez en la página de R2, busca el botón/enlace **"Manage R2 API Tokens"** que está en la parte superior de la página
+   - Este enlace te llevará a la sección específica de tokens de R2
+   - O ve directamente a: `https://dash.cloudflare.com/[TU_ACCOUNT_ID]/r2/api-tokens`
+   - La URL debe tener `/r2/api-tokens` al final, NO `/account/api-tokens`
+
+3. En la página de **"R2 API Tokens"**, haz clic en **"Create API token"**
+
 4. Configura el token:
    - **Token name**: Un nombre descriptivo (ej: `chatbot-upload-token`)
    - **Permissions**: Selecciona **"Object Read & Write"** o **"Admin Read & Write"**
    - **TTL**: Opcional, puedes dejarlo en blanco para que no expire
    - **Buckets**: Puedes restringirlo a un bucket específico o dejarlo en "All buckets"
+
 5. Haz clic en **"Create API Token"**
+
 6. **IMPORTANTE**: Copia inmediatamente las credenciales que aparecen:
    - **Access Key ID** → Este es tu `R2_ACCESS_KEY_ID`
    - **Secret Access Key** → Este es tu `R2_SECRET_ACCESS_KEY`
    - ⚠️ **La Secret Access Key solo se muestra UNA VEZ**. Si la pierdes, tendrás que crear un nuevo token.
+
+**Diferencias importantes:**
+- ❌ **"Account API Tokens"** = Tokens generales para toda la cuenta (NO son los que necesitas)
+- ✅ **"R2 API Tokens"** = Tokens específicos para R2 (ESTOS son los que necesitas)
 
 ### 4. **R2_PUBLIC_DOMAIN** (Dominio Público - Opcional)
 
