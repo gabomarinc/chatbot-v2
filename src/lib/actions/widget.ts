@@ -442,11 +442,11 @@ INSTRUCCIONES DE EJECUCIÓN:
             })) : undefined;
 
             // Use gpt-4o for images (has vision), gpt-4o-mini for text only
-            const modelToUse = (fileType === 'image' && imageBase64) ? 'gpt-4o' : 'gpt-4o-mini';
+            modelUsedForLogging = (fileType === 'image' && imageBase64) ? 'gpt-4o' : 'gpt-4o-mini';
             
             let completion = await currentOpenAI.chat.completions.create({
                 messages: openAiMessages as any,
-                model: modelToUse,
+                model: modelUsedForLogging,
                 temperature: agent.temperature,
                 tools: openAiTools as any,
             });
@@ -473,7 +473,7 @@ INSTRUCCIONES DE EJECUCIÓN:
                 }
                 completion = await currentOpenAI.chat.completions.create({
                     messages: openAiMessages as any,
-                    model: modelToUse,
+                    model: modelUsedForLogging,
                     temperature: agent.temperature,
                     tools: openAiTools as any,
                 });
@@ -526,7 +526,7 @@ INSTRUCCIONES DE EJECUCIÓN:
                     tokensUsed: tokensUsed,
                     creditsUsed: 1,
                     // Store strict model name used
-                    model: model.includes('gemini') ? 'gemini-1.5-flash' : modelToUse
+                    model: model.includes('gemini') ? 'gemini-1.5-flash' : modelUsedForLogging
                 }
             })
         ]);
