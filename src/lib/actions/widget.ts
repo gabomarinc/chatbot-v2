@@ -266,6 +266,11 @@ export async function sendWidgetMessage(data: {
             const calendarIntegration = agent.integrations[0];
             const hasCalendar = !!calendarIntegration;
 
+            // Get agent media for image search tool
+            const agentMedia = await prisma.agentMedia.findMany({
+                where: { agentId: channel.agentId }
+            });
+
             // Get image prompts/instructions
             const imagePrompts = agentMedia
                 .filter(m => m.prompt)
@@ -303,11 +308,6 @@ INSTRUCCIONES DE EJECUCIÓN:
 5. Mantén el Estilo de Comunicación (${styleDescription}) en cada palabra.
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
 `;
-
-            // Get agent media for image search tool
-            const agentMedia = await prisma.agentMedia.findMany({
-                where: { agentId: channel.agentId }
-            });
 
             // Define tools for Calendar and Image Search
             const tools: any[] = hasCalendar ? [
