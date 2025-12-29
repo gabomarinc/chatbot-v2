@@ -57,7 +57,8 @@ export async function uploadAgentMedia(
     file: File,
     description?: string,
     tags?: string[],
-    altText?: string
+    altText?: string,
+    prompt?: string
 ) {
     const session = await auth();
     if (!session?.user) {
@@ -118,7 +119,8 @@ export async function uploadAgentMedia(
             fileName: file.name,
             description: description || null,
             tags: tags || [],
-            altText: altText || null
+            altText: altText || null,
+            prompt: prompt || null
         }
     });
 

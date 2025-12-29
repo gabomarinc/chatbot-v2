@@ -266,6 +266,12 @@ export async function sendWidgetMessage(data: {
         const calendarIntegration = agent.integrations[0];
         const hasCalendar = !!calendarIntegration;
 
+        // Get image prompts/instructions
+        const imagePrompts = agentMedia
+            .filter(m => m.prompt)
+            .map(m => `- ${m.prompt}`)
+            .join('\n');
+
         const systemPrompt = `IDENTIDAD Y CONTEXTO LABORAL (FUNDAMENTAL):
 Eres ${agent.name}, el asistente oficial de ${agent.jobCompany || 'la empresa'}.
 Sitio Web Oficial: ${agent.jobWebsiteUrl || 'No especificado'}
@@ -284,6 +290,7 @@ CONFIGURACIÓN DINÁMICA DEL CHAT:
 - Restricción de Temas: ${agent.restrictTopics ? 'ESTRICTA. Solo responde sobre temas del negocio. Si preguntan algo ajeno, declina amablemente.' : 'Flexible. Puedes charlar de forma general pero siempre volviendo al negocio.'}
 - Transferencia Humana: ${agent.transferToHuman ? 'Disponible. Si el usuario pide hablar con una persona, indícale que puedes transferirlo.' : 'No disponible por ahora.'}
 ${hasCalendar ? '- Calendario: TIENES ACCESO a Google Calendar para revisar disponibilidad y agendar citas.' : '- Calendario: No disponible.'}
+${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG):
 ${context || 'No hay fragmentos de entrenamiento específicos para esta consulta, básate en tu Identidad y Contexto Laboral.'}

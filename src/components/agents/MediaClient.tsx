@@ -227,6 +227,7 @@ function MediaUploadModal({
     const [description, setDescription] = useState('')
     const [tags, setTags] = useState('')
     const [altText, setAltText] = useState('')
+    const [prompt, setPrompt] = useState('')
     const [isUploading, setIsUploading] = useState(false)
     const router = useRouter()
 
@@ -269,6 +270,7 @@ function MediaUploadModal({
             if (description) formData.append('description', description)
             if (tags) formData.append('tags', tags)
             if (altText) formData.append('altText', altText)
+            if (prompt) formData.append('prompt', prompt)
 
             const response = await fetch(`/api/agents/${agentId}/media`, {
                 method: 'POST',
@@ -395,6 +397,24 @@ function MediaUploadModal({
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             Texto que se mostrará si la imagen no puede cargarse
+                        </p>
+                    </div>
+
+                    {/* Prompt/Instructions */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Instrucciones para el Chatbot *
+                        </label>
+                        <textarea
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Ejemplo: Cuando el usuario pida imagen de la casa A, envía esta imagen"
+                            rows={3}
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Instrucciones específicas que le dirán al chatbot cuándo y cómo usar esta imagen. Ejemplo: "Cuando el usuario pida ver la casa modelo A o pregunte por fotos de la propiedad tipo A, envía esta imagen"
                         </p>
                     </div>
 

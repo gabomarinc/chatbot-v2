@@ -13,6 +13,7 @@ export async function POST(
         const description = formData.get('description') as string | null;
         const tagsStr = formData.get('tags') as string | null;
         const altText = formData.get('altText') as string | null;
+        const prompt = formData.get('prompt') as string | null;
 
         if (!file) {
             return NextResponse.json(
@@ -31,7 +32,8 @@ export async function POST(
             file,
             description || undefined,
             tags,
-            altText || undefined
+            altText || undefined,
+            prompt || undefined
         );
 
         return NextResponse.json(media, { status: 201 });

@@ -207,6 +207,7 @@ model AgentMedia {
   description String?  // Descripción de la imagen para búsqueda
   tags        String[] // Tags para categorizar (ej: ["casa", "exterior", "sala"])
   altText     String?  // Texto alternativo para accesibilidad
+  prompt      String?  // Instrucciones específicas para el chatbot (ej: "Cuando el usuario pida imagen de la casa A, envía esta")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
