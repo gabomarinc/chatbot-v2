@@ -116,16 +116,21 @@ export async function sendWidgetMessage(data: {
     let imageBase64: string | undefined = data.imageBase64;
     if (fileUrl && fileType === 'image' && !imageBase64) {
         try {
+            console.log('[IMAGE] Converting image URL to base64:', fileUrl);
             // Download image and convert to base64
             const response = await fetch(fileUrl);
+            console.log('[IMAGE] Fetch response status:', response.status, response.ok);
             if (response.ok) {
                 const arrayBuffer = await response.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
                 const contentType = response.headers.get('content-type') || 'image/jpeg';
                 imageBase64 = `data:${contentType};base64,${buffer.toString('base64')}`;
+                console.log('[IMAGE] Successfully converted to base64, length:', imageBase64.length);
+            } else {
+                console.error('[IMAGE] Failed to fetch image, status:', response.status);
             }
         } catch (error) {
-            console.error('Error converting image URL to base64:', error);
+            console.error('[IMAGE] Error converting image URL to base64:', error);
             // Continue without image if conversion fails
         }
     }
@@ -368,7 +373,9 @@ INSTRUCCIONES DE EJECUCIÓN:
                 });
             }
 
+            console.log('[GEMINI] Sending message with', messageParts.length, 'parts');
             let result = await chat.sendMessage(messageParts);
+            console.log('[GEMINI] Response received');
 
             // Handle tool calls for Gemini
             let call = result.response.functionCalls()?.[0];
@@ -449,12 +456,14 @@ INSTRUCCIONES DE EJECUCIÓN:
             // Use gpt-4o for images (has vision), gpt-4o-mini for text only (modelUsedForLogging already set above)
             const modelToUse = modelUsedForLogging;
             
+            console.log('[OPENAI] Sending request with model:', modelToUse, 'messages:', openAiMessages.length);
             let completion = await currentOpenAI.chat.completions.create({
                 messages: openAiMessages as any,
                 model: modelToUse,
                 temperature: agent.temperature,
                 tools: openAiTools as any,
             });
+            console.log('[OPENAI] Response received');
 
             let message = completion.choices[0].message;
 
@@ -541,7 +550,14 @@ INSTRUCCIONES DE EJECUCIÓN:
     } catch (error) {
         console.error("AI Error:", error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorStack = error instanceof Error ? error.stack : 'No stack trace';
         console.error("Error details:", errorMessage);
+        console.error("Error stack:", errorStack);
+        console.error("Model used:", model);
+        console.error("File type:", fileType);
+        console.error("Has imageBase64:", !!imageBase64);
+        console.error("Has openaiKey:", !!openaiKey);
+        console.error("Has googleKey:", !!googleKey);
         
         // Fallback message if AI fails
         const fallbackMsg = await prisma.message.create({
@@ -550,8 +566,12 @@ INSTRUCCIONES DE EJECUCIÓN:
                 role: 'AGENT',
                 content: errorMessage.includes('credits') 
                     ? "Lo siento, no hay créditos disponibles en este momento. Por favor, contacta al administrador."
-                    : errorMessage.includes('API Key')
+                    : errorMessage.includes('API Key') || errorMessage.includes('not configured')
                     ? "Error de configuración del servidor. Por favor, contacta al administrador."
+                    : errorMessage.includes('rate limit') || errorMessage.includes('429')
+                    ? "Lo siento, estoy recibiendo demasiadas solicitudes. Por favor, espera un momento e intenta de nuevo."
+                    : errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')
+                    ? "Lo siento, la solicitud está tardando demasiado. Por favor, intenta de nuevo."
                     : "Lo siento, estoy teniendo problemas de conexión en este momento. Por favor, intenta de nuevo."
             }
         });
