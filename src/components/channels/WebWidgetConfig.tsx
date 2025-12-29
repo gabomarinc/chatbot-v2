@@ -246,7 +246,7 @@ export function WebWidgetConfig({ agents, existingChannel, defaultAgentId }: Web
                     <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-8 z-10">Vista Previa en Vivo</p>
                 </div>
 
-                                {/* Integration Code */}
+                {/* Integration Code */}
                 {currentChannel && (
                     <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-4 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-[#21AC96] opacity-10 blur-3xl rounded-full"></div>
