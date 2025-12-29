@@ -453,17 +453,35 @@ INSTRUCCIONES DE EJECUCIÓN:
                 function: t
             })) : undefined;
 
-            // Use gpt-4o for images (has vision), gpt-4o-mini for text only (modelUsedForLogging already set above)
+            // Use gpt-4o for images (has vision), otherwise use agent's configured model
+            // Note: If model is gpt-4o-mini and it fails, we'll fallback to gpt-4o
             const modelToUse = modelUsedForLogging;
             
             console.log('[OPENAI] Sending request with model:', modelToUse, 'messages:', openAiMessages.length);
-            let completion = await currentOpenAI.chat.completions.create({
-                messages: openAiMessages as any,
-                model: modelToUse,
-                temperature: agent.temperature,
-                tools: openAiTools as any,
-            });
-            console.log('[OPENAI] Response received');
+            let completion;
+            try {
+                completion = await currentOpenAI.chat.completions.create({
+                    messages: openAiMessages as any,
+                    model: modelToUse,
+                    temperature: agent.temperature,
+                    tools: openAiTools as any,
+                });
+                console.log('[OPENAI] Response received');
+            } catch (modelError: any) {
+                // If model is not available (e.g., gpt-4o-mini), try fallback to gpt-4o
+                if (modelToUse === 'gpt-4o-mini' && (modelError?.message?.includes('model') || modelError?.code === 'model_not_found')) {
+                    console.warn('[OPENAI] Model gpt-4o-mini not available, falling back to gpt-4o');
+                    completion = await currentOpenAI.chat.completions.create({
+                        messages: openAiMessages as any,
+                        model: 'gpt-4o',
+                        temperature: agent.temperature,
+                        tools: openAiTools as any,
+                    });
+                    console.log('[OPENAI] Fallback to gpt-4o successful');
+                } else {
+                    throw modelError; // Re-throw if it's a different error
+                }
+            }
 
             let message = completion.choices[0].message;
 
