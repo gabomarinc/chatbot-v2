@@ -23,8 +23,9 @@ export function WebWidgetConfig({ agents, existingChannel, defaultAgentId }: Web
     const [isSaved, setIsSaved] = useState(false);
 
     // Initial State defaults
+    // If defaultAgentId is provided, use it; otherwise use existing channel's agent or first agent
     const [formData, setFormData] = useState({
-        agentId: existingChannel?.agentId || defaultAgentId || (agents.length > 0 ? agents[0].id : ''),
+        agentId: defaultAgentId || existingChannel?.agentId || (agents.length > 0 ? agents[0].id : ''),
         displayName: existingChannel?.displayName || 'Chat Web',
         color: existingChannel?.configJson?.color || '#21AC96',
         title: existingChannel?.configJson?.title || 'Asistente Virtual',

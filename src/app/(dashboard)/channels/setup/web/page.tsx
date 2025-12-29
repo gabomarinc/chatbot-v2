@@ -16,11 +16,13 @@ export default async function WebWidgetSetupPage({
     // We need agents to let user select one
     const agents = await getAgents();
 
-    // Check if there is already a WEBCHAT channel created.
-    // For MVP we might assume one per workspace or check specifically.
-    // Let's get all channels and filter.
+    // Get all channels and find existing WEBCHAT channel
+    // If agentId is provided in searchParams, find channel for that specific agent
+    // Otherwise, allow creating a new channel for any agent
     const channels = await getChannels();
-    const existingWebChat = channels.find(c => c.type === 'WEBCHAT');
+    const existingWebChat = params.agentId 
+        ? channels.find(c => c.type === 'WEBCHAT' && c.agentId === params.agentId)
+        : null; // Don't restrict if no specific agent is selected
 
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in p-6">
