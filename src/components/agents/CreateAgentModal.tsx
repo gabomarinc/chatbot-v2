@@ -19,7 +19,7 @@ export function CreateAgentModal({ isOpen, onClose }: CreateAgentModalProps) {
         jobType: 'SALES' as 'SUPPORT' | 'SALES' | 'PERSONAL',
         communicationStyle: 'NORMAL' as 'FORMAL' | 'NORMAL' | 'CASUAL',
         personalityPrompt: '',
-        model: 'gpt-4.0-mini'
+        model: 'gemini-1.5-flash' // Default to Gemini 1.5 Flash (supports images, cost-effective)
     });
 
     if (!isOpen) return null;
@@ -90,9 +90,9 @@ export function CreateAgentModal({ isOpen, onClose }: CreateAgentModalProps) {
                                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                                 className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:bg-white focus:border-[#21AC96] transition-all font-medium appearance-none cursor-pointer"
                             >
-                                <option value="gpt-4o-mini">GPT-4o Mini (Recomendado)</option>
+                                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Recomendado)</option>
+                                <option value="gpt-4o-mini">GPT-4o Mini</option>
                                 <option value="gpt-4o">GPT-4o</option>
-                                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                                 <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                             </select>
                         </div>
