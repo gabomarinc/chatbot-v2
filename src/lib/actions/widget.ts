@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { Message } from '@prisma/client';
 import { generateEmbedding, cosineSimilarity } from '@/lib/ai';
 import { listAvailableSlots, createCalendarEvent } from '@/lib/google';
+import { searchAgentMedia } from '@/lib/actions/agent-media';
 
 export async function sendWidgetMessage(data: {
     channelId: string;
@@ -202,6 +203,7 @@ export async function sendWidgetMessage(data: {
 
         let replyContent = '...';
         let tokensUsed = 0;
+        let selectedImage: { url: string; altText?: string | null } | null = null; // Image selected by AI tool
         // Determine model to use: gpt-4o for images (has vision), otherwise use agent's configured model
         // IMPORTANT: gpt-4o-mini does NOT support vision, so we MUST use gpt-4o if there's an image
         let modelUsedForLogging = model; // Default to agent's model
@@ -295,8 +297,13 @@ INSTRUCCIONES DE EJECUCIÓN:
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
 `;
 
-        // Define tools for Calendar
-        const tools: any[] = hasCalendar ? [
+        // Get agent media for image search tool
+        const agentMedia = await prisma.agentMedia.findMany({
+            where: { agentId: channel.agentId }
+        });
+
+        // Define tools for Calendar and Image Search
+        const tools: any[] = [
             {
                 name: "revisar_disponibilidad",
                 description: "Consulta los eventos ocupados en una fecha específica para ver disponibilidad.",
@@ -425,6 +432,35 @@ INSTRUCCIONES DE EJECUCIÓN:
                             toolResult = await listAvailableSlots(calendarIntegration.configJson, (args as any).fecha);
                         } else if (name === "agendar_cita") {
                             toolResult = await createCalendarEvent(calendarIntegration.configJson, args as any);
+                        } else if (name === "buscar_imagen") {
+                            // Search for images matching the query
+                            const query = (args as any).query;
+                            const foundMedia = await searchAgentMedia(channel.agentId, query);
+                            if (foundMedia.length > 0) {
+                                // Return the first matching image
+                                const image = foundMedia[0];
+                                selectedImage = { url: image.url, altText: image.altText };
+                                toolResult = {
+                                    found: true,
+                                    url: image.url,
+                                    description: image.description || image.fileName,
+                                    altText: image.altText
+                                };
+                            } else {
+                                // Try to find any image if no match
+                                if (agentMedia.length > 0) {
+                                    const image = agentMedia[0];
+                                    selectedImage = { url: image.url, altText: image.altText };
+                                    toolResult = {
+                                        found: true,
+                                        url: image.url,
+                                        description: image.description || image.fileName,
+                                        altText: image.altText
+                                    };
+                                } else {
+                                    toolResult = { found: false, message: "No se encontraron imágenes disponibles." };
+                                }
+                            }
                         }
 
                         result = await chat.sendMessage([{
@@ -563,6 +599,35 @@ INSTRUCCIONES DE EJECUCIÓN:
                         toolResult = await listAvailableSlots(calendarIntegration.configJson, args.fecha);
                     } else if (name === "agendar_cita") {
                         toolResult = await createCalendarEvent(calendarIntegration.configJson, args);
+                    } else if (name === "buscar_imagen") {
+                        // Search for images matching the query
+                        const query = args.query;
+                        const foundMedia = await searchAgentMedia(channel.agentId, query);
+                        if (foundMedia.length > 0) {
+                            // Return the first matching image
+                            const image = foundMedia[0];
+                            selectedImage = { url: image.url, altText: image.altText };
+                            toolResult = {
+                                found: true,
+                                url: image.url,
+                                description: image.description || image.fileName,
+                                altText: image.altText
+                            };
+                        } else {
+                            // Try to find any image if no match
+                            if (agentMedia.length > 0) {
+                                const image = agentMedia[0];
+                                selectedImage = { url: image.url, altText: image.altText };
+                                toolResult = {
+                                    found: true,
+                                    url: image.url,
+                                    description: image.description || image.fileName,
+                                    altText: image.altText
+                                };
+                            } else {
+                                toolResult = { found: false, message: "No se encontraron imágenes disponibles." };
+                            }
+                        }
                     }
                     openAiMessages.push({
                         role: 'tool',
@@ -583,12 +648,17 @@ INSTRUCCIONES DE EJECUCIÓN:
             tokensUsed = completion.usage?.total_tokens || 0;
         }
 
-        // 6. Save Agent Message
+        // 6. Save Agent Message (with image metadata if image was selected)
         const agentMsg = await prisma.message.create({
             data: {
                 conversationId: conversation.id,
                 role: 'AGENT',
-                content: replyContent
+                content: replyContent,
+                metadata: selectedImage ? {
+                    type: 'image',
+                    url: selectedImage.url,
+                    altText: selectedImage.altText || null
+                } : undefined
             }
         });
 

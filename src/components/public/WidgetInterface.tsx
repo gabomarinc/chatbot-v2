@@ -233,7 +233,8 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                     id: agentMsg.id,
                     role: 'AGENT',
                     content: agentMsg.content,
-                    createdAt: new Date(agentMsg.createdAt)
+                    createdAt: new Date(agentMsg.createdAt),
+                    metadata: agentMsg.metadata // Include metadata for images sent by agent
                 };
                 setMessages(prev => [...prev, realAgentMsg]);
             }

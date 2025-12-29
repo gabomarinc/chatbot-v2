@@ -85,6 +85,7 @@ model Agent {
   conversations      Conversation[]
   intents            Intent[]
   knowledgeBases     KnowledgeBase[]
+  media              AgentMedia[]
 }
 
 model KnowledgeBase {
@@ -196,6 +197,22 @@ model AgentMCPServer {
   endpoint String
   apiKey   String?
   agent    Agent   @relation(fields: [agentId], references: [id])
+}
+
+model AgentMedia {
+  id          String   @id @default(cuid())
+  agentId     String
+  url         String   // URL de la imagen en R2
+  fileName    String   // Nombre original del archivo
+  description String?  // Descripción de la imagen para búsqueda
+  tags        String[] // Tags para categorizar (ej: ["casa", "exterior", "sala"])
+  altText     String?  // Texto alternativo para accesibilidad
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([tags])
 }
 
 model SubscriptionPlan {
