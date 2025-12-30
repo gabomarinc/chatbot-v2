@@ -69,12 +69,17 @@ export default async function ChannelsPage() {
 
                             <div className="flex items-center gap-4">
                                 <Link
-                                    href={channel.type === 'WEBCHAT' ? `/channels/setup/web?agentId=${channel.agentId}` : `/channels/${channel.id}`}
+                                    href={
+                                        channel.type === 'WEBCHAT' ? `/channels/setup/web?agentId=${channel.agentId}` :
+                                            channel.type === 'INSTAGRAM' ? `/channels/setup/instagram?agentId=${channel.agentId}` :
+                                                channel.type === 'WHATSAPP' ? `/channels/setup/whatsapp?agentId=${channel.agentId}` :
+                                                    `/channels/${channel.id}`
+                                    }
                                     className="px-6 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors"
                                 >
                                     Configurar
                                 </Link>
-                                <DeleteChannelButton 
+                                <DeleteChannelButton
                                     channelId={channel.id}
                                     channelName={channel.displayName}
                                 />
