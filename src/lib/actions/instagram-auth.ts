@@ -156,3 +156,18 @@ export async function connectInstagramAccount(data: {
         return { error: error.message || 'Error connecting Instagram account' };
     }
 }
+
+export async function testInstagramConnection(pageAccessToken: string) {
+    try {
+        const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/me?fields=id,name&access_token=${pageAccessToken}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+            return { success: false, error: data.error?.message || 'Token invalido' };
+        }
+
+        return { success: true, name: data.name };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

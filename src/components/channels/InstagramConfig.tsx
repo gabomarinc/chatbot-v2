@@ -256,6 +256,27 @@ export function InstagramConfig({ agents, existingChannel, defaultAgentId, metaA
                     )}
                 </button>
 
+                <div className="text-center">
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            if (!formData.pageAccessToken) return toast.error('Pega un token primero');
+                            const { testInstagramConnection } = await import('@/lib/actions/instagram-auth');
+                            toast.promise(testInstagramConnection(formData.pageAccessToken), {
+                                loading: 'Probando token...',
+                                success: (data) => {
+                                    if (data.success) return `¡Token Válido! Conectado como: ${data.name}`;
+                                    throw new Error(data.error);
+                                },
+                                error: (err) => `Error: ${err.message}`
+                            });
+                        }}
+                        className="text-xs font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors mb-4"
+                    >
+                        Probar Conexión (Debug)
+                    </button>
+                </div>
+
                 {metaAppId && (
                     <div className="text-center pt-2">
                         <button
