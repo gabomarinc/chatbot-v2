@@ -52,18 +52,21 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ status: 'ok' });
         }
 
-        // Find the channel - Instagram doesn't send page ID in webhook, so we find by active channel
+        const instagramAccountId = entry.id;
+
+        // Find the specific channel for this Instagram account
+        // We fetch all active IG channels to filter in memory (safe for JSON fields compatibility)
         const channels = await prisma.channel.findMany({
             where: { type: 'INSTAGRAM', isActive: true }
         });
 
-        if (channels.length === 0) {
-            console.error('No active Instagram channel found');
-            return NextResponse.json({ error: 'No active channel' }, { status: 404 });
+        const channel = channels.find(c => (c.configJson as any)?.instagramAccountId === instagramAccountId);
+
+        if (!channel) {
+            console.error(`No active Instagram channel found for Account ID: ${instagramAccountId}`);
+            return NextResponse.json({ error: 'No active channel found for this account' }, { status: 404 });
         }
 
-        // Use the first active channel (in production, you might need better logic for multiple Instagram accounts)
-        const channel = channels[0];
         const config = channel.configJson as any;
 
         // Handle text messages
