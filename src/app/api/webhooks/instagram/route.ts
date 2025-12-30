@@ -80,31 +80,40 @@ export async function POST(req: NextRequest) {
         if (message.text) {
             const text = message.text;
 
-            // Process with AI (Reusing widget logic)
-            const result = await sendWidgetMessage({
-                channelId: channel.id,
-                content: text,
-                visitorId: senderId
-            });
+            try {
+                // Process with AI (Reusing widget logic)
+                const result = await sendWidgetMessage({
+                    channelId: channel.id,
+                    content: text,
+                    visitorId: senderId
+                });
 
-            // Send response back to Instagram
-            if (result.agentMsg) {
-                // Check if agent response includes an image
-                const hasImage = result.agentMsg.metadata &&
-                    typeof result.agentMsg.metadata === 'object' &&
-                    (result.agentMsg.metadata as any).type === 'image' &&
-                    (result.agentMsg.metadata as any).url;
+                // Send response back to Instagram
+                if (result.agentMsg) {
+                    // Check if agent response includes an image
+                    const hasImage = result.agentMsg.metadata &&
+                        typeof result.agentMsg.metadata === 'object' &&
+                        (result.agentMsg.metadata as any).type === 'image' &&
+                        (result.agentMsg.metadata as any).url;
 
-                if (hasImage) {
-                    // Send image first
-                    await sendInstagramImage(
-                        config.pageAccessToken,
-                        senderId,
-                        (result.agentMsg.metadata as any).url
-                    );
+                    if (hasImage) {
+                        // Send image first
+                        await sendInstagramImage(
+                            config.pageAccessToken,
+                            senderId,
+                            (result.agentMsg.metadata as any).url
+                        );
 
-                    // Then send text if there's accompanying text
-                    if (result.agentMsg.content && result.agentMsg.content.trim()) {
+                        // Then send text if there's accompanying text
+                        if (result.agentMsg.content && result.agentMsg.content.trim()) {
+                            await sendInstagramMessage(
+                                config.pageAccessToken,
+                                senderId,
+                                result.agentMsg.content
+                            );
+                        }
+                    } else {
+                        // Send text only
                         await sendInstagramMessage(
                             config.pageAccessToken,
                             senderId,
@@ -112,13 +121,16 @@ export async function POST(req: NextRequest) {
                         );
                     }
                 } else {
-                    // Send text only
+                    // Fallback if no agent message returned
                     await sendInstagramMessage(
                         config.pageAccessToken,
                         senderId,
-                        result.agentMsg.content
+                        "⚠ Debug: El bot recibió el mensaje pero no generó respuesta. (result.agentMsg is null)"
                     );
                 }
+            } catch (innerError: any) {
+                console.error('Processing Error:', innerError);
+                await sendDebugResponse(config, senderId, innerError.message || 'Unknown processing error');
             }
         }
         // Handle image messages
@@ -213,8 +225,30 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ status: 'ok' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Instagram Webhook Error:', error);
+
+        // Attempt to send error report to user if we have context
+        try {
+            // We need to parse body again or lift scope, but for simplicity let's try to grab from closure if possible
+            // or just rely on console logs if we can't reply. 
+            // Since we can't easily access 'config' here if it failed before definition, 
+            // we will implement the try-catch INSIDE the finding logic.
+        } catch (e) {
+            // ignore
+        }
+
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+// Helper to send debug message
+async function sendDebugResponse(config: any, recipientId: string, errorMessage: string) {
+    if (config?.pageAccessToken) {
+        try {
+            await sendInstagramMessage(config.pageAccessToken, recipientId, `⚠ Error interno: ${errorMessage}`);
+        } catch (e) {
+            console.error('Failed to send debug message', e);
+        }
     }
 }
