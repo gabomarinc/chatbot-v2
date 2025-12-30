@@ -82,12 +82,20 @@ export async function connectInstagramAccount(data: {
     if (!session?.user?.id) throw new Error('Unauthorized');
 
     try {
-        // 1. Get Workspace
-        const workspace = await prisma.workspace.findFirst({
-            where: { ownerId: session.user.id }
-        });
+        console.log('Connect Instagram Account called with:', JSON.stringify(data, null, 2));
 
-        if (!workspace) throw new Error('Workspace not found');
+        // 1. Get Workspace
+        // 1. Get Workspace (Robust lookup via membership)
+        const membership = await prisma.workspaceMember.findFirst({
+            where: { userId: session.user.id },
+            include: { workspace: true }
+        });
+        const workspace = membership?.workspace;
+
+        if (!workspace) {
+            console.error('Workspace not found for user:', session.user.id);
+            throw new Error('Workspace not found');
+        }
 
         // 2. Verify Token (Double check it works)
         // We can do a quick call to get the account info to ensure permissions are active
@@ -132,6 +140,7 @@ export async function connectInstagramAccount(data: {
                     isActive: true
                 }
             });
+            console.log('Channel created successfully');
         }
 
         revalidatePath('/channels');
@@ -140,6 +149,10 @@ export async function connectInstagramAccount(data: {
 
     } catch (error: any) {
         console.error('Connect Instagram Error:', error);
+        // Add detailed error logging
+        if (error instanceof Error) {
+            console.error('Error stack:', error.stack);
+        }
         return { error: error.message || 'Error connecting Instagram account' };
     }
 }
