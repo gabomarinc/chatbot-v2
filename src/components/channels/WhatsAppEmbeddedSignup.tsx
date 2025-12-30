@@ -125,9 +125,8 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
 
             // Para Embedded Signup con config_id, no necesitamos redirect_uri explícito
             // Meta maneja el redirect internamente cuando se usa config_id
+            // Usar flujo de Token (implícito) para evitar problemas de redirect_uri
             const loginOptions: any = {
-                response_type: 'code',
-                override_default_response_type: true,
                 scope: 'whatsapp_business_management,whatsapp_business_messaging',
             };
 
@@ -139,13 +138,13 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             window.FB.login((response: any) => {
                 console.log('Respuesta de FB.login:', response);
                 if (response.authResponse) {
-                    const code = response.authResponse.code;
-                    if (code) {
-                        // Para Embedded Signup, no necesitamos pasar redirect_uri
-                        processMetaCode(code);
+                    // Ahora recibimos un accessToken directamente
+                    const accessToken = response.authResponse.accessToken;
+                    if (accessToken) {
+                        processMetaToken(accessToken);
                     } else {
                         setIsProcessing(false);
-                        toast.error('No se recibió el código de autorización. Intenta de nuevo.');
+                        toast.error('No se recibió el token de acceso. Intenta de nuevo.');
                     }
                 } else {
                     setIsProcessing(false);
@@ -164,17 +163,10 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
         }
     };
 
-    const processMetaCode = async (code: string) => {
+    const processMetaToken = async (accessToken: string) => {
         try {
-            // Capture current URL to use as redirect_uri
-            // Remove hash and query params to be safe, as FB SDK usually does
-            let currentUrl = window.location.origin + window.location.pathname;
-            // Facebook SDK often strips trailing slash, so let's do it too to be safe
-            if (currentUrl.endsWith('/')) {
-                currentUrl = currentUrl.slice(0, -1);
-            }
-            console.log('Sending redirect_uri for validation:', currentUrl);
-            const result = await handleEmbeddedSignup({ code, agentId, currentUrl });
+            // Ya no necesitamos currentUrl ni redirect_uri
+            const result = await handleEmbeddedSignup({ accessToken, agentId });
             if (result.success) {
                 toast.success('¡WhatsApp conectado correctamente!');
                 if (onSuccess) onSuccess();

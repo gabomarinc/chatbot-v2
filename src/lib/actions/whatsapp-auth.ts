@@ -11,9 +11,8 @@ const META_API_VERSION = 'v21.0';
  * fetches WABA and Phone Number info, and registers it.
  */
 export async function handleEmbeddedSignup(data: {
-    code: string;
+    accessToken: string;
     agentId: string;
-    currentUrl?: string;
 }) {
     const session = await auth();
     if (!session?.user?.id) throw new Error('Unauthorized');
@@ -27,11 +26,10 @@ export async function handleEmbeddedSignup(data: {
             throw new Error('Meta App Configuration missing (ID or Secret)');
         }
 
-        // 2. Exchange code for Access Token
-        // Para Embedded Signup, no necesitamos redirect_uri en el intercambio
-        // POST /v21.0/oauth/access_token?client_id={app-id}&client_secret={app-secret}&code={code}
+        // 2. Exchange Short-Lived Token for Long-Lived User Access Token
+        // This endpoint DOES NOT require redirect_uri, solving our issue.
         const tokenRes = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${data.code}&redirect_uri=${data.currentUrl || ''}`
+            `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${data.accessToken}`
         );
         const tokenData = await tokenRes.json();
 
