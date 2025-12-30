@@ -18,7 +18,10 @@ export async function GET(req: NextRequest) {
                 where: { type: 'INSTAGRAM', isActive: true }
             });
 
-            const isValid = channels.some(c => (c.configJson as any).verifyToken === token) || token === process.env.INSTAGRAM_VERIFY_TOKEN;
+            const isValid = channels.some(c => {
+                const config = c.configJson as any;
+                return config?.verifyToken === token;
+            }) || token === process.env.INSTAGRAM_VERIFY_TOKEN;
 
             if (isValid) {
                 console.log('INSTAGRAM WEBHOOK_VERIFIED');
