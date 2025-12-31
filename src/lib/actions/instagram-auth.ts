@@ -106,12 +106,15 @@ export async function connectInstagramAccount(data: {
         if (!verifyRes.ok) throw new Error('Invalid or expired token');
 
         // 3. Save/Update Channel
-        const existingChannel = await prisma.channel.findFirst({
+        // Logic Update: Search based on INSTAGRAM ACCOUNT ID to allow multiple accounts (one per channel)
+        const allChannels = await prisma.channel.findMany({
             where: {
                 type: 'INSTAGRAM',
                 agent: { workspaceId: workspace.id }
             }
         });
+
+        const existingChannel = allChannels.find(c => (c.configJson as any)?.instagramAccountId === data.accountId);
 
         const configJson = {
             pageAccessToken: data.pageAccessToken,
@@ -124,7 +127,7 @@ export async function connectInstagramAccount(data: {
             await prisma.channel.update({
                 where: { id: existingChannel.id },
                 data: {
-                    agentId: data.agentId,
+                    agentId: data.agentId, // Allow switching agent
                     displayName: `IG: ${data.name}`,
                     configJson: configJson as any,
                     isActive: true

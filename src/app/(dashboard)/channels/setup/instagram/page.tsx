@@ -7,7 +7,7 @@ import { Instagram } from 'lucide-react';
 export default async function InstagramSetupPage({
     searchParams,
 }: {
-    searchParams: { agentId?: string };
+    searchParams: { agentId?: string; channelId?: string };
 }) {
     const session = await auth();
     if (!session?.user) redirect('/login');
@@ -33,19 +33,16 @@ export default async function InstagramSetupPage({
     }
 
     // Check if there's an existing Instagram channel
-    const existingChannel = await prisma.channel.findFirst({
-        where: {
-            type: 'INSTAGRAM',
-            agent: {
-                workspace: {
-                    OR: [
-                        { ownerId: session.user.id },
-                        { members: { some: { userId: session.user.id } } }
-                    ]
-                }
-            }
-        }
-    });
+    let existingChannel = null;
+
+    // IF editing a specific channel (passed via URL), load it
+    if (searchParams.channelId) {
+        existingChannel = await prisma.channel.findUnique({
+            where: { id: searchParams.channelId }
+        });
+    }
+    // IF no channelId is passed, we assume NEW CHANNEL creation (so we don't load any existing one)
+    // This allows connecting a second specific account without pre-filling the form
 
     const metaAppIdConfig = await prisma.globalConfig.findUnique({
         where: { key: 'META_APP_ID' }
