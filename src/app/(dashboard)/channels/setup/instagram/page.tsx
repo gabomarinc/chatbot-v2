@@ -52,18 +52,17 @@ export default async function InstagramSetupPage({
     return (
         <div className="container max-w-7xl mx-auto py-10 px-6">
             <div className="mb-10">
-                <div className="flex items-center gap-4 mb-3">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-600 to-purple-600 flex items-center justify-center">
-                        <Instagram className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-4xl font-black text-gray-900 tracking-tight">
-                            Configurar Instagram
-                        </h1>
-                        <p className="text-gray-500 font-medium mt-1">
-                            Conecta tu Instagram Business para responder mensajes directos automáticamente
-                        </p>
-                    </div>
+                {/* Header */}
+                <div className="flex items-center gap-4 mb-10">
+                    <a
+                        href={searchParams.agentId ? `/agents/${searchParams.agentId}/channels` : "/channels"}
+                        className="flex items-center gap-2 text-gray-400 font-extrabold text-sm uppercase tracking-widest hover:text-pink-600 transition-colors group"
+                    >
+                        <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                        Volver
+                    </a>
+                    <div className="h-8 w-[1px] bg-gray-200"></div>
+                    <h1 className="text-gray-900 font-black text-2xl tracking-tight">Configurar Instagram</h1>
                 </div>
 
                 {existingChannel && (
