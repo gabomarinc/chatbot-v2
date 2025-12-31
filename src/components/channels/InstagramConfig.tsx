@@ -116,6 +116,17 @@ export function InstagramConfig({ agents, existingChannel, defaultAgentId, metaA
                         setIsSaved(true);
                     }}
                 />
+
+                {/* 3. Manual Config (LAST) */}
+                <div className="text-center pt-4 border-t border-gray-50 mt-8">
+                    <button
+                        onClick={() => setShowManual(true)}
+                        className="text-gray-300 text-[10px] font-bold hover:text-gray-500 uppercase tracking-widest transition-colors flex items-center gap-1 mx-auto"
+                    >
+                        <span>⚙️ Configurar Manualmente (Avanzado)</span>
+                    </button>
+                    <p className="text-[10px] text-gray-300 mt-1">Solo necesario si falla la conexión automática.</p>
+                </div>
             </div>
         );
     }
