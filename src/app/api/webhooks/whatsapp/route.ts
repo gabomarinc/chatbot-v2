@@ -16,7 +16,9 @@ export async function GET(req: NextRequest) {
       // Find any WhatsApp channel to check verify token
       // In a multi-tenant system, we might need a better way to verify tokens, 
       // but usually Meta app-level verify token is what matters.
-      // For now, we'll check if it matches any active channel config or a global one.
+      // Allow verification if ANY channel matches OR if using the Master Token
+      // This decouples Platform Setup from having active users
+      const MASTER_TOKEN = 'konsul_master_verify_secret';
 
       // For simplicity, let's assume a global env var for verification, 
       // or find it in the first active whatsapp channel.
@@ -24,7 +26,7 @@ export async function GET(req: NextRequest) {
         where: { type: 'WHATSAPP', isActive: true }
       });
 
-      const isValid = channels.some(c => (c.configJson as any).verifyToken === token) || token === process.env.WHATSAPP_VERIFY_TOKEN;
+      const isValid = token === MASTER_TOKEN || channels.some(c => (c.configJson as any).verifyToken === token) || token === process.env.WHATSAPP_VERIFY_TOKEN;
 
       if (isValid) {
         console.log('WEBHOOK_VERIFIED');
