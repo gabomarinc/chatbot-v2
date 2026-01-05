@@ -10,6 +10,12 @@ const META_API_VERSION = 'v21.0';
  * Exchanges the temporary code for a long-lived user access token,
  * fetches WABA and Phone Number info, and registers it.
  */
+/**
+ * Exchanges the temporary code for a long-lived user access token,
+ * fetches WABA and Phone Number info.
+ * If multiple accounts are found, returns them for selection.
+ * If single account found, registers it immediately.
+ */
 export async function handleEmbeddedSignup(data: {
     accessToken: string;
     agentId: string;
@@ -27,7 +33,6 @@ export async function handleEmbeddedSignup(data: {
         }
 
         // 2. Exchange Short-Lived Token for Long-Lived User Access Token
-        // This endpoint DOES NOT require redirect_uri, solving our issue.
         const tokenRes = await fetch(
             `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${data.accessToken}`
         );
@@ -37,48 +42,101 @@ export async function handleEmbeddedSignup(data: {
         const userAccessToken = tokenData.access_token;
 
         // 3. Get WABA ID (Sharing permissions)
-        // Since we used Embedded Signup, the user granted permissions to their WABA.
-        // We can find the WABA associated with this token.
-        const debugRes = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/debug_token?input_token=${userAccessToken}&access_token=${appId}|${appSecret}`
-        );
-        const debugData = await debugRes.json();
-
-        // Find the WABA ID in granular_scopes or metadata if available, 
-        // or fetch from /me/whatsapp_business_accounts
         const wabaRes = await fetch(
             `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?access_token=${userAccessToken}`
         );
         const wabaData = await wabaRes.json();
-        const wabaId = wabaData.data?.[0]?.id;
 
-        if (!wabaId) throw new Error('No WhatsApp Business Account found for this user');
+        if (!wabaData.data || wabaData.data.length === 0) {
+            throw new Error('No WhatsApp Business Account found for this user');
+        }
 
-        // 4. Get Phone Number ID
-        const phoneRes = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/${wabaId}/phone_numbers?access_token=${userAccessToken}`
-        );
-        const phoneData = await phoneRes.json();
-        const phoneNumberId = phoneData.data?.[0]?.id;
+        // Collect all potential phone numbers
+        const availableAccounts: any[] = [];
 
-        if (!phoneNumberId) throw new Error('No verified phone number found in the WABA');
+        for (const waba of wabaData.data) {
+            const phoneRes = await fetch(
+                `https://graph.facebook.com/${META_API_VERSION}/${waba.id}/phone_numbers?access_token=${userAccessToken}`
+            );
+            const phoneData = await phoneRes.json();
 
+            if (phoneData.data && phoneData.data.length > 0) {
+                // Determine the "best" name for the WABA
+                // Sometimes waba.name is "WhatsApp Business Account", so we might want to check other fields
+                // But for now waba.name is the best we have.
+
+                for (const phone of phoneData.data) {
+                    availableAccounts.push({
+                        wabaId: waba.id,
+                        wabaName: waba.name,
+                        phoneNumberId: phone.id,
+                        phoneNumber: phone.display_phone_number || phone.verified_name || 'Unknown Number',
+                        displayName: phone.verified_name || phone.display_phone_number || waba.name
+                    });
+                }
+            }
+        }
+
+        if (availableAccounts.length === 0) {
+            throw new Error('No verified phone number found in the connected WABA(s)');
+        }
+
+        // 4. Decision Time
+        if (availableAccounts.length === 1) {
+            // Only one option, proceed automatically
+            return await finishWhatsAppSetup({
+                accessToken: userAccessToken,
+                wabaId: availableAccounts[0].wabaId,
+                phoneNumberId: availableAccounts[0].phoneNumberId,
+                agentId: data.agentId,
+                sessionUserId: session.user.id
+            });
+        } else {
+            // Multiple options, return to client for selection
+            return {
+                success: false,
+                requiresSelection: true,
+                accounts: availableAccounts,
+                accessToken: userAccessToken // Pass back the LONG-LIVED token
+            };
+        }
+
+    } catch (error: any) {
+        console.error('Embedded Signup Error:', error);
+        return { error: error.message || 'Error al procesar el registro de WhatsApp' };
+    }
+}
+
+/**
+ * Finalizes the setup with a selected account
+ */
+export async function finishWhatsAppSetup(data: {
+    accessToken: string;
+    wabaId: string;
+    phoneNumberId: string;
+    agentId: string;
+    sessionUserId?: string;
+}) {
+    const sessionUserId = data.sessionUserId || (await auth())?.user?.id;
+    if (!sessionUserId) throw new Error('Unauthorized');
+
+    try {
         // 5. Register the phone number (Required for Cloud API)
         await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/${phoneNumberId}/register`,
+            `https://graph.facebook.com/${META_API_VERSION}/${data.phoneNumberId}/register`,
             {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${userAccessToken}` },
+                headers: { 'Authorization': `Bearer ${data.accessToken}` },
                 body: JSON.stringify({
                     messaging_product: 'whatsapp',
-                    pin: '000000' // Default or prompted if needed
+                    pin: '000000'
                 })
             }
         );
 
         // 6. Save/Update Channel
         const workspace = await prisma.workspace.findFirst({
-            where: { ownerId: session.user.id }
+            where: { ownerId: sessionUserId }
         });
 
         if (!workspace) throw new Error('Workspace not found');
@@ -86,14 +144,14 @@ export async function handleEmbeddedSignup(data: {
         const existingChannel = await prisma.channel.findFirst({
             where: {
                 type: 'WHATSAPP',
-                agent: { workspaceId: workspace.id }
+                agent: { workspaceId: workspace.id } // Scoped to workspace, not just agent? Check logic.
             }
         });
 
         const configJson = {
-            accessToken: userAccessToken,
-            phoneNumberId,
-            wabaId,
+            accessToken: data.accessToken,
+            phoneNumberId: data.phoneNumberId,
+            wabaId: data.wabaId,
             verifyToken: Math.random().toString(36).substring(7)
         };
 
@@ -103,7 +161,8 @@ export async function handleEmbeddedSignup(data: {
                 data: {
                     agentId: data.agentId,
                     configJson: configJson as any,
-                    isActive: true
+                    isActive: true,
+                    displayName: 'WhatsApp Business' // Could update name here if we had it
                 }
             });
         } else {
@@ -120,10 +179,9 @@ export async function handleEmbeddedSignup(data: {
 
         revalidatePath('/channels');
         return { success: true };
-
     } catch (error: any) {
-        console.error('Embedded Signup Error:', error);
-        return { error: error.message || 'Error al procesar el registro de WhatsApp' };
+        console.error('Finish Setup Error:', error);
+        return { error: error.message || 'Error al guardar la configuración' };
     }
 }
 
