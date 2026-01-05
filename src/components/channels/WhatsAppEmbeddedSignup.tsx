@@ -134,6 +134,10 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             // Usar flujo de Token (implícito) para evitar problemas de redirect_uri
             const loginOptions: any = {
                 scope: 'whatsapp_business_management,whatsapp_business_messaging',
+                extras: {
+                    feature: 'whatsapp_embedded_signup',
+                    setup: {}
+                }
             };
 
             // Solo agregar config_id si está disponible
