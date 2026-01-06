@@ -96,6 +96,39 @@ export async function sendWidgetMessage(data: {
             })
         }
 
+        // 3.4. Ensure contact exists and is linked
+        if (!conversation.contactId) {
+            console.log(`[WIDGET] No contact linked for conversation ${conversation.id}. Creating new contact...`);
+            try {
+                // Create a new contact if one doesn't exist
+                const newContact = await prisma.contact.create({
+                    data: {
+                        workspaceId: workspace.id,
+                        name: conversation.contactName || 'Visitante',
+                        email: conversation.contactEmail,
+                        externalId: conversation.externalId,
+                        customData: {},
+                        // Add phone if extracted from somewhere, but currently not in conversation model apparently
+                    }
+                });
+                console.log(`[WIDGET] Created contact ${newContact.id}`);
+
+                // Link to conversation
+                const updatedConversation = await prisma.conversation.update({
+                    where: { id: conversation.id },
+                    data: { contactId: newContact.id },
+                    include: { contact: true } // Include contact for downstream use if needed
+                });
+
+                // Update local variable
+                conversation = updatedConversation;
+                console.log(`[WIDGET] Linked contact to conversation.`);
+            } catch (error) {
+                console.error(`[WIDGET] Error creating/linking contact:`, error);
+                // Continue execution
+            }
+        }
+
         // 3.5. Handle file uploads (images or PDFs)
         // Use fileUrl if provided (newer), otherwise fall back to imageUrl (backward compatibility)
         const fileUrl = data.fileUrl || data.imageUrl;
