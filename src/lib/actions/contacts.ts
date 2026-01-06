@@ -125,16 +125,23 @@ export async function updateContact(contactId: string, updates: Record<string, a
         console.log(`[updateContact] Received updates:`, updates);
 
         // 3. Filter updates to only include valid keys
+        // 3. Filter updates to only include valid keys (Custom Data) OR standard fields
         const filteredUpdates: Record<string, any> = {};
+        const standardUpdates: Record<string, any> = {};
+        const standardFields = ['name', 'email', 'phone'];
+
         for (const [key, value] of Object.entries(updates)) {
-            if (validKeys.has(key)) {
+            if (standardFields.includes(key)) {
+                standardUpdates[key] = value;
+            } else if (validKeys.has(key)) {
                 filteredUpdates[key] = value;
             } else {
                 console.warn(`[updateContact] Dropping invalid key: ${key}`);
             }
         }
 
-        console.log(`[updateContact] Final filtered updates:`, filteredUpdates);
+        console.log(`[updateContact] Final filtered custom updates:`, filteredUpdates);
+        console.log(`[updateContact] Standard updates:`, standardUpdates);
 
         // 4. Merge with existing data
         const currentData = (contact.customData as Record<string, any>) || {};
@@ -142,7 +149,10 @@ export async function updateContact(contactId: string, updates: Record<string, a
 
         const updatedContact = await prisma.contact.update({
             where: { id: contactId },
-            data: { customData: newData }
+            data: {
+                customData: newData,
+                ...standardUpdates
+            }
         });
 
         return { success: true, contact: updatedContact };
