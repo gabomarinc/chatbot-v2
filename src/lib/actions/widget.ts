@@ -498,6 +498,16 @@ INSTRUCCIONES DE EJECUCIÓN:
                             let toolResult;
                             if (name === "update_contact") {
                                 console.log('[GEMINI] Tool update_contact called with:', args);
+
+                                // HEURISTIC: Fix common LLM mistake of sending top-level keys instead of nested 'updates'
+                                if (!(args as any).updates && ((args as any).name || (args as any).email || (args as any).phone)) {
+                                    console.warn('[GEMINI] Detected top-level contact fields, moving to updates object');
+                                    (args as any).updates = {};
+                                    if ((args as any).name) (args as any).updates.name = (args as any).name;
+                                    if ((args as any).email) (args as any).updates.email = (args as any).email;
+                                    if ((args as any).phone) (args as any).updates.phone = (args as any).phone;
+                                }
+
                                 // Normalize keys (Name -> name, Email -> email) to be safe
                                 let updates = (args as any).updates || {};
                                 const normalizedUpdates: Record<string, any> = {};
@@ -509,13 +519,14 @@ INSTRUCCIONES DE EJECUCIÓN:
                                         normalizedUpdates[k] = v;
                                     }
                                 }
-                                (args as any).updates = normalizedUpdates;
+                                (args as any).updates = normalizedUpdates; // Assign specific object
+
                                 if (conversation.contactId) {
                                     try {
                                         const { updateContact } = await import('@/lib/actions/contacts');
                                         const result = await updateContact(
                                             conversation.contactId,
-                                            (args as any).updates,
+                                            normalizedUpdates, // Pass the normalized object directly
                                             workspace.id
                                         );
 
@@ -708,6 +719,16 @@ INSTRUCCIONES DE EJECUCIÓN:
                         let toolResult;
                         if (name === "update_contact") {
                             console.log('[WIDGET] Tool update_contact called with:', args);
+
+                            // HEURISTIC: Fix common LLM mistake of sending top-level keys instead of nested 'updates'
+                            if (!args.updates && (args.name || args.email || args.phone)) {
+                                console.warn('[WIDGET] Detected top-level contact fields, moving to updates object');
+                                args.updates = {};
+                                if (args.name) args.updates.name = args.name;
+                                if (args.email) args.updates.email = args.email;
+                                if (args.phone) args.updates.phone = args.phone;
+                            }
+
                             // Normalize keys (Name -> name, Email -> email) to be safe
                             let updates = args.updates || {};
                             const normalizedUpdates: Record<string, any> = {};
@@ -719,13 +740,14 @@ INSTRUCCIONES DE EJECUCIÓN:
                                     normalizedUpdates[k] = v;
                                 }
                             }
-                            args.updates = normalizedUpdates;
+                            args.updates = normalizedUpdates; // Assign specific object
+
                             if (conversation.contactId) {
                                 try {
                                     const { updateContact } = await import('@/lib/actions/contacts');
                                     const result = await updateContact(
                                         conversation.contactId,
-                                        args.updates,
+                                        normalizedUpdates, // Pass normalized object directly
                                         workspace.id
                                     );
 
