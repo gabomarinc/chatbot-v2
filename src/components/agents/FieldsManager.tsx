@@ -203,13 +203,28 @@ export function FieldsManager({ agentId, initialFields }: FieldsManagerProps) {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Descripción (para AI)</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Descripción del dato (¿Qué es?)</label>
                             <input
                                 type="text"
-                                placeholder="Explica a la IA qué es esto..."
+                                placeholder="Ej: Salario mensual neto en euros..."
+                                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96] mb-3"
+                                value={formData.description.split(' Contexto: ')[0] || formData.description}
+                                onChange={e => {
+                                    const currentWhen = formData.description.split(' Contexto: ')[1] || '';
+                                    setFormData({ ...formData, description: `${e.target.value}${currentWhen ? ` Contexto: ${currentWhen}` : ''}` })
+                                }}
+                            />
+
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Momento de recolección (¿Cuándo pedirlo?)</label>
+                            <input
+                                type="text"
+                                placeholder="Ej: Solo preguntar si el usuario muestra interés..."
                                 className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
-                                value={formData.description}
-                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                value={formData.description.split(' Contexto: ')[1] || ''}
+                                onChange={e => {
+                                    const currentWhat = formData.description.split(' Contexto: ')[0] || '';
+                                    setFormData({ ...formData, description: `${currentWhat} Contexto: ${e.target.value}` })
+                                }}
                             />
                         </div>
                     </div>
