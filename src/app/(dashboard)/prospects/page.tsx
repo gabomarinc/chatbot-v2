@@ -31,6 +31,9 @@ export default async function ProspectsBuilderPage() {
     // This allows filtering contacts by any field defined by any agent in the workspace.
     const allCustomFields = workspace.agents.flatMap(a => a.customFieldDefinitions);
 
+    // Debug logging
+    console.log(`[ProspectsPage] Found workspace ${workspace.id} with ${workspace.agents.length} agents. Total fields: ${allCustomFields.length}`);
+
     // Deduplicate fields by key to avoid duplicates in the filter dropdown
     const uniqueFieldsMap = new Map();
     allCustomFields.forEach(field => {
@@ -39,6 +42,7 @@ export default async function ProspectsBuilderPage() {
         }
     });
     const uniqueFields = Array.from(uniqueFieldsMap.values());
+    console.log(`[ProspectsPage] Unique fields passing to builder:`, uniqueFields.map(f => f.key));
 
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in p-6">
