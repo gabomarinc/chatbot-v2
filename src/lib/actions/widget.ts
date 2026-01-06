@@ -345,6 +345,9 @@ INSTRUCCIONES DE EJECUCIÓN:
                 systemPrompt += 'No seas intrusivo. Pregunta por estos datos de manera natural durante la conversación.\n';
             }
 
+            // Global instruction for standard fields
+            systemPrompt += '\nIMPORTANTE: Si el usuario te proporciona su Nombre, Email o Teléfono, DEBES usar la herramienta "update_contact" para guardarlos, independientemente de los campos personalizados. Usa las claves constantes "name", "email" y "phone".\n';
+
             // Define tools for Calendar and Image Search, and Contact Update
             const tools: any[] = [
                 {
@@ -355,7 +358,7 @@ INSTRUCCIONES DE EJECUCIÓN:
                         properties: {
                             updates: {
                                 type: 'object',
-                                description: 'Key-value pairs of data to update. Keys must match the defined custom fields.',
+                                description: 'Key-value pairs of data to update. Keys can be standard fields (name, email, phone) or match the defined custom fields.',
                                 additionalProperties: true
                             }
                         },
