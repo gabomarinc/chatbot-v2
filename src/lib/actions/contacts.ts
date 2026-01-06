@@ -131,8 +131,9 @@ export async function updateContact(contactId: string, updates: Record<string, a
         const standardFields = ['name', 'email', 'phone'];
 
         for (const [key, value] of Object.entries(updates)) {
-            if (standardFields.includes(key)) {
-                standardUpdates[key] = value;
+            const lowerKey = key.toLowerCase();
+            if (standardFields.includes(lowerKey)) {
+                standardUpdates[lowerKey] = value;
             } else if (validKeys.has(key)) {
                 filteredUpdates[key] = value;
             } else {
