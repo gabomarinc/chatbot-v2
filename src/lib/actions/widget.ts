@@ -493,7 +493,38 @@ INSTRUCCIONES DE EJECUCIÓN:
                         while (call) {
                             const { name, args } = call;
                             let toolResult;
-                            if (name === "revisar_disponibilidad") {
+                            if (name === "update_contact") {
+                                console.log('[GEMINI] Tool update_contact called with:', args);
+                                if (conversation.contactId) {
+                                    try {
+                                        const { updateContact } = await import('@/lib/actions/contacts');
+                                        const result = await updateContact(
+                                            conversation.contactId,
+                                            (args as any).updates,
+                                            workspace.id
+                                        );
+
+                                        // Sync name to conversation if updated
+                                        if ((args as any).updates?.name) {
+                                            await prisma.conversation.update({
+                                                where: { id: conversation.id },
+                                                data: { contactName: (args as any).updates.name }
+                                            });
+                                            // Update local object
+                                            conversation.contactName = (args as any).updates.name;
+                                        }
+
+                                        toolResult = result.success
+                                            ? { success: true, message: "Contact updated successfully" }
+                                            : { success: false, error: result.error };
+                                    } catch (e) {
+                                        console.error('[GEMINI] updateContact error:', e);
+                                        toolResult = { success: false, error: "Failed to update contact" };
+                                    }
+                                } else {
+                                    toolResult = { success: false, error: "No contact ID linked" };
+                                }
+                            } else if (name === "revisar_disponibilidad") {
                                 toolResult = await listAvailableSlots(calendarIntegration.configJson, (args as any).fecha);
                             } else if (name === "agendar_cita") {
                                 toolResult = await createCalendarEvent(calendarIntegration.configJson, args as any);
@@ -670,6 +701,17 @@ INSTRUCCIONES DE EJECUCIÓN:
                                         args.updates,
                                         workspace.id
                                     );
+
+                                    // Sync name to conversation if updated
+                                    if (args.updates?.name) {
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: { contactName: args.updates.name }
+                                        });
+                                        // Update local object
+                                        conversation.contactName = args.updates.name;
+                                    }
+
                                     toolResult = result.success
                                         ? { success: true, message: "Contact updated successfully" }
                                         : { success: false, error: result.error };
