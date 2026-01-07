@@ -97,7 +97,7 @@ async function logDebug(message: string, data?: any) {
     const path = await import('path');
     const timestamp = new Date().toISOString();
     const logLine = `[${timestamp}] ${message} ${data ? JSON.stringify(data) : ''}\n`;
-    const logPath = path.join(process.cwd(), 'debug-errors.log');
+    const logPath = '/tmp/chatbot-debug.log'; // Use tmp to avoid permission/cwd issues
     try {
         await fs.promises.appendFile(logPath, logLine);
     } catch (e) {

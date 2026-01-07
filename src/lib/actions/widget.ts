@@ -796,10 +796,27 @@ INSTRUCCIONES DE EJECUCIÓN:
                                         workspace.id
                                     );
 
-                                    await logDebugWidget('updateContact result', result);
+                                    // Store debug info in metadata
+                                    const debugInfo: any = {
+                                        timestamp: new Date().toISOString(),
+                                        updates: args.updates,
+                                        result: result
+                                    };
 
-                                    // Sync name to conversation if updated
-                                    if (updates.name) {
+                                    // Update metadata with debug info
+                                    const currentMeta = (conversation.metadata as Record<string, any>) || {};
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: {
+                                            metadata: {
+                                                ...currentMeta,
+                                                lastContactUpdate: debugInfo
+                                            }
+                                        }
+                                    });
+
+                                    // ONLY Sync name to conversation if contact update SUCCEEDED
+                                    if (result.success && updates.name) {
                                         await prisma.conversation.update({
                                             where: { id: conversation.id },
                                             data: { contactName: updates.name }
@@ -811,9 +828,24 @@ INSTRUCCIONES DE EJECUCIÓN:
                                     toolResult = result.success
                                         ? { success: true, message: "Contact updated successfully" }
                                         : { success: false, error: result.error };
-                                } catch (e) {
-                                    await logDebugWidget('updateContact threw error', e);
+                                } catch (e: any) {
                                     console.error('[WIDGET] updateContact error:', e);
+
+                                    // Log exception to metadata
+                                    const currentMeta = (conversation.metadata as Record<string, any>) || {};
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: {
+                                            metadata: {
+                                                ...currentMeta,
+                                                lastContactUpdateError: {
+                                                    message: e.message,
+                                                    stack: e.stack
+                                                }
+                                            }
+                                        }
+                                    });
+
                                     toolResult = { success: false, error: "Failed to update contact" };
                                 }
                             } else {
