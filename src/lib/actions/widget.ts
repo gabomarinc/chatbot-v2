@@ -826,7 +826,7 @@ When calling 'update_contact':
                                         const debugInfo: any = {
                                             timestamp: new Date().toISOString(),
                                             updates: args.updates,
-                                            result: result ? { success: result.success, message: result.message || 'Updated' } : 'No result'
+                                            result: result ? { success: result.success, message: result.success ? 'Contact updated' : (result.error || 'Unknown error') } : 'No result'
                                         };
 
                                         // Update metadata with debug info
