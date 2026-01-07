@@ -184,9 +184,11 @@ export async function addKnowledgeSource(agentId: string, data: {
                     const base64Data = data.fileContent.split(',')[1];
                     const buffer = Buffer.from(base64Data, 'base64');
                     // Lazy load pdf-parse to avoid top-level DOMMatrix errors
-                    const pdf = require('pdf-parse');
-                    const pdfData = await pdf(buffer);
+                    const { PDFParse } = await import('pdf-parse');
+                    const parser = new PDFParse({ data: buffer });
+                    const pdfData = await parser.getText();
                     text = pdfData.text;
+                    await parser.destroy();
                 } else {
                     // Assume text
                     text = data.fileContent; // Might contain data:text/plain;base64, if readAsDataURL was used for txt? 
