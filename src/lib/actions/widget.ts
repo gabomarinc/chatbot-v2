@@ -216,11 +216,20 @@ export async function sendWidgetMessage(data: {
         // 5. Generate AI Response
         try {
             // Fetch recent history for context
-            const history = await prisma.message.findMany({
-                where: { conversationId: conversation.id },
-                orderBy: { createdAt: 'desc' },
-                take: 10 // Last 10 messages
+            // Re-fetch conversation with contact and messages for full context
+            conversation = await prisma.conversation.findUniqueOrThrow({
+                where: { id: conversation.id },
+                include: {
+                    contact: true,
+                    messages: {
+                        orderBy: { createdAt: 'asc' },
+                        take: 20 // Context window
+                    }
+                }
             });
+
+            // Define history from the conversation messages we just fetched
+            const history = (conversation as any).messages || [];
 
             let replyContent = '...';
             let tokensUsed = 0;
@@ -804,7 +813,7 @@ INSTRUCCIONES DE EJECUCIÓN:
                                     };
 
                                     // Update metadata with debug info
-                                    const currentMeta = (conversation.metadata as Record<string, any>) || {};
+                                    const currentMeta = (conversation.metadata as any) || {};
                                     await prisma.conversation.update({
                                         where: { id: conversation.id },
                                         data: {
@@ -812,7 +821,7 @@ INSTRUCCIONES DE EJECUCIÓN:
                                                 ...currentMeta,
                                                 lastContactUpdate: debugInfo
                                             }
-                                        }
+                                        } as any
                                     });
 
                                     // ONLY Sync name to conversation if contact update SUCCEEDED
@@ -832,7 +841,7 @@ INSTRUCCIONES DE EJECUCIÓN:
                                     console.error('[WIDGET] updateContact error:', e);
 
                                     // Log exception to metadata
-                                    const currentMeta = (conversation.metadata as Record<string, any>) || {};
+                                    const currentMeta = (conversation.metadata as any) || {};
                                     await prisma.conversation.update({
                                         where: { id: conversation.id },
                                         data: {
@@ -843,7 +852,7 @@ INSTRUCCIONES DE EJECUCIÓN:
                                                     stack: e.stack
                                                 }
                                             }
-                                        }
+                                        } as any // Force cast for debug
                                     });
 
                                     toolResult = { success: false, error: "Failed to update contact" };
@@ -919,19 +928,10 @@ INSTRUCCIONES DE EJECUCIÓN:
                 }
             });
 
-            // 6.5. Extract contact info from user message (name and email)
-            const extractedName = data.content.match(/(?:me llamo|mi nombre es|soy)\s+([A-ZáéíóúÁÉÍÓÚ][a-záéíóúÁÉÍÓÚ]+(?:\s+[A-ZáéíóúÁÉÍÓÚ][a-záéíóúÁÉÍÓÚ]+)*)/i);
-            const extractedEmail = data.content.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-
-            if (extractedName || extractedEmail) {
-                await prisma.conversation.update({
-                    where: { id: conversation.id },
-                    data: {
-                        ...(extractedName && { contactName: extractedName[1] }),
-                        ...(extractedEmail && { contactEmail: extractedEmail[0] })
-                    }
-                });
-            }
+            // 6.5. [REMOVED] Legacy regex extraction.
+            // We rely on the 'update_contact' tool for this now.
+            // const extractedName = ...
+            // const extractedEmail = ...
 
             // 7. Deduct Credits
             await prisma.$transaction([
