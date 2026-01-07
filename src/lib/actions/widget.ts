@@ -756,6 +756,18 @@ INSTRUCCIONES DE EJECUCIÓN:
                                 return newObj;
                             };
 
+                            // Debug Logger Helper
+                            const logDebugWidget = async (message: string, data?: any) => {
+                                const fs = await import('fs');
+                                const path = await import('path');
+                                const timestamp = new Date().toISOString();
+                                const logLine = `[${timestamp}][WIDGET] ${message} ${data ? JSON.stringify(data) : ''}\n`;
+                                const logPath = path.join(process.cwd(), 'debug-errors.log');
+                                try {
+                                    await fs.promises.appendFile(logPath, logLine);
+                                } catch (e) { }
+                            };
+
                             let normalizedArgs = normalizeKeys(args);
                             let updates = normalizeKeys(normalizedArgs.updates || {});
 
@@ -769,6 +781,12 @@ INSTRUCCIONES DE EJECUCIÓN:
                             // Assign back for consistency
                             args.updates = updates;
 
+                            await logDebugWidget('Tool call processed', {
+                                contactId: conversation.contactId,
+                                updates,
+                                normalizedArgs
+                            });
+
                             if (conversation.contactId) {
                                 try {
                                     const { updateContact } = await import('@/lib/actions/contacts');
@@ -777,6 +795,8 @@ INSTRUCCIONES DE EJECUCIÓN:
                                         updates, // Pass normalized object
                                         workspace.id
                                     );
+
+                                    await logDebugWidget('updateContact result', result);
 
                                     // Sync name to conversation if updated
                                     if (updates.name) {
@@ -792,10 +812,12 @@ INSTRUCCIONES DE EJECUCIÓN:
                                         ? { success: true, message: "Contact updated successfully" }
                                         : { success: false, error: result.error };
                                 } catch (e) {
+                                    await logDebugWidget('updateContact threw error', e);
                                     console.error('[WIDGET] updateContact error:', e);
                                     toolResult = { success: false, error: "Failed to update contact" };
                                 }
                             } else {
+                                await logDebugWidget('No contactId linked', {});
                                 toolResult = { success: false, error: "No contact ID linked" };
                             }
                         } else if (name === "revisar_disponibilidad") {
