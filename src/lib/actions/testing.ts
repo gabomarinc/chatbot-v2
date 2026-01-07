@@ -147,8 +147,16 @@ INSTRUCCIONES DE EJECUCIÓN:
             }))
         }] : undefined;
 
+        // Apply same model mapping as widget.ts
+        let geminiModelName = agent.model;
+        if (agent.model === 'gemini-1.5-flash') {
+            geminiModelName = 'gemini-1.5-flash-001';
+        } else if (agent.model === 'gemini-1.5-pro') {
+            geminiModelName = 'gemini-1.5-pro-001';
+        }
+
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: geminiModelName,
             systemInstruction: systemPrompt,
             generationConfig: { temperature: agent.temperature },
             tools: geminiTools as any
@@ -203,7 +211,7 @@ INSTRUCCIONES DE EJECUCIÓN:
 
         let completion = await openai.chat.completions.create({
             messages: openAiMessages,
-            model: 'gpt-4o-mini',
+            model: agent.model, // Use configured model instead of hardcoded
             temperature: agent.temperature,
             tools: openAiTools as any,
         })
@@ -230,7 +238,7 @@ INSTRUCCIONES DE EJECUCIÓN:
             }
             completion = await openai.chat.completions.create({
                 messages: openAiMessages,
-                model: 'gpt-4o-mini',
+                model: agent.model, // Use configured model
                 temperature: agent.temperature,
                 tools: openAiTools as any,
             });
