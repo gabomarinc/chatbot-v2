@@ -797,6 +797,12 @@ When calling 'update_contact':
                                 if (normalizedArgs.phone) updates.phone = normalizedArgs.phone;
                             }
 
+                            // HEURISTIC: Sync custom "nombre_completo" to standard "name" if standard is missing
+                            // This fixes the issue where user defines "nombre_completo" and AI uses it, but UI needs "name"
+                            if (!updates.name && updates.nombre_completo) {
+                                updates.name = updates.nombre_completo;
+                            }
+
                             // Assign back for consistency
                             args.updates = updates;
 
@@ -815,24 +821,28 @@ When calling 'update_contact':
                                         workspace.id
                                     );
 
-                                    // Store debug info in metadata
-                                    const debugInfo: any = {
-                                        timestamp: new Date().toISOString(),
-                                        updates: args.updates,
-                                        result: result
-                                    };
+                                    // Store debug info in metadata (SAFELY)
+                                    try {
+                                        const debugInfo: any = {
+                                            timestamp: new Date().toISOString(),
+                                            updates: args.updates,
+                                            result: result ? { success: result.success, message: result.message || 'Updated' } : 'No result'
+                                        };
 
-                                    // Update metadata with debug info
-                                    const currentMeta = (conversation.metadata as any) || {};
-                                    await prisma.conversation.update({
-                                        where: { id: conversation.id },
-                                        data: {
-                                            metadata: {
-                                                ...currentMeta,
-                                                lastContactUpdate: debugInfo
-                                            }
-                                        } as any
-                                    });
+                                        // Update metadata with debug info
+                                        const currentMeta = (conversation.metadata as any) || {};
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: {
+                                                metadata: {
+                                                    ...currentMeta,
+                                                    lastContactUpdate: debugInfo
+                                                }
+                                            } as any
+                                        });
+                                    } catch (logErr) {
+                                        console.error('[WIDGET] Failed to log metadata:', logErr);
+                                    }
 
                                     // ONLY Sync name to conversation if contact update SUCCEEDED
                                     if (result.success && updates.name) {
