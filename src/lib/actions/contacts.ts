@@ -91,7 +91,22 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
     }
 }
 
+// Debug Logger Helper
+async function logDebug(message: string, data?: any) {
+    const fs = await import('fs');
+    const path = await import('path');
+    const timestamp = new Date().toISOString();
+    const logLine = `[${timestamp}] ${message} ${data ? JSON.stringify(data) : ''}\n`;
+    const logPath = path.join(process.cwd(), 'debug-errors.log');
+    try {
+        await fs.promises.appendFile(logPath, logLine);
+    } catch (e) {
+        // console.error("Failed to write to debug log", e);
+    }
+}
+
 export async function updateContact(contactId: string, updates: Record<string, any>, workspaceId: string) {
+    await logDebug('updateContact called', { contactId, updates, workspaceId });
     try {
         // 1. Fetch contact to verify existence and get current data
         const contact = await prisma.contact.findUnique({
@@ -99,12 +114,10 @@ export async function updateContact(contactId: string, updates: Record<string, a
         });
 
         if (!contact) {
+            await logDebug('Contact not found', { contactId });
             throw new Error('Contact not found');
         }
 
-        // 2. Fetch custom fields definitions to validate
-        // We need to find the agent(s) associated with this contact's workspace to know valid fields.
-        // OR, we can just fetch all custom fields for the workspace.
         // 2. Fetch custom fields definitions to validate
         const agents = await prisma.agent.findMany({
             where: { workspaceId },
@@ -114,35 +127,39 @@ export async function updateContact(contactId: string, updates: Record<string, a
         });
 
         if (agents.length === 0) {
-            // If no agents, assume no custom fields.
+            await logDebug('No agents found for workspace', { workspaceId });
         }
 
         // Flatten all available fields in the workspace
         const allFields = agents.flatMap(a => a.customFieldDefinitions);
-        const validKeys = new Set(allFields.map(f => f.key));
+        const validKeys = new Set(allFields.map(f => f.key)); // Assuming keys in DB are case-sensitive but usually lowercase
 
-        console.log(`[updateContact] Valid keys for workspace ${workspaceId}:`, Array.from(validKeys));
-        console.log(`[updateContact] Received updates:`, updates);
+        // Debug: Log valid keys
+        await logDebug('Valid keys found', Array.from(validKeys));
 
-        // 3. Filter updates to only include valid keys
-        // 3. Filter updates to only include valid keys (Custom Data) OR standard fields
+        // 3. Filter updates
         const filteredUpdates: Record<string, any> = {};
         const standardUpdates: Record<string, any> = {};
         const standardFields = ['name', 'email', 'phone'];
 
         for (const [key, value] of Object.entries(updates)) {
             const lowerKey = key.toLowerCase();
+            // Handle Standard Fields
             if (standardFields.includes(lowerKey)) {
                 standardUpdates[lowerKey] = value;
-            } else if (validKeys.has(key)) {
-                filteredUpdates[key] = value;
+            }
+            // Handle Custom Fields (Robust Check)
+            // convert validKeys to lowercase for comparison if needed, or rely on widget normalization
+            else if (validKeys.has(key) || validKeys.has(lowerKey)) {
+                // Prefer the exact key from validKeys if match found
+                const exactKey = validKeys.has(key) ? key : lowerKey;
+                filteredUpdates[exactKey] = value;
             } else {
-                console.warn(`[updateContact] Dropping invalid key: ${key}`);
+                await logDebug('Dropping invalid key', { key, value, validKeys: Array.from(validKeys) });
             }
         }
 
-        console.log(`[updateContact] Final filtered custom updates:`, filteredUpdates);
-        console.log(`[updateContact] Standard updates:`, standardUpdates);
+        await logDebug('Prepared updates', { standardUpdates, filteredUpdates });
 
         // 4. Merge with existing data
         const currentData = (contact.customData as Record<string, any>) || {};
@@ -156,8 +173,11 @@ export async function updateContact(contactId: string, updates: Record<string, a
             }
         });
 
+        await logDebug('Contact updated successfully', { id: updatedContact.id, name: updatedContact.name, customData: updatedContact.customData });
+
         return { success: true, contact: updatedContact };
     } catch (error) {
+        await logDebug('Error updating contact', error);
         console.error('Error updating contact:', error);
         return { success: false, error: 'Failed to update contact' };
     }
