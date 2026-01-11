@@ -83,7 +83,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
         switch (step) {
             case 1: return <StepIdentity name={data.name} onChange={n => setData({ ...data, name: n })} />;
             case 2: return <StepIntent intent={data.intent} onChange={i => setData({ ...data, intent: i })} />;
-            case 3: return <StepKnowledge intent={data.intent} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
+            case 3: return <StepKnowledge intent={data.intent} name={data.name} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
             case 4: return <StepChannels channels={data.channels} onChange={c => setData({ ...data, channels: c })} />;
             case 5: return <StepSuccess onClose={onClose} />;
             default: return null;

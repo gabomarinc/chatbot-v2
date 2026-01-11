@@ -174,19 +174,23 @@ Genera el JSON de análisis. Las preguntas deben ayudar a decidir si el bot debe
 export async function generateAgentPersonalities(
     webSummary: string,
     answers: { question: string, answer: string }[],
-    intent: string
+    intent: string,
+    agentName: string
 ): Promise<WizardPersonalityOption[]> {
 
     const systemPrompt = `Eres un arquitecto de Prompts para IA. 
-Tu tarea es diseñar 2 personalidades distintas para un Chatbot basado en las respuestas del usuario.
+Tu tarea es diseñar 2 personalidades distintas para un Chatbot llamado "${agentName}" basado en las respuestas del usuario.
 
-Salida estrictamente en JSON (Array de 2 opciones):
+Salida estrictamente en JSON (Array de 2 opciones).
+Para "systemPrompt": USA EL PLADEHOLDER "{AGENT_NAME}" para referirte al nombre del agente. NO digas "Eres un Chatbot", di "Eres {AGENT_NAME}...".
+
+JSON Schema:
 [
   {
     "id": "A",
     "name": "Nombre de la Personalidad (Ej: Consultor Experto)",
-    "description": "Breve descripción de cómo se comportará...",
-    "systemPrompt": "El Prompt de Sistema COMPLETO y detallado...",
+    "description": "Descripción DETALLADA de 2-3 lineas sobre cómo se comportará, su tono, y cómo abordará al usuario.",
+    "systemPrompt": "El Prompt de Sistema COMPLETO...",
     "temperature": 0.3,
     "communicationStyle": "FORMAL" 
   },
@@ -194,8 +198,7 @@ Salida estrictamente en JSON (Array de 2 opciones):
     "id": "B", 
      ...
   }
-]
-Note: communicationStyle must be 'FORMAL', 'CASUAL', or 'NORMAL'.`;
+]`;
 
     const qaText = answers.map(a => `P: ${a.question}\nR: ${a.answer}`).join('\n');
     const userPrompt = `Contexto del Negocio: ${webSummary}
@@ -203,13 +206,15 @@ Intención: ${intent}
 Entrevista de Configuración:
 ${qaText}
 
-Genera 2 opciones contrastantes pero útiles (ej: Una más orientado a cierre/ventas vs otra más orientada a asesoría/educación, o Formal vs Cercano).`;
+Genera 2 opciones contrastantes pero útiles para "${agentName}".`;
 
     const rawJson = await callLLM(systemPrompt, userPrompt);
     const cleanJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
 
     try {
         const parsed = JSON.parse(cleanJson);
+        // Replace placeholder validation if needed, but Prompt usually handles it.
+        // Also ensure description is long enough?
         return parsed as WizardPersonalityOption[];
     } catch (e) {
         console.error('[Wizard] Personality Gen error:', e);
@@ -218,16 +223,16 @@ Genera 2 opciones contrastantes pero útiles (ej: Una más orientado a cierre/ve
             {
                 id: 'A',
                 name: "Estándar Profesional",
-                description: "Un asistente equilibrado y profesional.",
-                systemPrompt: "Eres un asistente virtual profesional...",
+                description: "Un asistente equilibrado y profesional que prioriza la claridad y la eficiencia en cada respuesta.",
+                systemPrompt: `Eres ${agentName}, un asistente virtual profesional...`,
                 temperature: 0.5,
                 communicationStyle: 'NORMAL'
             },
             {
                 id: 'B',
                 name: "Asesor Amigable",
-                description: "Un asistente con tono cercano y empático.",
-                systemPrompt: "Eres un asistente virtual amigable...",
+                description: "Un asistente con tono cercano, cálido y empático, diseñado para conectar emocionalmente con el usuario.",
+                systemPrompt: `Eres ${agentName}, un asistente virtual amigable...`,
                 temperature: 0.7,
                 communicationStyle: 'CASUAL'
             }
@@ -259,7 +264,7 @@ export async function createAgentFromWizard(data: {
         name: data.name,
         description: `Agente de ${data.intent}`,
         model: 'gpt-4o-mini',
-        systemPrompt: personality?.systemPrompt || 'Eres un asistente útil.',
+        systemPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`,
         temperature: personality?.temperature || 0.7,
         isActive: true
     });
@@ -268,18 +273,24 @@ export async function createAgentFromWizard(data: {
 
     try {
         // 2. Add Knowledge Source
+        // FIX: Map 'WEB' to 'WEBSITE' correctly
+        let sourceType: 'TEXT' | 'WEBSITE' | 'VIDEO' | 'DOCUMENT' = 'TEXT';
+        if (data.knowledge.type === 'WEB') sourceType = 'WEBSITE';
+        else if (data.knowledge.type === 'PDF') sourceType = 'DOCUMENT';
+        else sourceType = data.knowledge.type as any;
+
         let sourceData: any = {
-            type: data.knowledge.type === 'PDF' ? 'DOCUMENT' : data.knowledge.type,
+            type: sourceType,
             updateInterval: 'NEVER',
             crawlSubpages: false
         };
 
-        if (data.knowledge.type === 'WEB') {
+        if (sourceType === 'WEBSITE') {
             sourceData.url = data.knowledge.source as string;
             sourceData.crawlSubpages = true;
-        } else if (data.knowledge.type === 'TEXT') {
+        } else if (sourceType === 'TEXT') {
             sourceData.text = data.knowledge.source as string;
-        } else if (data.knowledge.type === 'PDF') {
+        } else if (sourceType === 'DOCUMENT') {
             sourceData.fileContent = data.knowledge.source as string; // Base64
             sourceData.fileName = data.knowledge.fileName || 'documento.pdf';
         }

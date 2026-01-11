@@ -8,13 +8,14 @@ import { toast } from 'sonner';
 
 interface StepKnowledgeProps {
     intent: string;
+    name: string;
     knowledgeData: any;
     onChange: (data: any) => void;
 }
 
 type AnalysisState = 'INPUT' | 'ANALYZING' | 'QUESTIONS' | 'GENERATING_OPTIONS' | 'SELECTION' | 'DONE';
 
-export function StepKnowledge({ intent, knowledgeData, onChange }: StepKnowledgeProps) {
+export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKnowledgeProps) {
     const [sourceType, setSourceType] = useState<'WEB' | 'PDF' | 'TEXT'>('WEB');
     const [inputVal, setInputVal] = useState('');
     const [file, setFile] = useState<File | null>(null);
@@ -50,7 +51,8 @@ export function StepKnowledge({ intent, knowledgeData, onChange }: StepKnowledge
         setAnalysisState('GENERATING_OPTIONS');
         try {
             const qaPairs = analysisResult.questions.map(q => ({ question: q.text, answer: answers[q.id] }));
-            const options = await generateAgentPersonalities(analysisResult.summary, qaPairs, intent);
+            // Pass agent name
+            const options = await generateAgentPersonalities(analysisResult.summary, qaPairs, intent, name);
             setPersonalityOptions(options);
             setAnalysisState('SELECTION');
         } catch (error) {
@@ -63,7 +65,7 @@ export function StepKnowledge({ intent, knowledgeData, onChange }: StepKnowledge
     const handleSelectPersonality = (option: WizardPersonalityOption) => {
         // Save everything to parent
         onChange({
-            type: 'WEB',
+            type: 'WEB', // This gets mapped to WEBSITE in createAgentFromWizard but keeping internal state consistent
             source: inputVal,
             personality: option,
             analysisSummary: analysisResult?.summary
@@ -116,14 +118,46 @@ export function StepKnowledge({ intent, knowledgeData, onChange }: StepKnowledge
 
     if (analysisState === 'ANALYZING') {
         return (
-            <div className="flex flex-col items-center justify-center py-20 space-y-6 animate-in fade-in">
-                <div className="relative">
-                    <div className="w-20 h-20 border-4 border-[#21AC96]/20 border-t-[#21AC96] rounded-full animate-spin"></div>
-                    <BrainCircuit className="w-8 h-8 text-[#21AC96] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <div className="flex flex-col items-center justify-center py-12 space-y-8 animate-in fade-in max-w-2xl mx-auto">
+                {/* Simulated Web Scanner UI */}
+                <div className="w-full bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100 relative">
+                    <div className="bg-gray-50 border-b border-gray-100 p-3 flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                        </div>
+                        <div className="flex-1 bg-white h-6 rounded-md border border-gray-200 flex items-center px-3 mx-4">
+                            <span className="text-[10px] text-gray-400 font-mono truncate">{inputVal}</span>
+                        </div>
+                    </div>
+                    <div className="h-64 bg-gray-50 relative overflow-hidden flex flex-col items-center justify-center p-8">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#21AC96]/5 to-transparent animate-scan z-10"></div>
+
+                        {/* Content Mockup */}
+                        <div className="space-y-4 w-full opacity-30 blur-[1px]">
+                            <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+                            <div className="h-32 bg-gray-200 rounded w-full"></div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="h-20 bg-gray-200 rounded"></div>
+                                <div className="h-20 bg-gray-200 rounded"></div>
+                                <div className="h-20 bg-gray-200 rounded"></div>
+                            </div>
+                        </div>
+
+                        {/* Loader Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] z-20">
+                            <div className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-3">
+                                <div className="w-5 h-5 border-2 border-[#21AC96] border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-sm font-semibold text-gray-700">Extrayendo información...</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
                 <div className="text-center">
-                    <h3 className="text-xl font-bold text-gray-900">Analizando tu sitio web...</h3>
-                    <p className="text-gray-500">Nuestra IA está leyendo tu contenido para entender tu negocio.</p>
+                    <h3 className="text-xl font-bold text-gray-900">Analizando el ADN de tu negocio</h3>
+                    <p className="text-gray-500 mt-2">Nuestra IA está leyendo tu sitio web para entender <br />cómo hablas con tus clientes.</p>
                 </div>
             </div>
         );
@@ -176,26 +210,36 @@ export function StepKnowledge({ intent, knowledgeData, onChange }: StepKnowledge
 
     if (analysisState === 'SELECTION') {
         return (
-            <div className="space-y-6 animate-in slide-in-from-right">
+            <div className="space-y-8 animate-in slide-in-from-right">
                 <div className="text-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">Elige la personalidad de tu IA 🎭</h2>
                     <p className="text-gray-500">He diseñado estas dos opciones basándome en tus respuestas.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
                     {personalityOptions.map((opt) => (
-                        <div key={opt.id} className="border-2 border-gray-100 rounded-2xl p-6 hover:border-[#21AC96]/50 transition-all flex flex-col gap-4 bg-white hover:shadow-lg">
+                        <div key={opt.id} className="border-2 border-gray-100 rounded-3xl p-8 hover:border-[#21AC96] hover:shadow-xl hover:shadow-[#21AC96]/5 transition-all flex flex-col gap-5 bg-white group cursor-pointer" onClick={() => handleSelectPersonality(opt)}>
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-bold text-gray-900">{opt.name}</h3>
-                                <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{opt.communicationStyle}</span>
+                                <div className="space-y-1">
+                                    <h3 className="text-2xl font-black text-gray-900 tracking-tight group-hover:text-[#21AC96] transition-colors">{opt.name}</h3>
+                                    <div className="flex gap-2">
+                                        <span className="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1 rounded-full uppercase tracking-wide">{opt.communicationStyle}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <p className="text-gray-600 text-sm flex-grow">{opt.description}</p>
 
-                            <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-500 italic">
-                                "Sistema: {opt.systemPrompt.slice(0, 100)}..."
+                            <p className="text-gray-600 text-base leading-relaxed flex-grow">
+                                {opt.description}
+                            </p>
+
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <p className="text-xs text-gray-400 font-bold mb-2 uppercase tracking-wider">Tone of Voice Preview</p>
+                                <p className="text-sm text-gray-600 italic leading-relaxed">
+                                    "{opt.systemPrompt.slice(0, 180)}..."
+                                </p>
                             </div>
 
-                            <Button onClick={() => handleSelectPersonality(opt)} className="w-full mt-2" variant="outline">
+                            <Button onClick={(e) => { e.stopPropagation(); handleSelectPersonality(opt); }} className="w-full mt-2 bg-gray-900 text-white group-hover:bg-[#21AC96] transition-colors py-6 text-base rounded-xl">
                                 Seleccionar esta opción
                             </Button>
                         </div>
