@@ -58,20 +58,15 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
     const handleFinish = async () => {
         setIsLoading(true);
         try {
-            // 1. Construct Agent DTO
-            const agentPayload = {
+            // 1. Construct Agent Wizard Payload
+            const wizardPayload = {
                 name: data.name,
-                model: 'gpt-4o-mini', // Default model
-                systemPrompt: data.knowledge?.personality?.systemPrompt || 'Eres un asistente útil.',
-                temperature: data.knowledge?.personality?.temperature || 0.7,
-                // We'll need to handle the knowledge source creation in the backend too
-                // or we accept we create the agent first then add source?
-                // Ideally createAgent handles it or we call multiple actions.
-                initialKnowledge: data.knowledge, // We'll need to support this in createAgent or a new action
+                intent: data.intent,
+                knowledge: data.knowledge,
                 channels: data.channels
             };
 
-            const response = await createAgent(agentPayload);
+            const response = await createAgentFromWizard(wizardPayload);
 
             setStep(5); // Success Step
             if (onAgentCreated) onAgentCreated();

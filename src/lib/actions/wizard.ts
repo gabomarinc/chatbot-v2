@@ -273,7 +273,7 @@ export async function createAgentFromWizard(data: {
                     type: ch.type as any,
                     displayName: ch.displayName,
                     isActive: true,
-                    config: {}
+                    configJson: {}
                 }
             })
         }
