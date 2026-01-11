@@ -8,7 +8,7 @@ interface StepIdentityProps {
 
 export function StepIdentity({ name, onChange }: StepIdentityProps) {
     return (
-    return (
+
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700 flex flex-col items-center justify-center min-h-[400px]">
             <div className="text-center space-y-4 max-w-lg mx-auto">
                 <span className="text-4xl animate-bounce inline-block mb-2">👋</span>
