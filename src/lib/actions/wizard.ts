@@ -255,23 +255,23 @@ export async function createAgentFromWizard(data: {
         instagram: boolean;
     }
 }) {
-    // 1. Create Base Agent
-    const personality = data.knowledge.personality;
-    const { createAgent } = await import('./dashboard');
-    const { addKnowledgeSource } = await import('./knowledge');
-
-    const agent = await createAgent({
-        name: data.name,
-        description: `Agente de ${data.intent}`,
-        model: 'gpt-4o-mini',
-        systemPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`,
-        temperature: personality?.temperature || 0.7,
-        isActive: true
-    });
-
-    if (!agent) throw new Error('Failed to create agent');
-
     try {
+        // 1. Create Base Agent
+        const personality = data.knowledge.personality;
+        const { createAgent } = await import('./dashboard');
+        const { addKnowledgeSource } = await import('./knowledge');
+
+        const agent = await createAgent({
+            name: data.name,
+            description: `Agente de ${data.intent}`,
+            model: 'gpt-4o-mini',
+            systemPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`,
+            temperature: personality?.temperature || 0.7,
+            isActive: true
+        });
+
+        if (!agent) throw new Error('Failed to create agent record');
+
         // 2. Add Knowledge Source
         // FIX: Map 'WEB' to 'WEBSITE' correctly
         let sourceType: 'TEXT' | 'WEBSITE' | 'VIDEO' | 'DOCUMENT' = 'TEXT';
@@ -286,12 +286,16 @@ export async function createAgentFromWizard(data: {
         };
 
         if (sourceType === 'WEBSITE') {
-            sourceData.url = data.knowledge.source as string;
+            // Ensure URL is string
+            const sourceUrl = typeof data.knowledge.source === 'string' ? data.knowledge.source : '';
+            if (!sourceUrl) console.warn("Website source URL is missing or invalid");
+
+            sourceData.url = sourceUrl;
             sourceData.crawlSubpages = true;
         } else if (sourceType === 'TEXT') {
             sourceData.text = data.knowledge.source as string;
         } else if (sourceType === 'DOCUMENT') {
-            sourceData.fileContent = data.knowledge.source as string; // Base64
+            sourceData.fileContent = data.knowledge.source as string;
             sourceData.fileName = data.knowledge.fileName || 'documento.pdf';
         }
 
@@ -299,8 +303,6 @@ export async function createAgentFromWizard(data: {
             await addKnowledgeSource(agent.id, sourceData);
         } catch (sourceError) {
             console.error('Warning: Failed to add knowledge source during creation, but continuing:', sourceError);
-            // We ignore this error to allow the agent to be created. 
-            // The source will likely be in 'FAILED' state in the DB if it was created, or missing if it failed before creation.
         }
 
         // 3. Create Channels
@@ -310,21 +312,26 @@ export async function createAgentFromWizard(data: {
         if (data.channels.instagram) channelsToCreate.push({ type: 'INSTAGRAM', displayName: 'Instagram' });
 
         for (const ch of channelsToCreate) {
-            await prisma.channel.create({
-                data: {
-                    agentId: agent.id,
-                    type: ch.type as any,
-                    displayName: ch.displayName,
-                    isActive: true,
-                    configJson: {}
-                }
-            })
+            try {
+                await prisma.channel.create({
+                    data: {
+                        agentId: agent.id,
+                        type: ch.type as any,
+                        displayName: ch.displayName,
+                        isActive: true,
+                        configJson: {}
+                    }
+                });
+            } catch (channelError) {
+                console.error(`Failed to create channel ${ch.type}`, channelError);
+                // Continue, don't fail entire agent
+            }
         }
 
-        return agent;
+        return { success: true, data: agent };
 
-    } catch (e) {
+    } catch (e: any) {
         console.error('Error in wizard creation flow:', e);
-        throw e;
+        return { success: false, error: e.message || 'Unknown error during creation' };
     }
 }

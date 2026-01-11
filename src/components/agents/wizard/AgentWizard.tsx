@@ -65,14 +65,19 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 knowledge: data.knowledge,
                 channels: data.channels
             };
+            const result = await createAgentFromWizard(wizardPayload);
 
-            const response = await createAgentFromWizard(wizardPayload);
+            if (result && (result as any).success === false) {
+                throw new Error((result as any).error || 'Error desconocido al crear el agente');
+            }
 
+            // Success
+            toast.success('¡Agente creado exitosamente!');
             setStep(5); // Success Step
             if (onAgentCreated) onAgentCreated();
-        } catch (error) {
-            console.error(error);
-            toast.error('Error al crear el agente.');
+        } catch (error: any) {
+            console.error('Wizard error:', error);
+            toast.error(`Error al crear el agente: ${error.message || 'Inténtalo de nuevo.'}`);
         } finally {
             setIsLoading(false);
         }
