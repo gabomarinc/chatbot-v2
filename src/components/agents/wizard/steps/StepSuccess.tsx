@@ -7,43 +7,41 @@ interface StepSuccessProps {
 
 export function StepSuccess({ onClose }: StepSuccessProps) {
     return (
-        <div className="space-y-8 animate-in zoom-in-50 duration-500 text-center py-8">
-            <div className="flex justify-center">
-                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
-                    <BadgeCheck className="w-12 h-12 text-green-600" />
+        <div className="space-y-10 animate-in zoom-in-50 duration-700 py-12 flex flex-col items-center justify-center relative">
+            {/* Background decoration */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-teal-200/20 to-lime-200/20 rounded-full blur-3xl -z-10 animate-pulse" />
+
+            <div className="relative">
+                <div className="w-32 h-32 bg-gradient-to-br from-[#21AC96] to-[#4ADE80] rounded-3xl rotate-3 flex items-center justify-center shadow-2xl shadow-[#21AC96]/40 animate-bounce">
+                    <BadgeCheck className="w-16 h-16 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center animate-spin-slow">
+                    <Sparkles className="w-6 h-6 text-white" />
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <h2 className="text-3xl font-bold text-gray-900">¡Tu Agente está listo! 🚀</h2>
-                <p className="text-gray-500 max-w-md mx-auto">
-                    Hemos configurado tu asistente con la personalidad y conocimientos seleccionados. Ya puedes empezar a probarlo.
+            <div className="space-y-4 text-center max-w-lg">
+                <h2 className="text-4xl font-black text-gray-900 tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                    ¡Tu Agente está vivo! 🚀
+                </h2>
+                <p className="text-xl text-gray-500 leading-relaxed">
+                    Hemos configurado todo con éxito. Tu asistente virtual está listo para aprender y ayudar.
                 </p>
             </div>
 
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 p-6 rounded-2xl max-w-lg mx-auto relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Sparkles className="w-24 h-24 text-indigo-600" />
-                </div>
-
-                <div className="relative z-10 text-left space-y-4">
-                    <div className="flex items-center gap-2">
-                        <span className="bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wide">Pro</span>
-                        <h3 className="font-bold text-indigo-900 text-lg">¿Buscas resultados perfectos?</h3>
-                    </div>
-                    <p className="text-indigo-800 text-sm leading-relaxed">
-                        El entrenamiento automático es genial, pero un experto puede llevar tu IA al siguiente nivel afinando cada respuesta.
-                    </p>
-                    <Button variant="outline" className="w-full bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-800">
-                        Agenda una sesión con un experto
-                    </Button>
-                </div>
-            </div>
-
-            <div className="pt-4">
-                <Button onClick={onClose} size="lg" className="px-12 bg-[#21AC96] hover:bg-[#21AC96]/90 text-white rounded-full text-lg shadow-lg hover:shadow-xl transition-all">
+            <div className="grid grid-cols-1 gap-4 w-full max-w-md">
+                <Button
+                    onClick={onClose}
+                    size="lg"
+                    className="w-full bg-[#21AC96] hover:bg-[#21AC96]/90 text-white rounded-2xl h-14 text-lg font-bold shadow-xl shadow-[#21AC96]/20 hover:shadow-2xl hover:scale-[1.02] transition-all"
+                >
                     Ir al Panel de Control
                 </Button>
+
+                <div className="flex items-center justify-center gap-2 mt-4 text-sm text-gray-400">
+                    <Sparkles className="w-4 h-4 text-yellow-500" />
+                    <span>Puedes seguir entrenándolo en cualquier momento</span>
+                </div>
             </div>
         </div>
     );
