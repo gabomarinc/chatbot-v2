@@ -295,7 +295,13 @@ export async function createAgentFromWizard(data: {
             sourceData.fileName = data.knowledge.fileName || 'documento.pdf';
         }
 
-        await addKnowledgeSource(agent.id, sourceData);
+        try {
+            await addKnowledgeSource(agent.id, sourceData);
+        } catch (sourceError) {
+            console.error('Warning: Failed to add knowledge source during creation, but continuing:', sourceError);
+            // We ignore this error to allow the agent to be created. 
+            // The source will likely be in 'FAILED' state in the DB if it was created, or missing if it failed before creation.
+        }
 
         // 3. Create Channels
         const channelsToCreate = [];
