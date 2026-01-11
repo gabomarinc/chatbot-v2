@@ -25,11 +25,18 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
     const [analysisResult, setAnalysisResult] = useState<WizardAnalysisResult | null>(null);
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [personalityOptions, setPersonalityOptions] = useState<WizardPersonalityOption[]>([]);
+    const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
 
     const handleWebAnalysis = async () => {
         if (!inputVal) return toast.error('Ingresa una URL válida');
 
         setAnalysisState('ANALYZING');
+        setScreenshotUrl(null); // Reset
+
+        // Trigger screenshot fetch (don't await, let it load in parallel)
+        const encodedUrl = encodeURIComponent(inputVal.startsWith('http') ? inputVal : `https://${inputVal}`);
+        setScreenshotUrl(`https://api.microlink.io/?url=${encodedUrl}&screenshot=true&meta=false&embed=screenshot.url`);
+
         try {
             const result = await analyzeUrlAndGenerateQuestions(inputVal, intent);
             setAnalysisResult(result);
@@ -131,25 +138,35 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                             <span className="text-[10px] text-gray-400 font-mono truncate">{inputVal}</span>
                         </div>
                     </div>
-                    <div className="h-64 bg-gray-50 relative overflow-hidden flex flex-col items-center justify-center p-8">
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#21AC96]/5 to-transparent animate-scan z-10"></div>
+                    <div className="h-64 bg-gray-50 relative overflow-hidden flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#21AC96]/10 to-transparent animate-scan z-20 pointer-events-none"></div>
 
-                        {/* Content Mockup */}
-                        <div className="space-y-4 w-full opacity-30 blur-[1px]">
-                            <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
-                            <div className="h-32 bg-gray-200 rounded w-full"></div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="h-20 bg-gray-200 rounded"></div>
-                                <div className="h-20 bg-gray-200 rounded"></div>
-                                <div className="h-20 bg-gray-200 rounded"></div>
+                        {/* Screenshot or Skeleton */}
+                        {screenshotUrl ? (
+                            <img
+                                src={screenshotUrl}
+                                alt="Website Preview"
+                                className="w-full h-full object-cover object-top opacity-0 animate-in fade-in duration-1000 fill-mode-forwards"
+                                onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
+                            />
+                        ) : (
+                            /* Content Mockup (Fallback) */
+                            <div className="space-y-4 w-full opacity-30 blur-[1px] p-8">
+                                <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+                                <div className="h-32 bg-gray-200 rounded w-full"></div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="h-20 bg-gray-200 rounded"></div>
+                                    <div className="h-20 bg-gray-200 rounded"></div>
+                                    <div className="h-20 bg-gray-200 rounded"></div>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Loader Overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] z-20">
-                            <div className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-3">
-                                <div className="w-5 h-5 border-2 border-[#21AC96] border-t-transparent rounded-full animate-spin"></div>
-                                <span className="text-sm font-semibold text-gray-700">Extrayendo información...</span>
+                        <div className="absolute inset-x-0 bottom-6 flex justify-center z-30">
+                            <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-gray-100 flex items-center gap-3">
+                                <div className="w-4 h-4 border-2 border-[#21AC96] border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Analizando sitio web...</span>
                             </div>
                         </div>
                     </div>
@@ -157,7 +174,7 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
 
                 <div className="text-center">
                     <h3 className="text-xl font-bold text-gray-900">Analizando el ADN de tu negocio</h3>
-                    <p className="text-gray-500 mt-2">Nuestra IA está leyendo tu sitio web para entender <br />cómo hablas con tus clientes.</p>
+                    <p className="text-gray-500 mt-2">Estamos leyendo tu sitio web para capturar tu esencia.</p>
                 </div>
             </div>
         );
