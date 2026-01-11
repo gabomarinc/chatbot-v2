@@ -76,43 +76,73 @@ export async function addKnowledgeSource(agentId: string, data: {
                 data: { status: 'READY' }
             })
         }
-        // Handle WEBSITE type (Cheerio Scraping)
+        // Handle WEBSITE type (Robust Scraping)
         else if (data.type === 'WEBSITE' && data.url) {
+            let text = '';
+            const targetUrl = data.url.startsWith('http') ? data.url : `https://${data.url}`;
+
+            console.log(`[SCRAPING] Starting robust scrape for: ${targetUrl}`);
+
+            // STRATEGY 1: Jina Reader (Best for RAG, handles JS/Anti-bot)
             try {
-                console.log(`[SCRAPING] Fetching URL: ${data.url}`);
-                const response = await fetch(data.url, {
+                console.log('[SCRAPING] Strategy 1: Jina Reader');
+                const jinaResponse = await fetch(`https://r.jina.ai/${targetUrl}`, {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (compatible; KonsulBot/1.0)'
+                        'User-Agent': 'KonsulBot/1.0',
+                        'Accept': 'text/plain'
                     },
-                    signal: AbortSignal.timeout(15000)
+                    signal: AbortSignal.timeout(25000) // 25s timeout
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                if (jinaResponse.ok) {
+                    text = await jinaResponse.text();
+                    // Jina usually returns "Title\nURL\n...content...". 
+                    // Verify we got actual content
+                    if (text.length > 200 && !text.includes("Access Denied")) {
+                        console.log(`[SCRAPING] Jina success! Extracted ${text.length} chars`);
+                    } else {
+                        throw new Error("Jina returned empty or blocked content");
+                    }
+                } else {
+                    throw new Error(`Jina failed with ${jinaResponse.status}`);
                 }
+            } catch (jinaError) {
+                console.warn('[SCRAPING] Strategy 1 failed, trying Strategy 2 (Direct Fetch):', jinaError);
 
-                const html = await response.text();
-                const $ = load(html);
+                // STRATEGY 2: Direct Fetch + Cheerio (Fallback)
+                try {
+                    const response = await fetch(targetUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        },
+                        signal: AbortSignal.timeout(20000) // 20s
+                    });
 
-                // Clean up unnecessary elements
-                $('script').remove();
-                $('style').remove();
-                $('noscript').remove();
-                $('iframe').remove();
-                $('nav').remove();
-                $('footer').remove();
-                $('header').remove();
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-                // Extract text from body
-                const text = $('body').text().replace(/\s+/g, ' ').trim();
+                    const html = await response.text();
+                    const $ = load(html);
 
-                if (text.length === 0) {
-                    throw new Error("No text content found on page");
+                    // Cleanup
+                    $('script, style, noscript, iframe, nav, footer, header, svg').remove();
+
+                    text = $('body').text().replace(/\s+/g, ' ').trim();
+                    if (text.length === 0) throw new Error("Empty body after cleanup");
+
+                    console.log(`[SCRAPING] Direct success! Extracted ${text.length} chars`);
+                } catch (cheerioError: any) {
+                    console.error('[SCRAPING] All strategies failed for', targetUrl);
+                    throw new Error(`Could not scrape website: ${cheerioError.message}`);
                 }
+            }
 
-                console.log(`[SCRAPING] Extracted ${text.length} characters`);
-
-                // Create chunks (simple splitting)
+            // Common processing for whatever text we got
+            if (text.length > 0) {
+                // Create chunks
                 const chunks = text.match(/.{1,1000}/g) || [text];
 
                 for (const chunk of chunks) {
@@ -130,19 +160,6 @@ export async function addKnowledgeSource(agentId: string, data: {
                     where: { id: source.id },
                     data: { status: 'READY' }
                 })
-
-                console.log(`[SCRAPING] Success: ${chunks.length} chunks created`);
-
-            } catch (error: any) {
-                const errorMessage = error.message || 'Unknown error';
-                console.error(`[SCRAPING ERROR] ${data.url}:`, errorMessage);
-
-                await prisma.knowledgeSource.update({
-                    where: { id: source.id },
-                    data: { status: 'FAILED' }
-                })
-
-                throw new Error(`Failed to scrape ${data.url}: ${errorMessage}`);
             }
         }
         // Handle VIDEO type (Stub)
