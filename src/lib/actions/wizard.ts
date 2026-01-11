@@ -84,22 +84,34 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
 
 export async function analyzeUrlAndGenerateQuestions(url: string, intent: string): Promise<WizardAnalysisResult> {
     // 1. Scrape URL
-    console.log(`[Wizard] Scraping ${url}...`);
+    // Ensure protocol exists
+    let targetUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        targetUrl = `https://${url}`;
+    }
+
+    console.log(`[Wizard] Scraping ${targetUrl}...`);
     let textContent = "";
     try {
-        const response = await fetch(url, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KonsulBot/1.0)' },
-            signal: AbortSignal.timeout(10000)
+        const response = await fetch(targetUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
+            signal: AbortSignal.timeout(15000) // Increased timeout to 15s
         });
-        if (!response.ok) throw new Error('Failed to fetch');
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
 
         const html = await response.text();
         const $ = load(html);
-        $('script, style, noscript, svg').remove();
-        textContent = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 8000); // Limit context
+        $('script, style, noscript, svg, nav, footer, header').remove(); // Remove navigation/footer noise
+        textContent = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 12000); // Increased context limit
     } catch (e) {
         console.error('[Wizard] Scraping failed:', e);
-        throw new Error('No se pudo analizar el sitio web. Verifica la URL.');
+        // Don't crash, just let the AI halluciation or default fallback happen if scraping fails but return "Not found" context
+        // OR explicit error. Let's throw specific error for UI to handle?
+        // Actually, for "Wizard", maybe we just want to warn?
+        // But user specifically asked to analyze web. If web fails, we should tell them.
+        throw new Error('No se pudo acceder al sitio web. Verifica la URL o que el sitio sea público.');
     }
 
     // 2. Generate Analysis and Questions
