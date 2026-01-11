@@ -91,63 +91,73 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-300">
-            {/* Header */}
-            <div className="h-16 border-b border-gray-100 flex items-center justify-between px-8 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#21AC96]/10 rounded-lg flex items-center justify-center text-[#21AC96] font-bold">
-                        <Wand2 className="w-4 h-4" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            {/* Backdrop */}
+            <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
+                onClick={onClose}
+            />
+
+            {/* Modal Content */}
+            <div className="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col relative z-10 overflow-hidden animate-in zoom-in-95 duration-300">
+
+                {/* Header */}
+                <div className="h-16 border-b border-gray-100 flex items-center justify-between px-8 bg-white sticky top-0 z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-[#21AC96]/10 rounded-lg flex items-center justify-center text-[#21AC96] font-bold">
+                            <Wand2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-gray-900 leading-none">Asistente de Creación</h1>
+                            <p className="text-xs text-gray-400 mt-1">Paso {step > totalSteps ? totalSteps : step} de {totalSteps}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="font-bold text-gray-900 leading-none">Asistente de Creación</h1>
-                        <p className="text-xs text-gray-400 mt-1">Paso {step > totalSteps ? totalSteps : step} de {totalSteps}</p>
+
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <X className="w-5 h-5 text-gray-400" />
+                    </button>
+                </div>
+
+                {/* Progress Bar */}
+                {step <= totalSteps && (
+                    <div className="h-1 bg-gray-50 flex-none">
+                        <div
+                            className="h-full bg-[#21AC96] transition-all duration-500 ease-out"
+                            style={{ width: `${(step / totalSteps) * 100}%` }}
+                        />
+                    </div>
+                )}
+
+                {/* Main Content */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="max-w-3xl mx-auto px-6 py-12">
+                        {renderStep()}
                     </div>
                 </div>
 
-                <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <X className="w-5 h-5 text-gray-400" />
-                </button>
+                {/* Footer Navigation (only for 1-4) */}
+                {step <= totalSteps && (
+                    <div className="h-20 border-t border-gray-100 px-8 flex items-center justify-between bg-white flex-none">
+                        <Button
+                            variant="ghost"
+                            onClick={handleBack}
+                            disabled={step === 1 || isLoading}
+                            className="text-gray-500 hover:text-gray-900"
+                        >
+                            <ChevronLeft className="w-4 h-4 mr-2" /> Atrás
+                        </Button>
+
+                        <Button
+                            onClick={handleNext}
+                            disabled={isLoading}
+                            className="bg-[#21AC96] hover:bg-[#21AC96]/90 text-white rounded-full px-8 h-12 shadow-lg hover:shadow-xl transition-all"
+                        >
+                            {isLoading ? 'Creando...' : step === totalSteps ? 'Finalizar y Crear' : 'Siguiente'}
+                            {!isLoading && step < totalSteps && <ChevronRight className="w-4 h-4 ml-2" />}
+                        </Button>
+                    </div>
+                )}
             </div>
-
-            {/* Progress Bar */}
-            {step <= totalSteps && (
-                <div className="h-1 bg-gray-50">
-                    <div
-                        className="h-full bg-[#21AC96] transition-all duration-500 ease-out"
-                        style={{ width: `${(step / totalSteps) * 100}%` }}
-                    />
-                </div>
-            )}
-
-            {/* Main Content */}
-            <div className="flex-1 overflow-y-auto">
-                <div className="max-w-3xl mx-auto px-6 py-12">
-                    {renderStep()}
-                </div>
-            </div>
-
-            {/* Footer Navigation (only for 1-4) */}
-            {step <= totalSteps && (
-                <div className="h-20 border-t border-gray-100 px-8 flex items-center justify-between bg-white">
-                    <Button
-                        variant="ghost"
-                        onClick={handleBack}
-                        disabled={step === 1 || isLoading}
-                        className="text-gray-500 hover:text-gray-900"
-                    >
-                        <ChevronLeft className="w-4 h-4 mr-2" /> Atrás
-                    </Button>
-
-                    <Button
-                        onClick={handleNext}
-                        disabled={isLoading}
-                        className="bg-[#21AC96] hover:bg-[#21AC96]/90 text-white rounded-full px-8 h-12 shadow-lg hover:shadow-xl transition-all"
-                    >
-                        {isLoading ? 'Creando...' : step === totalSteps ? 'Finalizar y Crear' : 'Siguiente'}
-                        {!isLoading && step < totalSteps && <ChevronRight className="w-4 h-4 ml-2" />}
-                    </Button>
-                </div>
-            )}
         </div>
     );
 }
