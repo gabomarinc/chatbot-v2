@@ -101,20 +101,27 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             {/* Modal Content */}
             <div className="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col relative z-10 overflow-hidden animate-in zoom-in-95 duration-300">
 
-                {/* Header */}
-                <div className="h-16 border-b border-gray-100 flex items-center justify-between px-8 bg-white sticky top-0 z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#21AC96]/10 rounded-lg flex items-center justify-center text-[#21AC96] font-bold">
-                            <Wand2 className="w-4 h-4" />
+                {/* Header with clean design */}
+                <div className="h-24 flex items-center justify-between px-10 bg-white sticky top-0 z-10">
+                    <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 bg-[#21AC96]/10 rounded-2xl flex items-center justify-center text-[#21AC96]">
+                            <Wand2 className="w-6 h-6" />
                         </div>
                         <div>
-                            <h1 className="font-bold text-gray-900 leading-none">Asistente de Creación</h1>
-                            <p className="text-xs text-gray-400 mt-1">Paso {step > totalSteps ? totalSteps : step} de {totalSteps}</p>
+                            <h1 className="font-extrabold text-2xl text-gray-900 tracking-tight">Asistente de Creación</h1>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="text-sm font-medium text-gray-500">
+                                    Paso {step > totalSteps ? totalSteps : step} de {totalSteps}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-gray-400" />
+                    <button
+                        onClick={onClose}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 text-gray-400 hover:text-gray-900 rounded-full transition-all duration-200"
+                    >
+                        <X className="w-6 h-6" />
                     </button>
                 </div>
 
