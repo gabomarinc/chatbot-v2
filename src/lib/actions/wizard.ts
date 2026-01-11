@@ -49,7 +49,7 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
         try {
             const genAI = new GoogleGenerativeAI(googleKey);
             const model = genAI.getGenerativeModel({
-                model: "gemini-1.5-flash",
+                model: "gemini-pro",
                 // Force JSON if possible via prompt, specific models support response_schema but flash works well with instruction
             });
 
@@ -123,8 +123,22 @@ Intención del Bot: ${intent} (e.g. Ventas, Soporte)
 
 Genera el JSON de análisis. Las preguntas deben ayudar a decidir si el bot debe ser más agresivo/pasivo, formal/casual, o técnico/simple.`;
 
-    const rawJson = await callLLM(systemPrompt, userPrompt);
-    // Cleanup simple codeblocks if present
+    let rawJson = "";
+    try {
+        rawJson = await callLLM(systemPrompt, userPrompt);
+    } catch (error) {
+        console.error('[Wizard] LLM Generation failed:', error);
+        // Fallback or rethrow if strictly needed, but better to return default than crash
+        return {
+            summary: "No se pudo generar un análisis automático debido a un error de conexión con la IA.",
+            questions: [
+                { id: "q1", text: "¿Cuál es el tono de voz de tu marca?" },
+                { id: "q2", text: "¿Qué información es la más crítica para tus clientes?" },
+                { id: "q3", text: "¿Cómo manejas las objeciones de venta?" }
+            ]
+        };
+    }
+
     const cleanJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
 
     try {
