@@ -13,7 +13,8 @@ async function main() {
         const pdfImp = await import('pdf-parse');
 
         // Handle weird export structure if necessary
-        let PDFParseLike = pdfImp.PDFParse || (pdfImp.default && pdfImp.default.PDFParse) || pdfImp.default;
+        const pdfAny = pdfImp as any;
+        let PDFParseLike = pdfAny.PDFParse || (pdfAny.default && pdfAny.default.PDFParse) || pdfAny.default;
 
         console.log("Found class/function:", PDFParseLike);
 
@@ -25,13 +26,13 @@ async function main() {
                 const res = await parser.getText();
                 console.log("Success with Class! Text:", res.text);
                 if (parser.destroy) await parser.destroy();
-            } catch (err) {
+            } catch (err: any) {
                 console.log("Class usage failed:", err.message);
                 // Fallback to function usage (v1)
                 try {
                     const res = await PDFParseLike(dummyBuffer);
                     console.log("Success with Function! Text:", res.text);
-                } catch (err2) {
+                } catch (err2: any) {
                     console.log("Function usage failed:", err2.message);
                 }
             }
