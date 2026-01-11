@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Plus, MoreVertical, Bot, MessageSquare, Zap, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
-import { CreateAgentModal } from '@/components/agents/CreateAgentModal';
+import { AgentWizard } from '@/components/agents/wizard/AgentWizard';
+// import { CreateAgentModal } from '@/components/agents/CreateAgentModal';
 
 interface Agent {
     id: string;
@@ -21,7 +22,7 @@ interface AgentsPageClientProps {
 
 export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientProps) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    
+
     // Check if user can create agents (OWNER or MANAGER)
     const canCreate = userRole === 'OWNER' || userRole === 'MANAGER';
 
@@ -135,9 +136,10 @@ export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientPr
                 )}
             </div>
 
-            <CreateAgentModal
+            <AgentWizard
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
+                onAgentCreated={() => console.log('Agent Created')} // Page might reload automatically via server action revalidation?
             />
         </div>
     );
