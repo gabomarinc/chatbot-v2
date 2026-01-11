@@ -9,29 +9,31 @@ interface StepIdentityProps {
 export function StepIdentity({ name, onChange }: StepIdentityProps) {
     return (
 
-        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700 flex flex-col items-center justify-center min-h-[400px]">
-            <div className="text-center space-y-4 max-w-lg mx-auto">
-                <span className="text-4xl animate-bounce inline-block mb-2">👋</span>
-                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">¡Hola! Vamos a crear algo genial</h2>
-                <p className="text-lg text-gray-500 leading-relaxed">
-                    Todo gran asistente empieza con un nombre. <br />¿Cómo te gustaría llamar a tu nuevo agente?
+        <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-700 flex flex-col items-center justify-center min-h-[400px]">
+            <div className="text-center space-y-4 max-w-2xl mx-auto">
+                <div className="w-16 h-16 bg-gradient-to-tr from-[#21AC96] to-[#4ADE80] rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-[#21AC96]/20 mb-4 transform -rotate-6">
+                    <span className="text-3xl">👋</span>
+                </div>
+                <h2 className="text-4xl font-black text-gray-900 tracking-tight">¡Hola! Vamos a crear algo genial</h2>
+                <p className="text-xl text-gray-500 leading-relaxed max-w-md mx-auto">
+                    Todo gran asistente empieza con un nombre. <br />¿Cómo te gustaría llamar al tuyo?
                 </p>
             </div>
 
-            <div className="w-full max-w-xl relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-[#21AC96] to-[#4ADE80] rounded-2xl blur opacity-25 group-focus-within:opacity-50 transition duration-500"></div>
-                <div className="relative">
+            <div className="w-full max-w-lg">
+                <div className="relative group">
                     <Input
                         id="agentName"
                         value={name}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder="Ej: Sofia de Ventas..."
-                        className="text-2xl py-8 px-8 rounded-xl border-gray-200 shadow-xl shadow-gray-100/50 text-center placeholder:text-gray-300 focus:ring-2 focus:ring-[#21AC96] focus:border-transparent transition-all"
+                        className="text-2xl py-9 px-8 rounded-2xl border-2 border-gray-100 shadow-xl shadow-gray-100/50 text-center placeholder:text-gray-300 focus:border-[#21AC96] focus:ring-4 focus:ring-[#21AC96]/10 transition-all bg-white"
                         autoFocus
                     />
+                    <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-[#21AC96] to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity" />
                 </div>
-                <p className="text-center text-sm text-gray-400 mt-4">
-                    Podrás cambiar esto más tarde en la configuración.
+                <p className="text-center text-sm text-gray-400 mt-6 font-medium">
+                    Podrás cambiar esto más tarde en la configuración
                 </p>
             </div>
         </div>
