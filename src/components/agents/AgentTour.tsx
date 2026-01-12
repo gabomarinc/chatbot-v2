@@ -28,7 +28,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-profile',
                     popover: {
                         title: '👤 Perfil de Identidad',
-                        description: 'Aquí defines quién es tu agente: su nombre, su avatar y su rol básico.',
+                        description: 'Aquí nace tu agente. Dale un nombre con personalidad (ej. "Sofia") y un avatar amigable. Define si es un Asistente formal o un Vendedor carismático.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -37,7 +37,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-job',
                     popover: {
                         title: '💼 Descripción del Trabajo',
-                        description: 'Define qué hace tu agente y en qué empresa trabaja. Esto le da contexto profesional.',
+                        description: 'El contexto lo es todo. Dile dónde trabaja (ej. "Inmobiliaria Deluxe") y qué vende. Cuantos más detalles le des sobre su empresa, mejor representará tu marca.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -46,7 +46,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-training',
                     popover: {
                         title: '📚 Base de Conocimiento',
-                        description: 'Lo más importante. Carga PDFs, webs o texto para que tu agente sepa qué responder.',
+                        description: 'El cerebro de tu agente. 🧠 Sube tus PDFs de precios, manuales o el enlace de tu web. Ej: Sube "Menu_2024.pdf" para que sepa todos tus platos.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -55,7 +55,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-intents',
                     popover: {
                         title: '🎯 Intenciones y Acciones',
-                        description: 'Programas "gatillos" para detectar cuando un usuario quiere algo específico (comprar, agendar, etc.)',
+                        description: 'Automatiza la magia. Detecta cuando alguien dice "Cita" y haz que el agente abra tu Calendario automáticamente. O si dicen "Precio", que envíe el PDF de tarifas.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -64,7 +64,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-media',
                     popover: {
                         title: '🖼️ Galería Visual',
-                        description: 'Sube imágenes de productos, menús o mapas. Tu agente podrá enviarlas en el chat para enriquecer la conversación visualmente.',
+                        description: 'Una imagen vale más que mil palabras. Sube fotos de tus productos o un mapa de ubicación. Tu agente sabrá cuándo enviarlas en el chat para enamorar al cliente.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -73,7 +73,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-integrations',
                     popover: {
                         title: '🔌 Integraciones',
-                        description: 'Superpoderes para tu agente. Conecta Calendarios, CRMs y otras herramientas externas para automatizar tareas reales.',
+                        description: 'Conecta con el mundo real. Enlaza Google Calendar para agendar reuniones o tu CRM para guardar leads. Haz que tu agente trabaje por ti mientras duermes.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -82,7 +82,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-channels',
                     popover: {
                         title: '📡 Canales de Conexión',
-                        description: '¿WhatsApp, Instagram o Web? Decide por dónde hablará tu agente con el mundo y conecta tus cuentas.',
+                        description: 'Omnicanalidad real. Conecta WhatsApp, Instagram o tu Web. Tu agente estará listo para responder al instante, sea por donde sea que te escriban.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -91,7 +91,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-settings',
                     popover: {
                         title: '⚙️ Configuración Avanzada',
-                        description: 'Ajusta la "temperatura" (creatividad) del cerebro IA y otras reglas de comportamiento.',
+                        description: 'Ajuste fino. ¿Quieres un agente creativo (Temp 0.9) o preciso (Temp 0.2)? Configura su zona horaria y si puede usar emojis 😎 para parecer más humano.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -100,7 +100,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#tab-fields',
                     popover: {
                         title: '📝 Campos Personalizados',
-                        description: 'Define qué datos específicos debe recordar el agente sobre tus clientes (Talla, Presupuesto, ID, etc).',
+                        description: 'Memoria de elefante. Configura qué datos debe extraer y guardar del cliente. Ej: Crea un campo "Presupuesto" y el agente preguntará y guardará ese dato por ti.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -109,7 +109,7 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     element: '#test-agent-btn',
                     popover: {
                         title: '🧪 Zona de Pruebas',
-                        description: '¡Prueba tu agente aquí mismo antes de lanzarlo al público!',
+                        description: '¡Prueba tu agente aquí mismo antes de lanzarlo al público! Verifica que responda como esperas.',
                         side: 'left',
                         align: 'start'
                     }
