@@ -261,6 +261,11 @@ export async function createAgentFromWizard(data: {
         instagram: boolean;
     },
     allowEmojis?: boolean;
+    webConfig?: {
+        title: string;
+        welcomeMessage: string;
+        primaryColor: string;
+    };
 }) {
     try {
         // 1. Create Base Agent
@@ -347,10 +352,24 @@ export async function createAgentFromWizard(data: {
         }
 
         // 3. Create Channels
-        const channelsToCreate = [];
-        if (data.channels.web) channelsToCreate.push({ type: 'WEBCHAT', displayName: 'Chat Web' });
-        if (data.channels.whatsapp) channelsToCreate.push({ type: 'WHATSAPP', displayName: 'WhatsApp' });
-        if (data.channels.instagram) channelsToCreate.push({ type: 'INSTAGRAM', displayName: 'Instagram' });
+        const channelsToCreate: any[] = [];
+
+        // WEB
+        if (data.channels.web) {
+            const webConfig = data.webConfig || { title: '', welcomeMessage: '', primaryColor: '' };
+            channelsToCreate.push({
+                type: 'WEBCHAT',
+                displayName: 'Chat Web',
+                config: {
+                    title: webConfig.title || agent.name, // Fallback to agent name
+                    welcomeMessage: webConfig.welcomeMessage || '¡Hola! ¿En qué puedo ayudarte?',
+                    primaryColor: webConfig.primaryColor || '#21AC96'
+                }
+            });
+        }
+
+        if (data.channels.whatsapp) channelsToCreate.push({ type: 'WHATSAPP', displayName: 'WhatsApp', config: {} });
+        if (data.channels.instagram) channelsToCreate.push({ type: 'INSTAGRAM', displayName: 'Instagram', config: {} });
 
         for (const ch of channelsToCreate) {
             try {
@@ -360,7 +379,7 @@ export async function createAgentFromWizard(data: {
                         type: ch.type as any,
                         displayName: ch.displayName,
                         isActive: true,
-                        configJson: {}
+                        configJson: ch.config // SAVE CONFIG HERE
                     }
                 });
             } catch (channelError) {

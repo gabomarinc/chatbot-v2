@@ -25,13 +25,19 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
     const [data, setData] = useState({
         name: '',
         intent: '',
-        allowEmojis: true, // Default true, can be toggled in StepIdentity
-        knowledge: null as any, // { type, source, personality, analysisSummary }
+        allowEmojis: true,
+        knowledge: null as any,
         channels: {
             web: true,
             whatsapp: false,
             messenger: false,
             instagram: false
+        },
+        // New Web Config
+        webConfig: {
+            title: '',
+            welcomeMessage: '',
+            primaryColor: '#21AC96'
         }
     });
 
@@ -65,7 +71,8 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 intent: data.intent,
                 knowledge: data.knowledge,
                 channels: data.channels,
-                allowEmojis: data.allowEmojis
+                allowEmojis: data.allowEmojis,
+                webConfig: data.webConfig // Pass new config
             };
             const result = await createAgentFromWizard(wizardPayload);
 
@@ -96,7 +103,12 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             />;
             case 2: return <StepIntent intent={data.intent} onChange={i => setData({ ...data, intent: i })} />;
             case 3: return <StepKnowledge intent={data.intent} name={data.name} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
-            case 4: return <StepChannels channels={data.channels} onChange={c => setData({ ...data, channels: c })} />;
+            case 4: return <StepChannels
+                channels={data.channels}
+                webConfig={data.webConfig}
+                onChange={c => setData({ ...data, channels: c })}
+                onWebConfigChange={c => setData({ ...data, webConfig: c })}
+            />;
             case 5: return <StepSuccess onClose={onClose} />;
             default: return null;
         }
@@ -168,8 +180,11 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
 
                         <Button
                             onClick={handleNext}
-                            disabled={isLoading}
-                            className="bg-[#21AC96] hover:bg-[#21AC96]/90 text-white rounded-full px-8 h-12 shadow-lg hover:shadow-xl transition-all"
+                            disabled={isLoading || (step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.knowledge)}
+                            className={`rounded-full px-8 h-12 shadow-lg transition-all ${(step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.knowledge)
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' // Disabled style
+                                : 'bg-[#21AC96] hover:bg-[#21AC96]/90 hover:shadow-xl text-white'
+                                }`}
                         >
                             {isLoading ? 'Creando...' : step === totalSteps ? 'Finalizar y Crear' : 'Siguiente'}
                             {!isLoading && step < totalSteps && <ChevronRight className="w-4 h-4 ml-2" />}
