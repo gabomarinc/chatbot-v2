@@ -162,7 +162,7 @@ export function Sidebar() {
                 )}
             </nav>
 
-            {/* Referral Card - Only for OWNER and MANAGER */}
+            {/* Help Center Card - Only for OWNER and MANAGER */}
             {userRole !== 'AGENT' && (
                 <div className="p-6">
                     <div className="bg-gradient-to-br from-white to-[#F8FAFB] rounded-3xl p-6 border border-gray-100 shadow-xl shadow-gray-200/20 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/10 transition-all duration-500 cursor-pointer active:scale-[0.98]">
@@ -170,16 +170,26 @@ export function Sidebar() {
 
                         <div className="relative">
                             <div className="w-10 h-10 bg-white shadow-md rounded-xl flex items-center justify-center mb-4 transform group-hover:-rotate-12 transition-all duration-300">
-                                <Gift className="w-5 h-5 text-[#21AC96]" />
+                                <Sparkles className="w-5 h-5 text-[#21AC96]" />
                             </div>
 
                             <div className="space-y-1 mb-4">
-                                <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#21AC96] transition-colors">Programa VIP</h3>
-                                <p className="text-xs text-gray-500 leading-relaxed">Invita a tus amigos y gana créditos ilimitados.</p>
+                                <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#21AC96] transition-colors">Centro de Ayuda</h3>
+                                <p className="text-xs text-gray-500 leading-relaxed">¿Dudas? Vuelve a ver el tutorial interactivo del agente.</p>
                             </div>
 
-                            <button className="w-full bg-[#21AC96] text-white rounded-2xl py-3 text-xs font-bold hover:bg-[#1a8a78] transition-all duration-300 shadow-lg shadow-[#21AC96]/20 group-hover:shadow-[#21AC96]/40 cursor-pointer">
-                                Invitar ahora
+                            <button
+                                onClick={() => {
+                                    if (pathname.includes('/agents/')) {
+                                        window.dispatchEvent(new CustomEvent('trigger-agent-tour'));
+                                    } else {
+                                        // Optional: Redirect to first agent or show toast
+                                        alert('Ve al perfil de un agente para ver el tutorial.');
+                                    }
+                                }}
+                                className="w-full bg-[#21AC96] text-white rounded-2xl py-3 text-xs font-bold hover:bg-[#1a8a78] transition-all duration-300 shadow-lg shadow-[#21AC96]/20 group-hover:shadow-[#21AC96]/40 cursor-pointer"
+                            >
+                                Ver Tutorial
                             </button>
                         </div>
                     </div>

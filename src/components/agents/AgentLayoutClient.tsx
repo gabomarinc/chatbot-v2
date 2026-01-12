@@ -14,14 +14,19 @@ interface Tab {
     href: string;
 }
 
+import { AgentTour } from './AgentTour';
+
+// ... (previous imports)
+
 interface AgentLayoutClientProps {
     agentId: string;
     agentName: string;
     tabs: Tab[];
     userRole: 'OWNER' | 'MANAGER' | 'AGENT' | null;
+    hasSeenTour: boolean;
 }
 
-export function AgentLayoutClient({ agentId, agentName, tabs, userRole }: AgentLayoutClientProps) {
+export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenTour }: AgentLayoutClientProps) {
     // Check if user can manage agents (OWNER or MANAGER)
     const canManage = userRole === 'OWNER' || userRole === 'MANAGER';
     const pathname = usePathname();
@@ -29,9 +34,12 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole }: AgentL
 
     return (
         <div className="space-y-10">
+            <AgentTour hasSeenTour={hasSeenTour} />
+
             {/* Action Bar */}
             <div className="flex justify-end">
                 <button
+                    id="test-agent-btn"
                     onClick={() => setIsTestModalOpen(true)}
                     className="flex items-center justify-center gap-2 px-6 py-3.5 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95 font-bold text-sm"
                 >
@@ -47,6 +55,7 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole }: AgentL
                         const isActive = pathname === tab.href;
                         return (
                             <Link
+                                id={`tab-${tab.id}`}
                                 key={tab.id}
                                 href={tab.href}
                                 className={cn(

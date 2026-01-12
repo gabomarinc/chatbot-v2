@@ -17,6 +17,7 @@ model User {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   role         AppRole           @default(USER)
+  hasSeenAgentTour Boolean       @default(false)
   workspaces   Workspace[]
   memberships  WorkspaceMember[]
   assignedConversations Conversation[]
