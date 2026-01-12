@@ -2,6 +2,7 @@ import { Globe, Smartphone, MessageCircle, Instagram, Facebook, Key, Hash, Lock 
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
+import { WhatsAppEmbeddedSignup } from '@/components/channels/WhatsAppEmbeddedSignup';
 
 interface StepChannelsProps {
     channels: {
@@ -23,9 +24,10 @@ interface StepChannelsProps {
     onChange: (channels: any) => void;
     onWebConfigChange: (config: any) => void;
     onWhatsappConfigChange?: (config: any) => void;
+    agentId?: string | null;
 }
 
-export function StepChannels({ channels, webConfig, whatsappConfig, onChange, onWebConfigChange, onWhatsappConfigChange }: StepChannelsProps) {
+export function StepChannels({ channels, webConfig, whatsappConfig, onChange, onWebConfigChange, onWhatsappConfigChange, agentId }: StepChannelsProps) {
 
     const handleToggle = (key: string) => {
         onChange({ ...channels, [key]: !channels[key as keyof typeof channels] });
@@ -126,29 +128,26 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
                         <Switch checked={channels.whatsapp} onCheckedChange={() => handleToggle('whatsapp')} />
                     </div>
 
-                    {/* CONFIGURACIÓN WHATSAPP */}
                     {channels.whatsapp && (
                         <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2">
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-4">
-                                <div className="w-16 h-16 bg-[#1877F2]/10 text-[#1877F2] rounded-full flex items-center justify-center mx-auto">
-                                    <Facebook className="w-8 h-8" />
-                                </div>
-                                <div>
-                                    <h4 className="text-gray-900 font-bold mb-1">Conexión Simplificada con Meta</h4>
-                                    <p className="text-xs text-gray-500 max-w-xs mx-auto">
-                                        Una vez creado tu agente, podrás conectar tu número de WhatsApp Business haciendo clic en un solo botón.
-                                    </p>
-                                </div>
-                                <div className="flex flex-col items-center gap-3">
-                                    <div className="inline-flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-400 rounded-xl text-xs font-bold border border-gray-200 cursor-not-allowed select-none w-full max-w-xs justify-center">
-                                        <Smartphone className="w-4 h-4" />
-                                        <span>Conectar cuenta de WhatsApp</span>
+                            {agentId ? (
+                                <WhatsAppEmbeddedSignup
+                                    appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || ''}
+                                    agentId={agentId}
+                                    onSuccess={() => {
+                                        // Optional: Refresh or show success
+                                    }}
+                                />
+                            ) : (
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-4 opacity-50">
+                                    <div className="w-16 h-16 bg-[#1877F2]/10 text-[#1877F2] rounded-full flex items-center justify-center mx-auto">
+                                        <Facebook className="w-8 h-8" />
                                     </div>
-                                    <p className="text-[10px] text-green-600 font-medium bg-green-50 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-green-100">
-                                        <span>⚡️</span> Disponible al finalizar la creación
+                                    <p className="text-sm font-bold text-gray-500">
+                                        Creando agente para habilitar conexión...
                                     </p>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     )}
                 </div>

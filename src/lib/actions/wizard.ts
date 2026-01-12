@@ -413,4 +413,108 @@ export async function createAgentFromWizard(data: {
         console.error('Error in wizard creation flow:', e);
         return { success: false, error: e.message || 'Unknown error during creation' };
     }
+    return { success: false, error: e.message || 'Unknown error during creation' };
+}
+}
+
+export async function updateAgentWizard(agentId: string, data: {
+    channels: {
+        web: boolean;
+        whatsapp: boolean;
+        instagram: boolean;
+        messenger: boolean;
+    };
+    webConfig?: {
+        title: string;
+        welcomeMessage: string;
+        primaryColor: string;
+    };
+}) {
+    try {
+        const { updateChannel, getChannels } = await import('./dashboard');
+        // We need raw prisma access to find channels by agentId quickly or use getChannels
+        // Let's use prisma directly for efficiency in this transactional-like operation
+        const workspace = await (await import('./dashboard')).getUserWorkspace();
+        if (!workspace) throw new Error("Unauthorized");
+
+        const agent = await prisma.agent.findFirst({
+            where: { id: agentId, workspaceId: workspace.id },
+            include: { channels: true }
+        });
+
+        if (!agent) throw new Error("Agent not found");
+
+        // 1. Update WEB config
+        if (data.channels.web) {
+            const webChannel = agent.channels.find(c => c.type === 'WEBCHAT');
+            const webConfigData = {
+                title: data.webConfig?.title || agent.name,
+                welcomeMessage: data.webConfig?.welcomeMessage || '¡Hola! ¿En qué puedo ayudarte?',
+                primaryColor: data.webConfig?.primaryColor || '#21AC96'
+            };
+
+            if (webChannel) {
+                await prisma.channel.update({
+                    where: { id: webChannel.id },
+                    data: {
+                        isActive: true,
+                        configJson: webConfigData
+                    }
+                });
+            } else {
+                await prisma.channel.create({
+                    data: {
+                        agentId: agent.id,
+                        type: 'WEBCHAT',
+                        displayName: 'Chat Web',
+                        isActive: true,
+                        configJson: webConfigData
+                    }
+                });
+            }
+        } else {
+            // Disable web if unchecked? usually always filtered out but valid logic
+            const webChannel = agent.channels.find(c => c.type === 'WEBCHAT');
+            if (webChannel) await prisma.channel.update({ where: { id: webChannel.id }, data: { isActive: false } });
+        }
+
+        // 2. Ensure other channels exist/active state
+        // For WhatsApp, Instagram, Messenger, we mainly check if they need to be active
+        // Connection happens via Embedded Signup which creates the channel, but we ensure 'isActive' here.
+
+        const ensureChannel = async (type: 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER', displayName: string, shouldBeActive: boolean) => {
+            const existing = agent.channels.find(c => c.type === type);
+            if (shouldBeActive) {
+                if (existing) {
+                    if (!existing.isActive) await prisma.channel.update({ where: { id: existing.id }, data: { isActive: true } });
+                } else {
+                    // Create empty placeholder if it doesn't exist? 
+                    // For the "Connect" flow, we prefer the connection to create it.
+                    // BUT if user just toggles it ON in wizard but doesn't connect, should we create it?
+                    // Yes, so it shows up in dashboard list as "Pending".
+                    await prisma.channel.create({
+                        data: {
+                            agentId: agent.id,
+                            type,
+                            displayName,
+                            isActive: true,
+                            configJson: {}
+                        }
+                    });
+                }
+            } else {
+                if (existing) await prisma.channel.update({ where: { id: existing.id }, data: { isActive: false } });
+            }
+        };
+
+        await ensureChannel('WHATSAPP', 'WhatsApp', data.channels.whatsapp);
+        await ensureChannel('INSTAGRAM', 'Instagram', data.channels.instagram);
+        await ensureChannel('MESSENGER', 'Messenger', data.channels.messenger);
+
+        return { success: true };
+
+    } catch (e: any) {
+        console.error('Wizard update error:', e);
+        return { success: false, error: e.message };
+    }
 }

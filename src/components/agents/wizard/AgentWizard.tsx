@@ -8,7 +8,7 @@ import { StepKnowledge } from './steps/StepKnowledge';
 import { StepChannels } from './steps/StepChannels';
 import { StepSuccess } from './steps/StepSuccess';
 import { Button } from '@/components/ui/button';
-import { createAgentFromWizard, WizardPersonalityOption } from '@/lib/actions/wizard';
+import { createAgentFromWizard, updateAgentWizard, WizardPersonalityOption } from '@/lib/actions/wizard';
 import { toast } from 'sonner';
 
 interface AgentWizardProps {
@@ -20,6 +20,7 @@ interface AgentWizardProps {
 export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProps) {
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
 
     // Wizard Data State
     const [data, setData] = useState({
@@ -56,7 +57,10 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
         if (step === 2 && !data.intent) return toast.error('Selecciona el propósito');
         if (step === 3 && !data.knowledge) return toast.error('Configura el conocimiento');
 
-        if (step < totalSteps) {
+        if (step === 3) {
+            // STEP 3 -> 4: CREATE AGENT
+            await handleCreateAgent();
+        } else if (step < totalSteps) {
             setStep(s => s + 1);
         } else {
             // FINISH
@@ -68,32 +72,61 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
         if (step > 1) setStep(s => s - 1);
     };
 
-    const handleFinish = async () => {
+    const handleCreateAgent = async () => {
         setIsLoading(true);
         try {
-            // 1. Construct Agent Wizard Payload
             const wizardPayload = {
                 name: data.name,
                 intent: data.intent,
                 knowledge: data.knowledge,
-                channels: data.channels,
+                channels: { // Default channels for creation
+                    web: true,
+                    whatsapp: false,
+                    instagram: false,
+                    messenger: false
+                },
                 allowEmojis: data.allowEmojis,
                 webConfig: data.webConfig,
                 whatsappConfig: data.whatsappConfig
             };
+
             const result = await createAgentFromWizard(wizardPayload);
 
             if (result && (result as any).success === false) {
-                throw new Error((result as any).error || 'Error desconocido al crear el agente');
+                throw new Error((result as any).error || 'Error creando el agente');
             }
 
+            const newAgentId = (result as any).data.id;
+            setCreatedAgentId(newAgentId);
+            toast.success('Agente inicializado correctamente');
+            setStep(4); // Move to Channels Step
+
+        } catch (error: any) {
+            console.error('Wizard create error:', error);
+            toast.error(`Error al iniciar el agente: ${error.message}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleFinish = async () => {
+        setIsLoading(true);
+        try {
+            if (!createdAgentId) throw new Error("No hay ID de agente");
+
+            // Update with final channel config
+            await updateAgentWizard(createdAgentId, {
+                channels: data.channels,
+                webConfig: data.webConfig
+            });
+
             // Success
-            toast.success('¡Agente creado exitosamente!');
+            toast.success('¡Agente configurado exitosamente!');
             setStep(5); // Success Step
             if (onAgentCreated) onAgentCreated();
         } catch (error: any) {
-            console.error('Wizard error:', error);
-            toast.error(`Error al crear el agente: ${error.message || 'Inténtalo de nuevo.'}`);
+            console.error('Wizard finish error:', error);
+            toast.error(`Error al finalizar configuración: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -114,6 +147,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 channels={data.channels}
                 webConfig={data.webConfig}
                 whatsappConfig={data.whatsappConfig}
+                agentId={createdAgentId}
                 onChange={c => setData({ ...data, channels: c })}
                 onWebConfigChange={c => setData({ ...data, webConfig: c })}
                 onWhatsappConfigChange={c => setData({ ...data, whatsappConfig: c })}
