@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Wand2, Loader2 } from 'lucide-react';
 import { StepIdentity } from './steps/StepIdentity';
 import { StepIntent } from './steps/StepIntent';
 import { StepKnowledge } from './steps/StepKnowledge';

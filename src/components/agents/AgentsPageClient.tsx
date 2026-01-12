@@ -204,6 +204,7 @@ function AgentCard({ agent }: { agent: Agent }) {
 
 export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientProps) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
 
     // Check if user can create agents (OWNER or MANAGER)
     const canCreate = userRole === 'OWNER' || userRole === 'MANAGER';
@@ -216,44 +217,74 @@ export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientPr
                     <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight mb-2">Agentes</h1>
                     <p className="text-gray-500 font-medium">Crea, entrena y gestiona tus agentes de IA personalizados</p>
                 </div>
-                {canCreate && (
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer group active:scale-95"
-                    >
-                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                        Crear Nuevo Agente
-                    </button>
-                )}
+                <div className="flex items-center gap-3">
+                    {/* View Toggle */}
+                    <div className="bg-white p-1 rounded-xl border border-gray-100 flex items-center shadow-sm">
+                        <button
+                            onClick={() => setViewMode('GRID')}
+                            className={`p-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-gray-100 text-[#21AC96]' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                            <LayoutGrid className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('LIST')}
+                            className={`p-2 rounded-lg transition-all ${viewMode === 'LIST' ? 'bg-gray-100 text-[#21AC96]' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                            <div className="w-5 h-5 flex flex-col justify-center gap-1">
+                                <span className="w-full h-0.5 bg-current rounded-full"></span>
+                                <span className="w-full h-0.5 bg-current rounded-full"></span>
+                                <span className="w-full h-0.5 bg-current rounded-full"></span>
+                            </div>
+                        </button>
+                    </div>
+
+                    {canCreate && (
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="flex items-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer group active:scale-95"
+                        >
+                            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                            Crear Nuevo Agente
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Agents Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-                {initialAgents.length > 0 ? (
-                    initialAgents.map((agent) => (
-                        <AgentCard key={agent.id} agent={agent} />
-                    ))
-                ) : (
-                    <div className="col-span-full bg-white rounded-[2.5rem] py-20 px-10 border border-gray-100 shadow-sm text-center">
-                        <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mb-6 border border-gray-100 shadow-inner mx-auto">
-                            <Bot className="w-10 h-10 text-gray-200" />
-                        </div>
-                        <h3 className="text-gray-900 font-extrabold text-xl tracking-tight mb-2">No tienes agentes aún</h3>
-                        <p className="text-gray-400 font-medium max-w-sm mx-auto mb-8">
-                            Empieza creando tu primer agente para automatizar tus canales de comunicación.
-                        </p>
-                        {canCreate && (
-                            <button
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer active:scale-95"
-                            >
-                                <Plus className="w-5 h-5" />
-                                Crear Agente
-                            </button>
-                        )}
+            {/* Content */}
+            {initialAgents.length > 0 ? (
+                viewMode === 'GRID' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                        {initialAgents.map((agent) => (
+                            <AgentCard key={agent.id} agent={agent} />
+                        ))}
                     </div>
-                )}
-            </div>
+                ) : (
+                    <div className="space-y-4">
+                        {initialAgents.map((agent) => (
+                            <AgentListItem key={agent.id} agent={agent} />
+                        ))}
+                    </div>
+                )
+            ) : (
+                <div className="col-span-full bg-white rounded-[2.5rem] py-20 px-10 border border-gray-100 shadow-sm text-center">
+                    <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mb-6 border border-gray-100 shadow-inner mx-auto">
+                        <Bot className="w-10 h-10 text-gray-200" />
+                    </div>
+                    <h3 className="text-gray-900 font-extrabold text-xl tracking-tight mb-2">No tienes agentes aún</h3>
+                    <p className="text-gray-400 font-medium max-w-sm mx-auto mb-8">
+                        Empieza creando tu primer agente para automatizar tus canales de comunicación.
+                    </p>
+                    {canCreate && (
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer active:scale-95"
+                        >
+                            <Plus className="w-5 h-5" />
+                            Crear Agente
+                        </button>
+                    )}
+                </div>
+            )}
 
             <AgentWizard
                 isOpen={isCreateModalOpen}
@@ -261,5 +292,110 @@ export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientPr
                 onAgentCreated={() => console.log('Agent Created')}
             />
         </div>
+    );
+}
+
+function AgentListItem({ agent }: { agent: Agent }) {
+    const router = useRouter();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleConfirmDelete = async () => {
+        setIsDeleting(true);
+        try {
+            const { deleteAgent } = await import('@/lib/actions/dashboard');
+            await deleteAgent(agent.id);
+            toast.success('Agente eliminado');
+            router.refresh();
+        } catch (error) {
+            console.error('Error deleting agent:', error);
+            toast.error('Error al eliminar');
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteDialogOpen(false);
+        }
+    };
+
+    return (
+        <>
+            <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all group flex flex-col md:flex-row items-center gap-6">
+                {/* Avatar + Basic Info */}
+                <div className="flex items-center gap-6 flex-1 w-full md:w-auto">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-2xl flex items-center justify-center text-3xl shadow-lg text-white font-bold flex-none">
+                        {agent.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h3 className="text-gray-900 text-lg font-extrabold tracking-tight">{agent.name}</h3>
+                            <span className="inline-flex px-2 py-0.5 bg-green-50 text-green-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-green-100">
+                                Activo
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1 font-medium">Creado el 12 Ene 2024</p>
+                    </div>
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center justify-center gap-12 flex-1 w-full md:w-auto border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                    <div className="text-center">
+                        <span className="block text-xl font-black text-gray-900">{agent._count.channels}</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Canales</span>
+                    </div>
+                    <div className="text-center">
+                        <span className="block text-xl font-black text-gray-900">{agent._count.conversations}</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Chats</span>
+                    </div>
+                    <div className="text-center">
+                        <span className="block text-xl font-black text-gray-900">0</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Puntos</span>
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3 w-full md:w-auto justify-end border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                    <Link
+                        href={`/agents/${agent.id}/settings`}
+                        className="px-5 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors"
+                    >
+                        Configurar
+                    </Link>
+                    <button
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                        className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    >
+                        <Trash2 className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 mx-auto text-red-600">
+                            <AlertTriangle className="w-6 h-6" />
+                        </div>
+                        <DialogTitle className="text-center text-xl">¿Estás seguro?</DialogTitle>
+                        <DialogDescription className="text-center pt-2">
+                            Esta acción eliminará permanentemente al agente <strong>{agent.name}</strong> y todo su historial. No se puede deshacer.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-6 gap-2 sm:gap-0 sm:flex-col sm:space-y-2">
+                        <button
+                            onClick={handleConfirmDelete}
+                            disabled={isDeleting}
+                            className="w-full px-4 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/20"
+                        >
+                            {isDeleting ? 'Eliminando...' : 'Sí, Eliminar Agente'}
+                        </button>
+                        <button
+                            onClick={() => setIsDeleteDialogOpen(false)}
+                            className="w-full px-4 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl font-bold hover:bg-gray-50 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
