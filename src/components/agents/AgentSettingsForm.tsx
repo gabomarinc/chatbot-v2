@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { updateAgent } from '@/lib/actions/dashboard';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Loader2, CheckCircle2, Settings, Sliders, Zap, MessageSquare, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +42,22 @@ export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
             console.error('Error updating agent settings:', error);
             alert('Error al guardar la configuración.');
         } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!confirm('¿Estás seguro de que quieres eliminar este agente? Esta acción no se puede deshacer.')) return;
+
+        setIsLoading(true);
+        try {
+            const { deleteAgent } = await import('@/lib/actions/dashboard');
+            await deleteAgent(agent.id);
+            toast.success('Agente eliminado');
+            router.push('/agents');
+        } catch (error) {
+            console.error('Error deleting agent:', error);
+            toast.error('Error al eliminar el agente');
             setIsLoading(false);
         }
     };
@@ -206,6 +223,32 @@ export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
                                 <span>Guardar Configuración</span>
                             )}
                         </button>
+                    </div>
+                </div>
+
+                {/* Danger Zone */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-red-50 p-8 rounded-[2.5rem] border border-red-100 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600">
+                                <AlertTriangle className="w-5 h-5" />
+                            </div>
+                            <h3 className="text-red-900 font-black text-sm uppercase tracking-widest">Zona de Peligro</h3>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="text-red-900 font-bold text-lg">Eliminar Agente</h4>
+                                <p className="text-red-700/70 text-sm font-medium">Esta acción eliminará permanentemente al agente y todo su historial.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                className="px-6 py-3 bg-white text-red-600 border border-red-200 rounded-xl text-sm font-bold shadow-sm hover:bg-red-50 hover:border-red-300 transition-all active:scale-95"
+                            >
+                                Eliminar Agente
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
