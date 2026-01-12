@@ -186,8 +186,5 @@ export async function finishWhatsAppSetup(data: {
 }
 
 async function getMetaAppId() {
-    const config = await prisma.globalConfig.findUnique({
-        where: { key: 'META_APP_ID' }
-    });
-    return config?.value;
+    return process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
 }
