@@ -26,12 +26,14 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [personalityOptions, setPersonalityOptions] = useState<WizardPersonalityOption[]>([]);
     const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+    const [webError, setWebError] = useState<string | null>(null);
 
     const handleWebAnalysis = async () => {
         if (!inputVal) return toast.error('Ingresa una URL válida');
 
         setAnalysisState('ANALYZING');
         setScreenshotUrl(null); // Reset
+        setWebError(null);
 
         // Trigger screenshot fetch (don't await, let it load in parallel)
         const encodedUrl = encodeURIComponent(inputVal.startsWith('http') ? inputVal : `https://${inputVal}`);
@@ -43,7 +45,8 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
             setAnalysisState('QUESTIONS');
         } catch (error) {
             console.error(error);
-            toast.error('Error analizando la web. Intenta de nuevo.');
+            // toast.error('Error analizando la web. Intenta de nuevo.'); // Removed generic toast
+            setWebError('Failed'); // Trigger inline alert
             setAnalysisState('INPUT');
         }
     };
@@ -216,8 +219,8 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                                             key={opt}
                                             onClick={() => setAnswers({ ...answers, [q.id]: opt })}
                                             className={`px-4 py-2 rounded-full text-sm border transition-all ${answers[q.id] === opt
-                                                    ? 'bg-[#21AC96] text-white border-[#21AC96] font-medium shadow-sm'
-                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#21AC96] hover:text-[#21AC96]'
+                                                ? 'bg-[#21AC96] text-white border-[#21AC96] font-medium shadow-sm'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-[#21AC96] hover:text-[#21AC96]'
                                                 }`}
                                         >
                                             {opt}
@@ -226,8 +229,8 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                                     <button
                                         onClick={() => setAnswers({ ...answers, [q.id]: '' })} // Clear to trigger manual mode visual if needed, or just let them type
                                         className={`px-4 py-2 rounded-full text-sm border transition-all ${!q.options?.includes(answers[q.id] || '') && answers[q.id]
-                                                ? 'bg-[#21AC96] text-white border-[#21AC96]'
-                                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                            ? 'bg-[#21AC96] text-white border-[#21AC96]'
+                                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         Otra / Escribir...
@@ -342,6 +345,21 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                         <p className="text-xs text-gray-500">
                             Analizaremos tu web para extraer información y sugerirte la mejor configuración.
                         </p>
+
+                        {webError && (
+                            <div className="bg-red-50 border border-red-100 rounded-lg p-4 flex items-start gap-3 animate-in slide-in-from-top-2">
+                                <div className="p-1 bg-red-100 rounded-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-semibold text-red-800 mb-1">No hemos encontrado su web</h4>
+                                    <p className="text-sm text-red-600 leading-relaxed">
+                                        Por favor, verifique la URL o intente <strong>Entrenar el agente con PDF o Texto Manual</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         <Button onClick={handleWebAnalysis} className="w-full bg-[#21AC96] hover:bg-[#21AC96]/90 text-white mt-4">
                             Analizar Web e IA
                         </Button>
