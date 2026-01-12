@@ -287,8 +287,7 @@ export async function createAgentFromWizard(data: {
             personalityPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`, // Schema uses personalityPrompt, not systemPrompt
             jobType: jobType,
             temperature: personality?.temperature || 0.7,
-            communicationStyle: commStyle,
-            isActive: true
+            communicationStyle: commStyle
         });
 
         if (!agent) throw new Error('Failed to create agent record');
