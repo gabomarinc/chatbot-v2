@@ -197,7 +197,7 @@ JSON Schema:
     "description": "Descripción DETALLADA de 2-3 lineas sobre cómo se comportará, su tono, y cómo abordará al usuario.",
     "systemPrompt": "El Prompt de Sistema COMPLETO...",
     "temperature": 0.3,
-    "communicationStyle": "FORMAL" 
+    "communicationStyle": "FORMAL" // Valores permitidos: FORMAL, CASUAL, NORMAL
   },
   {
     "id": "B", 
@@ -272,6 +272,14 @@ export async function createAgentFromWizard(data: {
         if (normalizedIntent.includes('VENTA') || normalizedIntent.includes('COMERCIAL')) jobType = 'SALES';
         else if (normalizedIntent.includes('SOPORTE') || normalizedIntent.includes('ATENCIÓN')) jobType = 'SUPPORT';
 
+        // Sanitize Communication Style
+        let commStyle: 'NORMAL' | 'CASUAL' | 'FORMAL' = 'NORMAL';
+        const rawStyle = (personality?.communicationStyle || 'NORMAL').toUpperCase();
+
+        if (rawStyle.includes('CASUAL') || rawStyle.includes('CERCANO') || rawStyle.includes('AMIGABLE')) commStyle = 'CASUAL';
+        else if (rawStyle.includes('FORMAL') || rawStyle.includes('SERIO')) commStyle = 'FORMAL';
+        else commStyle = 'NORMAL';
+
         const agent = await createAgent({
             name: data.name,
             jobDescription: `Agente de ${data.intent}`,
@@ -279,7 +287,7 @@ export async function createAgentFromWizard(data: {
             personalityPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`, // Schema uses personalityPrompt, not systemPrompt
             jobType: jobType,
             temperature: personality?.temperature || 0.7,
-            communicationStyle: personality?.communicationStyle || 'NORMAL',
+            communicationStyle: commStyle,
             isActive: true
         });
 
