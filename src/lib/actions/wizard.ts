@@ -253,6 +253,7 @@ export async function createAgentFromWizard(data: {
         source: string | File;
         personality?: WizardPersonalityOption;
         fileName?: string;
+        analysisSummary?: string;
     },
     channels: {
         web: boolean;
@@ -269,8 +270,8 @@ export async function createAgentFromWizard(data: {
         // Map intent to JobType
         let jobType: 'SALES' | 'SUPPORT' | 'PERSONAL' = 'PERSONAL';
         const normalizedIntent = data.intent.toUpperCase();
-        if (normalizedIntent.includes('VENTA') || normalizedIntent.includes('COMERCIAL')) jobType = 'SALES';
-        else if (normalizedIntent.includes('SOPORTE') || normalizedIntent.includes('ATENCIÓN')) jobType = 'SUPPORT';
+        if (normalizedIntent.includes('VENTA') || normalizedIntent.includes('COMERCIAL') || normalizedIntent.includes('SALES')) jobType = 'SALES';
+        else if (normalizedIntent.includes('SOPORTE') || normalizedIntent.includes('ATENCIÓN') || normalizedIntent.includes('SUPPORT') || normalizedIntent.includes('SERVICE')) jobType = 'SUPPORT';
 
         // Sanitize Communication Style
         let commStyle: 'NORMAL' | 'CASUAL' | 'FORMAL' = 'NORMAL';
@@ -280,9 +281,26 @@ export async function createAgentFromWizard(data: {
         else if (rawStyle.includes('FORMAL') || rawStyle.includes('SERIO')) commStyle = 'FORMAL';
         else commStyle = 'NORMAL';
 
+        // Extract extra fields (Website, Company)
+        let jobWebsiteUrl: string | null = null;
+        let jobCompany: string | null = null;
+        if (data.knowledge.type === 'WEB' && typeof data.knowledge.source === 'string') {
+            jobWebsiteUrl = data.knowledge.source;
+            try {
+                const urlObj = new URL(jobWebsiteUrl.startsWith('http') ? jobWebsiteUrl : `https://${jobWebsiteUrl}`);
+                const hostname = urlObj.hostname.replace('www.', '');
+                jobCompany = hostname.split('.')[0];
+                jobCompany = jobCompany.charAt(0).toUpperCase() + jobCompany.slice(1);
+            } catch (e) { }
+        }
+
+        const jobDescription = data.knowledge.analysisSummary || `Agente de ${data.intent}`;
+
         const agent = await createAgent({
             name: data.name,
-            jobDescription: `Agente de ${data.intent}`,
+            jobDescription: jobDescription,
+            jobCompany: jobCompany,
+            jobWebsiteUrl: jobWebsiteUrl,
             model: 'gpt-4o-mini',
             personalityPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`, // Schema uses personalityPrompt, not systemPrompt
             jobType: jobType,
