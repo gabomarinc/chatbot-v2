@@ -142,7 +142,7 @@ export const getWeeklyConversationsData = cache(async (weekOffset: number = 0) =
 
         const dayNameFull = format(day, 'EEE', { locale: es });
         const dayName = dayNameFull.toLowerCase().replace(/\./g, '').substring(0, 3); // "lun", "mar", etc.
-        
+
         return {
             date: day,
             dayName: dayName,
@@ -290,7 +290,7 @@ export async function getTopAgents() {
 
     return sortedAgents.map((agent, index) => {
         const recentConversations = agent.conversations
-        
+
         // Calculate active hours (unique hours with activity in last 7 days)
         const activeHoursSet = new Set<number>()
         recentConversations.forEach(conv => {
@@ -326,7 +326,7 @@ export async function getTopAgents() {
         })
         const peakHourEntry = Object.entries(hourCounts)
             .sort(([, a], [, b]) => b - a)[0]
-        const peakHour = peakHourEntry 
+        const peakHour = peakHourEntry
             ? `${peakHourEntry[0]}:00-${parseInt(peakHourEntry[0]) + 1}:00`
             : null
 
@@ -495,11 +495,80 @@ export async function deleteAgent(agentId: string) {
         throw new Error("No tienes permisos para gestionar agentes")
     }
 
-    await prisma.agent.delete({
-        where: {
-            id: agentId,
-            workspaceId: workspace.id
+    // Use transaction to ensure all related data is cleaned up
+    await prisma.$transaction(async (tx) => {
+        // 1. Delete conversations and messages
+        const conversations = await tx.conversation.findMany({
+            where: { agentId: agentId },
+            select: { id: true }
+        })
+        const conversationIds = conversations.map(c => c.id)
+
+        if (conversationIds.length > 0) {
+            await tx.message.deleteMany({
+                where: { conversationId: { in: conversationIds } }
+            })
+            await tx.conversation.deleteMany({
+                where: { id: { in: conversationIds } }
+            })
         }
+
+        // 2. Delete Channels
+        await tx.channel.deleteMany({
+            where: { agentId: agentId }
+        })
+
+        // 3. Delete Intents
+        await tx.intent.deleteMany({
+            where: { agentId: agentId }
+        })
+
+        // 4. Delete Integrations
+        await tx.agentIntegration.deleteMany({
+            where: { agentId: agentId }
+        })
+
+        // 5. Delete MCPServers
+        await tx.agentMCPServer.deleteMany({
+            where: { agentId: agentId }
+        })
+
+        // 6. Delete KnowledgeBases (and dependent sources/chunks)
+        const kbs = await tx.knowledgeBase.findMany({
+            where: { agentId: agentId },
+            select: { id: true }
+        })
+        const kbIds = kbs.map(k => k.id)
+        if (kbIds.length > 0) {
+            const sources = await tx.knowledgeSource.findMany({
+                where: { knowledgeBaseId: { in: kbIds } },
+                select: { id: true }
+            })
+            const sourceIds = sources.map(s => s.id)
+            if (sourceIds.length > 0) {
+                await tx.documentChunk.deleteMany({
+                    where: { knowledgeSourceId: { in: sourceIds } }
+                })
+                await tx.knowledgeSource.deleteMany({
+                    where: { id: { in: sourceIds } }
+                })
+            }
+            await tx.knowledgeBase.deleteMany({
+                where: { id: { in: kbIds } }
+            })
+        }
+
+        // 7. Finally delete Agent
+        // AgentMedia and CustomFieldDefinition have cascade in schema, so they should be handled automatically by DB if supported,
+        // or we can add them here if paranoid. Trusting schema cascade for those for now, but adding explicit delete just in case won't hurt if we want to be super safe.
+        // But let's trust the schema 'onDelete: Cascade' for Media and CustomFields as I saw them.
+
+        await tx.agent.delete({
+            where: {
+                id: agentId,
+                workspaceId: workspace.id
+            }
+        })
     })
 
     revalidatePath('/agents')
@@ -918,7 +987,7 @@ export async function getResponseRateDetails() {
     })
 
     const totalConversations = conversations.length
-    const conversationsWithResponse = conversations.filter(conv => 
+    const conversationsWithResponse = conversations.filter(conv =>
         conv.messages.some(msg => msg.role === 'AGENT')
     ).length
 
@@ -931,7 +1000,7 @@ export async function getResponseRateDetails() {
     conversations.forEach(conv => {
         const firstUserMessage = conv.messages.find(msg => msg.role === 'USER')
         const firstAgentMessage = conv.messages.find(msg => msg.role === 'AGENT')
-        
+
         if (firstUserMessage && firstAgentMessage) {
             const timeDiff = differenceInSeconds(
                 new Date(firstAgentMessage.createdAt),
@@ -1009,17 +1078,17 @@ export async function getResponseRateDetails() {
     for (let i = 3; i >= 0; i--) {
         const weekStart = startOfWeek(subWeeks(new Date(), i))
         const weekEnd = endOfWeek(subWeeks(new Date(), i))
-        
+
         const weekConversations = conversations.filter(conv => {
             const convDate = new Date(conv.createdAt)
             return convDate >= weekStart && convDate <= weekEnd
         })
-        
+
         const weekTotal = weekConversations.length
         const weekResponded = weekConversations.filter(conv =>
             conv.messages.some(msg => msg.role === 'AGENT')
         ).length
-        
+
         weeklyData.push({
             week: format(weekStart, 'd MMM', { locale: es }),
             total: weekTotal,
@@ -1063,7 +1132,7 @@ export async function getNotificationCount() {
         if (subscription?.plan) {
             const creditsPerMonth = subscription.plan.creditsPerMonth
             const percentage = creditsPerMonth > 0 ? (creditBalance.balance / creditsPerMonth) * 100 : 0
-            
+
             if (creditBalance.balance < 100 || percentage < 10) {
                 count++
             }
@@ -1112,7 +1181,7 @@ export async function getNotificationCount() {
         }
     })
 
-    const inactiveChannels = agents.flatMap(agent => 
+    const inactiveChannels = agents.flatMap(agent =>
         agent.channels.filter(channel => !channel.isActive)
     )
 
@@ -1152,13 +1221,13 @@ export async function getNotifications() {
         if (subscription?.plan) {
             const creditsPerMonth = subscription.plan.creditsPerMonth
             const percentage = creditsPerMonth > 0 ? (creditBalance.balance / creditsPerMonth) * 100 : 0
-            
+
             if (creditBalance.balance < 100 || percentage < 10) {
                 notifications.push({
                     id: `low-credits-${workspace.id}`,
                     type: creditBalance.balance < 50 ? 'error' : 'warning',
                     title: 'Créditos bajos',
-                    message: creditBalance.balance < 50 
+                    message: creditBalance.balance < 50
                         ? `Quedan solo ${creditBalance.balance} créditos. Recarga ahora para evitar interrupciones.`
                         : `Tienes ${creditBalance.balance} créditos disponibles. Considera recargar pronto.`,
                     actionUrl: '/billing',
@@ -1264,7 +1333,7 @@ export async function getNotifications() {
         }
     })
 
-    const inactiveChannels = agents.flatMap(agent => 
+    const inactiveChannels = agents.flatMap(agent =>
         agent.channels.filter(channel => !channel.isActive)
     )
 
