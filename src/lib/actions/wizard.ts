@@ -267,6 +267,7 @@ export async function createAgentFromWizard(data: {
             model: 'gpt-4o-mini',
             systemPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`,
             temperature: personality?.temperature || 0.7,
+            communicationStyle: personality?.communicationStyle || 'NORMAL',
             isActive: true
         });
 
