@@ -25,6 +25,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
     const [data, setData] = useState({
         name: '',
         intent: '',
+        allowEmojis: true, // Default true, can be toggled in StepIdentity
         knowledge: null as any, // { type, source, personality, analysisSummary }
         channels: {
             web: true,
@@ -63,7 +64,8 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 name: data.name,
                 intent: data.intent,
                 knowledge: data.knowledge,
-                channels: data.channels
+                channels: data.channels,
+                allowEmojis: data.allowEmojis
             };
             const result = await createAgentFromWizard(wizardPayload);
 
@@ -86,7 +88,12 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
     // -- RENDER STEPS --
     const renderStep = () => {
         switch (step) {
-            case 1: return <StepIdentity name={data.name} onChange={n => setData({ ...data, name: n })} />;
+            case 1: return <StepIdentity
+                name={data.name}
+                allowEmojis={data.allowEmojis}
+                onNameChange={n => setData({ ...data, name: n })}
+                onEmojisChange={e => setData({ ...data, allowEmojis: e })}
+            />;
             case 2: return <StepIntent intent={data.intent} onChange={i => setData({ ...data, intent: i })} />;
             case 3: return <StepKnowledge intent={data.intent} name={data.name} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
             case 4: return <StepChannels channels={data.channels} onChange={c => setData({ ...data, channels: c })} />;

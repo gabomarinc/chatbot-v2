@@ -259,7 +259,8 @@ export async function createAgentFromWizard(data: {
         web: boolean;
         whatsapp: boolean;
         instagram: boolean;
-    }
+    },
+    allowEmojis?: boolean;
 }) {
     try {
         // 1. Create Base Agent
@@ -301,11 +302,13 @@ export async function createAgentFromWizard(data: {
             jobDescription: jobDescription,
             jobCompany: jobCompany,
             jobWebsiteUrl: jobWebsiteUrl,
-            model: 'gpt-4o-mini',
-            personalityPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`, // Schema uses personalityPrompt, not systemPrompt
+            model: 'gemini-1.5-flash',
+            personalityPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`,
             jobType: jobType,
             temperature: personality?.temperature || 0.7,
-            communicationStyle: commStyle
+            communicationStyle: commStyle,
+            allowEmojis: data.allowEmojis ?? true,
+            signMessages: false
         });
 
         if (!agent) throw new Error('Failed to create agent record');
