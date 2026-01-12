@@ -61,10 +61,46 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     }
                 },
                 {
+                    element: '#tab-media',
+                    popover: {
+                        title: '🖼️ Galería Visual',
+                        description: 'Sube imágenes de productos, menús o mapas. Tu agente podrá enviarlas en el chat para enriquecer la conversación visualmente.',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#tab-integrations',
+                    popover: {
+                        title: '🔌 Integraciones',
+                        description: 'Superpoderes para tu agente. Conecta Calendarios, CRMs y otras herramientas externas para automatizar tareas reales.',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#tab-channels',
+                    popover: {
+                        title: '📡 Canales de Conexión',
+                        description: '¿WhatsApp, Instagram o Web? Decide por dónde hablará tu agente con el mundo y conecta tus cuentas.',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
                     element: '#tab-settings',
                     popover: {
                         title: '⚙️ Configuración Avanzada',
                         description: 'Ajusta la "temperatura" (creatividad) del cerebro IA y otras reglas de comportamiento.',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#tab-fields',
+                    popover: {
+                        title: '📝 Campos Personalizados',
+                        description: 'Define qué datos específicos debe recordar el agente sobre tus clientes (Talla, Presupuesto, ID, etc).',
                         side: 'bottom',
                         align: 'start'
                     }
