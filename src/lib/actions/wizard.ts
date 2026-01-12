@@ -259,6 +259,7 @@ export async function createAgentFromWizard(data: {
         web: boolean;
         whatsapp: boolean;
         instagram: boolean;
+        messenger: boolean;
     },
     allowEmojis?: boolean;
     webConfig?: {
@@ -374,15 +375,16 @@ export async function createAgentFromWizard(data: {
         }
 
         if (data.channels.whatsapp) {
-            const waConfig = data.whatsappConfig || {};
+            // If config is provided (legacy or future), use it. Otherwise create empty/pending channel.
+            const waConfig = data.whatsappConfig;
             channelsToCreate.push({
                 type: 'WHATSAPP',
                 displayName: 'WhatsApp',
-                config: {
+                config: waConfig ? {
                     phoneNumberId: waConfig.phoneNumberId,
                     accessToken: waConfig.accessToken,
                     verifyToken: waConfig.verifyToken
-                }
+                } : {}
             });
         }
         if (data.channels.instagram) channelsToCreate.push({ type: 'INSTAGRAM', displayName: 'Instagram', config: {} });
