@@ -151,6 +151,7 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
                         <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2">
                             {agentId ? (
                                 <WhatsAppEmbeddedSignup
+                                    key={agentId}
                                     appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || ''}
                                     agentId={agentId}
                                     onSuccess={() => {

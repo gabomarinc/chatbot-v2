@@ -30,84 +30,57 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
     const [longLivedToken, setLongLivedToken] = useState<string>('');
 
     useEffect(() => {
-        // Verificar HTTPS - Meta requiere HTTPS incluso en localhost
+        // Verificar HTTPS
         if (typeof window !== 'undefined' && window.location.protocol !== 'https:') {
             console.warn('Facebook SDK requiere HTTPS. Para desarrollo local, usa ngrok.');
-            // No mostramos error aquí, solo en launchSignup cuando el usuario intente conectar
             return;
         }
 
-        // Load Facebook SDK
-        const loadSDK = () => {
-            // Si ya existe el script, verificar si FB está disponible
-            const existingScript = document.getElementById('facebook-jssdk');
-            if (existingScript) {
-                // Esperar un poco y verificar si FB se inicializó
-                const checkFB = setInterval(() => {
-                    if (window.FB) {
-                        setIsLoaded(true);
-                        clearInterval(checkFB);
-                    }
-                }, 100);
-
-                // Timeout después de 5 segundos
-                setTimeout(() => {
-                    clearInterval(checkFB);
-                    if (!window.FB) {
-                        console.warn('SDK de Facebook no se inicializó después de 5 segundos');
-                    }
-                }, 5000);
-                return;
+        const initSDK = () => {
+            if (window.FB) {
+                window.FB.init({
+                    appId: appId,
+                    autoLogAppEvents: true,
+                    xfbml: true,
+                    version: 'v21.0'
+                });
+                setIsLoaded(true);
+                console.log('Facebook SDK inicializado correctamente (Re-init)');
             }
+        };
 
-            // Configurar fbAsyncInit antes de cargar el script
-            window.fbAsyncInit = function () {
-                if (window.FB) {
-                    window.FB.init({
-                        appId: appId,
-                        autoLogAppEvents: true,
-                        xfbml: true,
-                        version: 'v21.0'
-                    });
-                    setIsLoaded(true);
-                    console.log('Facebook SDK inicializado correctamente');
-                }
-            };
+        // Always Setup callback
+        window.fbAsyncInit = function () {
+            initSDK();
+        };
 
+        // Load SDK if not present
+        if (!document.getElementById('facebook-jssdk')) {
             const script = document.createElement('script');
             script.id = 'facebook-jssdk';
             script.src = "https://connect.facebook.net/en_US/sdk.js";
             script.async = true;
             script.defer = true;
-
             script.onload = () => {
-                console.log('Script de Facebook SDK cargado');
-                // El SDK debería llamar a fbAsyncInit automáticamente
-                // Pero verificamos después de un tiempo por si acaso
-                setTimeout(() => {
-                    if (window.FB) {
-                        setIsLoaded(true);
-                    }
-                }, 1000);
+                // Should trigger fbAsyncInit
             };
-
-            script.onerror = (error) => {
-                console.error('Error al cargar el SDK de Facebook:', error);
-                toast.error('Error al cargar el SDK de Facebook. Verifica tu conexión o desactiva bloqueadores de anuncios.');
-            };
-
             document.body.appendChild(script);
-
-            // Timeout de seguridad: si después de 10 segundos no se cargó, mostrar advertencia
-            setTimeout(() => {
-                if (!window.FB) {
-                    console.warn('El SDK de Facebook no se cargó después de 10 segundos');
-                    toast.error('El SDK de Facebook está tardando en cargar. Verifica tu conexión o desactiva bloqueadores de anuncios.');
-                }
-            }, 10000);
-        };
-
-        loadSDK();
+        } else {
+            // Script already exists
+            if (window.FB) {
+                initSDK();
+            } else {
+                // Script loaded but FB not ready? Wait for it is handled by the script running fbAsyncInit eventually
+                // But just in case:
+                const interval = setInterval(() => {
+                    if (window.FB) {
+                        initSDK();
+                        clearInterval(interval);
+                    }
+                }, 500);
+                setTimeout(() => clearInterval(interval), 5000);
+            }
+        }
     }, [appId]);
 
     const launchSignup = () => {
