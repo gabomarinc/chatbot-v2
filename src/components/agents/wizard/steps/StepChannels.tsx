@@ -139,12 +139,15 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
                                         Una vez creado tu agente, podrás conectar tu número de WhatsApp Business haciendo clic en un solo botón.
                                     </p>
                                 </div>
-                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-400 rounded-lg text-xs font-bold border border-gray-200 cursor-not-allowed select-none">
-                                    <span>Conectar cuenta de Facebook</span>
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="inline-flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-400 rounded-xl text-xs font-bold border border-gray-200 cursor-not-allowed select-none w-full max-w-xs justify-center">
+                                        <Smartphone className="w-4 h-4" />
+                                        <span>Conectar cuenta de WhatsApp</span>
+                                    </div>
+                                    <p className="text-[10px] text-green-600 font-medium bg-green-50 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-green-100">
+                                        <span>⚡️</span> Disponible al finalizar la creación
+                                    </p>
                                 </div>
-                                <p className="text-[10px] text-green-600 font-medium bg-green-50 inline-block px-2 py-1 rounded-md border border-green-100">
-                                    ⚡️ Disponible al finalizar la creación
-                                </p>
                             </div>
                         </div>
                     )}
