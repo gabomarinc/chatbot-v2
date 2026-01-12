@@ -480,9 +480,11 @@ export async function updateAgentWizard(agentId: string, data: {
                 });
             }
         } else {
-            // Disable web if unchecked? usually always filtered out but valid logic
+            // El usuario desactivó el canal Web: Lo eliminamos para que el agente quede limpio
             const webChannel = agent.channels.find(c => c.type === 'WEBCHAT');
-            if (webChannel) await prisma.channel.update({ where: { id: webChannel.id }, data: { isActive: false } });
+            if (webChannel) {
+                await prisma.channel.delete({ where: { id: webChannel.id } });
+            }
         }
 
         // 2. Ensure other channels exist/active state
