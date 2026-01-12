@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import { Plus, MoreVertical, Bot, MessageSquare, Zap, LayoutGrid, Settings, Trash2 } from 'lucide-react';
 import Link from 'next/link';
