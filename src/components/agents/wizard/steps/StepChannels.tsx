@@ -25,9 +25,10 @@ interface StepChannelsProps {
     onWebConfigChange: (config: any) => void;
     onWhatsappConfigChange?: (config: any) => void;
     agentId?: string | null;
+    webChannelId?: string | null;
 }
 
-export function StepChannels({ channels, webConfig, whatsappConfig, onChange, onWebConfigChange, onWhatsappConfigChange, agentId }: StepChannelsProps) {
+export function StepChannels({ channels, webConfig, whatsappConfig, onChange, onWebConfigChange, onWhatsappConfigChange, agentId, webChannelId }: StepChannelsProps) {
 
     const handleToggle = (key: string) => {
         onChange({ ...channels, [key]: !channels[key as keyof typeof channels] });
@@ -99,11 +100,12 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
                             {/* Snippet Preview */}
                             <div className="bg-gray-900 rounded-xl p-4 overflow-hidden relative group">
                                 <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Código de Instalación (Previsualización)</div>
-                                <pre className="font-mono text-[10px] text-green-400 opacity-60">
-                                    {`<script>
+                                <pre className="font-mono text-[10px] text-green-400 opacity-60 break-all whitespace-pre-wrap">
+                                    {webChannelId ? `<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://chat.realtos.ai'}/widget.js" data-channel-id="${webChannelId}"></script>` :
+                                        `<script>
   window.chatConfig = { agentId: "${agentId || 'PENDING'}" };
 </script>
-<script src="https://chat.realtos.ai/widget.js" async></script>`}
+<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://chat.realtos.ai'}/widget.js" async></script>`}
                                 </pre>
                                 {!agentId && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 backdrop-blur-[1px]">

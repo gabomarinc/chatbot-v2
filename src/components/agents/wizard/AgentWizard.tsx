@@ -21,6 +21,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
+    const [webChannelId, setWebChannelId] = useState<string | null>(null);
 
     // Wizard Data State
     const [data, setData] = useState({
@@ -97,7 +98,11 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             }
 
             const newAgentId = (result as any).data.id;
+            const channels = (result as any).data.channels || [];
+            const webChannel = channels.find((c: any) => c.type === 'WEBCHAT');
             setCreatedAgentId(newAgentId);
+            if (webChannel) setWebChannelId(webChannel.id);
+
             toast.success('Agente inicializado correctamente');
             setStep(4); // Move to Channels Step
 
@@ -148,6 +153,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 webConfig={data.webConfig}
                 whatsappConfig={data.whatsappConfig}
                 agentId={createdAgentId}
+                webChannelId={webChannelId}
                 onChange={c => setData({ ...data, channels: c })}
                 onWebConfigChange={c => setData({ ...data, webConfig: c })}
                 onWhatsappConfigChange={c => setData({ ...data, whatsappConfig: c })}

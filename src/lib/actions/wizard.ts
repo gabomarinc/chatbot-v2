@@ -407,7 +407,13 @@ export async function createAgentFromWizard(data: {
             }
         }
 
-        return { success: true, data: agent };
+        // 4. Return Full Agent with Channels
+        const fullAgent = await prisma.agent.findUnique({
+            where: { id: agent.id },
+            include: { channels: true }
+        });
+
+        return { success: true, data: fullAgent };
 
     } catch (e: any) {
         console.error('Error in wizard creation flow:', e);
