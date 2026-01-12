@@ -209,12 +209,40 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                                 <span className="bg-[#21AC96]/10 text-[#21AC96] rounded px-2 text-sm mt-0.5">IA</span>
                                 {q.text}
                             </label>
-                            <Textarea
-                                placeholder="Escribe tu respuesta aquí..."
-                                value={answers[q.id] || ''}
-                                onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
-                                className="min-h-[80px]"
-                            />
+                            <div className="space-y-3">
+                                <div className="flex flex-wrap gap-2">
+                                    {q.options?.map((opt) => (
+                                        <button
+                                            key={opt}
+                                            onClick={() => setAnswers({ ...answers, [q.id]: opt })}
+                                            className={`px-4 py-2 rounded-full text-sm border transition-all ${answers[q.id] === opt
+                                                    ? 'bg-[#21AC96] text-white border-[#21AC96] font-medium shadow-sm'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#21AC96] hover:text-[#21AC96]'
+                                                }`}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() => setAnswers({ ...answers, [q.id]: '' })} // Clear to trigger manual mode visual if needed, or just let them type
+                                        className={`px-4 py-2 rounded-full text-sm border transition-all ${!q.options?.includes(answers[q.id] || '') && answers[q.id]
+                                                ? 'bg-[#21AC96] text-white border-[#21AC96]'
+                                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                            }`}
+                                    >
+                                        Otra / Escribir...
+                                    </button>
+                                </div>
+
+                                {/* Show textarea if "Other" is implicit (value not in options) or explicitly if they want to edit */}
+                                <Textarea
+                                    placeholder="Escribe tu respuesta personalizada..."
+                                    value={answers[q.id] || ''}
+                                    onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+                                    className={`min-h-[80px] transition-all ${q.options?.includes(answers[q.id] || '') ? 'opacity-50 hover:opacity-100' : ''
+                                        }`}
+                                />
+                            </div>
                         </div>
                     ))}
                     <Button onClick={handleGeneratePersonalities} className="w-full bg-[#21AC96] hover:bg-[#21AC96]/90 text-white rounded-xl py-6 text-lg">

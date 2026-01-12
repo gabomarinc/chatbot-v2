@@ -11,6 +11,7 @@ export interface WizardAnalysisResult {
     questions: {
         id: string;
         text: string;
+        options: string[];
     }[];
 }
 
@@ -119,21 +120,25 @@ export async function analyzeUrlAndGenerateQuestions(url: string, intent: string
 Tu objetivo es analizar el contenido de un sitio web y generar:
 1. Un resumen breve del negocio.
 2. 3 preguntas estratégicas para definir la personalidad del bot.
+3. Para cada pregunta, sugiere 2 o 3 respuestas predefinidas (cortas) que cubran los casos más comunes.
 
 Salida estrictamente en JSON:
 {
   "summary": "Resumen del negocio...",
   "questions": [
-    { "id": "q1", "text": "¿Pregunta 1?" },
-    { "id": "q2", "text": "¿Pregunta 2?" },
-    { "id": "q3", "text": "¿Pregunta 3?" }
+    { 
+      "id": "q1", 
+      "text": "¿Pregunta 1?", 
+      "options": ["Opción A", "Opción B"] 
+    },
+    ...
   ]
 }`;
 
     const userPrompt = `Sitio Web Content: "${textContent}"
 Intención del Bot: ${intent} (e.g. Ventas, Soporte)
 
-Genera el JSON de análisis. Las preguntas deben ayudar a decidir si el bot debe ser más agresivo/pasivo, formal/casual, o técnico/simple.`;
+Genera el JSON de análisis. Las preguntas y opciones deben ayudar a decidir el tono y comportamiento del bot.`;
 
     let rawJson = "";
     try {
@@ -144,9 +149,9 @@ Genera el JSON de análisis. Las preguntas deben ayudar a decidir si el bot debe
         return {
             summary: "No se pudo generar un análisis automático debido a un error de conexión con la IA.",
             questions: [
-                { id: "q1", text: "¿Cuál es el tono de voz de tu marca?" },
-                { id: "q2", text: "¿Qué información es la más crítica para tus clientes?" },
-                { id: "q3", text: "¿Cómo manejas las objeciones de venta?" }
+                { id: "q1", text: "¿Cuál es el tono de voz de tu marca?", options: ["Formal y serio", "Amigable y cercano", "Enérgico"] },
+                { id: "q2", text: "¿Qué información es la más crítica para tus clientes?", options: ["Precios y Costos", "Características Técnicas", "Garantías"] },
+                { id: "q3", text: "¿Cómo manejas las objeciones de venta?", options: ["Ofrecer descuentos", "Explicar valor", "Redirigir a humano"] }
             ]
         };
     }
@@ -162,9 +167,9 @@ Genera el JSON de análisis. Las preguntas deben ayudar a decidir si el bot debe
         return {
             summary: "No se pudo generar un resumen automático.",
             questions: [
-                { id: "q1", text: "¿Cuál es el tono de voz de tu marca?" },
-                { id: "q2", text: "¿Qué información es la más crítica para tus clientes?" },
-                { id: "q3", text: "¿Cómo manejas las objeciones de venta?" }
+                { id: "q1", text: "¿Cuál es el tono de voz de tu marca?", options: ["Formal", "Casual"] },
+                { id: "q2", text: "¿Qué prioridad debe tener el bot?", options: ["Vender", "Informar"] },
+                { id: "q3", text: "¿Nivel de tecnicismo?", options: ["Alto", "Bajo"] }
             ]
         };
     }
