@@ -261,11 +261,18 @@ export async function createAgentFromWizard(data: {
         const { createAgent } = await import('./dashboard');
         const { addKnowledgeSource } = await import('./knowledge');
 
+        // Map intent to JobType
+        let jobType: 'SALES' | 'SUPPORT' | 'PERSONAL' = 'PERSONAL';
+        const normalizedIntent = data.intent.toUpperCase();
+        if (normalizedIntent.includes('VENTA') || normalizedIntent.includes('COMERCIAL')) jobType = 'SALES';
+        else if (normalizedIntent.includes('SOPORTE') || normalizedIntent.includes('ATENCIÓN')) jobType = 'SUPPORT';
+
         const agent = await createAgent({
             name: data.name,
             description: `Agente de ${data.intent}`,
             model: 'gpt-4o-mini',
-            systemPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`,
+            personalityPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`, // Schema uses personalityPrompt, not systemPrompt
+            jobType: jobType,
             temperature: personality?.temperature || 0.7,
             communicationStyle: personality?.communicationStyle || 'NORMAL',
             isActive: true
