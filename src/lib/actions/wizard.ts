@@ -266,6 +266,11 @@ export async function createAgentFromWizard(data: {
         welcomeMessage: string;
         primaryColor: string;
     };
+    whatsappConfig?: {
+        phoneNumberId: string;
+        accessToken: string;
+        verifyToken: string;
+    };
 }) {
     try {
         // 1. Create Base Agent
@@ -368,8 +373,20 @@ export async function createAgentFromWizard(data: {
             });
         }
 
-        if (data.channels.whatsapp) channelsToCreate.push({ type: 'WHATSAPP', displayName: 'WhatsApp', config: {} });
+        if (data.channels.whatsapp) {
+            const waConfig = data.whatsappConfig || {};
+            channelsToCreate.push({
+                type: 'WHATSAPP',
+                displayName: 'WhatsApp',
+                config: {
+                    phoneNumberId: waConfig.phoneNumberId,
+                    accessToken: waConfig.accessToken,
+                    verifyToken: waConfig.verifyToken
+                }
+            });
+        }
         if (data.channels.instagram) channelsToCreate.push({ type: 'INSTAGRAM', displayName: 'Instagram', config: {} });
+        if (data.channels.messenger) channelsToCreate.push({ type: 'MESSENGER', displayName: 'Messenger', config: {} });
 
         for (const ch of channelsToCreate) {
             try {

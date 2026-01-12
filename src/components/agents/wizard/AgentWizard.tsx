@@ -38,6 +38,12 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             title: '',
             welcomeMessage: '',
             primaryColor: '#21AC96'
+        },
+        // New WhatsApp Config
+        whatsappConfig: {
+            phoneNumberId: '',
+            accessToken: '',
+            verifyToken: ''
         }
     });
 
@@ -72,7 +78,8 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 knowledge: data.knowledge,
                 channels: data.channels,
                 allowEmojis: data.allowEmojis,
-                webConfig: data.webConfig // Pass new config
+                webConfig: data.webConfig,
+                whatsappConfig: data.whatsappConfig
             };
             const result = await createAgentFromWizard(wizardPayload);
 
@@ -106,8 +113,10 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             case 4: return <StepChannels
                 channels={data.channels}
                 webConfig={data.webConfig}
+                whatsappConfig={data.whatsappConfig}
                 onChange={c => setData({ ...data, channels: c })}
                 onWebConfigChange={c => setData({ ...data, webConfig: c })}
+                onWhatsappConfigChange={c => setData({ ...data, whatsappConfig: c })}
             />;
             case 5: return <StepSuccess onClose={onClose} />;
             default: return null;

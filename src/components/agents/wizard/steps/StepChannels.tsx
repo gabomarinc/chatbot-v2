@@ -1,4 +1,4 @@
-import { Globe, Smartphone, MessageCircle } from 'lucide-react';
+import { Globe, Smartphone, MessageCircle, Instagram, Facebook, Key, Hash, Lock } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -15,11 +15,17 @@ interface StepChannelsProps {
         welcomeMessage: string;
         primaryColor: string;
     };
+    whatsappConfig?: {
+        phoneNumberId: string;
+        accessToken: string;
+        verifyToken: string;
+    };
     onChange: (channels: any) => void;
     onWebConfigChange: (config: any) => void;
+    onWhatsappConfigChange?: (config: any) => void;
 }
 
-export function StepChannels({ channels, webConfig, onChange, onWebConfigChange }: StepChannelsProps) {
+export function StepChannels({ channels, webConfig, whatsappConfig, onChange, onWebConfigChange, onWhatsappConfigChange }: StepChannelsProps) {
 
     const handleToggle = (key: string) => {
         onChange({ ...channels, [key]: !channels[key as keyof typeof channels] });
@@ -48,9 +54,9 @@ export function StepChannels({ channels, webConfig, onChange, onWebConfigChange 
                         <Switch checked={channels.web} onCheckedChange={() => handleToggle('web')} />
                     </div>
 
-                    {/* CONFIGURACIÓN EXPANDIBLE */}
+                    {/* CONFIGURACIÓN WEB */}
                     {channels.web && (
-                        <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2 space-y-4">
+                        <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2 space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-xs font-bold text-gray-600 uppercase">Título del Widget</Label>
@@ -88,21 +94,17 @@ export function StepChannels({ channels, webConfig, onChange, onWebConfigChange 
                                 />
                             </div>
 
-                            {/* PREVIEW MINIATURA */}
-                            <div className="bg-gray-100 p-4 rounded-xl flex justify-end items-end h-32 relative overflow-hidden border border-gray-200">
-                                <div className="absolute top-2 left-2 text-[10px] text-gray-400 font-bold uppercase">Vista Previa</div>
-                                {/* Message Bubble */}
-                                {webConfig.welcomeMessage && (
-                                    <div className="bg-white p-2 rounded-lg rounded-br-none shadow-sm text-xs text-gray-700 mb-2 mr-2 max-w-[200px] border border-gray-100 animate-in zoom-in slide-in-from-right duration-300">
-                                        {webConfig.welcomeMessage}
-                                    </div>
-                                )}
-                                {/* Chat Button */}
-                                <div
-                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg z-10"
-                                    style={{ backgroundColor: webConfig.primaryColor }}
-                                >
-                                    <MessageCircle className="w-5 h-5" />
+                            {/* Snippet Preview */}
+                            <div className="bg-gray-900 rounded-xl p-4 overflow-hidden relative group">
+                                <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Código de Instalación (Previsualización)</div>
+                                <pre className="font-mono text-[10px] text-green-400 opacity-60">
+                                    {`<script>
+  window.chatConfig = { agentId: "SE_GENERARÁ_AUTOMÁTICAMENTE" };
+</script>
+<script src=".../widget.js" async></script>`}
+                                </pre>
+                                <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 backdrop-blur-[1px]">
+                                    <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-bold border border-gray-700 shadow-lg">Se activará al crear el agente</span>
                                 </div>
                             </div>
                         </div>
@@ -110,22 +112,111 @@ export function StepChannels({ channels, webConfig, onChange, onWebConfigChange 
                 </div>
 
                 {/* WhatsApp */}
-                <div className={`flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${channels.whatsapp ? 'border-[#21AC96] bg-[#21AC96]/5' : 'border-gray-100 bg-white'}`}>
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-xl ${channels.whatsapp ? 'bg-[#21AC96] text-white' : 'bg-gray-100 text-gray-400'}`}>
-                            <Smartphone className="w-6 h-6" />
+                <div className={`p-5 rounded-2xl border-2 transition-all ${channels.whatsapp ? 'border-[#21AC96] bg-[#21AC96]/5' : 'border-gray-100 bg-white'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl ${channels.whatsapp ? 'bg-[#21AC96] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                <Smartphone className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">WhatsApp</h3>
+                                <p className="text-sm text-gray-500">Conecta tu número de WhatsApp Business.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-gray-900">WhatsApp</h3>
-                            <p className="text-sm text-gray-500">Conecta tu número de WhatsApp Business.</p>
-                        </div>
+                        <Switch checked={channels.whatsapp} onCheckedChange={() => handleToggle('whatsapp')} />
                     </div>
-                    <Switch checked={channels.whatsapp} onCheckedChange={() => handleToggle('whatsapp')} />
+
+                    {/* CONFIGURACIÓN WHATSAPP */}
+                    {channels.whatsapp && (
+                        <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2">
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-4">
+                                <div className="w-16 h-16 bg-[#1877F2]/10 text-[#1877F2] rounded-full flex items-center justify-center mx-auto">
+                                    <Facebook className="w-8 h-8" />
+                                </div>
+                                <div>
+                                    <h4 className="text-gray-900 font-bold mb-1">Conexión Simplificada con Meta</h4>
+                                    <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                                        Una vez creado tu agente, podrás conectar tu número de WhatsApp Business haciendo clic en un solo botón.
+                                    </p>
+                                </div>
+                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-400 rounded-lg text-xs font-bold border border-gray-200 cursor-not-allowed select-none">
+                                    <span>Conectar cuenta de Facebook</span>
+                                </div>
+                                <p className="text-[10px] text-green-600 font-medium bg-green-50 inline-block px-2 py-1 rounded-md border border-green-100">
+                                    ⚡️ Disponible al finalizar la creación
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Instagram */}
+                <div className={`p-5 rounded-2xl border-2 transition-all ${channels.instagram ? 'border-[#21AC96] bg-[#21AC96]/5' : 'border-gray-100 bg-white'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl ${channels.instagram ? 'bg-[#21AC96] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                <Instagram className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">Instagram</h3>
+                                <p className="text-sm text-gray-500">Respuestas automáticas en DMs.</p>
+                            </div>
+                        </div>
+                        <Switch checked={channels.instagram} onCheckedChange={() => handleToggle('instagram')} />
+                    </div>
+
+                    {channels.instagram && (
+                        <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2">
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-4">
+                                <div className="w-10 h-10 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 rounded-lg flex items-center justify-center text-white shrink-0">
+                                    <Instagram className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-gray-900">Integración Directa</p>
+                                    <p className="text-[10px] text-gray-500">
+                                        Podrás seleccionar tu cuenta de Instagram Business después de crear el agente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Messenger */}
+                <div className={`p-5 rounded-2xl border-2 transition-all ${channels.messenger ? 'border-[#21AC96] bg-[#21AC96]/5' : 'border-gray-100 bg-white'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl ${channels.messenger ? 'bg-[#21AC96] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                <Facebook className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">Messenger</h3>
+                                <p className="text-sm text-gray-500">Automatiza tu página de Facebook.</p>
+                            </div>
+                        </div>
+                        <Switch checked={channels.messenger} onCheckedChange={() => handleToggle('messenger')} />
+                    </div>
+
+                    {channels.messenger && (
+                        <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2">
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-4">
+                                <div className="w-10 h-10 bg-[#1877F2] rounded-lg flex items-center justify-center text-white shrink-0">
+                                    <Facebook className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-gray-900">Integración Directa</p>
+                                    <p className="text-[10px] text-gray-500">
+                                        Podrás seleccionar tu Página de Facebook después de crear el agente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <p className="text-center text-xs text-gray-400 mt-4">
-                * Podrás configurar los detalles de conexión de cada canal más tarde.
+                * Podrás cambiar estas configuraciones en cualquier momento.
             </p>
         </div>
     );
