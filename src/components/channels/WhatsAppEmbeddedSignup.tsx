@@ -30,6 +30,12 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
     const [longLivedToken, setLongLivedToken] = useState<string>('');
 
     useEffect(() => {
+        if (!appId) {
+            console.error('Missing Facebook App ID');
+            toast.error('Realtos Chatbot Error: Falta configurar el App ID de Facebook.');
+            return;
+        }
+
         // Verificar HTTPS
         if (typeof window !== 'undefined' && window.location.protocol !== 'https:') {
             console.warn('Facebook SDK requiere HTTPS. Para desarrollo local, usa ngrok.');
@@ -38,6 +44,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
 
         const initSDK = () => {
             if (window.FB) {
+                console.log('Inicializando Facebook SDK con App ID:', appId);
                 window.FB.init({
                     appId: appId,
                     autoLogAppEvents: true,
@@ -45,7 +52,6 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                     version: 'v21.0'
                 });
                 setIsLoaded(true);
-                console.log('Facebook SDK inicializado correctamente (Re-init)');
             }
         };
 
@@ -70,8 +76,6 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             if (window.FB) {
                 initSDK();
             } else {
-                // Script loaded but FB not ready? Wait for it is handled by the script running fbAsyncInit eventually
-                // But just in case:
                 const interval = setInterval(() => {
                     if (window.FB) {
                         initSDK();
@@ -86,30 +90,35 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
     const launchSignup = () => {
         if (!window.FB) {
             toast.error('El SDK de Facebook aún no está cargado. Por favor, espera unos segundos e intenta de nuevo.');
-            console.warn('FB no está disponible:', { FB: window.FB });
             return;
         }
 
-        // Verificar HTTPS - Meta requiere HTTPS incluso en localhost para FB.login
+        // Verificar HTTPS
         if (typeof window !== 'undefined' && window.location.protocol !== 'https:') {
-            toast.error('Meta requiere HTTPS para conectar WhatsApp. Para desarrollo local, usa ngrok (consulta NGROK_SETUP.md)');
-            console.error('FB.login requiere HTTPS. URL actual:', window.location.href);
+            toast.error('Meta requiere HTTPS para conectar WhatsApp.');
             return;
         }
 
         setIsProcessing(true);
 
         try {
+            // Safety Re-init just before login call (sometimes necessary in SPA transitions)
+            if (window.FB) {
+                window.FB.init({
+                    appId: appId,
+                    autoLogAppEvents: true,
+                    xfbml: true,
+                    version: 'v21.0'
+                });
+            }
+
             console.log('Iniciando FB.login con config:', { configId, appId });
 
-            // Para Embedded Signup con config_id, no necesitamos redirect_uri explícito
-            // Meta maneja el redirect internamente cuando se usa config_id
-            // Usar flujo de Token (implícito) para evitar problemas de redirect_uri
+            // Para Embedded Signup con config_id
             const loginOptions: any = {
                 scope: 'whatsapp_business_management,whatsapp_business_messaging',
             };
 
-            // Solo agregar config_id si está disponible
             if (configId) {
                 loginOptions.config_id = configId;
             }
