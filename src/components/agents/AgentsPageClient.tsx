@@ -74,7 +74,7 @@ function AgentCard({ agent }: { agent: Agent }) {
             <div className="relative group">
                 <Link
                     href={`/agents/${agent.id}/profile`}
-                    className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-[#21AC96]/5 transition-all cursor-pointer block relative overflow-visible h-full"
+                    className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-[#21AC96]/5 transition-all cursor-pointer block relative overflow-hidden h-full"
                 >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#21AC96]/5 rounded-full -translate-y-16 translate-x-16 group-hover:bg-[#21AC96]/10 transition-colors pointer-events-none"></div>
 
