@@ -269,7 +269,7 @@ export async function createAgentFromWizard(data: {
 
         const agent = await createAgent({
             name: data.name,
-            description: `Agente de ${data.intent}`,
+            jobDescription: `Agente de ${data.intent}`,
             model: 'gpt-4o-mini',
             personalityPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`, // Schema uses personalityPrompt, not systemPrompt
             jobType: jobType,
