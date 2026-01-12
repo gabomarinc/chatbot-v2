@@ -27,8 +27,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-profile',
                     popover: {
-                        title: '👤 Perfil de Identidad',
-                        description: 'Aquí nace tu agente. Dale un nombre con personalidad (ej. "Sofia") y un avatar amigable. Define si es un Asistente formal o un Vendedor carismático.',
+                        title: '👤 Perfil e Identidad',
+                        description: 'Este es el primer paso para dar vida a tu agente. Aquí configurarás su apariencia pública y su personalidad base.\n\n• **Nombre:** Cómo se presentará ante los usuarios.\n• **Avatar:** Una imagen genera confianza; usa el logo de tu empresa o una foto humana.\n• **Rol:** Define si será un Asistente servicial, un Vendedor agresivo o un Soporte técnico calmado.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -36,8 +36,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-job',
                     popover: {
-                        title: '💼 Descripción del Trabajo',
-                        description: 'El contexto lo es todo. Dile dónde trabaja (ej. "Inmobiliaria Deluxe") y qué vende. Cuantos más detalles le des sobre su empresa, mejor representará tu marca.',
+                        title: '💼 Contexto Laboral',
+                        description: 'Para que la IA sea efectiva, necesita saber "quién es" profesionalmente. \n\nDefine la **Empresa** que representa y su **Puesto de Trabajo**. En la "Descripción", sé muy detallado sobre qué productos venden, cuál es la propuesta de valor única y qué tono de voz debe usar (formal, cercano, técnico). Cuanto más contexto, mejores respuestas.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -45,8 +45,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-training',
                     popover: {
-                        title: '📚 Base de Conocimiento',
-                        description: 'El cerebro de tu agente. 🧠 Sube tus PDFs de precios, manuales o el enlace de tu web. Ej: Sube "Menu_2024.pdf" para que sepa todos tus platos.',
+                        title: '📚 Base de Conocimiento (Cerebro)',
+                        description: 'Aquí es donde "educas" a tu agente. Sin datos, la IA puede alucinar.\n\n• **Archivos:** Sube PDFs con menús, listas de precios, políticas de devolución o manuales técnicos.\n• **Sitios Web:** Agrega tu URL para que el agente lea tu página y aprenda sobre tu negocio automáticamente.\nLa IA buscará en esta información antes de responder cualquier pregunta.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -54,8 +54,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-intents',
                     popover: {
-                        title: '🎯 Intenciones y Acciones',
-                        description: 'Automatiza la magia. Detecta cuando alguien dice "Cita" y haz que el agente abra tu Calendario automáticamente. O si dicen "Precio", que envíe el PDF de tarifas.',
+                        title: '🎯 Intenciones y Automatización',
+                        description: 'Las "Intenciones" son superpoderes que permiten al agente actuar, no solo hablar.\n\nConfigura palabras clave o frases (ej: "Quiero agendar") que disparen acciones específicas:\n• Abrir un calendario de reservas.\n• Enviar un formulario de contacto.\n• Derivar la charla a un humano.\nEs la clave para convertir conversaciones en ventas.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -63,8 +63,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-media',
                     popover: {
-                        title: '🖼️ Galería Visual',
-                        description: 'Una imagen vale más que mil palabras. Sube fotos de tus productos o un mapa de ubicación. Tu agente sabrá cuándo enviarlas en el chat para enamorar al cliente.',
+                        title: '🖼️ Galería Multimedia',
+                        description: 'El texto a veces no es suficiente. Aquí puedes cargar una biblioteca de imágenes:\n\n• Fotos de productos destacados.\n• Mapas de ubicación de la oficina.\n• Gráficos o esquemas explicativos.\n\nTu agente será capaz de seleccionar y enviar la imagen correcta en el momento justo de la conversación.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -72,8 +72,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-integrations',
                     popover: {
-                        title: '🔌 Integraciones',
-                        description: 'Conecta con el mundo real. Enlaza Google Calendar para agendar reuniones o tu CRM para guardar leads. Haz que tu agente trabaje por ti mientras duermes.',
+                        title: '🔌 Conectividad e Integraciones',
+                        description: 'Tu agente no es una isla. Aquí lo conectas con tus herramientas de negocio:\n\n• **Calendario:** Para que agende citas directamente en tu agenda.\n• **CRM:** Para guardar automáticamente los datos de clientes potenciales.\n• **Hojas de Cálculo:** Para registrar pedidos o incidencias.\nAutomatiza el flujo de trabajo completo sin intervención manual.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -81,8 +81,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-channels',
                     popover: {
-                        title: '📡 Canales de Conexión',
-                        description: 'Omnicanalidad real. Conecta WhatsApp, Instagram o tu Web. Tu agente estará listo para responder al instante, sea por donde sea que te escriban.',
+                        title: '📡 Canales de Comunicación',
+                        description: 'La omnicanalidad simplificada. Decide por dónde podrán contactar a este agente:\n\n• **WhatsApp:** Ideal para ventas y soporte rápido.\n• **Web Widget:** Para captar visitas en tu página.\n• **Instagram/Facebook:** Para responder consultas sociales.\n\nPuedes tener el mismo "cerebro" atendiendo todos estos canales simultáneamente.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -90,8 +90,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-settings',
                     popover: {
-                        title: '⚙️ Configuración Avanzada',
-                        description: 'Ajuste fino. ¿Quieres un agente creativo (Temp 0.9) o preciso (Temp 0.2)? Configura su zona horaria y si puede usar emojis 😎 para parecer más humano.',
+                        title: '⚙️ Configuración del Motor IA',
+                        description: 'Ajustes técnicos para refinar el comportamiento:\n\n• **Modelo:** Elige entre rapidez (Flash) o razonamiento complejo (Pro).\n• **Temperatura:** Sube el valor para más creatividad, bájalo para precisión robótica.\n• **Emojis:** Actívalos para un trato más humano y cálido.\n• **Zona Horaria:** Crítico para que el agente entienda "mañana a las 5pm".',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -99,8 +99,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#tab-fields',
                     popover: {
-                        title: '📝 Campos Personalizados',
-                        description: 'Memoria de elefante. Configura qué datos debe extraer y guardar del cliente. Ej: Crea un campo "Presupuesto" y el agente preguntará y guardará ese dato por ti.',
+                        title: '📝 Captura de Datos (Campos)',
+                        description: 'Convierte el chat en una base de datos. Define qué información es vital recolectar:\n\nEjemplos: *Correo electrónico, Teléfono, Presupuesto, Talla, Fecha de evento*.\n\nEl agente preguntará de forma natural por estos datos durante la charla y los guardará en el perfil del contacto automáticamente.',
                         side: 'bottom',
                         align: 'start'
                     }
@@ -108,8 +108,8 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                 {
                     element: '#test-agent-btn',
                     popover: {
-                        title: '🧪 Zona de Pruebas',
-                        description: '¡Prueba tu agente aquí mismo antes de lanzarlo al público! Verifica que responda como esperas.',
+                        title: '🧪 Zona de Pruebas (Playground)',
+                        description: 'El paso final y más importante. Antes de conectar tu agente al mundo real, pruébalo aquí.\n\nSimula conversaciones reales, intenta "romperlo" con preguntas difíciles y verifica que usa las herramientas correctas. ¡Asegúrate de que está listo para brillar!',
                         side: 'left',
                         align: 'start'
                     }
