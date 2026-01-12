@@ -413,8 +413,9 @@ export async function createAgentFromWizard(data: {
         console.error('Error in wizard creation flow:', e);
         return { success: false, error: e.message || 'Unknown error during creation' };
     }
-    return { success: false, error: e.message || 'Unknown error during creation' };
-}
+
+
+
 }
 
 export async function updateAgentWizard(agentId: string, data: {
