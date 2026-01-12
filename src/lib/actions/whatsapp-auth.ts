@@ -24,12 +24,15 @@ export async function handleEmbeddedSignup(data: {
     if (!session?.user?.id) throw new Error('Unauthorized');
 
     try {
-        // 1. Get Meta App Secret from env
-        const appSecret = process.env.META_APP_SECRET;
+        // 1. Get Meta App Secret and ID
+        const appSecret = await getMetaAppSecret();
         const appId = await getMetaAppId();
 
-        if (!appSecret || !appId) {
-            throw new Error('Meta App Configuration missing (ID or Secret)');
+        if (!appId) {
+            throw new Error('Meta App ID missing (Check .env or GlobalConfig)');
+        }
+        if (!appSecret) {
+            throw new Error('Meta App Secret missing (Check .env or GlobalConfig)');
         }
 
         // 2. Exchange Short-Lived Token for Long-Lived User Access Token
@@ -186,5 +189,21 @@ export async function finishWhatsAppSetup(data: {
 }
 
 async function getMetaAppId() {
-    return process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    if (process.env.NEXT_PUBLIC_FACEBOOK_APP_ID) return process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+
+    // Fallback to Global Config
+    const config = await prisma.globalConfig.findUnique({
+        where: { key: 'META_APP_ID' }
+    });
+    return config?.value;
+}
+
+async function getMetaAppSecret() {
+    if (process.env.META_APP_SECRET) return process.env.META_APP_SECRET;
+
+    // Fallback to Global Config
+    const config = await prisma.globalConfig.findUnique({
+        where: { key: 'META_APP_SECRET' }
+    });
+    return config?.value;
 }
