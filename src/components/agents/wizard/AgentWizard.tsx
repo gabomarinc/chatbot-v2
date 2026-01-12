@@ -202,10 +202,26 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                     </div>
                 )}
 
-                {/* Main Content */}
                 <div className="flex-1 overflow-y-auto">
                     <div className="max-w-3xl mx-auto px-6 py-12">
-                        {renderStep()}
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center h-full py-20 animate-in fade-in space-y-6">
+                                <div className="relative">
+                                    <div className="w-20 h-20 border-4 border-[#21AC96]/30 border-t-[#21AC96] rounded-full animate-spin"></div>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Wand2 className="w-8 h-8 text-[#21AC96] animate-pulse" />
+                                    </div>
+                                </div>
+                                <div className="text-center space-y-2">
+                                    <h3 className="text-2xl font-bold text-gray-900">Creando tu Agente...</h3>
+                                    <p className="text-gray-500 max-w-sm mx-auto">
+                                        Estamos configurando el cerebro, conectando los canales y preparando todo para ti.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            renderStep()
+                        )}
                     </div>
                 </div>
 

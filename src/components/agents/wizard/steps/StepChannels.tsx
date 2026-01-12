@@ -101,13 +101,15 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
                                 <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Código de Instalación (Previsualización)</div>
                                 <pre className="font-mono text-[10px] text-green-400 opacity-60">
                                     {`<script>
-  window.chatConfig = { agentId: "SE_GENERARÁ_AUTOMÁTICAMENTE" };
+  window.chatConfig = { agentId: "${agentId || 'PENDING'}" };
 </script>
-<script src=".../widget.js" async></script>`}
+<script src="https://chat.realtos.ai/widget.js" async></script>`}
                                 </pre>
-                                <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 backdrop-blur-[1px]">
-                                    <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-bold border border-gray-700 shadow-lg">Se activará al crear el agente</span>
-                                </div>
+                                {!agentId && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 backdrop-blur-[1px]">
+                                        <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-bold border border-gray-700 shadow-lg">Se activará al crear el agente</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
