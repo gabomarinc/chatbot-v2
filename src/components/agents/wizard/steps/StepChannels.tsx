@@ -99,14 +99,29 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
 
                             {/* Snippet Preview */}
                             <div className="bg-gray-900 rounded-xl p-4 overflow-hidden relative group">
-                                <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Código de Instalación (Previsualización)</div>
-                                <pre className="font-mono text-[10px] text-green-400 opacity-60 break-all whitespace-pre-wrap">
-                                    {webChannelId ? `<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://chat.realtos.ai'}/widget.js" data-channel-id="${webChannelId}"></script>` :
-                                        `<script>
+                                <div className="space-y-4">
+                                    {/* Script Option */}
+                                    <div>
+                                        <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Opción 1: Script (Recomendado)</div>
+                                        <pre className="font-mono text-[10px] text-green-400 opacity-60 break-all whitespace-pre-wrap bg-gray-950 p-3 rounded-lg border border-gray-800">
+                                            {webChannelId ? `<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://chat.realtos.ai'}/widget.js" data-channel-id="${webChannelId}"></script>` :
+                                                `<script>
   window.chatConfig = { agentId: "${agentId || 'PENDING'}" };
 </script>
 <script src="${typeof window !== 'undefined' ? window.location.origin : 'https://chat.realtos.ai'}/widget.js" async></script>`}
-                                </pre>
+                                        </pre>
+                                    </div>
+
+                                    {/* Iframe Option */}
+                                    {webChannelId && (
+                                        <div className="animate-in slide-in-from-top-2">
+                                            <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Opción 2: Iframe</div>
+                                            <pre className="font-mono text-[10px] text-blue-400 opacity-60 break-all whitespace-pre-wrap bg-gray-950 p-3 rounded-lg border border-gray-800">
+                                                {`<iframe src="${typeof window !== 'undefined' ? window.location.origin : 'https://chat.realtos.ai'}/widget/${webChannelId}" width="100%" height="600" frameborder="0"></iframe>`}
+                                            </pre>
+                                        </div>
+                                    )}
+                                </div>
                                 {!agentId && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 backdrop-blur-[1px]">
                                         <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-bold border border-gray-700 shadow-lg">Se activará al crear el agente</span>
