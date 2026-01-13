@@ -8,7 +8,7 @@ export async function sendInstagramMessage(
     recipientId: string,
     text: string
 ) {
-    const url = `https://graph.facebook.com/v21.0/me/messages`;
+    const url = `https://graph.facebook.com/v19.0/me/messages`;
 
     const response = await fetch(url, {
         method: 'POST',
@@ -44,7 +44,7 @@ export async function sendInstagramImage(
     recipientId: string,
     imageUrl: string
 ) {
-    const url = `https://graph.facebook.com/v21.0/me/messages`;
+    const url = `https://graph.facebook.com/v19.0/me/messages`;
 
     const response = await fetch(url, {
         method: 'POST',
@@ -87,7 +87,7 @@ export async function downloadInstagramMedia(
 ): Promise<Buffer | null> {
     try {
         // Step 1: Get media URL
-        const mediaInfoUrl = `https://graph.facebook.com/v21.0/${mediaId}`;
+        const mediaInfoUrl = `https://graph.facebook.com/v19.0/${mediaId}`;
         const infoResponse = await fetch(mediaInfoUrl, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
