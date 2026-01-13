@@ -51,53 +51,67 @@ export async function handleEmbeddedSignup(data: {
         }
 
         // 3. Get WABA ID (Sharing permissions)
+        // 3. Get WABA ID (Sharing permissions)
         let wabaList: any[] = [];
+        let debugLog: string[] = [];
 
         try {
-            console.log('Attempting direct WABA fetch...');
+            debugLog.push('Attempting direct WABA fetch...');
             const wabaRes = await fetch(
                 `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?access_token=${userAccessToken}`
             );
             const wabaData = await wabaRes.json();
 
-            if (wabaData.data) {
+            if (wabaData.data && wabaData.data.length > 0) {
                 wabaList = wabaData.data;
-            } else if (wabaData.error) {
-                console.warn('Direct WABA fetch failed:', wabaData.error);
-                throw new Error(wabaData.error.message);
+                debugLog.push(`Direct fetch found ${wabaData.data.length} WABAs`);
+            } else {
+                debugLog.push(`Direct fetch empty. Error: ${JSON.stringify(wabaData.error || wabaData)}`);
             }
-        } catch (error) {
-            console.log('Direct WABA fetch failed, trying via Businesses fallback...');
+        } catch (error: any) {
+            debugLog.push(`Direct fetch crashed: ${error.message}`);
+        }
 
-            // Fallback: Get Businesses -> Owned WABAs
-            const bizRes = await fetch(
-                `https://graph.facebook.com/${META_API_VERSION}/me/businesses?access_token=${userAccessToken}`
-            );
-            const bizData = await bizRes.json();
+        if (wabaList.length === 0) {
+            try {
+                debugLog.push('Trying via Businesses fallback...');
+                // Fallback: Get Businesses -> Owned WABAs
+                const bizRes = await fetch(
+                    `https://graph.facebook.com/${META_API_VERSION}/me/businesses?access_token=${userAccessToken}`
+                );
+                const bizData = await bizRes.json();
 
-            if (bizData.data) {
-                for (const biz of bizData.data) {
-                    try {
-                        const bizWabaRes = await fetch(
-                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?access_token=${userAccessToken}`
-                        );
-                        const bizWabaData = await bizWabaRes.json();
-                        if (bizWabaData.data) {
-                            wabaList = [...wabaList, ...bizWabaData.data];
+                if (bizData.data) {
+                    debugLog.push(`Found ${bizData.data.length} Businesses`);
+                    for (const biz of bizData.data) {
+                        try {
+                            const bizWabaRes = await fetch(
+                                `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?access_token=${userAccessToken}`
+                            );
+                            const bizWabaData = await bizWabaRes.json();
+                            if (bizWabaData.data) {
+                                wabaList = [...wabaList, ...bizWabaData.data];
+                                debugLog.push(`Biz ${biz.id} (Client) found ${bizWabaData.data.length}`);
+                            }
+
+                            // Also try "owned" if client returns nothing
+                            const ownedWabaRes = await fetch(
+                                `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?access_token=${userAccessToken}`
+                            );
+                            const ownedWabaData = await ownedWabaRes.json();
+                            if (ownedWabaData.data) {
+                                wabaList = [...wabaList, ...ownedWabaData.data];
+                                debugLog.push(`Biz ${biz.id} (Owned) found ${ownedWabaData.data.length}`);
+                            }
+                        } catch (e: any) {
+                            debugLog.push(`Biz ${biz.id} scan failed: ${e.message}`);
                         }
-
-                        // Also try "owned" if client returns nothing
-                        const ownedWabaRes = await fetch(
-                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?access_token=${userAccessToken}`
-                        );
-                        const ownedWabaData = await ownedWabaRes.json();
-                        if (ownedWabaData.data) {
-                            wabaList = [...wabaList, ...ownedWabaData.data];
-                        }
-                    } catch (e) {
-                        console.error(`Failed to fetch WABAs for business ${biz.id}`, e);
                     }
+                } else {
+                    debugLog.push(`No Businesses found. BizData: ${JSON.stringify(bizData)}`);
                 }
+            } catch (e: any) {
+                debugLog.push(`Fallback crashed: ${e.message}`);
             }
         }
 
@@ -105,7 +119,10 @@ export async function handleEmbeddedSignup(data: {
         wabaList = Array.from(new Map(wabaList.map(item => [item.id, item])).values());
 
         if (wabaList.length === 0) {
-            throw new Error(`No se encontró ninguna Cuenta de WhatsApp. (Permiso verificado: ${hasBizMgmt ? 'OK' : 'FAIL'}).`);
+            if (wabaList.length === 0) {
+                console.error('Debug Log:', debugLog);
+                throw new Error(`No se encontró ninguna Cuenta de WhatsApp. Logs: ${debugLog.join(' || ')}`);
+            }
         }
 
         // Collect all potential phone numbers
