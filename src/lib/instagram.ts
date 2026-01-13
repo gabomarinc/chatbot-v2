@@ -3,6 +3,31 @@
  * Mirrors WhatsApp implementation for consistency
  */
 
+// Helper to split text into chunks
+function splitMessage(text: string, maxLength: number = 980): string[] {
+    const chunks: string[] = [];
+    let currentText = text;
+
+    while (currentText.length > 0) {
+        if (currentText.length <= maxLength) {
+            chunks.push(currentText);
+            break;
+        }
+
+        // Find last space before maxLength to avoid splitting words
+        let splitIndex = currentText.lastIndexOf(' ', maxLength);
+
+        // If no space found (very long word), force split at maxLength
+        if (splitIndex === -1) {
+            splitIndex = maxLength;
+        }
+
+        chunks.push(currentText.substring(0, splitIndex));
+        currentText = currentText.substring(splitIndex).trim();
+    }
+    return chunks;
+}
+
 export async function sendInstagramMessage(
     pageAccessToken: string,
     recipientId: string,
@@ -10,30 +35,38 @@ export async function sendInstagramMessage(
 ) {
     const url = `https://graph.facebook.com/v19.0/me/messages`;
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${pageAccessToken}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            recipient: {
-                id: recipientId,
-            },
-            message: {
-                text: text,
-            },
-        }),
-    });
+    // 1. Split message if it's too long
+    const chunks = splitMessage(text);
 
-    const data = await response.json();
+    // 2. Send chunks sequentially
+    for (const chunk of chunks) {
+        if (!chunk.trim()) continue;
 
-    if (!response.ok) {
-        console.error('Instagram Send Error:', data);
-        throw new Error(data.error?.message || 'Failed to send Instagram message');
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${pageAccessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                recipient: {
+                    id: recipientId,
+                },
+                message: {
+                    text: chunk,
+                },
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Instagram Send Error:', data);
+            throw new Error(data.error?.message || 'Failed to send Instagram message');
+        }
     }
 
-    return data;
+    return { success: true, chunksSent: chunks.length };
 }
 
 /**
