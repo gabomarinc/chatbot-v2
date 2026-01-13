@@ -179,7 +179,11 @@ export async function connectInstagramAccount(data: {
             `https://graph.facebook.com/${META_API_VERSION}/${data.accountId}?fields=username&access_token=${data.pageAccessToken}`
         );
 
-        if (!verifyRes.ok) throw new Error('Invalid or expired token');
+        if (!verifyRes.ok) {
+            const errData = await verifyRes.json();
+            console.error('Verify Token Failed:', JSON.stringify(errData));
+            throw new Error(`Meta validation failed: ${errData.error?.message || 'Invalid token'}`);
+        }
 
         // 3. Save/Update Channel
         // Logic Update: Search based on INSTAGRAM ACCOUNT ID to allow multiple accounts (one per channel)
