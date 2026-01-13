@@ -126,8 +126,8 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 loginOptions.response_type = 'code,token'; // We want both mostly, but 'token' is default for FB.login
             } else {
                 // Fallback manual (More reliable for standard Business Apps)
-                console.log('Usando Scopes manuales (Standard Flow)');
-                loginOptions.scope = 'whatsapp_business_management,whatsapp_business_messaging';
+                console.log('Usando Scopes manuales (Standard Flow + Business Management)');
+                loginOptions.scope = 'whatsapp_business_management,whatsapp_business_messaging,business_management';
             }
 
             window.FB.login((response: any) => {
