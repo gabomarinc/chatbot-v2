@@ -125,8 +125,13 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 // loginOptions.override_default_response_type = true; // Sometimes needed
                 loginOptions.response_type = 'code,token'; // We want both mostly, but 'token' is default for FB.login
             } else {
-                // Fallback manual
+                // Fallback manual (More reliable if Config ID is misconfigured)
+                console.log('Usando Scopes manuales');
                 loginOptions.scope = 'whatsapp_business_management,whatsapp_business_messaging';
+                loginOptions.extras = {
+                    "feature": "whatsapp_embedded_signup",
+                    "version": 2 // Force version 2 if needed, though standard login flow usually works
+                }
             }
 
             window.FB.login((response: any) => {

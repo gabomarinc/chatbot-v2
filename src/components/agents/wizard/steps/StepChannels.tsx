@@ -153,7 +153,7 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
                                 <WhatsAppEmbeddedSignup
                                     key={agentId}
                                     appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || ''}
-                                    configId="1388941242686989" // ES Config ID
+                                    // configId="1388941242686989" // ES Config ID
                                     agentId={agentId}
                                     onSuccess={() => {
                                         // Optional: Refresh or show success
