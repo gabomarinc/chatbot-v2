@@ -114,13 +114,19 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
 
             console.log('Iniciando FB.login con config:', { configId, appId });
 
-            // Para Embedded Signup con config_id
-            const loginOptions: any = {
-                scope: 'whatsapp_business_management,whatsapp_business_messaging',
-            };
+            // Para Embedded Signup con config_id (Recomendado) o Scopes manuales
+            const loginOptions: any = {};
 
             if (configId) {
+                // Si tenemos Config ID, Meta maneja los permisos automáticamente
+                console.log('Usando Config ID para login:', configId);
                 loginOptions.config_id = configId;
+                // Importante: Extras feature limits might apply if we mix scope and config_id
+                // loginOptions.override_default_response_type = true; // Sometimes needed
+                loginOptions.response_type = 'code,token'; // We want both mostly, but 'token' is default for FB.login
+            } else {
+                // Fallback manual
+                loginOptions.scope = 'whatsapp_business_management,whatsapp_business_messaging';
             }
 
             window.FB.login((response: any) => {
