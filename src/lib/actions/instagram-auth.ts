@@ -72,7 +72,7 @@ export async function getInstagramAccounts(shortLivedToken: string) {
                 id: page.instagram_business_account.id, // Instagram ID
                 name: page.name, // Page Name (usually matches)
                 pageId: page.id,
-                pageAccessToken: page.access_token // This is the Long-Lived Page Token we need
+                pageAccessToken: page.access_token || longLivedToken // Fallback to User Token if Page Token missing
             }));
 
         // FALLBACK: If no accounts found via standard /me/accounts (due to missing pages_show_list), try via Businesses
@@ -103,14 +103,16 @@ export async function getInstagramAccounts(shortLivedToken: string) {
                                 const bizAccounts = bizPagesData.data
                                     .filter((page: any) => !!page.instagram_business_account)
                                     .map((page: any) => {
-                                        if (!page.access_token) {
-                                            debugLog.push(`WARNING: Page "${page.name}" has IG but NO ACCESS TOKEN. Permissions missing?`);
+                                        let finalToken = page.access_token;
+                                        if (!finalToken) {
+                                            debugLog.push(`WARNING: Page "${page.name}" missing Page Token. Using User Token as fallback.`);
+                                            finalToken = longLivedToken;
                                         }
                                         return {
                                             id: page.instagram_business_account.id,
                                             name: page.name,
                                             pageId: page.id,
-                                            pageAccessToken: page.access_token
+                                            pageAccessToken: finalToken
                                         };
                                     });
 
