@@ -82,7 +82,7 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
                 }
             }
         }, {
-            scope: 'instagram_basic,instagram_manage_messages,instagram_manage_comments,public_profile,business_management',
+            scope: 'instagram_basic,instagram_manage_messages,instagram_manage_comments,public_profile,business_management,pages_show_list,pages_read_engagement',
             return_scopes: true
         });
     };
