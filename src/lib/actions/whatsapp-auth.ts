@@ -4,17 +4,11 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-const META_API_VERSION = 'v21.0';
+const META_API_VERSION = 'v19.0';
 
 /**
  * Exchanges the temporary code for a long-lived user access token,
  * fetches WABA and Phone Number info, and registers it.
- */
-/**
- * Exchanges the temporary code for a long-lived user access token,
- * fetches WABA and Phone Number info.
- * If multiple accounts are found, returns them for selection.
- * If single account found, registers it immediately.
  */
 export async function handleEmbeddedSignup(data: {
     accessToken: string;
@@ -43,6 +37,18 @@ export async function handleEmbeddedSignup(data: {
 
         if (!tokenRes.ok) throw new Error(tokenData.error?.message || 'Token exchange failed');
         const userAccessToken = tokenData.access_token;
+
+        // DEBUG: Verify Permissions
+        const permRes = await fetch(
+            `https://graph.facebook.com/${META_API_VERSION}/me/permissions?access_token=${userAccessToken}`
+        );
+        const permData = await permRes.json();
+        const hasBizMgmt = permData.data?.some((p: any) => p.permission === 'whatsapp_business_management' && p.status === 'granted');
+
+        if (!hasBizMgmt) {
+            console.error('Missing Permissions:', JSON.stringify(permData, null, 2));
+            throw new Error(`Falta el permiso 'whatsapp_business_management'. Permisos actuales: ${permData.data?.map((p: any) => p.permission).join(', ')}`);
+        }
 
         // 3. Get WABA ID (Sharing permissions)
         const wabaRes = await fetch(
