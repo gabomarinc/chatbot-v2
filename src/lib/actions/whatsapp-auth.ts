@@ -51,7 +51,8 @@ export async function handleEmbeddedSignup(data: {
         const wabaData = await wabaRes.json();
 
         if (!wabaData.data || wabaData.data.length === 0) {
-            throw new Error('No WhatsApp Business Account found for this user');
+            console.error('Meta API Response (WABAs):', JSON.stringify(wabaData, null, 2));
+            throw new Error(`No se encontró ninguna Cuenta de WhatsApp. Respuesta de Meta: ${JSON.stringify(wabaData)}`);
         }
 
         // Collect all potential phone numbers
