@@ -192,6 +192,21 @@ export async function connectInstagramAccount(data: {
             throw new Error(`Meta validation failed: ${errData.error?.message || 'Invalid token'}`);
         }
 
+        // 2.5 Subscribe Page to App (Enable Webhooks)
+        // This is CRITICAL. Without this, the App works but the Page doesn't send events.
+        const subscribeRes = await fetch(
+            `https://graph.facebook.com/${META_API_VERSION}/${data.pageId}/subscribed_apps?subscribed_fields=messages,messaging_postbacks&access_token=${data.pageAccessToken}`,
+            { method: 'POST' }
+        );
+        const subscribeData = await subscribeRes.json();
+
+        if (!subscribeRes.ok) {
+            console.error('Webhook Subscription Failed:', JSON.stringify(subscribeData));
+            // We don't throw here to avoid blocking the user if they did it manually, but we warn
+        } else {
+            console.log('Webhook Subscribed Successfully:', JSON.stringify(subscribeData));
+        }
+
         // 3. Save/Update Channel
         // Logic Update: Search based on INSTAGRAM ACCOUNT ID to allow multiple accounts (one per channel)
         const allChannels = await prisma.channel.findMany({
