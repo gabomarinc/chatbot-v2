@@ -21,6 +21,11 @@ interface InstagramConfigProps {
 }
 
 export function InstagramConfig({ agents, existingChannel, defaultAgentId, metaAppId }: InstagramConfigProps) {
+    console.log('InstagramConfig Props Debug:', {
+        existingChannel,
+        configJson: existingChannel?.configJson,
+        hasAccessToken: !!existingChannel?.configJson?.pageAccessToken
+    });
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
