@@ -58,7 +58,7 @@ export async function getInstagramAccounts(shortLivedToken: string) {
         debugLog.push(`Found ${pagesData.data?.length || 0} pages`);
 
         // Filter pages that have a connected Instagram account
-        const connectedAccounts = (pagesData.data || [])
+        let connectedAccounts = (pagesData.data || [])
             .filter((page: any) => {
                 const hasIg = !!page.instagram_business_account;
                 if (!hasIg) {
@@ -75,11 +75,59 @@ export async function getInstagramAccounts(shortLivedToken: string) {
                 pageAccessToken: page.access_token // This is the Long-Lived Page Token we need
             }));
 
+        // FALLBACK: If no accounts found via standard /me/accounts (due to missing pages_show_list), try via Businesses
         if (connectedAccounts.length === 0) {
-            // Check /me/businesses fallback like WhatsApp?
-            debugLog.push('No accounts found via direct /me/accounts. Checking permissions...');
-            // We could check if we have pages_show_list or similar
+            debugLog.push('Standard page fetch empty. Attempting Business Manager Fallback...');
+
+            try {
+                // 1. Get User's Businesses
+                const bizRes = await fetch(
+                    `https://graph.facebook.com/${META_API_VERSION}/me/businesses?access_token=${longLivedToken}`
+                );
+                const bizData = await bizRes.json();
+
+                if (bizData.data && bizData.data.length > 0) {
+                    debugLog.push(`Found ${bizData.data.length} Businesses. Scanning pages inside...`);
+
+                    for (const biz of bizData.data) {
+                        try {
+                            // 2. Get Pages owned by Business (needs business_management)
+                            // We ask for the same fields: instagram_business_account + access_token
+                            const bizPagesUrl = `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_pages?fields=name,access_token,instagram_business_account&access_token=${longLivedToken}`;
+                            const bizPagesRes = await fetch(bizPagesUrl);
+                            const bizPagesData = await bizPagesRes.json();
+
+                            if (bizPagesData.data) {
+                                debugLog.push(`Business "${biz.name}" has ${bizPagesData.data.length} owned pages.`);
+
+                                const bizAccounts = bizPagesData.data
+                                    .filter((page: any) => !!page.instagram_business_account)
+                                    .map((page: any) => ({
+                                        id: page.instagram_business_account.id,
+                                        name: page.name,
+                                        pageId: page.id,
+                                        pageAccessToken: page.access_token
+                                    }));
+
+                                if (bizAccounts.length > 0) {
+                                    debugLog.push(`Found ${bizAccounts.length} IG accounts in Business "${biz.name}"`);
+                                    connectedAccounts = [...connectedAccounts, ...bizAccounts];
+                                }
+                            }
+                        } catch (e: any) {
+                            debugLog.push(`Error scanning Biz "${biz.name}": ${e.message}`);
+                        }
+                    }
+                } else {
+                    debugLog.push('No Businesses found.');
+                }
+            } catch (e: any) {
+                debugLog.push(`Business Fallback Error: ${e.message}`);
+            }
         }
+
+        // Remove duplicates (by ID)
+        connectedAccounts = Array.from(new Map(connectedAccounts.map((item: any) => [item.id, item])).values());
 
         return {
             success: true,
