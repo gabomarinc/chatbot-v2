@@ -88,11 +88,16 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
     };
 
     const handleAuth = async (accessToken: string) => {
+        let result: any = null;
         try {
             // 1. Obtener cuentas disponibles
-            const result = await getInstagramAccounts(accessToken);
+            result = await getInstagramAccounts(accessToken);
 
             if (result.error) {
+                // If we have debug info in the error result, attach it to the thrown error or log it here
+                if (result.debug) {
+                    console.log("DEBUG LOGS:\n", result.debug.join('\n'));
+                }
                 throw new Error(result.error);
             }
 
@@ -101,6 +106,9 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
                 setAccounts(result.accounts);
                 setShowAccountSelection(true);
             } else {
+                if (result.debug) {
+                    console.log("DEBUG LOGS (Empty Accounts):\n", result.debug.join('\n'));
+                }
                 toast.error('No se encontraron cuentas de Instagram Business conectadas a tus Páginas de Facebook.');
             }
         } catch (error: any) {

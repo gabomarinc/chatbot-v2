@@ -14,6 +14,8 @@ export async function getInstagramAccounts(shortLivedToken: string) {
     const session = await auth();
     if (!session?.user?.id) throw new Error('Unauthorized');
 
+    let debugLog: string[] = [];
+
     try {
         const appSecret = process.env.META_APP_SECRET;
         const config = await prisma.globalConfig.findUnique({ where: { key: 'META_APP_ID' } });
@@ -24,32 +26,48 @@ export async function getInstagramAccounts(shortLivedToken: string) {
         }
 
         // 1. Exchange for Long-Lived User Access Token
+        debugLog.push('Exchanging token...');
         const tokenRes = await fetch(
             `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`
         );
         const tokenData = await tokenRes.json();
 
         if (!tokenRes.ok) {
-            console.error('Token Exchange Error:', tokenData);
+            debugLog.push(`Token error: ${JSON.stringify(tokenData)}`);
             throw new Error(tokenData.error?.message || 'Failed to exchange token');
         }
 
         const longLivedToken = tokenData.access_token;
+        debugLog.push('Token exchanged.');
 
         // 2. Fetch Pages with Instagram Business Accounts
-        const pagesRes = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/me/accounts?fields=name,access_token,instagram_business_account&access_token=${longLivedToken}`
-        );
+        // Trying fields specifically for discovery
+        const fields = 'name,access_token,instagram_business_account,connected_instagram_account';
+        const pagesUrl = `https://graph.facebook.com/${META_API_VERSION}/me/accounts?fields=${fields}&access_token=${longLivedToken}`;
+
+        debugLog.push(`Fetching pages via: ${pagesUrl.replace(longLivedToken, '***')}`);
+
+        const pagesRes = await fetch(pagesUrl);
         const pagesData = await pagesRes.json();
 
         if (!pagesRes.ok) {
-            console.error('Pages Fetch Error:', pagesData);
+            debugLog.push(`Pages fetch error: ${JSON.stringify(pagesData)}`);
             throw new Error(pagesData.error?.message || 'Failed to fetch pages');
         }
 
+        debugLog.push(`Found ${pagesData.data?.length || 0} pages`);
+
         // Filter pages that have a connected Instagram account
-        const connectedAccounts = pagesData.data
-            .filter((page: any) => page.instagram_business_account)
+        const connectedAccounts = (pagesData.data || [])
+            .filter((page: any) => {
+                const hasIg = !!page.instagram_business_account;
+                if (!hasIg) {
+                    debugLog.push(`Page "${page.name}" has no linked IG Business Account.`);
+                } else {
+                    debugLog.push(`Page "${page.name}" HAS IG: ${page.instagram_business_account.id}`);
+                }
+                return hasIg;
+            })
             .map((page: any) => ({
                 id: page.instagram_business_account.id, // Instagram ID
                 name: page.name, // Page Name (usually matches)
@@ -57,14 +75,24 @@ export async function getInstagramAccounts(shortLivedToken: string) {
                 pageAccessToken: page.access_token // This is the Long-Lived Page Token we need
             }));
 
+        if (connectedAccounts.length === 0) {
+            // Check /me/businesses fallback like WhatsApp?
+            debugLog.push('No accounts found via direct /me/accounts. Checking permissions...');
+            // We could check if we have pages_show_list or similar
+        }
+
         return {
             success: true,
-            accounts: connectedAccounts
+            accounts: connectedAccounts,
+            debug: debugLog // Return debugging info
         };
 
     } catch (error: any) {
         console.error('Get Instagram Accounts Error:', error);
-        return { error: error.message || 'Error fetching Instagram accounts' };
+        return {
+            error: error.message || 'Error fetching Instagram accounts',
+            debug: debugLog
+        };
     }
 }
 
