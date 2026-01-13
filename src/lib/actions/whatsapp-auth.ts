@@ -103,8 +103,19 @@ export async function handleEmbeddedSignup(data: {
                                 wabaList = [...wabaList, ...ownedWabaData.data];
                                 debugLog.push(`Biz ${biz.id} (Owned) found ${ownedWabaData.data.length}`);
                             }
+
+                            // 3rd Try: Generic Edge (often works for Admins)
+                            const genericWabaRes = await fetch(
+                                `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/whatsapp_business_accounts?access_token=${userAccessToken}`
+                            );
+                            const genericWabaData = await genericWabaRes.json();
+                            if (genericWabaData.data) {
+                                wabaList = [...wabaList, ...genericWabaData.data];
+                                debugLog.push(`Biz ${biz.id} (Generic) found ${genericWabaData.data.length}`);
+                            }
                         } catch (e: any) {
-                            debugLog.push(`Biz ${biz.id} scan failed: ${e.message}`);
+                            // Only log non-critical errors to save space
+                            if (debugLog.length < 5) debugLog.push(`Biz scan err: ${e.message}`);
                         }
                     }
                 } else {
