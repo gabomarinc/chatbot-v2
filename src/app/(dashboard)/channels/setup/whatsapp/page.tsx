@@ -7,15 +7,25 @@ import { prisma } from '@/lib/prisma';
 // Force dynamic rendering to always get fresh agents list
 export const dynamic = 'force-dynamic';
 
-export default async function WhatsAppSetupPage({ 
-    searchParams 
-}: { 
-    searchParams: Promise<{ agentId?: string }> 
+export default async function WhatsAppSetupPage({
+    searchParams
+}: {
+    searchParams: Promise<{ agentId?: string; channelId?: string }>
 }) {
     const params = await searchParams;
     const agents = await getAgents();
     const channels = await getChannels();
-    const existingWhatsApp = channels.find(c => c.type === 'WHATSAPP');
+
+    // Fix: Only find existing channel if we are editing a specific one (by ID or Agent)
+    // Do NOT default to the first found WhatsApp channel globally.
+    let existingWhatsApp = undefined;
+
+    if (params.channelId) {
+        existingWhatsApp = channels.find(c => c.id === params.channelId);
+    } else if (params.agentId) {
+        existingWhatsApp = channels.find(c => c.type === 'WHATSAPP' && c.agentId === params.agentId);
+    }
+    // If no params, we are creating a fresh one.
 
     const metaAppIdConfig = await prisma.globalConfig.findUnique({
         where: { key: 'META_APP_ID' }
