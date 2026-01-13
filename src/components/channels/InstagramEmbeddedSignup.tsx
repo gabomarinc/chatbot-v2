@@ -48,7 +48,7 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
                     appId: appId,
                     cookie: true,
                     xfbml: true,
-                    version: 'v21.0'
+                    version: 'v19.0'
                 });
                 setIsLoaded(true);
             };

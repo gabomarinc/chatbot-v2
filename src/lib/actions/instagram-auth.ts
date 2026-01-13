@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-const META_API_VERSION = 'v21.0';
+const META_API_VERSION = 'v19.0';
 
 /**
  * 1. Exchanges short-lived token for long-lived one
@@ -102,12 +102,17 @@ export async function getInstagramAccounts(shortLivedToken: string) {
 
                                 const bizAccounts = bizPagesData.data
                                     .filter((page: any) => !!page.instagram_business_account)
-                                    .map((page: any) => ({
-                                        id: page.instagram_business_account.id,
-                                        name: page.name,
-                                        pageId: page.id,
-                                        pageAccessToken: page.access_token
-                                    }));
+                                    .map((page: any) => {
+                                        if (!page.access_token) {
+                                            debugLog.push(`WARNING: Page "${page.name}" has IG but NO ACCESS TOKEN. Permissions missing?`);
+                                        }
+                                        return {
+                                            id: page.instagram_business_account.id,
+                                            name: page.name,
+                                            pageId: page.id,
+                                            pageAccessToken: page.access_token
+                                        };
+                                    });
 
                                 if (bizAccounts.length > 0) {
                                     debugLog.push(`Found ${bizAccounts.length} IG accounts in Business "${biz.name}"`);
