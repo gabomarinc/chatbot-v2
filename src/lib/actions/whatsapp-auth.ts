@@ -51,20 +51,67 @@ export async function handleEmbeddedSignup(data: {
         }
 
         // 3. Get WABA ID (Sharing permissions)
-        const wabaRes = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?access_token=${userAccessToken}`
-        );
-        const wabaData = await wabaRes.json();
+        let wabaList: any[] = [];
 
-        if (!wabaData.data || wabaData.data.length === 0) {
-            console.error('Meta API Response (WABAs):', JSON.stringify(wabaData, null, 2));
-            throw new Error(`No se encontró ninguna Cuenta de WhatsApp. Respuesta de Meta: ${JSON.stringify(wabaData)}`);
+        try {
+            console.log('Attempting direct WABA fetch...');
+            const wabaRes = await fetch(
+                `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?access_token=${userAccessToken}`
+            );
+            const wabaData = await wabaRes.json();
+
+            if (wabaData.data) {
+                wabaList = wabaData.data;
+            } else if (wabaData.error) {
+                console.warn('Direct WABA fetch failed:', wabaData.error);
+                throw new Error(wabaData.error.message);
+            }
+        } catch (error) {
+            console.log('Direct WABA fetch failed, trying via Businesses fallback...');
+
+            // Fallback: Get Businesses -> Owned WABAs
+            const bizRes = await fetch(
+                `https://graph.facebook.com/${META_API_VERSION}/me/businesses?access_token=${userAccessToken}`
+            );
+            const bizData = await bizRes.json();
+
+            if (bizData.data) {
+                for (const biz of bizData.data) {
+                    try {
+                        const bizWabaRes = await fetch(
+                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?access_token=${userAccessToken}`
+                        );
+                        const bizWabaData = await bizWabaRes.json();
+                        if (bizWabaData.data) {
+                            wabaList = [...wabaList, ...bizWabaData.data];
+                        }
+
+                        // Also try "owned" if client returns nothing
+                        const ownedWabaRes = await fetch(
+                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?access_token=${userAccessToken}`
+                        );
+                        const ownedWabaData = await ownedWabaRes.json();
+                        if (ownedWabaData.data) {
+                            wabaList = [...wabaList, ...ownedWabaData.data];
+                        }
+                    } catch (e) {
+                        console.error(`Failed to fetch WABAs for business ${biz.id}`, e);
+                    }
+                }
+            }
+        }
+
+        // Deduplicate WABAs by ID
+        wabaList = Array.from(new Map(wabaList.map(item => [item.id, item])).values());
+
+        if (wabaList.length === 0) {
+            throw new Error(`No se encontró ninguna Cuenta de WhatsApp. (Permiso verificado: ${hasBizMgmt ? 'OK' : 'FAIL'}).`);
         }
 
         // Collect all potential phone numbers
         const availableAccounts: any[] = [];
 
-        for (const waba of wabaData.data) {
+        for (const waba of wabaList) {
             const phoneRes = await fetch(
                 `https://graph.facebook.com/${META_API_VERSION}/${waba.id}/phone_numbers?access_token=${userAccessToken}`
             );
