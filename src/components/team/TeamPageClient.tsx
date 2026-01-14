@@ -65,21 +65,21 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
         if (currentUser && member.user.id === currentUser) {
             return 'active';
         }
-        
+
         // If no lastLoginAt, user has never logged in - Pending
         if (!member.user.lastLoginAt) {
             return 'pending';
         }
-        
+
         // User has logged in before - check if it's recent (within last 30 minutes = active, otherwise offline)
         const lastLogin = new Date(member.user.lastLoginAt).getTime();
         const now = Date.now();
         const thirtyMinutes = 30 * 60 * 1000;
-        
+
         if (now - lastLogin < thirtyMinutes) {
             return 'active';
         }
-        
+
         return 'offline';
     };
 
@@ -111,16 +111,16 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
 
     const formatLastLogin = (lastLoginAt: Date | null) => {
         if (!lastLoginAt) return 'Nunca';
-        
+
         const date = new Date(lastLoginAt);
         const now = new Date();
         const diffMs = now.getTime() - date.getTime();
         const oneDay = 24 * 60 * 60 * 1000;
-        
+
         if (diffMs < oneDay) {
             return formatDistanceToNow(date, { addSuffix: true, locale: es });
         }
-        
+
         return format(date, 'dd/MM/yyyy HH:mm', { locale: es });
     };
 
@@ -130,7 +130,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
         if (target.closest('button') || target.closest('[role="button"]')) {
             return;
         }
-        
+
         // Only allow OWNER and MANAGER to view details
         if (userRole === 'OWNER' || userRole === 'MANAGER') {
             setSelectedMemberForDetails(member);
@@ -155,15 +155,15 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                 setIsLoading(false);
                 return;
             }
-            
+
             // Remove from local state
             setMembers(members.filter(m => m.id !== memberToDelete.id));
             setIsDeleteModalOpen(false);
             setMemberToDelete(null);
-            
+
             // Refresh to get updated data from server
             router.refresh();
-            
+
             setIsLoading(false);
         } catch (error) {
             console.error('Error al eliminar miembro:', error);
@@ -179,7 +179,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
             if (result.error) {
                 alert(result.error);
             } else {
-                setMembers(members.map(m => 
+                setMembers(members.map(m =>
                     m.id === memberId ? { ...m, role: newRole } : m
                 ));
                 router.refresh();
@@ -245,7 +245,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                     </div>
                     {(userRole === 'OWNER' || userRole === 'MANAGER') && (
                         <div className="relative">
-                            <button 
+                            <button
                                 onClick={() => {
                                     if (canInvite) {
                                         setIsInviteModalOpen(true);
@@ -281,8 +281,8 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                         const status = getUserStatus(member);
                                         const buttonRect = buttonRefs.current[member.id]?.getBoundingClientRect();
                                         return (
-                                            <tr 
-                                                key={member.id} 
+                                            <tr
+                                                key={member.id}
                                                 className="hover:bg-gray-50/50 transition-colors group"
                                                 onClick={(e) => handleMemberClick(member, e)}
                                                 style={{ cursor: (userRole === 'OWNER' || userRole === 'MANAGER') ? 'pointer' : 'default' }}
@@ -338,20 +338,22 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                 <td className="px-8 py-6">
                                                     <div className="flex justify-end">
                                                         <div className="relative">
-                                                            <button 
-                                                                ref={(el) => {
-                                                                    if (el) buttonRefs.current[member.id] = el;
-                                                                }}
-                                                                onClick={() => setIsActionMenuOpen(isActionMenuOpen === member.id ? null : member.id)}
-                                                                disabled={member.role === 'OWNER'}
-                                                                className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                            >
-                                                                <MoreVertical className="w-5 h-5" />
-                                                            </button>
-                                                            
+                                                            {(userRole === 'OWNER' || userRole === 'MANAGER') && (
+                                                                <button
+                                                                    ref={(el) => {
+                                                                        if (el) buttonRefs.current[member.id] = el;
+                                                                    }}
+                                                                    onClick={() => setIsActionMenuOpen(isActionMenuOpen === member.id ? null : member.id)}
+                                                                    disabled={member.role === 'OWNER'}
+                                                                    className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                >
+                                                                    <MoreVertical className="w-5 h-5" />
+                                                                </button>
+                                                            )}
+
                                                             {isActionMenuOpen === member.id && mounted && buttonRect && (
                                                                 createPortal(
-                                                                    <div 
+                                                                    <div
                                                                         ref={(el) => {
                                                                             if (el) actionMenuRefs.current[member.id] = el;
                                                                         }}
@@ -429,14 +431,14 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                 maxMembers={maxMembers}
                 onSuccess={handleInviteSuccess}
             />
-            
+
             <MaxMembersModal
                 isOpen={isMaxMembersModalOpen}
                 onClose={() => setIsMaxMembersModalOpen(false)}
                 currentPlanName={currentPlanName}
                 currentMaxMembers={maxMembers}
             />
-            
+
             <ConfirmDeleteModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => {

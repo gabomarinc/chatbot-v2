@@ -95,7 +95,11 @@ export function WorkspaceDropdown({ isOpen, workspaceInfo, isLoading = false, on
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-gray-900 truncate">{workspaceInfo.plan.name}</p>
                                     <p className="text-xs text-gray-600">
-                                        ${workspaceInfo.plan.price.toLocaleString()}/mes • {workspaceInfo.plan.creditsPerMonth.toLocaleString()} créditos
+                                        {userRole === 'OWNER' ? (
+                                            <>${workspaceInfo.plan.price.toLocaleString()}/mes • {workspaceInfo.plan.creditsPerMonth.toLocaleString()} créditos</>
+                                        ) : (
+                                            <>{workspaceInfo.plan.creditsPerMonth.toLocaleString()} créditos</>
+                                        )}
                                     </p>
                                 </div>
                             </div>
