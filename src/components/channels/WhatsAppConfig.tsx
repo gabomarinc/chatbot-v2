@@ -375,7 +375,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                                         Actualizar Plantillas
                                     </button>
                                     <a
-                                        href={`https://business.facebook.com/direct-messaging-templates/${formData.wabaId ? `?waba_id=${formData.wabaId}` : ''}`}
+                                        href="https://business.facebook.com/wa/static/management/"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2"
