@@ -374,15 +374,6 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                                         {isFetchingTemplates ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Settings2 className="w-3.5 h-3.5" />}
                                         Actualizar Plantillas
                                     </button>
-                                    <a
-                                        href="https://business.facebook.com/wa/static/management/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2"
-                                    >
-                                        Administrar en Meta
-                                        <ArrowRight className="w-3.5 h-3.5 -rotate-45" />
-                                    </a>
                                 </div>
                             </div>
 
