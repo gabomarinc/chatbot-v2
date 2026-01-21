@@ -289,3 +289,68 @@ async function getMetaAppSecret() {
     });
     return config?.value;
 }
+/**
+ * Fetches message templates from Meta for a given WABA
+ */
+export async function getWhatsAppTemplates(wabaId: string, accessToken: string) {
+    try {
+        const response = await fetch(
+            `https://graph.facebook.com/${META_API_VERSION}/${wabaId}/message_templates?access_token=${accessToken}`
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error?.message || 'Failed to fetch templates');
+        }
+
+        return { success: true, templates: data.data || [] };
+    } catch (error: any) {
+        console.error('Error fetching templates:', error);
+        return { error: error.message || 'Error al obtener las plantillas' };
+    }
+}
+
+/**
+ * Sends a test template message
+ */
+export async function sendWhatsAppTemplateAction(data: {
+    phoneNumberId: string;
+    accessToken: string;
+    to: string;
+    templateName: string;
+    languageCode: string;
+}) {
+    try {
+        const url = `https://graph.facebook.com/${META_API_VERSION}/${data.phoneNumberId}/messages`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${data.accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                to: data.to,
+                type: 'template',
+                template: {
+                    name: data.templateName,
+                    language: {
+                        code: data.languageCode,
+                    },
+                },
+            }),
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(resData.error?.message || 'Failed to send template');
+        }
+
+        return { success: true, data: resData };
+    } catch (error: any) {
+        console.error('Error sending template:', error);
+        return { error: error.message || 'Error al enviar la plantilla' };
+    }
+}

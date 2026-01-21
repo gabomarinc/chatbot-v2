@@ -6,6 +6,8 @@ import { Loader2, Check, Phone, Copy, ArrowRight, ShieldCheck, Settings2, Info }
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { WhatsAppEmbeddedSignup } from './WhatsAppEmbeddedSignup';
+import { getWhatsAppTemplates, sendWhatsAppTemplateAction } from '@/lib/actions/whatsapp-auth';
+import { useEffect } from 'react';
 
 interface Agent {
     id: string;
@@ -25,6 +27,10 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     const [isSaved, setIsSaved] = useState(false);
     const [showManual, setShowManual] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [isFetchingTemplates, setIsFetchingTemplates] = useState(false);
+    const [testPhone, setTestPhone] = useState('');
+    const [isSendingTest, setIsSendingTest] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         agentId: existingChannel?.agentId || defaultAgentId || (agents.length > 0 ? agents[0].id : ''),
@@ -41,6 +47,66 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
         toast.success(`${field} copiado al portapapeles`);
         setTimeout(() => setCopiedField(null), 2000);
     };
+
+    const fetchTemplates = async () => {
+        const wabaId = formData.wabaId || existingChannel?.configJson?.wabaId;
+        const accessToken = formData.accessToken || existingChannel?.configJson?.accessToken;
+
+        if (!wabaId || !accessToken) return;
+
+        setIsFetchingTemplates(true);
+        try {
+            const result = await getWhatsAppTemplates(wabaId, accessToken);
+            if (result.success) {
+                setTemplates(result.templates);
+            } else {
+                toast.error(result.error || 'Error al obtener plantillas');
+            }
+        } catch (error) {
+            console.error('Error fetching templates:', error);
+        } finally {
+            setIsFetchingTemplates(false);
+        }
+    };
+
+    const handleSendTest = async (templateName: string, languageCode: string) => {
+        if (!testPhone) {
+            toast.error('Ingresa un número de teléfono de prueba');
+            return;
+        }
+
+        const phoneNumberId = formData.phoneNumberId || existingChannel?.configJson?.phoneNumberId;
+        const accessToken = formData.accessToken || existingChannel?.configJson?.accessToken;
+
+        if (!phoneNumberId || !accessToken) return;
+
+        setIsSendingTest(templateName);
+        try {
+            const result = await sendWhatsAppTemplateAction({
+                phoneNumberId,
+                accessToken,
+                to: testPhone,
+                templateName,
+                languageCode: languageCode || 'es'
+            });
+
+            if (result.success) {
+                toast.success('Plantilla de prueba enviada');
+            } else {
+                toast.error(result.error || 'Error al enviar prueba');
+            }
+        } catch (error) {
+            console.error('Error sending test:', error);
+        } finally {
+            setIsSendingTest(null);
+        }
+    };
+
+    useEffect(() => {
+        if (existingChannel?.configJson?.wabaId && existingChannel?.configJson?.accessToken) {
+            fetchTemplates();
+        }
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -288,6 +354,98 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                             )}
                         </button>
                     </form>
+
+                    {/* Templates Management Section */}
+                    {existingChannel && (
+                        <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm space-y-8 mt-8">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                                        <Copy className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                    <h3 className="text-gray-900 font-bold text-lg">Plantillas de Mensaje (Templates)</h3>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={fetchTemplates}
+                                        disabled={isFetchingTemplates}
+                                        className="px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition-colors flex items-center gap-2"
+                                    >
+                                        {isFetchingTemplates ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Settings2 className="w-3.5 h-3.5" />}
+                                        Actualizar Plantillas
+                                    </button>
+                                    <a
+                                        href="https://business.facebook.com/wa/static/management/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2"
+                                    >
+                                        Administrar en Meta
+                                        <ArrowRight className="w-3.5 h-3.5 -rotate-45" />
+                                    </a>
+                                </div>
+                            </div>
+
+                            <p className="text-sm text-gray-500 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                                Las plantillas son obligatorias para iniciar conversaciones o responder después de 24 horas.
+                                <strong> Meta revisa que nuestra app pueda gestionar estos activos.</strong>
+                            </p>
+
+                            <div className="space-y-4">
+                                <div className="flex gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 items-end">
+                                    <div className="flex-1 space-y-2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Número de Prueba</label>
+                                        <input
+                                            type="text"
+                                            value={testPhone}
+                                            onChange={(e) => setTestPhone(e.target.value)}
+                                            placeholder="Ej: 521..."
+                                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="text-xs text-gray-400 italic mb-3">
+                                        Formato internacional sin +
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4">
+                                    {templates.length === 0 && !isFetchingTemplates && (
+                                        <div className="text-center py-8 text-gray-400 italic text-sm">
+                                            No se encontraron plantillas aprobadas en esta cuenta.
+                                        </div>
+                                    )}
+
+                                    {templates.map((template) => (
+                                        <div key={template.id} className="group relative flex items-center justify-between p-5 bg-white border border-gray-100 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-gray-900">{template.name}</span>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter ${template.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                                                        }`}>
+                                                        {template.status}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-3 text-xs text-gray-400">
+                                                    <span className="uppercase">{template.category}</span>
+                                                    <span>•</span>
+                                                    <span>{template.language}</span>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={() => handleSendTest(template.name, template.language)}
+                                                disabled={isSendingTest === template.name || !testPhone}
+                                                className="px-4 py-2 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                            >
+                                                {isSendingTest === template.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                                                Enviar Prueba
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Back to Simple Mode Link */}
                     {metaAppId && !existingChannel && (
