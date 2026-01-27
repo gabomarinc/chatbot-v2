@@ -217,7 +217,7 @@ export async function handleEmbeddedSignupV2(data: {
                             return s;
                         };
 
-                        const bizPrefix = waba._sourceBiz && waba._sourceBiz !== 'Direct' ? `[${waba._sourceBiz}] ` : '';
+                        const bizPrefix = waba._sourceBiz && waba._sourceBiz !== 'Direct' && waba._sourceBiz !== 'Granular' ? `[${waba._sourceBiz}] ` : '';
 
                         // Priority: Verified Name -> WABA Name -> Display Phone -> "Cuenta sin nombre"
                         let rawName = clean(phone.verified_name) || clean(resolvedWabaName);
