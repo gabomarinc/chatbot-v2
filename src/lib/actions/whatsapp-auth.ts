@@ -57,10 +57,11 @@ export async function handleEmbeddedSignup(data: {
 
         // Attempt 1: Direct Fetch (me/whatsapp_business_accounts)
         // Note: This often fails for System Users or new scopes, so we swallow the error intentionally.
+        // Message for errors
         try {
             debugLog.push('Attempting direct WABA fetch...');
             const wabaRes = await fetch(
-                `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
+                `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?access_token=${userAccessToken}`
             );
             const wabaData = await wabaRes.json();
 
@@ -92,7 +93,7 @@ export async function handleEmbeddedSignup(data: {
                     try {
                         // Strategy A: "Client" WABAs (Agencies usually see this)
                         const bizWabaRes = await fetch(
-                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
+                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?access_token=${userAccessToken}`
                         );
                         const bizWabaData = await bizWabaRes.json();
                         if (bizWabaData.data && bizWabaData.data.length > 0) {
@@ -104,7 +105,7 @@ export async function handleEmbeddedSignup(data: {
                         // Strategy B: "Owned" WABAs (Direct owners see this)
                         // This often finds WABAs that are neither strictly "client" nor "owned" in the graph API's eyes
                         const ownedWabaRes = await fetch(
-                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
+                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?access_token=${userAccessToken}`
                         );
                         const ownedWabaData = await ownedWabaRes.json();
                         if (ownedWabaData.data && ownedWabaData.data.length > 0) {
@@ -116,7 +117,7 @@ export async function handleEmbeddedSignup(data: {
                         // Strategy C: Generic Edge (Catch-all for Admins/legacy)
                         // This often finds WABAs that are neither strictly "client" nor "owned" in the graph API's eyes
                         const genericWabaRes = await fetch(
-                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/whatsapp_business_accounts?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
+                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/whatsapp_business_accounts?access_token=${userAccessToken}`
                         );
                         const genericWabaData = await genericWabaRes.json();
                         if (genericWabaData.data && genericWabaData.data.length > 0) {
@@ -160,6 +161,18 @@ export async function handleEmbeddedSignup(data: {
                 );
                 const phoneData = await phoneRes.json();
 
+                // Also Fetch WABA Details explicitly to get the correct Name (Avoids "unknown" and #100 errors on list fetch)
+                let resolvedWabaName = waba.name;
+                try {
+                    const wabaDetailRes = await fetch(
+                        `https://graph.facebook.com/${META_API_VERSION}/${waba.id}?fields=name,currency,timezone_id&access_token=${userAccessToken}`
+                    );
+                    const wabaDetailData = await wabaDetailRes.json();
+                    if (wabaDetailData.name) {
+                        resolvedWabaName = wabaDetailData.name;
+                    }
+                } catch (ignore) { }
+
                 if (phoneData.data && phoneData.data.length > 0) {
                     for (const phone of phoneData.data) {
                         // Construct a clear Display Name: "[Business Name] Account Name - Phone"
@@ -167,18 +180,18 @@ export async function handleEmbeddedSignup(data: {
                         const clean = (val: string) => (val && val.toLowerCase() !== 'unknown' ? val : null);
 
                         const bizPrefix = waba._sourceBiz && waba._sourceBiz !== 'Direct' ? `[${waba._sourceBiz}] ` : '';
-                        const accountName = clean(phone.verified_name) || clean(waba.name) || clean(phone.display_phone_number) || 'Cuenta';
+                        const accountName = clean(phone.verified_name) || clean(resolvedWabaName) || clean(phone.display_phone_number) || 'Cuenta';
 
                         availableAccounts.push({
                             wabaId: waba.id,
-                            wabaName: waba.name || 'Sin Nombre',
+                            wabaName: resolvedWabaName || 'Sin Nombre',
                             phoneNumberId: phone.id,
                             phoneNumber: phone.display_phone_number || phone.verified_name || 'Unknown Number',
                             displayName: `${bizPrefix}${accountName}`
                         });
                     }
                 } else {
-                    phoneDebugLog.push(`WABA [${waba.name}]: 0 numbers.`);
+                    phoneDebugLog.push(`WABA [${resolvedWabaName}]: 0 numbers.`);
                 }
             } catch (e: any) {
                 phoneDebugLog.push(`WABA [${waba.id}] Error: ${e.message}`);
