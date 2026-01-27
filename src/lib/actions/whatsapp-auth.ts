@@ -174,10 +174,28 @@ export async function handleEmbeddedSignup(data: {
                     for (const phone of phoneData.data) {
 
                         // Helper to ignore "unknown" garbage from Meta
-                        const clean = (val: string) => (val && val.toLowerCase() !== 'unknown' ? val : null);
+                        const clean = (val: string) => {
+                            if (!val) return null;
+                            const s = String(val).trim();
+                            if (s.toLowerCase() === 'unknown') return null;
+                            if (s.toLowerCase().includes('unknown')) return null; // Aggressive check
+                            return s;
+                        };
 
                         const bizPrefix = waba._sourceBiz && waba._sourceBiz !== 'Direct' ? `[${waba._sourceBiz}] ` : '';
-                        const rawName = clean(phone.verified_name) || clean(resolvedWabaName) || clean(phone.display_phone_number) || 'Cuenta';
+
+                        // Priority: Verified Name -> WABA Name -> Display Phone -> "Cuenta sin nombre"
+                        let rawName = clean(phone.verified_name) || clean(resolvedWabaName);
+
+                        // If we still don't have a name, or it's generic, force usage of the phone number
+                        if (!rawName) {
+                            rawName = clean(phone.display_phone_number) || 'Cuenta WhatsApp';
+                        }
+
+                        // Final safety: if the resulting name SOMEHOW is still "unknown", hard replace it
+                        if (rawName.toLowerCase().includes('unknown')) {
+                            rawName = phone.display_phone_number || 'Cuenta WhatsApp';
+                        }
 
                         // DEBUG LOGGING
                         console.log(`[DEBUG WA] WABA: ${waba.id} | Name: ${resolvedWabaName} | Phone: ${phone.display_phone_number} | Verified_Name: ${phone.verified_name} | Biz: ${waba._sourceBiz} | -> FINAL: ${bizPrefix}${rawName}`);
