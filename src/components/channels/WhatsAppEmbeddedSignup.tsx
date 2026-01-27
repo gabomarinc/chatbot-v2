@@ -135,7 +135,9 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 loginOptions.scope = 'whatsapp_business_management,whatsapp_business_messaging,business_management';
 
                 // COEXISTENCE MODE: Enable WhatsApp Business App Onboarding
-                loginOptions.extras = '{"featureType":"whatsapp_business_app_onboarding"}';
+                loginOptions.extras = {
+                    "featureType": "whatsapp_business_app_onboarding"
+                };
             }
 
             window.FB.login((response: any) => {
