@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-const META_API_VERSION = 'v19.0';
+const META_API_VERSION = 'v21.0';
 
 /**
  * Exchanges the temporary code for a long-lived user access token,
@@ -50,7 +50,6 @@ export async function handleEmbeddedSignup(data: {
             throw new Error(`Falta el permiso 'whatsapp_business_management'. Permisos actuales: ${permData.data?.map((p: any) => p.permission).join(', ')}`);
         }
 
-        // 3. Get WABA ID (Sharing permissions)
         // 3. Get WABA ID (Sharing permissions)
         let wabaList: any[] = [];
         let debugLog: string[] = [];
@@ -136,8 +135,6 @@ export async function handleEmbeddedSignup(data: {
             debugLog.push(`Fallback scan crashed: ${e.message}`);
         }
 
-
-
         // Deduplicate WABAs by ID (Last Write Wins to prefer Business-linked entries over Direct)
         const wabaMap = new Map();
         for (const w of wabaList) {
@@ -175,19 +172,22 @@ export async function handleEmbeddedSignup(data: {
 
                 if (phoneData.data && phoneData.data.length > 0) {
                     for (const phone of phoneData.data) {
-                        // Construct a clear Display Name: "[Business Name] Account Name - Phone"
+
                         // Helper to ignore "unknown" garbage from Meta
                         const clean = (val: string) => (val && val.toLowerCase() !== 'unknown' ? val : null);
 
                         const bizPrefix = waba._sourceBiz && waba._sourceBiz !== 'Direct' ? `[${waba._sourceBiz}] ` : '';
-                        const accountName = clean(phone.verified_name) || clean(resolvedWabaName) || clean(phone.display_phone_number) || 'Cuenta';
+                        const rawName = clean(phone.verified_name) || clean(resolvedWabaName) || clean(phone.display_phone_number) || 'Cuenta';
+
+                        // DEBUG LOGGING
+                        console.log(`[DEBUG WA] WABA: ${waba.id} | Name: ${resolvedWabaName} | Phone: ${phone.display_phone_number} | Verified_Name: ${phone.verified_name} | Biz: ${waba._sourceBiz} | -> FINAL: ${bizPrefix}${rawName}`);
 
                         availableAccounts.push({
                             wabaId: waba.id,
                             wabaName: resolvedWabaName || 'Sin Nombre',
                             phoneNumberId: phone.id,
                             phoneNumber: phone.display_phone_number || phone.verified_name || 'Unknown Number',
-                            displayName: `${bizPrefix}${accountName}`
+                            displayName: `${bizPrefix}${rawName}`
                         });
                     }
                 } else {
