@@ -55,6 +55,8 @@ export async function handleEmbeddedSignup(data: {
         let wabaList: any[] = [];
         let debugLog: string[] = [];
 
+        // Attempt 1: Direct Fetch (me/whatsapp_business_accounts)
+        // Note: This often fails for System Users or new scopes, so we swallow the error intentionally.
         try {
             debugLog.push('Attempting direct WABA fetch...');
             const wabaRes = await fetch(
@@ -65,72 +67,66 @@ export async function handleEmbeddedSignup(data: {
             if (wabaData.data && wabaData.data.length > 0) {
                 wabaList = wabaData.data;
                 debugLog.push(`Direct fetch found ${wabaData.data.length} WABAs`);
+            } else if (wabaData.error) {
+                debugLog.push(`Direct fetch skipped (API Error): ${wabaData.error.message}`);
             } else {
-                debugLog.push(`Direct fetch empty. Error: ${JSON.stringify(wabaData.error || wabaData)}`);
+                debugLog.push('Direct fetch returned empty list');
             }
         } catch (error: any) {
             debugLog.push(`Direct fetch crashed: ${error.message}`);
         }
 
-        // ALWAYS TRY FALLBACK TO ENSURE WE GET BUSINESS MANAGER WABAS TOO
+        // Attempt 2: Comprehensive Business Manager Scan (The "Big Net")
         try {
-            debugLog.push('Scanning Businesses for more WABAs...');
-            // Fallback: Get Businesses -> Owned WABAs
+            debugLog.push('Scanning Businesses for WABAs...');
             const bizRes = await fetch(
                 `https://graph.facebook.com/${META_API_VERSION}/me/businesses?access_token=${userAccessToken}`
             );
             const bizData = await bizRes.json();
 
             if (bizData.data) {
-                debugLog.push(`Found ${bizData.data.length} Businesses`);
+                debugLog.push(`Found ${bizData.data.length} Businesses connected to user`);
+
                 for (const biz of bizData.data) {
                     try {
+                        // Strategy A: "Client" WABAs (Agencies usually see this)
                         const bizWabaRes = await fetch(
                             `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?access_token=${userAccessToken}`
                         );
                         const bizWabaData = await bizWabaRes.json();
-                        if (bizWabaData.data) {
+                        if (bizWabaData.data && bizWabaData.data.length > 0) {
                             wabaList = [...wabaList, ...bizWabaData.data];
-                            debugLog.push(`Biz ${biz.id} (Client) found ${bizWabaData.data.length}`);
+                            debugLog.push(`Business [${biz.name}] (Client): Found ${bizWabaData.data.length}`);
                         }
 
-                        // Also try "owned" if client returns nothing
+                        // Strategy B: "Owned" WABAs (Direct owners see this)
+                        // This is often the most important one for end-businesses.
                         const ownedWabaRes = await fetch(
                             `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?access_token=${userAccessToken}`
                         );
                         const ownedWabaData = await ownedWabaRes.json();
-                        if (ownedWabaData.data) {
+                        if (ownedWabaData.data && ownedWabaData.data.length > 0) {
                             wabaList = [...wabaList, ...ownedWabaData.data];
-                            debugLog.push(`Biz ${biz.id} (Owned) found ${ownedWabaData.data.length}`);
-                        }
-
-                        // 3rd Try: Generic Edge (often works for Admins)
-                        const genericWabaRes = await fetch(
-                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/whatsapp_business_accounts?access_token=${userAccessToken}`
-                        );
-                        const genericWabaData = await genericWabaRes.json();
-                        if (genericWabaData.data) {
-                            wabaList = [...wabaList, ...genericWabaData.data];
-                            debugLog.push(`Biz ${biz.id} (Generic) found ${genericWabaData.data.length}`);
+                            debugLog.push(`Business [${biz.name}] (Owned): Found ${ownedWabaData.data.length}`);
                         }
                     } catch (e: any) {
-                        // Only log non-critical errors to save space
-                        if (debugLog.length < 5) debugLog.push(`Biz scan err: ${e.message}`);
+                        // Silent fail for individual business scan
                     }
                 }
             } else {
-                debugLog.push(`No Businesses found. BizData: ${JSON.stringify(bizData)}`);
+                debugLog.push(`No Businesses found. BizData keys: ${Object.keys(bizData).join(', ')}`);
             }
         } catch (e: any) {
-            debugLog.push(`Fallback crashed: ${e.message}`);
+            debugLog.push(`Fallback scan crashed: ${e.message}`);
         }
 
         // Deduplicate WABAs by ID
         wabaList = Array.from(new Map(wabaList.map(item => [item.id, item])).values());
 
         if (wabaList.length === 0) {
-            console.error('Debug Log:', debugLog);
-            throw new Error(`No se encontró ninguna Cuenta de WhatsApp. Logs: ${debugLog.join(' || ')}`);
+            console.error('Debug Log for User Support:', debugLog);
+            // Construct a friendly error message
+            throw new Error(`No se encontraron cuentas de WhatsApp.\nDetalles técnicos: ${debugLog.slice(0, 3).join(' | ')}... (Ver consola para más)`);
         }
 
         // Collect all potential phone numbers
@@ -143,19 +139,17 @@ export async function handleEmbeddedSignup(data: {
             const phoneData = await phoneRes.json();
 
             if (phoneData.data && phoneData.data.length > 0) {
-                // Determine the "best" name for the WABA
-                // Sometimes waba.name is "WhatsApp Business Account", so we might want to check other fields
-                // But for now waba.name is the best we have.
-
                 for (const phone of phoneData.data) {
                     availableAccounts.push({
                         wabaId: waba.id,
                         wabaName: waba.name,
                         phoneNumberId: phone.id,
                         phoneNumber: phone.display_phone_number || phone.verified_name || 'Unknown Number',
-                        displayName: phone.verified_name || waba.name || phone.display_phone_number // PRIORITIZE VERIFIED NAME OR WABA NAME
+                        displayName: phone.verified_name || waba.name || phone.display_phone_number
                     });
                 }
+            } else {
+                debugLog.push(`WABA ${waba.name} has 0 numbers`);
             }
         }
 
