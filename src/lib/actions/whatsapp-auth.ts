@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-const META_API_VERSION = 'v21.0';
+const META_API_VERSION = 'v20.0';
 
 /**
  * Exchanges the temporary code for a long-lived user access token,
@@ -51,7 +51,6 @@ export async function handleEmbeddedSignupV2(data: {
         }
 
         // 3. Get WABA ID (Sharing permissions)
-        // 3. Get WABA ID (Sharing permissions)
         let wabaList: any[] = [];
         let debugLog: string[] = [];
 
@@ -70,46 +69,54 @@ export async function handleEmbeddedSignupV2(data: {
             }
 
             if (bizData.data) {
-                debugLog.push(`Found ${bizData.data.length} Businesses connected to user`);
+                debugLog.push(`Found ${bizData.data.length} Businesses`);
 
                 for (const biz of bizData.data) {
                     try {
+                        debugLog.push(`Processing Business: ${biz.id} - ${biz.name}`);
+
+                        let clientCount = 0;
                         // Strategy A: "Client" WABAs (Agencies usually see this)
                         const bizWabaRes = await fetch(
                             `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?access_token=${userAccessToken}`
                         );
                         const bizWabaData = await bizWabaRes.json();
-                        if (bizWabaData.data && bizWabaData.data.length > 0) {
+                        clientCount = bizWabaData.data?.length || 0;
+                        if (clientCount > 0) {
                             const tagged = bizWabaData.data.map((w: any) => ({ ...w, _sourceBiz: biz.name }));
                             wabaList = [...wabaList, ...tagged];
-                            debugLog.push(`Business [${biz.name}] (Client): Found ${bizWabaData.data.length}`);
                         }
 
+                        let ownedCount = 0;
                         // Strategy B: "Owned" WABAs (Direct owners see this)
                         // This often finds WABAs that are neither strictly "client" nor "owned" in the graph API's eyes
                         const ownedWabaRes = await fetch(
                             `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?access_token=${userAccessToken}`
                         );
                         const ownedWabaData = await ownedWabaRes.json();
-                        if (ownedWabaData.data && ownedWabaData.data.length > 0) {
+                        ownedCount = ownedWabaData.data?.length || 0;
+                        if (ownedCount > 0) {
                             const tagged = ownedWabaData.data.map((w: any) => ({ ...w, _sourceBiz: biz.name }));
                             wabaList = [...wabaList, ...tagged];
-                            debugLog.push(`Business [${biz.name}] (Owned): Found ${ownedWabaData.data.length}`);
                         }
 
+                        let genericCount = 0;
                         // Strategy C: Generic Edge (Catch-all for Admins/legacy)
                         // This often finds WABAs that are neither strictly "client" nor "owned" in the graph API's eyes
                         const genericWabaRes = await fetch(
                             `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/whatsapp_business_accounts?access_token=${userAccessToken}`
                         );
                         const genericWabaData = await genericWabaRes.json();
-                        if (genericWabaData.data && genericWabaData.data.length > 0) {
+                        genericCount = genericWabaData.data?.length || 0;
+                        if (genericCount > 0) {
                             const tagged = genericWabaData.data.map((w: any) => ({ ...w, _sourceBiz: biz.name }));
                             wabaList = [...wabaList, ...tagged];
-                            debugLog.push(`Business [${biz.name}] (Generic): Found ${genericWabaData.data.length}`);
                         }
+
+                        debugLog.push(`Biz [${biz.name}]: C=${clientCount} O=${ownedCount} G=${genericCount}`);
+
                     } catch (e: any) {
-                        debugLog.push(`Biz [${biz.name}] processing error: ${e.message}`);
+                        debugLog.push(`Biz [${biz.name}] Error: ${e.message}`);
                     }
                 }
             } else {
@@ -129,7 +136,7 @@ export async function handleEmbeddedSignupV2(data: {
         if (wabaList.length === 0) {
             console.error('Debug Log for User Support:', debugLog);
             // DUMP THE FULL LOG so we can see what happened
-            throw new Error(`No se encontraron cuentas de WhatsApp.\nLog: ${debugLog.join(' | ')}`);
+            throw new Error(`Siguiendo sin encontrar cuentas... Log: ${debugLog.join(' | ')}`);
         }
 
         // Collect all potential phone numbers
