@@ -60,12 +60,13 @@ export async function handleEmbeddedSignup(data: {
         try {
             debugLog.push('Attempting direct WABA fetch...');
             const wabaRes = await fetch(
-                `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?access_token=${userAccessToken}`
+                `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
             );
             const wabaData = await wabaRes.json();
 
             if (wabaData.data && wabaData.data.length > 0) {
-                wabaList = wabaData.data;
+                // Attach source info
+                wabaList = wabaData.data.map((w: any) => ({ ...w, _sourceBiz: 'Direct' }));
                 debugLog.push(`Direct fetch found ${wabaData.data.length} WABAs`);
             } else if (wabaData.error) {
                 debugLog.push(`Direct fetch skipped (API Error): ${wabaData.error.message}`);
@@ -91,23 +92,37 @@ export async function handleEmbeddedSignup(data: {
                     try {
                         // Strategy A: "Client" WABAs (Agencies usually see this)
                         const bizWabaRes = await fetch(
-                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?access_token=${userAccessToken}`
+                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/client_whatsapp_business_accounts?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
                         );
                         const bizWabaData = await bizWabaRes.json();
                         if (bizWabaData.data && bizWabaData.data.length > 0) {
-                            wabaList = [...wabaList, ...bizWabaData.data];
+                            const tagged = bizWabaData.data.map((w: any) => ({ ...w, _sourceBiz: biz.name }));
+                            wabaList = [...wabaList, ...tagged];
                             debugLog.push(`Business [${biz.name}] (Client): Found ${bizWabaData.data.length}`);
                         }
 
                         // Strategy B: "Owned" WABAs (Direct owners see this)
-                        // This is often the most important one for end-businesses.
+                        // This often finds WABAs that are neither strictly "client" nor "owned" in the graph API's eyes
                         const ownedWabaRes = await fetch(
-                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?access_token=${userAccessToken}`
+                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
                         );
                         const ownedWabaData = await ownedWabaRes.json();
                         if (ownedWabaData.data && ownedWabaData.data.length > 0) {
-                            wabaList = [...wabaList, ...ownedWabaData.data];
+                            const tagged = ownedWabaData.data.map((w: any) => ({ ...w, _sourceBiz: biz.name }));
+                            wabaList = [...wabaList, ...tagged];
                             debugLog.push(`Business [${biz.name}] (Owned): Found ${ownedWabaData.data.length}`);
+                        }
+
+                        // Strategy C: Generic Edge (Catch-all for Admins/legacy)
+                        // This often finds WABAs that are neither strictly "client" nor "owned" in the graph API's eyes
+                        const genericWabaRes = await fetch(
+                            `https://graph.facebook.com/${META_API_VERSION}/${biz.id}/whatsapp_business_accounts?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
+                        );
+                        const genericWabaData = await genericWabaRes.json();
+                        if (genericWabaData.data && genericWabaData.data.length > 0) {
+                            const tagged = genericWabaData.data.map((w: any) => ({ ...w, _sourceBiz: biz.name }));
+                            wabaList = [...wabaList, ...tagged];
+                            debugLog.push(`Business [${biz.name}] (Generic): Found ${genericWabaData.data.length}`);
                         }
                     } catch (e: any) {
                         // Silent fail for individual business scan
@@ -120,41 +135,57 @@ export async function handleEmbeddedSignup(data: {
             debugLog.push(`Fallback scan crashed: ${e.message}`);
         }
 
+
+
         // Deduplicate WABAs by ID
-        wabaList = Array.from(new Map(wabaList.map(item => [item.id, item])).values());
+        const seenIds = new Set();
+        wabaList = wabaList.filter(item => {
+            const duplicate = seenIds.has(item.id);
+            seenIds.add(item.id);
+            return !duplicate;
+        });
 
         if (wabaList.length === 0) {
             console.error('Debug Log for User Support:', debugLog);
-            // Construct a friendly error message
             throw new Error(`No se encontraron cuentas de WhatsApp.\nDetalles técnicos: ${debugLog.slice(0, 3).join(' | ')}... (Ver consola para más)`);
         }
 
         // Collect all potential phone numbers
         const availableAccounts: any[] = [];
+        const phoneDebugLog: string[] = [];
 
         for (const waba of wabaList) {
-            const phoneRes = await fetch(
-                `https://graph.facebook.com/${META_API_VERSION}/${waba.id}/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating&access_token=${userAccessToken}`
-            );
-            const phoneData = await phoneRes.json();
+            try {
+                const phoneRes = await fetch(
+                    `https://graph.facebook.com/${META_API_VERSION}/${waba.id}/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating,name_status&access_token=${userAccessToken}`
+                );
+                const phoneData = await phoneRes.json();
 
-            if (phoneData.data && phoneData.data.length > 0) {
-                for (const phone of phoneData.data) {
-                    availableAccounts.push({
-                        wabaId: waba.id,
-                        wabaName: waba.name,
-                        phoneNumberId: phone.id,
-                        phoneNumber: phone.display_phone_number || phone.verified_name || 'Unknown Number',
-                        displayName: phone.verified_name || waba.name || phone.display_phone_number
-                    });
+                if (phoneData.data && phoneData.data.length > 0) {
+                    for (const phone of phoneData.data) {
+                        // Construct a clear Display Name: "[Business Name] Account Name - Phone"
+                        const bizPrefix = waba._sourceBiz && waba._sourceBiz !== 'Direct' ? `[${waba._sourceBiz}] ` : '';
+                        const accountName = phone.verified_name || waba.name || phone.display_phone_number || 'Cuenta';
+
+                        availableAccounts.push({
+                            wabaId: waba.id,
+                            wabaName: waba.name || 'Sin Nombre',
+                            phoneNumberId: phone.id,
+                            phoneNumber: phone.display_phone_number || phone.verified_name || 'Unknown Number',
+                            displayName: `${bizPrefix}${accountName}`
+                        });
+                    }
+                } else {
+                    phoneDebugLog.push(`WABA [${waba.name}]: 0 numbers.`);
                 }
-            } else {
-                debugLog.push(`WABA ${waba.name} has 0 numbers`);
+            } catch (e: any) {
+                phoneDebugLog.push(`WABA [${waba.id}] Error: ${e.message}`);
             }
         }
 
         if (availableAccounts.length === 0) {
-            throw new Error('No verified phone number found in the connected WABA(s)');
+            console.error('Phone Fetch Debug:', phoneDebugLog);
+            throw new Error(`No se encontraron números verificados en ninguna de las ${wabaList.length} cuentas de negocio detectadas.\nLogs: ${phoneDebugLog.join('\n')}`);
         }
 
         // 4. Decision Time
