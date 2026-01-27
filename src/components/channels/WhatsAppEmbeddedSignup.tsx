@@ -130,31 +130,39 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 loginOptions.scope = 'whatsapp_business_management,whatsapp_business_messaging,business_management';
             }
 
-            window.FB.login(async (response: any) => {
+            window.FB.login((response: any) => {
                 console.log('FB Login Response:', response);
                 if (response.authResponse) {
                     const accessToken = response.authResponse.accessToken;
                     if (accessToken) {
                         // 2. Send token to server to exchange and fetch WABAs
-                        const result = await handleEmbeddedSignupV2({
-                            accessToken: accessToken,
-                            agentId
-                        });
+                        // Wrap async logic in an IIFE to satisfy FB SDK's synchronous callback requirement
+                        (async () => {
+                            try {
+                                const result = await handleEmbeddedSignupV2({
+                                    accessToken: accessToken,
+                                    agentId
+                                });
 
-                        if (result.success) {
-                            toast.success('¡WhatsApp conectado correctamente!');
-                            if (onSuccess) onSuccess();
-                        }
-                        else if ('requiresSelection' in result && result.requiresSelection) {
-                            // Show selection modal
-                            setAvailableAccounts((result as any).accounts);
-                            setLongLivedToken((result as any).accessToken || accessToken);
-                            setShowSelectionModal(true);
-                        }
-                        else {
-                            const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
-                            toast.error(errorMsg);
-                        }
+                                if (result.success) {
+                                    toast.success('¡WhatsApp conectado correctamente!');
+                                    if (onSuccess) onSuccess();
+                                }
+                                else if ('requiresSelection' in result && result.requiresSelection) {
+                                    // Show selection modal
+                                    setAvailableAccounts((result as any).accounts);
+                                    setLongLivedToken((result as any).accessToken || accessToken);
+                                    setShowSelectionModal(true);
+                                }
+                                else {
+                                    const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
+                                    toast.error(errorMsg);
+                                }
+                            } catch (err) {
+                                console.error('Error in async login handler:', err);
+                                toast.error('Error procesando la respuesta del servidor.');
+                            }
+                        })();
                     } else {
                         setIsProcessing(false);
                         toast.error('No se recibió el token de acceso. Intenta de nuevo.');
@@ -166,7 +174,6 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                         toast.error(`Error: ${response.error.message || 'Error desconocido'}`);
                     } else {
                         // User cancelled
-                        // toast.error('El usuario canceló el inicio de sesión o no autorizó la aplicación.');
                     }
                 }
             }, loginOptions);
