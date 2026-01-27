@@ -10,7 +10,7 @@ const META_API_VERSION = 'v21.0';
  * Exchanges the temporary code for a long-lived user access token,
  * fetches WABA and Phone Number info, and registers it.
  */
-export async function handleEmbeddedSignup(data: {
+export async function handleEmbeddedSignupV2(data: {
     accessToken: string;
     agentId: string;
 }) {

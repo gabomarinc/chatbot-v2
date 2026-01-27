@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, MessageSquare, ShieldCheck, Check, Smartphone, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { handleEmbeddedSignup, finishWhatsAppSetup } from '@/lib/actions/whatsapp-auth';
+import { handleEmbeddedSignupV2, finishWhatsAppSetup } from '@/lib/actions/whatsapp-auth';
 import { cn } from '@/lib/utils';
 
 interface WhatsAppEmbeddedSignupProps {
@@ -130,13 +130,31 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 loginOptions.scope = 'whatsapp_business_management,whatsapp_business_messaging,business_management';
             }
 
-            window.FB.login((response: any) => {
-                console.log('Respuesta de FB.login:', response);
+            window.FB.login(async (response: any) => {
+                console.log('FB Login Response:', response);
                 if (response.authResponse) {
-                    // Ahora recibimos un accessToken directamente
                     const accessToken = response.authResponse.accessToken;
                     if (accessToken) {
-                        processMetaToken(accessToken);
+                        // 2. Send token to server to exchange and fetch WABAs
+                        const result = await handleEmbeddedSignupV2({
+                            accessToken: accessToken,
+                            agentId
+                        });
+
+                        if (result.success) {
+                            toast.success('¡WhatsApp conectado correctamente!');
+                            if (onSuccess) onSuccess();
+                        }
+                        else if ('requiresSelection' in result && result.requiresSelection) {
+                            // Show selection modal
+                            setAvailableAccounts((result as any).accounts);
+                            setLongLivedToken((result as any).accessToken || accessToken);
+                            setShowSelectionModal(true);
+                        }
+                        else {
+                            const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
+                            toast.error(errorMsg);
+                        }
                     } else {
                         setIsProcessing(false);
                         toast.error('No se recibió el token de acceso. Intenta de nuevo.');
@@ -159,33 +177,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
         }
     };
 
-    const processMetaToken = async (accessToken: string) => {
-        try {
-            // Ya no necesitamos currentUrl ni redirect_uri
-            const result = await handleEmbeddedSignup({ accessToken, agentId });
 
-            if (result.success) {
-                toast.success('¡WhatsApp conectado correctamente!');
-                if (onSuccess) onSuccess();
-            }
-            else if ('requiresSelection' in result && result.requiresSelection) {
-                // Show selection modal
-                setAvailableAccounts((result as any).accounts);
-                setLongLivedToken((result as any).accessToken || accessToken);
-                setShowSelectionModal(true);
-            }
-            else {
-                const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
-                toast.error(errorMsg);
-            }
-        } catch (error) {
-            toast.error('Error procesando la conexión');
-        } finally {
-            if (!showSelectionModal) {
-                setIsProcessing(false);
-            }
-        }
-    };
 
     const handleAccountSelection = async (account: any) => {
         // Keep isProcessing true
