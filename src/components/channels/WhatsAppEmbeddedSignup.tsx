@@ -146,6 +146,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
 
                                 if (result.success) {
                                     toast.success('¡WhatsApp conectado correctamente!');
+                                    setIsProcessing(false);
                                     if (onSuccess) onSuccess();
                                 }
                                 else if ('requiresSelection' in result && result.requiresSelection) {
