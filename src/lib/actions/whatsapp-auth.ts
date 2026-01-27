@@ -137,13 +137,12 @@ export async function handleEmbeddedSignup(data: {
 
 
 
-        // Deduplicate WABAs by ID
-        const seenIds = new Set();
-        wabaList = wabaList.filter(item => {
-            const duplicate = seenIds.has(item.id);
-            seenIds.add(item.id);
-            return !duplicate;
-        });
+        // Deduplicate WABAs by ID (Last Write Wins to prefer Business-linked entries over Direct)
+        const wabaMap = new Map();
+        for (const w of wabaList) {
+            wabaMap.set(w.id, w);
+        }
+        wabaList = Array.from(wabaMap.values());
 
         if (wabaList.length === 0) {
             console.error('Debug Log for User Support:', debugLog);
@@ -164,8 +163,11 @@ export async function handleEmbeddedSignup(data: {
                 if (phoneData.data && phoneData.data.length > 0) {
                     for (const phone of phoneData.data) {
                         // Construct a clear Display Name: "[Business Name] Account Name - Phone"
+                        // Helper to ignore "unknown" garbage from Meta
+                        const clean = (val: string) => (val && val.toLowerCase() !== 'unknown' ? val : null);
+
                         const bizPrefix = waba._sourceBiz && waba._sourceBiz !== 'Direct' ? `[${waba._sourceBiz}] ` : '';
-                        const accountName = phone.verified_name || waba.name || phone.display_phone_number || 'Cuenta';
+                        const accountName = clean(phone.verified_name) || clean(waba.name) || clean(phone.display_phone_number) || 'Cuenta';
 
                         availableAccounts.push({
                             wabaId: waba.id,
