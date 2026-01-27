@@ -51,31 +51,9 @@ export async function handleEmbeddedSignupV2(data: {
         }
 
         // 3. Get WABA ID (Sharing permissions)
+        // 3. Get WABA ID (Sharing permissions)
         let wabaList: any[] = [];
         let debugLog: string[] = [];
-
-        // Attempt 1: Direct Fetch (me/whatsapp_business_accounts)
-        // Note: This often fails for System Users or new scopes, so we swallow the error intentionally.
-        // Message for errors
-        try {
-            debugLog.push('Attempting direct WABA fetch...');
-            const wabaRes = await fetch(
-                `https://graph.facebook.com/${META_API_VERSION}/me/whatsapp_business_accounts?access_token=${userAccessToken}`
-            );
-            const wabaData = await wabaRes.json();
-
-            if (wabaData.data && wabaData.data.length > 0) {
-                // Attach source info
-                wabaList = wabaData.data.map((w: any) => ({ ...w, _sourceBiz: 'Direct' }));
-                debugLog.push(`Direct fetch found ${wabaData.data.length} WABAs`);
-            } else if (wabaData.error) {
-                debugLog.push(`Direct fetch skipped (API Error): ${wabaData.error.message}`);
-            } else {
-                debugLog.push('Direct fetch returned empty list');
-            }
-        } catch (error: any) {
-            debugLog.push(`Direct fetch crashed: ${error.message}`);
-        }
 
         // Attempt 2: Comprehensive Business Manager Scan (The "Big Net")
         try {
@@ -83,7 +61,13 @@ export async function handleEmbeddedSignupV2(data: {
             const bizRes = await fetch(
                 `https://graph.facebook.com/${META_API_VERSION}/me/businesses?access_token=${userAccessToken}`
             );
+
+            debugLog.push(`Biz Scan Status: ${bizRes.status} ${bizRes.statusText}`);
             const bizData = await bizRes.json();
+
+            if (bizData.error) {
+                debugLog.push(`Biz Scan Error: ${JSON.stringify(bizData.error)}`);
+            }
 
             if (bizData.data) {
                 debugLog.push(`Found ${bizData.data.length} Businesses connected to user`);
@@ -125,7 +109,7 @@ export async function handleEmbeddedSignupV2(data: {
                             debugLog.push(`Business [${biz.name}] (Generic): Found ${genericWabaData.data.length}`);
                         }
                     } catch (e: any) {
-                        // Silent fail for individual business scan
+                        debugLog.push(`Biz [${biz.name}] processing error: ${e.message}`);
                     }
                 }
             } else {
@@ -144,7 +128,8 @@ export async function handleEmbeddedSignupV2(data: {
 
         if (wabaList.length === 0) {
             console.error('Debug Log for User Support:', debugLog);
-            throw new Error(`No se encontraron cuentas de WhatsApp.\nDetalles técnicos: ${debugLog.slice(0, 3).join(' | ')}... (Ver consola para más)`);
+            // DUMP THE FULL LOG so we can see what happened
+            throw new Error(`No se encontraron cuentas de WhatsApp.\nLog: ${debugLog.join(' | ')}`);
         }
 
         // Collect all potential phone numbers
