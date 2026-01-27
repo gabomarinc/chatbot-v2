@@ -49,10 +49,53 @@ export async function handleEmbeddedSignupV2(data: {
             console.error('Missing Permissions:', JSON.stringify(permData, null, 2));
             throw new Error(`Falta el permiso 'whatsapp_business_management'. Permisos actuales: ${permData.data?.map((p: any) => p.permission).join(', ')}`);
         }
-
         // 3. Get WABA ID (Sharing permissions)
         let wabaList: any[] = [];
         let debugLog: string[] = [];
+
+        // Attempt 1: Inspect Token for Granular Scopes (The "Precise Cut")
+        // When users select specific accounts in the new Meta UI, they are hidden from "me/businesses"
+        // and only appear in the token's "granular_scopes".
+        try {
+            debugLog.push('Inspecting Token Granular Scopes...');
+            // App Access Token is just AppID|AppSecret
+            const appAccessToken = `${appId}|${appSecret}`;
+            const debugRes = await fetch(
+                `https://graph.facebook.com/${META_API_VERSION}/debug_token?input_token=${userAccessToken}&access_token=${appAccessToken}`
+            );
+            const debugData = await debugRes.json();
+
+            if (debugData.data && debugData.data.granular_scopes) {
+                const scopes = debugData.data.granular_scopes;
+                debugLog.push(`Granular Scopes found: ${scopes.length}`);
+
+                const waScope = scopes.find((s: any) => s.scope === 'whatsapp_business_management');
+                if (waScope && waScope.target_ids) {
+                    debugLog.push(`Target IDs for WA: ${waScope.target_ids.join(', ')}`);
+
+                    for (const id of waScope.target_ids) {
+                        try {
+                            const wabaDetailsRes = await fetch(
+                                `https://graph.facebook.com/${META_API_VERSION}/${id}?fields=id,name,currency,timezone_id&access_token=${userAccessToken}`
+                            );
+                            const wabaDetails = await wabaDetailsRes.json();
+                            if (wabaDetails.id) {
+                                wabaList.push({ ...wabaDetails, _sourceBiz: 'Granular' });
+                                debugLog.push(`Granular WABA found: ${wabaDetails.name} (${wabaDetails.id})`);
+                            }
+                        } catch (err: any) {
+                            debugLog.push(`Failed to fetch Granular WABA ${id}: ${err.message}`);
+                        }
+                    }
+                } else {
+                    debugLog.push('No target_ids in whatsapp_business_management scope');
+                }
+            } else {
+                debugLog.push('No granular_scopes found in token (Profile+ or Legacy)');
+            }
+        } catch (e: any) {
+            debugLog.push(`Token Inspection Error: ${e.message}`);
+        }
 
         // Attempt 2: Comprehensive Business Manager Scan (The "Big Net")
         try {
