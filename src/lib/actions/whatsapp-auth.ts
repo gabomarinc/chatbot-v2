@@ -309,6 +309,18 @@ export async function finishWhatsAppSetup(data: {
             }
         );
 
+        // 5.1. Subscribe App to WABA Webhooks (Crucial for receiving messages)
+        const subRes = await fetch(
+            `https://graph.facebook.com/${META_API_VERSION}/${data.wabaId}/subscribed_apps`,
+            {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${data.accessToken}` }
+            }
+        );
+        if (!subRes.ok) {
+            console.error('Webhook Subscription Failed:', await subRes.json());
+        }
+
         // 6. Save/Update Channel
         const workspace = await prisma.workspace.findFirst({
             where: { ownerId: sessionUserId }
