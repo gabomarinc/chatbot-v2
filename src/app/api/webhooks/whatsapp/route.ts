@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log('Incoming WhatsApp Webhook:', JSON.stringify(body, null, 2));
 
     // Check if it's a message event
     const entry = body.entry?.[0];
