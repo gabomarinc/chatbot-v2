@@ -37,7 +37,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
         }
 
         // Verificar HTTPS
-        if (typeof window !== 'undefined' && window.location.protocol !== 'https:') {
+        if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
             console.warn('Facebook SDK requiere HTTPS. Para desarrollo local, usa ngrok.');
             return;
         }
@@ -93,9 +93,9 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             return;
         }
 
-        // Verificar HTTPS
-        if (typeof window !== 'undefined' && window.location.protocol !== 'https:') {
-            toast.error('Meta requiere HTTPS para conectar WhatsApp.');
+        // Verificar HTTPS (Permitir localhost para pruebas)
+        if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+            toast.error('Meta requiere HTTPS para conectar WhatsApp. (Use ngrok o localhost)');
             return;
         }
 
@@ -285,10 +285,15 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                                     </div>
                                     <div className="flex-1">
                                         <p className="font-bold text-gray-900 group-hover:text-green-700">
-                                            {account.phoneNumber}
+                                            {account.displayName}
                                         </p>
                                         <p className="text-xs text-gray-500 flex items-center gap-1">
-                                            <span className="font-medium text-gray-400">{account.wabaName}</span>
+                                            <span className="font-medium text-gray-400">
+                                                {account.phoneNumber}
+                                                {account.wabaName && account.wabaName !== account.displayName && (
+                                                    <span className="ml-1 opacity-70">({account.wabaName})</span>
+                                                )}
+                                            </span>
                                         </p>
                                     </div>
                                     <div className="opacity-0 group-hover:opacity-100 transition-opacity text-green-600">
