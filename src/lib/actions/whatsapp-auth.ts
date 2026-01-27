@@ -264,6 +264,7 @@ export async function handleEmbeddedSignupV2(data: {
                 wabaId: availableAccounts[0].wabaId,
                 phoneNumberId: availableAccounts[0].phoneNumberId,
                 agentId: data.agentId,
+                displayName: availableAccounts[0].displayName,
                 sessionUserId: session.user.id
             });
         } else {
@@ -290,6 +291,7 @@ export async function finishWhatsAppSetup(data: {
     wabaId: string;
     phoneNumberId: string;
     agentId: string;
+    displayName: string;
     sessionUserId?: string;
 }) {
     const sessionUserId = data.sessionUserId || (await auth())?.user?.id;
@@ -331,7 +333,7 @@ export async function finishWhatsAppSetup(data: {
         const existingChannel = await prisma.channel.findFirst({
             where: {
                 type: 'WHATSAPP',
-                agent: { workspaceId: workspace.id } // Scoped to workspace, not just agent? Check logic.
+                agent: { workspaceId: workspace.id }
             }
         });
 
@@ -349,7 +351,7 @@ export async function finishWhatsAppSetup(data: {
                     agentId: data.agentId,
                     configJson: configJson as any,
                     isActive: true,
-                    displayName: 'WhatsApp Business' // Could update name here if we had it
+                    displayName: data.displayName
                 }
             });
         } else {
@@ -357,7 +359,7 @@ export async function finishWhatsAppSetup(data: {
                 data: {
                     agent: { connect: { id: data.agentId } },
                     type: 'WHATSAPP',
-                    displayName: 'WhatsApp Business',
+                    displayName: data.displayName,
                     configJson: configJson as any,
                     isActive: true
                 }

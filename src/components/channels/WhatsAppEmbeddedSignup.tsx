@@ -194,7 +194,8 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 accessToken: longLivedToken,
                 wabaId: account.wabaId,
                 phoneNumberId: account.phoneNumberId,
-                agentId
+                agentId,
+                displayName: account.displayName
             });
 
             if (result.success) {
