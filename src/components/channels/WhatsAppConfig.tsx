@@ -7,8 +7,14 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { WhatsAppEmbeddedSignup } from './WhatsAppEmbeddedSignup';
 import { YcloudSetup } from './YcloudSetup';
-import { getWhatsAppTemplates, sendWhatsAppTemplateAction } from '@/lib/actions/whatsapp-auth';
+import { getWhatsAppTemplates, sendWhatsAppTemplateAction, deleteWhatsAppTemplateAction } from '@/lib/actions/whatsapp-auth';
 import { useEffect } from 'react';
+import { TemplateManager } from './TemplateManager';
+import { Trash2, AlertCircle, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 interface Agent {
     id: string;
@@ -32,6 +38,112 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     const [isFetchingTemplates, setIsFetchingTemplates] = useState(false);
     const [testPhone, setTestPhone] = useState('');
     const [isSendingTest, setIsSendingTest] = useState<string | null>(null);
+    const [showTemplateManager, setShowTemplateManager] = useState(false);
+
+    // Test Param State
+    const [testTemplate, setTestTemplate] = useState<any | null>(null);
+    const [testParams, setTestParams] = useState<{ [key: string]: string }>({});
+    const [headerParam, setHeaderParam] = useState<string>('');
+
+    const handleDeleteTemplate = async (templateName: string) => {
+        if (!confirm(`¿Estás seguro de que deseas eliminar la plantilla "${templateName}"?`)) return;
+
+        const wabaId = formData.wabaId || existingChannel?.configJson?.wabaId;
+        const accessToken = formData.accessToken || existingChannel?.configJson?.accessToken;
+
+        if (!wabaId || !accessToken) return;
+
+        try {
+            const result = await deleteWhatsAppTemplateAction({
+                wabaId,
+                accessToken,
+                name: templateName
+            });
+
+            if (result.success) {
+                toast.success('Plantilla eliminada');
+                fetchTemplates();
+            } else {
+                toast.error(result.error || 'Error al eliminar plantilla');
+            }
+        } catch (error) {
+            console.error('Error deleting template:', error);
+            toast.error('Error al eliminar');
+        }
+    };
+
+    const prepareTest = (template: any) => {
+        setTestTemplate(template);
+        setTestParams({});
+        setHeaderParam('');
+    };
+
+    const executeSendTest = async () => {
+        if (!testPhone) {
+            toast.error('Ingresa un número de teléfono de prueba');
+            return;
+        }
+
+        if (!testTemplate) return;
+
+        const phoneNumberId = formData.phoneNumberId || existingChannel?.configJson?.phoneNumberId;
+        const accessToken = formData.accessToken || existingChannel?.configJson?.accessToken;
+
+        if (!phoneNumberId || !accessToken) return;
+
+        setIsSendingTest(testTemplate.name);
+        try {
+            // Construct Components from params
+            const components = [];
+
+            // Body Params
+            const bodyParams = Object.keys(testParams)
+                .sort()
+                .map(key => ({
+                    type: 'text',
+                    text: testParams[key]
+                }));
+
+            if (bodyParams.length > 0) {
+                components.push({
+                    type: 'body',
+                    parameters: bodyParams
+                });
+            }
+
+            // Header Param (Text only for now as MVP)
+            if (headerParam) {
+                components.push({
+                    type: 'header',
+                    parameters: [{
+                        type: 'text',
+                        text: headerParam
+                    }]
+                });
+            }
+
+            const result = await sendWhatsAppTemplateAction({
+                phoneNumberId,
+                accessToken,
+                to: testPhone,
+                templateName: testTemplate.name,
+                languageCode: testTemplate.language,
+                components: components.length > 0 ? components : undefined
+            });
+
+            if (result.success) {
+                toast.success('Plantilla de prueba enviada');
+                setTestTemplate(null);
+            } else {
+                toast.error(result.error || 'Error al enviar prueba');
+            }
+        } catch (error) {
+            console.error('Error sending test:', error);
+        } finally {
+            setIsSendingTest(null);
+        }
+    };
+
 
     const [formData, setFormData] = useState({
         agentId: existingChannel?.agentId || defaultAgentId || (agents.length > 0 ? agents[0].id : ''),
@@ -70,38 +182,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
         }
     };
 
-    const handleSendTest = async (templateName: string, languageCode: string) => {
-        if (!testPhone) {
-            toast.error('Ingresa un número de teléfono de prueba');
-            return;
-        }
 
-        const phoneNumberId = formData.phoneNumberId || existingChannel?.configJson?.phoneNumberId;
-        const accessToken = formData.accessToken || existingChannel?.configJson?.accessToken;
-
-        if (!phoneNumberId || !accessToken) return;
-
-        setIsSendingTest(templateName);
-        try {
-            const result = await sendWhatsAppTemplateAction({
-                phoneNumberId,
-                accessToken,
-                to: testPhone,
-                templateName,
-                languageCode: languageCode || 'es'
-            });
-
-            if (result.success) {
-                toast.success('Plantilla de prueba enviada');
-            } else {
-                toast.error(result.error || 'Error al enviar prueba');
-            }
-        } catch (error) {
-            console.error('Error sending test:', error);
-        } finally {
-            setIsSendingTest(null);
-        }
-    };
 
     useEffect(() => {
         if (existingChannel?.configJson?.wabaId && existingChannel?.configJson?.accessToken) {
@@ -479,12 +560,19 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
+                                        onClick={() => setShowTemplateManager(true)}
+                                        className="px-4 py-2 text-xs font-bold bg-green-600 text-white hover:bg-green-500 rounded-xl transition-colors flex items-center gap-2 shadow-sm"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        Crear Plantilla
+                                    </button>
+                                    <button
                                         onClick={fetchTemplates}
                                         disabled={isFetchingTemplates}
                                         className="px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-xl transition-colors flex items-center gap-2"
                                     >
                                         {isFetchingTemplates ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Settings2 className="w-3.5 h-3.5" />}
-                                        Actualizar Plantillas
+                                        Actualizar
                                     </button>
                                 </div>
                             </div>
@@ -535,14 +623,23 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                                                 </div>
                                             </div>
 
-                                            <button
-                                                onClick={() => handleSendTest(template.name, template.language)}
-                                                disabled={isSendingTest === template.name || !testPhone}
-                                                className="px-4 py-2 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-                                            >
-                                                {isSendingTest === template.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
-                                                Enviar Prueba
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleDeleteTemplate(template.name)}
+                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Eliminar plantilla"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => prepareTest(template)}
+                                                    disabled={isSendingTest === template.name}
+                                                    className="px-4 py-2 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                                >
+                                                    {isSendingTest === template.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                                                    Probar
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -634,6 +731,77 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                     </div>
                 </div>
             </div>
+            {/* Template Manager Overlay */}
+            {showTemplateManager && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                    <TemplateManager
+                        wabaId={formData.wabaId || existingChannel?.configJson?.wabaId}
+                        accessToken={formData.accessToken || existingChannel?.configJson?.accessToken}
+                        onSuccess={() => {
+                            setShowTemplateManager(false);
+                            fetchTemplates();
+                        }}
+                        onCancel={() => setShowTemplateManager(false)}
+                    />
+                </div>
+            )}
+
+            {/* Test Template Dialog */}
+            <Dialog open={!!testTemplate} onOpenChange={(open) => !open && setTestTemplate(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Probar Plantilla: {testTemplate?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Número de Destino</Label>
+                            <Input
+                                value={testPhone}
+                                onChange={(e) => setTestPhone(e.target.value)}
+                                placeholder="521..."
+                            />
+                        </div>
+
+                        {/* Detect Variables in Body */}
+                        {testTemplate?.components?.find((c: any) => c.type === 'BODY')?.text?.match(/{{(\d+)}}/g)?.map((match: string, idx: number) => {
+                            const varNum = match.replace(/[{}]/g, '');
+                            return (
+                                <div key={idx} className="space-y-2">
+                                    <Label>Variable {varNum} (Body)</Label>
+                                    <Input
+                                        value={testParams[varNum] || ''}
+                                        onChange={(e) => setTestParams(prev => ({ ...prev, [varNum]: e.target.value }))}
+                                        placeholder={`Valor para {{${varNum}}}`}
+                                    />
+                                </div>
+                            );
+                        })}
+
+                        {/* Detect Header Text Variable (Simplified detection) */}
+                        {testTemplate?.components?.find((c: any) => c.type === 'HEADER' && c.format === 'TEXT' && c.text.includes('{{1}}')) && (
+                            <div className="space-y-2">
+                                <Label>Variable Header</Label>
+                                <Input
+                                    value={headerParam}
+                                    onChange={(e) => setHeaderParam(e.target.value)}
+                                    placeholder="Valor para el Encabezado"
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-2 pt-4">
+                            <Button variant="outline" onClick={() => setTestTemplate(null)}>Cancelar</Button>
+                            <Button onClick={executeSendTest} disabled={isSendingTest === testTemplate?.name}>
+                                {isSendingTest === testTemplate?.name && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                Enviar Prueba
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
+                </div >
+            </div >
+        </div >
     );
 }

@@ -423,6 +423,7 @@ export async function sendWhatsAppTemplateAction(data: {
     to: string;
     templateName: string;
     languageCode: string;
+    components?: any[]; // Allow passing variables (header, body buttons)
 }) {
     try {
         const url = `https://graph.facebook.com/${META_API_VERSION}/${data.phoneNumberId}/messages`;
@@ -442,6 +443,7 @@ export async function sendWhatsAppTemplateAction(data: {
                     language: {
                         code: data.languageCode,
                     },
+                    components: data.components || []
                 },
             }),
         });
@@ -456,5 +458,78 @@ export async function sendWhatsAppTemplateAction(data: {
     } catch (error: any) {
         console.error('Error sending template:', error);
         return { error: error.message || 'Error al enviar la plantilla' };
+    }
+}
+
+/**
+ * Creates a new message template
+ */
+export async function createWhatsAppTemplateAction(data: {
+    wabaId: string;
+    accessToken: string;
+    name: string;
+    category: string;
+    language: string;
+    components: any[];
+}) {
+    try {
+        const url = `https://graph.facebook.com/${META_API_VERSION}/${data.wabaId}/message_templates`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${data.accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: data.name,
+                category: data.category,
+                language: data.language,
+                components: data.components,
+                allow_category_change: true,
+            }),
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(resData.error?.message || 'Failed to create template');
+        }
+
+        return { success: true, data: resData };
+    } catch (error: any) {
+        console.error('Error creating template:', error);
+        return { error: error.message || 'Error al crear la plantilla' };
+    }
+}
+
+/**
+ * Deletes a message template by name
+ */
+export async function deleteWhatsAppTemplateAction(data: {
+    wabaId: string;
+    accessToken: string;
+    name: string;
+}) {
+    try {
+        const url = `https://graph.facebook.com/${META_API_VERSION}/${data.wabaId}/message_templates?name=${data.name}`;
+
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${data.accessToken}`,
+            },
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(resData.error?.message || 'Failed to delete template');
+        }
+
+        return { success: true, data: resData };
+    } catch (error: any) {
+        console.error('Error deleting template:', error);
+        return { error: error.message || 'Error al eliminar la plantilla' };
     }
 }
