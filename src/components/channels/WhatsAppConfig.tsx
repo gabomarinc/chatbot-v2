@@ -800,8 +800,5 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                 </DialogContent>
             </Dialog>
         </div>
-                </div >
-            </div >
-        </div >
     );
 }
