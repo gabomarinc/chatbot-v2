@@ -18,6 +18,7 @@ import {
 interface Agent {
     id: string;
     name: string;
+    jobCompany?: string | null;
     _count: {
         channels: number;
         conversations: number;
@@ -86,10 +87,15 @@ function AgentCard({ agent }: { agent: Agent }) {
                             </div>
                             <div>
                                 <h3 className="text-gray-900 text-xl font-extrabold tracking-tight mb-1">{agent.name}</h3>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <span className="inline-flex px-2 py-0.5 bg-green-50 text-green-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-green-100">
                                         Activo
                                     </span>
+                                    {agent.jobCompany && (
+                                        <span className="inline-flex px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-blue-100">
+                                            {agent.jobCompany}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -330,6 +336,11 @@ function AgentListItem({ agent }: { agent: Agent }) {
                             <span className="inline-flex px-2 py-0.5 bg-green-50 text-green-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-green-100">
                                 Activo
                             </span>
+                            {agent.jobCompany && (
+                                <span className="inline-flex px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-blue-100">
+                                    {agent.jobCompany}
+                                </span>
+                            )}
                         </div>
                         <p className="text-xs text-gray-400 mt-1 font-medium">Creado el 12 Ene 2024</p>
                     </div>

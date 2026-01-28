@@ -11,6 +11,7 @@ export default async function AgentsPage() {
     const formattedAgents = agents.map(agent => ({
         id: agent.id,
         name: agent.name,
+        jobCompany: agent.jobCompany,
         _count: {
             channels: agent._count.channels,
             conversations: agent._count.conversations
