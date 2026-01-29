@@ -27,37 +27,68 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
             // Build JSONB filter query
             const jsonFilters = filters.map(filter => {
                 const { field, operator, value } = filter;
-                let prismaOp: any = {};
+                const lowerField = field.toLowerCase();
+                const isStandardField = ['name', 'email', 'phone'].includes(lowerField);
 
-                // This assumes customData is flat JSON object
+                // Initialize operation object
+                let op: any = {};
+
                 if (operator === 'equals') {
-                    prismaOp = { equals: value };
+                    op = { equals: value, mode: 'insensitive' }; // Case insensitive for standard fields
                 } else if (operator === 'contains' && typeof value === 'string') {
-                    prismaOp = { string_contains: value };
+                    op = { contains: value, mode: 'insensitive' };
                 } else if (operator === 'gt') {
-                    prismaOp = { gt: Number(value) };
+                    op = { gt: Number(value) };
                 } else if (operator === 'lt') {
-                    prismaOp = { lt: Number(value) };
+                    op = { lt: Number(value) };
                 } else if (operator === 'isSet') {
-                    // Check if path is NOT null (meaning it exists)
-                    // In Prisma JSON filtering, not: null checks for JSON null or DB null depending on driver, 
-                    // but typically path access returns null if missing.
-                    // "not: Prisma.DbNull" is safer for "field exists" if using specific Json types, 
-                    // but "not: null" is the standard JS way often translated.
-                    // Let's use `not: Prisma.AnyNull` or simple `not: null` which usually works for "is not null"
-                    prismaOp = { not: Prisma.JsonNull };
+                    op = isStandardField ? { not: null } : { not: Prisma.JsonNull };
                 } else if (operator === 'isNotSet') {
-                    // Check if it is null (missing or explicit null)
-                    prismaOp = { equals: Prisma.JsonNull };
+                    op = isStandardField ? { equals: null } : { equals: Prisma.JsonNull };
                 }
 
-                return {
-                    customData: {
-                        path: [field],
-                        ...prismaOp
-                    }
-                };
+                if (isStandardField) {
+                    // Standard Field Filter (Top Level)
+                    // If we are filtering by name, email or phone directly on the columns
+                    // We return a special marker to be hoisted up or we structure it differently.
+                    // Since map returns one object, we can't easily hoist it out of this array map structure 
+                    // if we strictly follow the current "jsonFilters" array approach which puts everything in AND.
+                    // HOWEVER, we can just return the prisma where clause piece.
+
+                    // NOTE: The current code puts the result of this map into `jsonFilters`.
+                    // We need to return a structure that can be distinguished or change the logic before mapping.
+
+                    // Let's return the simplified object and filter/hoist later or 
+                    // better yet, just return the where clause object.
+                    return {
+                        [lowerField]: op
+                    };
+                } else {
+                    // JSON Custom Field Filter
+                    // Re-map operators for JSON without 'mode' if strict JSON
+                    let jsonOp: any = {};
+                    if (operator === 'equals') jsonOp = { equals: value }; // JSON equals is usually case-sensitive strings or direct numbers
+                    else if (operator === 'contains') jsonOp = { string_contains: value }; // Prisma specialized JSON filter
+                    else if (operator === 'gt') jsonOp = { gt: Number(value) };
+                    else if (operator === 'lt') jsonOp = { lt: Number(value) };
+                    else if (operator === 'isSet') jsonOp = { not: Prisma.JsonNull };
+                    else if (operator === 'isNotSet') jsonOp = { equals: Prisma.JsonNull };
+
+                    return {
+                        customData: {
+                            path: [field],
+                            ...jsonOp
+                        }
+                    };
+                }
             });
+
+            if (jsonFilters.length > 0) {
+                // If there were any filters, add them to AND
+                // Note: jsonFilters now contains both standard field objects { name: ... } and customData objects { customData: ... }
+                // Prisma AND accepts an array of where clauses, so this works perfectly for both!
+                where.AND = jsonFilters;
+            }
 
             if (jsonFilters.length > 0) {
                 where.AND = jsonFilters;

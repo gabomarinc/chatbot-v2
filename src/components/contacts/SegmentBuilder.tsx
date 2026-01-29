@@ -23,6 +23,10 @@ export function SegmentBuilder({ workspaceId, customFields }: SegmentBuilderProp
     const [hasSearched, setHasSearched] = useState(false);
     const [selectedContact, setSelectedContact] = useState<any>(null);
 
+    // Pagination
+    const [page, setPage] = useState(1);
+    const pageSize = 15;
+
     // Filter building state
     const [selectedField, setSelectedField] = useState('');
     const [selectedOperator, setSelectedOperator] = useState<FilterCondition['operator']>('equals');
@@ -41,12 +45,15 @@ export function SegmentBuilder({ workspaceId, customFields }: SegmentBuilderProp
         setFilters([...filters, newFilter]);
         setFilterValue('');
         setSelectedField('');
+        // Reset page when filter changes
+        setPage(1);
     };
 
     const removeFilter = (index: number) => {
         const newFilters = [...filters];
         newFilters.splice(index, 1);
         setFilters(newFilters);
+        setPage(1);
     };
 
     const runQuery = async () => {
@@ -55,8 +62,8 @@ export function SegmentBuilder({ workspaceId, customFields }: SegmentBuilderProp
             const res = await getContacts({
                 workspaceId,
                 filters: filters,
-                page: 1,
-                pageSize: 50
+                page: page,
+                pageSize: pageSize
             });
             setResults(res.contacts);
             setTotalResults(res.total);
@@ -68,7 +75,21 @@ export function SegmentBuilder({ workspaceId, customFields }: SegmentBuilderProp
         }
     };
 
+    // Re-run query when page changes (only if already searched)
+    useEffect(() => {
+        if (hasSearched) {
+            runQuery();
+        }
+    }, [page]);
+
+    // Reset page when filters change (handled in add/remove but good to be safe if other triggers exist)
+    // Actually better not to auto-run on filter change until user clicks 'Execute', but we should reset page UI.
+
     const getFieldLabel = (key: string) => {
+        if (key === 'name') return 'Nombre Completo';
+        if (key === 'email') return 'Email';
+        if (key === 'phone') return 'Teléfono';
+
         const field = customFields.find(f => f.key === key);
         return field ? field.label : key;
     };
@@ -119,9 +140,16 @@ export function SegmentBuilder({ workspaceId, customFields }: SegmentBuilderProp
                                 onChange={e => setSelectedField(e.target.value)}
                             >
                                 <option value="">Seleccionar campo...</option>
-                                {customFields.map(field => (
-                                    <option key={field.id} value={field.key}>{field.label}</option>
-                                ))}
+                                <optgroup label="Campos Estándar">
+                                    <option value="name">Nombre Completo</option>
+                                    <option value="email">Email</option>
+                                    <option value="phone">Teléfono</option>
+                                </optgroup>
+                                <optgroup label="Campos Personalizados">
+                                    {customFields.map(field => (
+                                        <option key={field.id} value={field.key}>{field.label}</option>
+                                    ))}
+                                </optgroup>
                             </select>
                         </div>
 
@@ -221,52 +249,80 @@ export function SegmentBuilder({ workspaceId, customFields }: SegmentBuilderProp
                         )}
 
                         {hasSearched && results.length > 0 && (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase font-bold tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4">Nombre</th>
-                                            <th className="px-6 py-4">Email / Teléfono</th>
-                                            {customFields.slice(0, 3).map(f => ( // Show first 3 custom fields
-                                                <th key={f.id} className="px-6 py-4">{f.label}</th>
-                                            ))}
-                                            <th className="px-6 py-4">Contactado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {results.map((contact) => (
-                                            <tr
-                                                key={contact.id}
-                                                className="group hover:bg-gray-50/50 transition-colors cursor-pointer"
-                                                onClick={() => setSelectedContact(contact)}
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="font-bold text-gray-900">{contact.name || 'Sin Nombre'}</div>
-                                                    <div className="text-xs text-gray-400 font-mono mt-0.5 truncate max-w-[150px]">{contact.id}</div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {contact.email && <div className="text-sm text-gray-600">{contact.email}</div>}
-                                                    {contact.phone && <div className="text-sm text-gray-500 font-mono">{contact.phone}</div>}
-                                                </td>
-                                                {customFields.slice(0, 3).map(f => (
-                                                    <td key={f.id} className="px-6 py-4">
-                                                        {contact.customData?.[f.key] ? (
-                                                            <span className="px-2 py-1 bg-[#21AC96]/10 text-[#21AC96] rounded-lg text-xs font-bold">
-                                                                {String(contact.customData[f.key])}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-gray-300">-</span>
-                                                        )}
-                                                    </td>
+                            <>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase font-bold tracking-wider">
+                                            <tr>
+                                                <th className="px-6 py-4">Nombre</th>
+                                                <th className="px-6 py-4">Email / Teléfono</th>
+                                                {customFields.slice(0, 3).map(f => ( // Show first 3 custom fields
+                                                    <th key={f.id} className="px-6 py-4">{f.label}</th>
                                                 ))}
-                                                <td className="px-6 py-4 text-xs text-gray-500">
-                                                    {format(new Date(contact.createdAt), "d MMM yyyy", { locale: es })}
-                                                </td>
+                                                <th className="px-6 py-4">Contactado</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {results.map((contact) => (
+                                                <tr
+                                                    key={contact.id}
+                                                    className="group hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                                    onClick={() => setSelectedContact(contact)}
+                                                >
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-gray-900">{contact.name || 'Sin Nombre'}</div>
+                                                        <div className="text-xs text-gray-400 font-mono mt-0.5 truncate max-w-[150px]">{contact.id}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {contact.email && <div className="text-sm text-gray-600">{contact.email}</div>}
+                                                        {contact.phone && <div className="text-sm text-gray-500 font-mono">{contact.phone}</div>}
+                                                    </td>
+                                                    {customFields.slice(0, 3).map(f => (
+                                                        <td key={f.id} className="px-6 py-4">
+                                                            {contact.customData?.[f.key] ? (
+                                                                <span className="px-2 py-1 bg-[#21AC96]/10 text-[#21AC96] rounded-lg text-xs font-bold">
+                                                                    {String(contact.customData[f.key])}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-gray-300">-</span>
+                                                            )}
+                                                        </td>
+                                                    ))}
+                                                    <td className="px-6 py-4 text-xs text-gray-500">
+                                                        {format(new Date(contact.createdAt), "d MMM yyyy", { locale: es })}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Pagination Controls */}
+                                <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+                                    <p className="text-xs text-gray-500">
+                                        Mostrando {results.length} de {totalResults} resultados
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                                            disabled={page === 1}
+                                            className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+                                        >
+                                            Anterior
+                                        </button>
+                                        <span className="text-xs font-bold text-gray-700 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100">
+                                            Página {page}
+                                        </span>
+                                        <button
+                                            onClick={() => setPage(prev => prev + 1)}
+                                            disabled={results.length < pageSize}
+                                            className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+                                        >
+                                            Siguiente
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>
