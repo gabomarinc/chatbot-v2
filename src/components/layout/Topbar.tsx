@@ -128,7 +128,7 @@ export function Topbar() {
             }, 300);
         } else {
             setIsSearchOpen(false);
-            setSearchResults({ agents: [], conversations: [], prospects: [] });
+            setSearchResults({ agents: [], conversations: [], prospects: [], team: [] });
             setIsSearching(false);
         }
 
