@@ -150,193 +150,195 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
 
             window.FB.login((response: any) => {
                 console.log('FB Login Response:', response);
-                if (response.authResponse || response.code) {
-                    const accessToken = response.authResponse?.accessToken;
-                    const code = response.code;
 
-                    if (accessToken || code) {
-                        // 2. Send token/code to server to exchange and fetch WABAs
-                        // Wrap async logic in an IIFE to satisfy FB SDK's synchronous callback requirement
-                        (async () => {
-                            try {
-                                const result = await handleEmbeddedSignupV2({
-                                    accessToken: accessToken,
-                                    code: code,
-                                    agentId
-                                });
+                // Tech Provider flow returns 'code' inside authResponse sometimes or at top level
+                // We must check all possible locations
+                const accessToken = response.authResponse?.accessToken;
+                const code = response.code || response.authResponse?.code;
 
-                                if (result.success) {
-                                    toast.success('¡WhatsApp conectado correctamente!');
-                                    setIsProcessing(false);
-                                    if (onSuccess) onSuccess();
-                                }
-                                else if ('requiresSelection' in result && result.requiresSelection) {
-                                    // Show selection modal
-                                    setAvailableAccounts((result as any).accounts);
-                                    setLongLivedToken((result as any).accessToken || accessToken);
-                                    setShowSelectionModal(true);
-                                }
-                                else {
-                                    const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
-                                    toast.error(errorMsg);
-                                }
-                            } catch (err) {
-                                console.error('Error in async login handler:', err);
-                                toast.error('Error procesando la respuesta del servidor.');
+                if (accessToken || code) {
+                    // 2. Send token/code to server to exchange and fetch WABAs
+                    // Wrap async logic in an IIFE to satisfy FB SDK's synchronous callback requirement
+                    (async () => {
+                        try {
+                            const result = await handleEmbeddedSignupV2({
+                                accessToken: accessToken,
+                                code: code,
+                                agentId
+                            });
+
+                            if (result.success) {
+                                toast.success('¡WhatsApp conectado correctamente!');
+                                setIsProcessing(false);
+                                if (onSuccess) onSuccess();
                             }
-                        })();
-                    } else {
-                        setIsProcessing(false);
-                        toast.error('No se recibió el token de acceso. Intenta de nuevo.');
-                    }
+                            else if ('requiresSelection' in result && result.requiresSelection) {
+                                // Show selection modal
+                                setAvailableAccounts((result as any).accounts);
+                                setLongLivedToken((result as any).accessToken || accessToken);
+                                setShowSelectionModal(true);
+                            }
+                            else {
+                                const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
+                                toast.error(errorMsg);
+                            }
+                        } catch (err) {
+                            console.error('Error in async login handler:', err);
+                            toast.error('Error procesando la respuesta del servidor.');
+                        }
+                    })();
                 } else {
                     setIsProcessing(false);
-                    if (response.error) {
-                        console.error('Error de Facebook:', response.error);
-                        toast.error(`Error: ${response.error.message || 'Error desconocido'}`);
-                    } else {
-                        // User cancelled
-                    }
+                    toast.error('No se recibió el token de acceso. Intenta de nuevo.');
                 }
-            }, loginOptions);
-        } catch (error: any) {
-            setIsProcessing(false);
-            console.error('Error en FB.login:', error);
-            toast.error(`Error al iniciar sesión con Facebook: ${error.message || 'Error desconocido'}. Verifica que no tengas bloqueadores de anuncios activos.`);
-        }
-    };
-
-
-
-    const handleAccountSelection = async (account: any) => {
-        // Keep isProcessing true
-        try {
-            const result = await finishWhatsAppSetup({
-                accessToken: longLivedToken,
-                wabaId: account.wabaId,
-                phoneNumberId: account.phoneNumberId,
-                agentId,
-                displayName: account.displayName
-            });
-
-            if (result.success) {
-                toast.success(`Conectado a ${account.phoneNumber}`);
-                setShowSelectionModal(false);
-                if (onSuccess) onSuccess();
             } else {
-                toast.error(result.error || 'Error al finalizar la conexión');
+                setIsProcessing(false);
+                    if(response.error) {
+                console.error('Error de Facebook:', response.error);
+                toast.error(`Error: ${response.error.message || 'Error desconocido'}`);
+            } else {
+                // User cancelled
             }
-        } catch (error) {
-            toast.error('Error al finalizar la conexión');
-        } finally {
-            setIsProcessing(false);
         }
+            }, loginOptions);
+} catch (error: any) {
+    setIsProcessing(false);
+    console.error('Error en FB.login:', error);
+    toast.error(`Error al iniciar sesión con Facebook: ${error.message || 'Error desconocido'}. Verifica que no tengas bloqueadores de anuncios activos.`);
+}
     };
 
-    return (
-        <>
-            <div className="bg-slate-900 overflow-hidden relative group rounded-[2.5rem]">
-                {/* Background Decoration */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 blur-[80px] -mr-32 -mt-32"></div>
 
-                <div className="relative p-10 flex flex-col items-center text-center space-y-6">
-                    <div className="w-20 h-20 bg-green-500/20 rounded-[2rem] flex items-center justify-center text-green-500 shadow-xl shadow-green-500/10 group-hover:scale-110 transition-transform duration-500">
-                        <MessageSquare className="w-10 h-10" />
-                    </div>
 
-                    <div className="space-y-2">
-                        <h3 className="text-white font-black text-2xl tracking-tight">Conexión Profesional</h3>
-                        <p className="text-slate-400 text-sm font-medium max-w-sm">
-                            Conecta tu número oficial de WhatsApp en segundos sin configuraciones técnicas complejas.
-                        </p>
-                    </div>
+const handleAccountSelection = async (account: any) => {
+    // Keep isProcessing true
+    try {
+        const result = await finishWhatsAppSetup({
+            accessToken: longLivedToken,
+            wabaId: account.wabaId,
+            phoneNumberId: account.phoneNumberId,
+            agentId,
+            displayName: account.displayName
+        });
 
-                    <button
-                        onClick={launchSignup}
-                        disabled={!isLoaded || isProcessing}
-                        className="w-full py-4 bg-green-500 text-slate-900 rounded-2xl text-sm font-black shadow-lg shadow-green-500/30 hover:bg-green-400 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 group-hover:ring-4 ring-green-500/20"
-                    >
-                        {isProcessing ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <>
-                                <ShieldCheck className="w-5 h-5" />
-                                <span>CONECTAR CON WHATSAPP</span>
-                            </>
-                        )}
-                    </button>
+        if (result.success) {
+            toast.success(`Conectado a ${account.phoneNumber}`);
+            setShowSelectionModal(false);
+            if (onSuccess) onSuccess();
+        } else {
+            toast.error(result.error || 'Error al finalizar la conexión');
+        }
+    } catch (error) {
+        toast.error('Error al finalizar la conexión');
+    } finally {
+        setIsProcessing(false);
+    }
+};
 
-                    {!isLoaded && (
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest animate-pulse">
-                            Sincronizando con Meta...
-                        </p>
+return (
+    <>
+        <div className="bg-slate-900 overflow-hidden relative group rounded-[2.5rem]">
+            {/* Background Decoration */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 blur-[80px] -mr-32 -mt-32"></div>
+
+            <div className="relative p-10 flex flex-col items-center text-center space-y-6">
+                <div className="w-20 h-20 bg-green-500/20 rounded-[2rem] flex items-center justify-center text-green-500 shadow-xl shadow-green-500/10 group-hover:scale-110 transition-transform duration-500">
+                    <MessageSquare className="w-10 h-10" />
+                </div>
+
+                <div className="space-y-2">
+                    <h3 className="text-white font-black text-2xl tracking-tight">Conexión Profesional</h3>
+                    <p className="text-slate-400 text-sm font-medium max-w-sm">
+                        Conecta tu número oficial de WhatsApp en segundos sin configuraciones técnicas complejas.
+                    </p>
+                </div>
+
+                <button
+                    onClick={launchSignup}
+                    disabled={!isLoaded || isProcessing}
+                    className="w-full py-4 bg-green-500 text-slate-900 rounded-2xl text-sm font-black shadow-lg shadow-green-500/30 hover:bg-green-400 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 group-hover:ring-4 ring-green-500/20"
+                >
+                    {isProcessing ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <>
+                            <ShieldCheck className="w-5 h-5" />
+                            <span>CONECTAR CON WHATSAPP</span>
+                        </>
                     )}
+                </button>
 
-                    <div className="pt-2">
-                        <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                            Método Oficial y Seguro
-                        </div>
+                {!isLoaded && (
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest animate-pulse">
+                        Sincronizando con Meta...
+                    </p>
+                )}
+
+                <div className="pt-2">
+                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                        Método Oficial y Seguro
                     </div>
                 </div>
             </div>
+        </div>
 
-            {/* Account Selection Modal */}
-            {showSelectionModal && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-[2rem] shadow-2xl p-8 max-w-lg w-full animate-in zoom-in-95 duration-200 relative">
-                        <div className="text-center mb-6">
-                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
-                                <Smartphone className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-black text-gray-900">Selecciona un Número</h3>
-                            <p className="text-gray-500 text-sm mt-1">
-                                Encontramos varias cuentas asociadas. Elige cuál quieres conectar.
-                            </p>
+        {/* Account Selection Modal */}
+        {showSelectionModal && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-[2rem] shadow-2xl p-8 max-w-lg w-full animate-in zoom-in-95 duration-200 relative">
+                    <div className="text-center mb-6">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+                            <Smartphone className="w-6 h-6" />
                         </div>
-
-                        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                            {availableAccounts.map((account, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => handleAccountSelection(account)}
-                                    className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-green-500 hover:bg-green-50/50 transition-all text-left group"
-                                >
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-green-100 group-hover:text-green-600">
-                                        <Building2 className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-gray-900 group-hover:text-green-700">
-                                            {account.displayName}
-                                        </p>
-                                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                                            <span className="font-medium text-gray-400">
-                                                {account.phoneNumber}
-                                                {account.wabaName && account.wabaName !== account.displayName && (
-                                                    <span className="ml-1 opacity-70">({account.wabaName})</span>
-                                                )}
-                                            </span>
-                                        </p>
-                                    </div>
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-green-600">
-                                        <Check className="w-5 h-5" />
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-
-                        <button
-                            onClick={() => {
-                                setShowSelectionModal(false);
-                                setIsProcessing(false);
-                            }}
-                            className="mt-6 w-full py-3 text-gray-400 font-bold text-sm hover:text-gray-600"
-                        >
-                            Cancelar
-                        </button>
+                        <h3 className="text-xl font-black text-gray-900">Selecciona un Número</h3>
+                        <p className="text-gray-500 text-sm mt-1">
+                            Encontramos varias cuentas asociadas. Elige cuál quieres conectar.
+                        </p>
                     </div>
+
+                    <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                        {availableAccounts.map((account, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => handleAccountSelection(account)}
+                                className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-green-500 hover:bg-green-50/50 transition-all text-left group"
+                            >
+                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-green-100 group-hover:text-green-600">
+                                    <Building2 className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-bold text-gray-900 group-hover:text-green-700">
+                                        {account.displayName}
+                                    </p>
+                                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                                        <span className="font-medium text-gray-400">
+                                            {account.phoneNumber}
+                                            {account.wabaName && account.wabaName !== account.displayName && (
+                                                <span className="ml-1 opacity-70">({account.wabaName})</span>
+                                            )}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity text-green-600">
+                                    <Check className="w-5 h-5" />
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            setShowSelectionModal(false);
+                            setIsProcessing(false);
+                        }}
+                        className="mt-6 w-full py-3 text-gray-400 font-bold text-sm hover:text-gray-600"
+                    >
+                        Cancelar
+                    </button>
                 </div>
-            )}
-        </>
-    );
+            </div>
+        )}
+    </>
+);
 }
