@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-type SearchResult = 
+type SearchResult =
     | {
         id: string;
         name: string;
@@ -28,7 +28,14 @@ type SearchResult =
         email: string | null;
         lastContact: Date;
         type: 'prospect';
-    };
+    | {
+            id: string;
+            name: string;
+            email: string | null;
+            role: string;
+            avatarUrl?: string | null;
+            type: 'member';
+        };
 
 interface SearchDropdownProps {
     isOpen: boolean;
@@ -56,6 +63,14 @@ interface SearchDropdownProps {
             lastContact: Date;
             type: 'prospect';
         }>;
+        team: Array<{
+            id: string;
+            name: string;
+            email: string | null;
+            role: string;
+            avatarUrl?: string | null;
+            type: 'member';
+        }>;
     };
     isLoading?: boolean;
     onClose: () => void;
@@ -77,6 +92,9 @@ export function SearchDropdown({ isOpen, query, results, isLoading = false, onCl
             case 'prospect':
                 router.push(`/prospects`);
                 break;
+            case 'member':
+                router.push(`/team`);
+                break;
         }
         onClose();
     };
@@ -96,7 +114,7 @@ export function SearchDropdown({ isOpen, query, results, isLoading = false, onCl
         }
     };
 
-    const totalResults = results.agents.length + results.conversations.length + results.prospects.length;
+    const totalResults = results.agents.length + results.conversations.length + results.prospects.length + (results.team?.length || 0);
 
     return (
         <div className="absolute left-0 top-full mt-2 w-[600px] bg-white rounded-3xl shadow-2xl shadow-gray-200/50 border border-gray-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
@@ -106,6 +124,36 @@ export function SearchDropdown({ isOpen, query, results, isLoading = false, onCl
                 </div>
             ) : totalResults > 0 ? (
                 <div className="max-h-[500px] overflow-y-auto">
+                    {/* Team Members */}
+                    {results.team?.length > 0 && (
+                        <div className="p-4 border-b border-gray-100">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">
+                                Equipo ({results.team.length})
+                            </h3>
+                            <div className="space-y-1">
+                                {results.team.map((member) => (
+                                    <div
+                                        key={member.id}
+                                        onClick={() => handleResultClick(member)}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 cursor-pointer group transition-all"
+                                    >
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden">
+                                            {member.avatarUrl ? (
+                                                <img src={member.avatarUrl} alt={member.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <User className="w-5 h-5" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-gray-900 truncate">{member.name}</p>
+                                            <p className="text-xs text-gray-500 capitalize">{member.role.toLowerCase()}</p>
+                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96] group-hover:translate-x-1 transition-all" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     {/* Agents */}
                     {results.agents.length > 0 && (
                         <div className="p-4 border-b border-gray-100">

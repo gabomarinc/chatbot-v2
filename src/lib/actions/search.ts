@@ -28,7 +28,7 @@ export async function globalSearch(query: string) {
         },
         orderBy: { createdAt: 'desc' }
     })
-    
+
     const agents = allAgents
         .filter(agent => agent.name.toLowerCase().includes(searchTerm))
         .slice(0, 5)
@@ -61,9 +61,9 @@ export async function globalSearch(query: string) {
             const contactName = conv.contactName?.toLowerCase() || ''
             const contactEmail = conv.contactEmail?.toLowerCase() || ''
             const externalId = conv.externalId?.toLowerCase() || ''
-            return contactName.includes(searchTerm) || 
-                   contactEmail.includes(searchTerm) || 
-                   externalId.includes(searchTerm)
+            return contactName.includes(searchTerm) ||
+                contactEmail.includes(searchTerm) ||
+                externalId.includes(searchTerm)
         })
         .slice(0, 5)
 
@@ -83,14 +83,14 @@ export async function globalSearch(query: string) {
         orderBy: { lastMessageAt: 'desc' },
         take: 100 // Get more to filter and deduplicate
     })
-    
+
     const filteredConversations = allProspectConversations.filter(conv => {
         const contactName = conv.contactName?.toLowerCase() || ''
         const contactEmail = conv.contactEmail?.toLowerCase() || ''
         const externalId = conv.externalId?.toLowerCase() || ''
-        return contactName.includes(searchTerm) || 
-               contactEmail.includes(searchTerm) || 
-               externalId.includes(searchTerm)
+        return contactName.includes(searchTerm) ||
+            contactEmail.includes(searchTerm) ||
+            externalId.includes(searchTerm)
     })
 
     // Deduplicate by externalId (prospect = unique contact)
@@ -107,6 +107,30 @@ export async function globalSearch(query: string) {
     })
 
     const prospects = Array.from(prospectsMap.values()).slice(0, 5)
+
+    // Search team members
+    const teamMembers = await prisma.workspaceMember.findMany({
+        where: {
+            workspaceId: workspace.id,
+            user: {
+                OR: [
+                    { name: { contains: searchTerm, mode: 'insensitive' } },
+                    { email: { contains: searchTerm, mode: 'insensitive' } }
+                ]
+            }
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true
+                }
+            }
+        },
+        take: 5
+    })
 
     return {
         agents: agents.map(agent => ({
@@ -131,6 +155,14 @@ export async function globalSearch(query: string) {
             lastContact: prospect.lastContact,
             type: 'prospect' as const,
         })),
+        team: teamMembers.map(member => ({
+            id: member.user.id,
+            name: member.user.name || 'Sin nombre',
+            email: member.user.email,
+            avatarUrl: member.user.image,
+            role: member.role,
+            type: 'member' as const
+        }))
     }
 }
 
