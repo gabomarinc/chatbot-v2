@@ -51,6 +51,9 @@ export async function handleEmbeddedSignupV2(data: {
                     urisToTry.push(cleanPath);
                     urisToTry.push(cleanPath.endsWith('/') ? cleanPath.slice(0, -1) : `${cleanPath}/`);
                 }
+                // Also try the root domain (origin) as the SDK sometimes falls back to it
+                urisToTry.push(urlObj.origin);
+                urisToTry.push(`${urlObj.origin}/`);
             } catch (e) {
                 // Ignore invalid URLs
             }
