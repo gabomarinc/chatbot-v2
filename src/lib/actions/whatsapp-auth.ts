@@ -13,6 +13,7 @@ const META_API_VERSION = 'v20.0';
 export async function handleEmbeddedSignupV2(data: {
     accessToken?: string;
     code?: string;
+    redirectUri?: string;
     agentId: string;
 }) {
     const session = await auth();
@@ -36,13 +37,11 @@ export async function handleEmbeddedSignupV2(data: {
         if (data.code) {
             console.log('Exchanging Code for Token...');
             // Exchange Code for Access Token
-            // Note: For JS SDK, redirect_uri can sometimes be tricky. 
-            // Usually it is not required for SDK flows or matches the current domain.
-            // We'll try without redirect_uri first, or with an empty string, or constructed one.
-            // Documentation for Embedded Signup V2 implies standard OAuth.
+            // Match the redirect_uri used in client (or default to postmessage fallback)
+            const redirectUri = data.redirectUri || 'postmessage';
 
             const tokenRes = await fetch(
-                `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${data.code}&redirect_uri=${encodeURIComponent('postmessage')}` // 'postmessage' is magic for some SDK flows, otherwise try origin
+                `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${data.code}&redirect_uri=${encodeURIComponent(redirectUri)}`
             );
             const tokenData = await tokenRes.json();
 
