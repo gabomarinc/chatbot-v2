@@ -161,10 +161,14 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                     // Wrap async logic in an IIFE to satisfy FB SDK's synchronous callback requirement
                     (async () => {
                         try {
+                            // The redirect_uri must match EXACTLY what the SDK used.
+                            // Usually for SDK flows, it's the current page URL.
+                            const currentUrl = window.location.href.split('#')[0];
+
                             const result = await handleEmbeddedSignupV2({
                                 accessToken: accessToken,
                                 code: code,
-                                redirectUri: window.location.origin + window.location.pathname, // Pass exact current URL for OAuth validation
+                                redirectUri: currentUrl,
                                 agentId
                             });
 
