@@ -11,7 +11,8 @@ const META_API_VERSION = 'v20.0';
  * fetches WABA and Phone Number info, and registers it.
  */
 export async function handleEmbeddedSignupV2(data: {
-    accessToken: string;
+    accessToken?: string;
+    code?: string;
     agentId: string;
 }) {
     const session = await auth();
@@ -29,14 +30,43 @@ export async function handleEmbeddedSignupV2(data: {
             throw new Error('Meta App Secret missing (Check .env or GlobalConfig)');
         }
 
-        // 2. Exchange Short-Lived Token for Long-Lived User Access Token
-        const tokenRes = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${data.accessToken}`
-        );
-        const tokenData = await tokenRes.json();
+        let userAccessToken = data.accessToken;
 
-        if (!tokenRes.ok) throw new Error(tokenData.error?.message || 'Token exchange failed');
-        const userAccessToken = tokenData.access_token;
+        // 2. Obtain User Access Token
+        if (data.code) {
+            console.log('Exchanging Code for Token...');
+            // Exchange Code for Access Token
+            // Note: For JS SDK, redirect_uri can sometimes be tricky. 
+            // Usually it is not required for SDK flows or matches the current domain.
+            // We'll try without redirect_uri first, or with an empty string, or constructed one.
+            // Documentation for Embedded Signup V2 implies standard OAuth.
+
+            const tokenRes = await fetch(
+                `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${data.code}&redirect_uri=${encodeURIComponent('postmessage')}` // 'postmessage' is magic for some SDK flows, otherwise try origin
+            );
+            const tokenData = await tokenRes.json();
+
+            if (!tokenRes.ok) {
+                // Retry with common redirect_uris if failed?
+                console.error('Code Exchange Failed (postmessage):', tokenData);
+                throw new Error(tokenData.error?.message || 'Code exchange failed');
+            }
+            userAccessToken = tokenData.access_token;
+
+        } else if (data.accessToken) {
+            // 2b. Exchange Short-Lived Token for Long-Lived User Access Token
+            const tokenRes = await fetch(
+                `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${data.accessToken}`
+            );
+            const tokenData = await tokenRes.json();
+
+            if (!tokenRes.ok) throw new Error(tokenData.error?.message || 'Token exchange failed');
+            userAccessToken = tokenData.access_token;
+        } else {
+            throw new Error('No access token or code provided');
+        }
+
+        if (!userAccessToken) throw new Error('Could not obtain user access token');
 
         // DEBUG: Verify Permissions
         const permRes = await fetch(

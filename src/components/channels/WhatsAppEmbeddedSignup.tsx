@@ -123,7 +123,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 loginOptions.config_id = configId;
 
                 // Tech Provider / Embedded Signup V2 Standard
-                loginOptions.response_type = 'code,token';
+                loginOptions.response_type = 'code';
 
                 // COEXISTENCE MODE: Enable WhatsApp Business App Onboarding
                 // This allows the user to keep using the mobile app while connected to the API.
@@ -149,15 +149,18 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
 
             window.FB.login((response: any) => {
                 console.log('FB Login Response:', response);
-                if (response.authResponse) {
-                    const accessToken = response.authResponse.accessToken;
-                    if (accessToken) {
-                        // 2. Send token to server to exchange and fetch WABAs
+                if (response.authResponse || response.code) {
+                    const accessToken = response.authResponse?.accessToken;
+                    const code = response.code;
+
+                    if (accessToken || code) {
+                        // 2. Send token/code to server to exchange and fetch WABAs
                         // Wrap async logic in an IIFE to satisfy FB SDK's synchronous callback requirement
                         (async () => {
                             try {
                                 const result = await handleEmbeddedSignupV2({
                                     accessToken: accessToken,
+                                    code: code,
                                     agentId
                                 });
 
