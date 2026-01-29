@@ -10,6 +10,7 @@ export async function globalSearch(query: string) {
             agents: [],
             conversations: [],
             prospects: [],
+            team: [],
         }
     }
 
