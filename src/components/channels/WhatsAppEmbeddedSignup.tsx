@@ -124,6 +124,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
 
                 // Tech Provider / Embedded Signup V2 Standard
                 loginOptions.response_type = 'code';
+                loginOptions.override_default_response_type = true; // Force SDK to use our response_type
 
                 // COEXISTENCE MODE: Enable WhatsApp Business App Onboarding
                 // This allows the user to keep using the mobile app while connected to the API.
