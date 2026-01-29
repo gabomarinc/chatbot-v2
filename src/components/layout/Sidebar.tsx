@@ -90,7 +90,7 @@ export function Sidebar() {
                     </div>
                     <div>
                         <div className="text-gray-900 font-bold text-xl tracking-tight group-hover:text-[#21AC96] transition-colors">Kônsul</div>
-                        <div className="text-[10px] text-[#21AC96] font-bold uppercase tracking-widest bg-[#21AC96]/5 px-1.5 rounded-full inline-block animate-pulse">Pro AI</div>
+                        <div className="text-[10px] text-[#21AC96] font-bold uppercase tracking-widest bg-[#21AC96]/5 px-1.5 rounded-full inline-block animate-pulse">BETA v1.0</div>
                     </div>
                 </div>
             </div>
