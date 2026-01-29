@@ -164,18 +164,19 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             url += `&config_id=${configId}`;
 
             // Extras for Coexistence
+            // Extras for Coexistence
+            // NOTE: Passing 'extras' directly in URL might be causing "Error requesting code"
+            // Let's try relying on config_id alone first.
+            /*
             const extras = {
                 "setup": {},
                 "featureType": "whatsapp_business_app_onboarding",
                 "sessionInfoVersion": "3"
             };
-            // url += `&state=${encodeURIComponent(JSON.stringify(extras))}`; // Some flows use state, others separate param?
-            // Documentation says 'extras' is a parameter for Embedded Signup? 
-            // Actually, for Dialog, pass 'extras' as JSON string? Or inside 'state'?
-            // For standard OAuth, it's state. For Embedded Config ID flow, params are handled by Config.
-            // But 'featureType' is needed. 
-            // Let's try passing it as 'extras'.
             url += `&extras=${encodeURIComponent(JSON.stringify(extras))}`;
+            */
+
+            console.log('Manual OAuth URL:', url);
 
         } else {
             // Manual Scopes Fallback
