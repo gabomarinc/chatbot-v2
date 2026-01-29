@@ -164,6 +164,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                             const result = await handleEmbeddedSignupV2({
                                 accessToken: accessToken,
                                 code: code,
+                                redirectUri: window.location.origin + window.location.pathname, // Pass exact current URL for OAuth validation
                                 agentId
                             });
 
