@@ -38,30 +38,36 @@ export async function handleEmbeddedSignupV2(data: {
             console.log('Exchanging Code for Token...');
 
             // Fix: Try variations of redirect_uri to handle trailing slash mismatches between client/SDK
+            // Prioritize "clean" URLs (no query params) because Strict Mode with an allowlist likely matches these.
             const baseUri = data.redirectUri || '';
-            const urisToTry = [
-                baseUri, // Exact match from client
-                baseUri.endsWith('/') ? baseUri.slice(0, -1) : `${baseUri}/` // Toggle trailing slash
-            ];
-            // Also try stripping query params if the above fail (SDK might default to pure path)
+            let urisToTry: string[] = [];
+
             try {
                 const urlObj = new URL(baseUri);
                 const cleanPath = `${urlObj.origin}${urlObj.pathname}`;
-                if (cleanPath !== baseUri) {
-                    urisToTry.push(cleanPath);
-                    urisToTry.push(cleanPath.endsWith('/') ? cleanPath.slice(0, -1) : `${cleanPath}/`);
+                const origin = urlObj.origin;
+
+                // Priority 1: Clean Path (Most likely in Allowlist)
+                urisToTry.push(cleanPath);
+                urisToTry.push(cleanPath.endsWith('/') ? cleanPath.slice(0, -1) : `${cleanPath}/`);
+
+                // Priority 2: Origin / Root (Common fallback)
+                urisToTry.push(origin);
+                urisToTry.push(`${origin}/`);
+
+                // Priority 3: Exact Base URI (If it has params that theoretically could be whitelisted)
+                if (baseUri !== cleanPath && baseUri !== origin) {
+                    urisToTry.push(baseUri);
                 }
-                // Also try the root domain (origin) as the SDK sometimes falls back to it
-                urisToTry.push(urlObj.origin);
-                urisToTry.push(`${urlObj.origin}/`);
             } catch (e) {
-                // Ignore invalid URLs
+                // Fallback if URL parsing fails
+                urisToTry.push(baseUri);
             }
 
             // Remove duplicates
             const uniqueUris = Array.from(new Set(urisToTry)).filter(u => u && u.length > 0);
 
-            console.log('Trying redirect_uris:', uniqueUris);
+            console.log('Trying redirect_uris (in order):', uniqueUris);
 
             let lastError;
             let tokenData;
@@ -81,6 +87,10 @@ export async function handleEmbeddedSignupV2(data: {
                     } else {
                         console.warn(`Failed with uri: ${uri}`, json.error?.message);
                         lastError = json;
+
+                        // Optimization: If error is explicitly NOT redirect_uri mismatch, maybe break? 
+                        // But Meta errors are sometimes vague. "Error validating verification code" is the one we want to retry on.
+                        // If "Invalid verification code" (expired), retrying won't help.
                     }
                 } catch (err) {
                     console.error(`Network error with uri: ${uri}`, err);
@@ -89,7 +99,8 @@ export async function handleEmbeddedSignupV2(data: {
 
             if (!userAccessToken) {
                 console.error('All redirect_uri variations failed.');
-                throw new Error(lastError?.error?.message || 'Code exchange failed with all redirect_uri variations');
+                const triedList = uniqueUris.join(', ');
+                throw new Error(`${lastError?.error?.message || 'Code exchange failed'}. (Tried URIs: ${triedList})`);
             }
 
         } else if (data.accessToken) {
