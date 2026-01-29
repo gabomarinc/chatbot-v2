@@ -126,6 +126,10 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 loginOptions.response_type = 'code';
                 loginOptions.override_default_response_type = true; // Force SDK to use our response_type
 
+                // Attempt to force the SDK to use the current page as redirect_uri
+                // This maximizes the chance that our server-side validation match works.
+                loginOptions.redirect_uri = window.location.href;
+
                 // COEXISTENCE MODE: Enable WhatsApp Business App Onboarding
                 // This allows the user to keep using the mobile app while connected to the API.
 

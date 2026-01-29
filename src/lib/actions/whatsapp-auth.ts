@@ -59,6 +59,11 @@ export async function handleEmbeddedSignupV2(data: {
                 if (baseUri !== cleanPath && baseUri !== origin) {
                     urisToTry.push(baseUri);
                 }
+
+                // Priority 4: Standard Facebook Fallbacks (sometimes used by SDKs internally)
+                urisToTry.push('https://www.facebook.com/connect/login_success.html');
+                urisToTry.push('fbconnect://success');
+
             } catch (e) {
                 // Fallback if URL parsing fails
                 urisToTry.push(baseUri);
