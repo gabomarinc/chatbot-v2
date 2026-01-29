@@ -49,6 +49,13 @@ export default async function ProspectsBuilderPage() {
     const uniqueFields = Array.from(uniqueFieldsMap.values());
     console.log(`[ProspectsPage] Unique fields passing to builder:`, uniqueFields.map(f => f.key));
 
+    // Fetch agents for the filter dropdown
+    const agents = workspace.agents.map(a => ({
+        id: a.id,
+        name: a.name,
+        avatarUrl: a.avatarUrl
+    }));
+
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
@@ -58,7 +65,7 @@ export default async function ProspectsBuilderPage() {
                 </div>
             </div>
 
-            <SegmentBuilder workspaceId={workspace.id} customFields={uniqueFields} />
+            <SegmentBuilder workspaceId={workspace.id} customFields={uniqueFields} agents={agents} />
         </div>
     );
 }

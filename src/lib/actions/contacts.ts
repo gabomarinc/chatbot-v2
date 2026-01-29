@@ -29,9 +29,23 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                 const { field, operator, value } = filter;
                 const lowerField = field.toLowerCase();
                 const isStandardField = ['name', 'email', 'phone'].includes(lowerField);
+                const isAgentField = lowerField === 'agentid';
 
                 // Initialize operation object
                 let op: any = {};
+
+                if (isAgentField) {
+                    // Agent Filter: Find contacts with conversations with this agent
+                    // Logic: contacts where conversations some agentId = value
+                    // We return a top-level where clause for this.
+                    return {
+                        conversations: {
+                            some: {
+                                agentId: value
+                            }
+                        }
+                    };
+                }
 
                 if (operator === 'equals') {
                     op = { equals: value, mode: 'insensitive' }; // Case insensitive for standard fields
@@ -42,9 +56,27 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                 } else if (operator === 'lt') {
                     op = { lt: Number(value) };
                 } else if (operator === 'isSet') {
-                    op = isStandardField ? { not: null } : { not: Prisma.JsonNull };
+                    if (isStandardField) {
+                        op = {
+                            AND: [
+                                { not: null },
+                                { not: '' }
+                            ]
+                        };
+                    } else {
+                        op = { not: Prisma.JsonNull };
+                    }
                 } else if (operator === 'isNotSet') {
-                    op = isStandardField ? { equals: null } : { equals: Prisma.JsonNull };
+                    if (isStandardField) {
+                        op = {
+                            OR: [
+                                { equals: null },
+                                { equals: '' }
+                            ]
+                        };
+                    } else {
+                        op = { equals: Prisma.JsonNull };
+                    }
                 }
 
                 if (isStandardField) {
