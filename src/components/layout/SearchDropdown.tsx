@@ -28,14 +28,15 @@ type SearchResult =
         email: string | null;
         lastContact: Date;
         type: 'prospect';
+    }
     | {
-            id: string;
-            name: string;
-            email: string | null;
-            role: string;
-            avatarUrl?: string | null;
-            type: 'member';
-        };
+        id: string;
+        name: string;
+        email: string | null;
+        role: string;
+        avatarUrl?: string | null;
+        type: 'member';
+    };
 
 interface SearchDropdownProps {
     isOpen: boolean;
