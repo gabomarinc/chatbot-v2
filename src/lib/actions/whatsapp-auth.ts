@@ -36,21 +36,58 @@ export async function handleEmbeddedSignupV2(data: {
         // 2. Obtain User Access Token
         if (data.code) {
             console.log('Exchanging Code for Token...');
-            // Exchange Code for Access Token
-            // Match the redirect_uri used in client (or default to postmessage fallback)
-            const redirectUri = data.redirectUri || 'postmessage';
 
-            const tokenRes = await fetch(
-                `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${data.code}&redirect_uri=${encodeURIComponent(redirectUri)}`
-            );
-            const tokenData = await tokenRes.json();
-
-            if (!tokenRes.ok) {
-                // Retry with common redirect_uris if failed?
-                console.error('Code Exchange Failed (postmessage):', tokenData);
-                throw new Error(tokenData.error?.message || 'Code exchange failed');
+            // Fix: Try variations of redirect_uri to handle trailing slash mismatches between client/SDK
+            const baseUri = data.redirectUri || '';
+            const urisToTry = [
+                baseUri, // Exact match from client
+                baseUri.endsWith('/') ? baseUri.slice(0, -1) : `${baseUri}/` // Toggle trailing slash
+            ];
+            // Also try stripping query params if the above fail (SDK might default to pure path)
+            try {
+                const urlObj = new URL(baseUri);
+                const cleanPath = `${urlObj.origin}${urlObj.pathname}`;
+                if (cleanPath !== baseUri) {
+                    urisToTry.push(cleanPath);
+                    urisToTry.push(cleanPath.endsWith('/') ? cleanPath.slice(0, -1) : `${cleanPath}/`);
+                }
+            } catch (e) {
+                // Ignore invalid URLs
             }
-            userAccessToken = tokenData.access_token;
+
+            // Remove duplicates
+            const uniqueUris = Array.from(new Set(urisToTry)).filter(u => u && u.length > 0);
+
+            console.log('Trying redirect_uris:', uniqueUris);
+
+            let lastError;
+            let tokenData;
+
+            for (const uri of uniqueUris) {
+                try {
+                    const res = await fetch(
+                        `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${data.code}&redirect_uri=${encodeURIComponent(uri)}`
+                    );
+                    const json = await res.json();
+
+                    if (res.ok && json.access_token) {
+                        tokenData = json;
+                        userAccessToken = json.access_token;
+                        console.log('Successfully exchanged code with redirect_uri:', uri);
+                        break; // Success!
+                    } else {
+                        console.warn(`Failed with uri: ${uri}`, json.error?.message);
+                        lastError = json;
+                    }
+                } catch (err) {
+                    console.error(`Network error with uri: ${uri}`, err);
+                }
+            }
+
+            if (!userAccessToken) {
+                console.error('All redirect_uri variations failed.');
+                throw new Error(lastError?.error?.message || 'Code exchange failed with all redirect_uri variations');
+            }
 
         } else if (data.accessToken) {
             // 2b. Exchange Short-Lived Token for Long-Lived User Access Token
