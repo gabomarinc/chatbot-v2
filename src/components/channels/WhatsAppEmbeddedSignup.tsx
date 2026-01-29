@@ -117,18 +117,25 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             // Para Embedded Signup con config_id (Recomendado) o Scopes manuales
             const loginOptions: any = {};
 
-            if (configId && false) { // DISABLED TEMPORARILY: Force Manual Scopes to ensure 'extras' works
+            if (configId) {
                 // Si tenemos Config ID, Meta maneja los permisos automáticamente
                 console.log('Usando Config ID para login:', configId);
                 loginOptions.config_id = configId;
-                // Importante: Extras feature limits might apply if we mix scope and config_id
-                // loginOptions.override_default_response_type = true; // Sometimes needed
-                loginOptions.response_type = 'code,token'; // We want both mostly, but 'token' is default for FB.login
+
+                // Tech Provider / Embedded Signup V2 Standard
+                loginOptions.response_type = 'code,token';
 
                 // COEXISTENCE MODE: Enable WhatsApp Business App Onboarding
                 // This allows the user to keep using the mobile app while connected to the API.
-                console.log('Activating Coexistence Mode (whatsapp_business_app_onboarding)');
-                loginOptions.extras = '{"featureType":"whatsapp_business_app_onboarding"}';
+
+                loginOptions.extras = {
+                    "setup": {
+                        // "mode": "MIGRATION" // Optional: force migration
+                    },
+                    "featureType": "whatsapp_business_app_onboarding",
+                    "sessionInfoVersion": "3"
+                };
+
             } else {
                 // Fallback manual (More reliable for standard Business Apps)
                 console.log('Usando Scopes manuales (Standard Flow + Business Management)');
