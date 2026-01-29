@@ -101,253 +101,238 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
 
         setIsProcessing(true);
 
-        try {
-            // Safety Re-init just before login call (sometimes necessary in SPA transitions)
-            if (window.FB) {
-                window.FB.init({
-                    appId: appId,
-                    autoLogAppEvents: true,
-                    xfbml: true,
-                    version: 'v21.0'
-                });
+        // --- Manual OAuth Popup Implementation (Strict Mode Fix) ---
+        // Because Meta Strict Mode rejects the SDK's internal redirect_uri (mismatch or domain error),
+        // we use a manual popup where we explicitly control the redirect_uri to be the CLEAN current URL.
+
+        useEffect(() => {
+            // Child Mode: If this component is loaded inside the popup with a code
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            if (code) {
+                // We are in the popup! Send code to parent and close.
+                if (window.opener) {
+                    console.log('Sending Code to parent:', code);
+                    window.opener.postMessage({ type: 'WA_OAUTH_CODE', code }, window.location.origin);
+                    window.close();
+                }
             }
 
-            console.log('Iniciando FB.login con config:', { configId, appId });
+            // Parent Mode: Listen for the code
+            const handleMessage = (e: MessageEvent) => {
+                if (e.origin !== window.location.origin) return;
+                if (e.data?.type === 'WA_OAUTH_CODE' && e.data?.code) {
+                    console.log('Received Code from popup:', e.data.code);
+                    onPopupCodeReceived(e.data.code);
+                }
+            };
+            window.addEventListener('message', handleMessage);
+            return () => window.removeEventListener('message', handleMessage);
+        }, []);
 
-            // Para Embedded Signup con config_id (Recomendado) o Scopes manuales
-            const loginOptions: any = {};
+        const onPopupCodeReceived = async (code: string) => {
+            setIsProcessing(true);
+            try {
+                // The redirect_uri used in the manual dialog is EXACTLY this (clean):
+                const currentUrl = window.location.origin + window.location.pathname;
+
+                const result = await handleEmbeddedSignupV2({
+                    code: code,
+                    redirectUri: currentUrl,
+                    agentId
+                });
+
+                if (result.success) {
+                    toast.success('¡WhatsApp conectado correctamente!');
+                    setIsProcessing(false);
+                    if (onSuccess) onSuccess();
+                }
+                else if ('requiresSelection' in result && result.requiresSelection) {
+                    setAvailableAccounts((result as any).accounts);
+                    setLongLivedToken((result as any).accessToken || '');
+                    setShowSelectionModal(true);
+                }
+                else {
+                    const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
+                    toast.error(errorMsg);
+                }
+            } catch (err) {
+                console.error('Error processing code:', err);
+                toast.error('Error procesando la conexión.');
+            } finally {
+                // setIsProcessing(false); // Handled in success/error branches or modal
+            }
+        };
+
+        const launchSignup = () => {
+            // Manually construct the OAuth URL
+            // Redirect URI: Must be the CLEAN path (no params) to match Allowlist + Strict Mode
+            const redirectUri = window.location.origin + window.location.pathname;
+
+            let url = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
 
             if (configId) {
-                // Si tenemos Config ID, Meta maneja los permisos automáticamente
-                console.log('Usando Config ID para login:', configId);
-                loginOptions.config_id = configId;
+                console.log('Usando Config ID (Manual Flow):', configId);
+                url += `&config_id=${configId}`;
 
-                // Tech Provider / Embedded Signup V2 Standard
-                loginOptions.response_type = 'code';
-                loginOptions.override_default_response_type = true; // Force SDK to use our response_type
-
-                // Attempt to force the SDK to use the current page as redirect_uri
-                // This maximizes the chance that our server-side validation match works.
-                loginOptions.redirect_uri = window.location.href;
-
-                // COEXISTENCE MODE: Enable WhatsApp Business App Onboarding
-                // This allows the user to keep using the mobile app while connected to the API.
-
-                loginOptions.extras = {
-                    "setup": {
-                        // "mode": "MIGRATION" // Optional: force migration
-                    },
+                // Extras for Coexistence
+                const extras = {
+                    "setup": {},
                     "featureType": "whatsapp_business_app_onboarding",
                     "sessionInfoVersion": "3"
                 };
+                // url += `&state=${encodeURIComponent(JSON.stringify(extras))}`; // Some flows use state, others separate param?
+                // Documentation says 'extras' is a parameter for Embedded Signup? 
+                // Actually, for Dialog, pass 'extras' as JSON string? Or inside 'state'?
+                // For standard OAuth, it's state. For Embedded Config ID flow, params are handled by Config.
+                // But 'featureType' is needed. 
+                // Let's try passing it as 'extras'.
+                url += `&extras=${encodeURIComponent(JSON.stringify(extras))}`;
 
             } else {
-                // Fallback manual (More reliable for standard Business Apps)
-                console.log('Usando Scopes manuales (Standard Flow + Business Management)');
-                loginOptions.scope = 'whatsapp_business_management,whatsapp_business_messaging,business_management';
-
-                // COEXISTENCE MODE: Enable WhatsApp Business App Onboarding
-                loginOptions.extras = {
-                    "featureType": "whatsapp_business_app_onboarding"
-                };
+                // Manual Scopes Fallback
+                url += `&scope=whatsapp_business_management,whatsapp_business_messaging,business_management`;
             }
 
-            window.FB.login((response: any) => {
-                console.log('FB Login Response:', response);
+            const width = 600;
+            const height = 700;
+            const left = (window.innerWidth - width) / 2;
+            const top = (window.innerHeight - height) / 2;
 
-                // Tech Provider flow returns 'code' inside authResponse sometimes or at top level
-                // We must check all possible locations
-                const accessToken = response.authResponse?.accessToken;
-                const code = response.code || response.authResponse?.code;
+            window.open(url, 'fb_oauth', `width=${width},height=${height},top=${top},left=${left}`);
+        };
 
-                if (accessToken || code) {
-                    // 2. Send token/code to server to exchange and fetch WABAs
-                    // Wrap async logic in an IIFE to satisfy FB SDK's synchronous callback requirement
-                    (async () => {
-                        try {
-                            // The redirect_uri must match EXACTLY what the SDK used.
-                            // Usually for SDK flows, it's the current page URL.
-                            const currentUrl = window.location.href.split('#')[0];
 
-                            const result = await handleEmbeddedSignupV2({
-                                accessToken: accessToken,
-                                code: code,
-                                redirectUri: currentUrl,
-                                agentId
-                            });
 
-                            if (result.success) {
-                                toast.success('¡WhatsApp conectado correctamente!');
-                                setIsProcessing(false);
-                                if (onSuccess) onSuccess();
-                            }
-                            else if ('requiresSelection' in result && result.requiresSelection) {
-                                // Show selection modal
-                                setAvailableAccounts((result as any).accounts);
-                                setLongLivedToken((result as any).accessToken || accessToken);
-                                setShowSelectionModal(true);
-                            }
-                            else {
-                                const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
-                                toast.error(errorMsg);
-                            }
-                        } catch (err) {
-                            console.error('Error in async login handler:', err);
-                            toast.error('Error procesando la respuesta del servidor.');
-                        }
-                    })();
+        const handleAccountSelection = async (account: any) => {
+            // Keep isProcessing true
+            try {
+                const result = await finishWhatsAppSetup({
+                    accessToken: longLivedToken,
+                    wabaId: account.wabaId,
+                    phoneNumberId: account.phoneNumberId,
+                    agentId,
+                    displayName: account.displayName
+                });
+
+                if (result.success) {
+                    toast.success(`Conectado a ${account.phoneNumber}`);
+                    setShowSelectionModal(false);
+                    if (onSuccess) onSuccess();
                 } else {
-                    setIsProcessing(false);
-                    if (response.error) {
-                        console.error('Error de Facebook:', response.error);
-                        toast.error(`Error: ${response.error.message || 'Error desconocido'}`);
-                    } else {
-                        // User Cancelled or just no token returned without explicit error
-                        console.warn('Login completado pero sin token/code:', response);
-                        // Don't show error if it was just a cancellation, but here we don't know for sure.
-                        // Usually cancellation has status 'unknown' or no authResponse.
-                        toast.error('No se pudo conectar. Por favor intenta de nuevo.');
-                    }
+                    toast.error(result.error || 'Error al finalizar la conexión');
                 }
-            }, loginOptions);
-        } catch (error: any) {
-            setIsProcessing(false);
-            console.error('Error en FB.login:', error);
-            toast.error(`Error al iniciar sesión con Facebook: ${error.message || 'Error desconocido'}. Verifica que no tengas bloqueadores de anuncios activos.`);
-        }
-    };
-
-
-
-    const handleAccountSelection = async (account: any) => {
-        // Keep isProcessing true
-        try {
-            const result = await finishWhatsAppSetup({
-                accessToken: longLivedToken,
-                wabaId: account.wabaId,
-                phoneNumberId: account.phoneNumberId,
-                agentId,
-                displayName: account.displayName
-            });
-
-            if (result.success) {
-                toast.success(`Conectado a ${account.phoneNumber}`);
-                setShowSelectionModal(false);
-                if (onSuccess) onSuccess();
-            } else {
-                toast.error(result.error || 'Error al finalizar la conexión');
+            } catch (error) {
+                toast.error('Error al finalizar la conexión');
+            } finally {
+                setIsProcessing(false);
             }
-        } catch (error) {
-            toast.error('Error al finalizar la conexión');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
+        };
 
-    return (
-        <>
-            <div className="bg-slate-900 overflow-hidden relative group rounded-[2.5rem]">
-                {/* Background Decoration */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 blur-[80px] -mr-32 -mt-32"></div>
+        return (
+            <>
+                <div className="bg-slate-900 overflow-hidden relative group rounded-[2.5rem]">
+                    {/* Background Decoration */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 blur-[80px] -mr-32 -mt-32"></div>
 
-                <div className="relative p-10 flex flex-col items-center text-center space-y-6">
-                    <div className="w-20 h-20 bg-green-500/20 rounded-[2rem] flex items-center justify-center text-green-500 shadow-xl shadow-green-500/10 group-hover:scale-110 transition-transform duration-500">
-                        <MessageSquare className="w-10 h-10" />
-                    </div>
-
-                    <div className="space-y-2">
-                        <h3 className="text-white font-black text-2xl tracking-tight">Conexión Profesional</h3>
-                        <p className="text-slate-400 text-sm font-medium max-w-sm">
-                            Conecta tu número oficial de WhatsApp en segundos sin configuraciones técnicas complejas.
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={launchSignup}
-                        disabled={!isLoaded || isProcessing}
-                        className="w-full py-4 bg-green-500 text-slate-900 rounded-2xl text-sm font-black shadow-lg shadow-green-500/30 hover:bg-green-400 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 group-hover:ring-4 ring-green-500/20"
-                    >
-                        {isProcessing ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <>
-                                <ShieldCheck className="w-5 h-5" />
-                                <span>CONECTAR CON WHATSAPP</span>
-                            </>
-                        )}
-                    </button>
-
-                    {!isLoaded && (
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest animate-pulse">
-                            Sincronizando con Meta...
-                        </p>
-                    )}
-
-                    <div className="pt-2">
-                        <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                            Método Oficial y Seguro
+                    <div className="relative p-10 flex flex-col items-center text-center space-y-6">
+                        <div className="w-20 h-20 bg-green-500/20 rounded-[2rem] flex items-center justify-center text-green-500 shadow-xl shadow-green-500/10 group-hover:scale-110 transition-transform duration-500">
+                            <MessageSquare className="w-10 h-10" />
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Account Selection Modal */}
-            {showSelectionModal && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-[2rem] shadow-2xl p-8 max-w-lg w-full animate-in zoom-in-95 duration-200 relative">
-                        <div className="text-center mb-6">
-                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
-                                <Smartphone className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-black text-gray-900">Selecciona un Número</h3>
-                            <p className="text-gray-500 text-sm mt-1">
-                                Encontramos varias cuentas asociadas. Elige cuál quieres conectar.
+                        <div className="space-y-2">
+                            <h3 className="text-white font-black text-2xl tracking-tight">Conexión Profesional</h3>
+                            <p className="text-slate-400 text-sm font-medium max-w-sm">
+                                Conecta tu número oficial de WhatsApp en segundos sin configuraciones técnicas complejas.
                             </p>
                         </div>
 
-                        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                            {availableAccounts.map((account, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => handleAccountSelection(account)}
-                                    className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-green-500 hover:bg-green-50/50 transition-all text-left group"
-                                >
-                                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-green-100 group-hover:text-green-600">
-                                        <Building2 className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-gray-900 group-hover:text-green-700">
-                                            {account.displayName}
-                                        </p>
-                                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                                            <span className="font-medium text-gray-400">
-                                                {account.phoneNumber}
-                                                {account.wabaName && account.wabaName !== account.displayName && (
-                                                    <span className="ml-1 opacity-70">({account.wabaName})</span>
-                                                )}
-                                            </span>
-                                        </p>
-                                    </div>
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-green-600">
-                                        <Check className="w-5 h-5" />
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-
                         <button
-                            onClick={() => {
-                                setShowSelectionModal(false);
-                                setIsProcessing(false);
-                            }}
-                            className="mt-6 w-full py-3 text-gray-400 font-bold text-sm hover:text-gray-600"
+                            onClick={launchSignup}
+                            disabled={!isLoaded || isProcessing}
+                            className="w-full py-4 bg-green-500 text-slate-900 rounded-2xl text-sm font-black shadow-lg shadow-green-500/30 hover:bg-green-400 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 group-hover:ring-4 ring-green-500/20"
                         >
-                            Cancelar
+                            {isProcessing ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <ShieldCheck className="w-5 h-5" />
+                                    <span>CONECTAR CON WHATSAPP</span>
+                                </>
+                            )}
                         </button>
+
+                        {!isLoaded && (
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest animate-pulse">
+                                Sincronizando con Meta...
+                            </p>
+                        )}
+
+                        <div className="pt-2">
+                            <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                Método Oficial y Seguro
+                            </div>
+                        </div>
                     </div>
                 </div>
-            )}
-        </>
-    );
-}
+
+                {/* Account Selection Modal */}
+                {showSelectionModal && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-[2rem] shadow-2xl p-8 max-w-lg w-full animate-in zoom-in-95 duration-200 relative">
+                            <div className="text-center mb-6">
+                                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+                                    <Smartphone className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl font-black text-gray-900">Selecciona un Número</h3>
+                                <p className="text-gray-500 text-sm mt-1">
+                                    Encontramos varias cuentas asociadas. Elige cuál quieres conectar.
+                                </p>
+                            </div>
+
+                            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                                {availableAccounts.map((account, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleAccountSelection(account)}
+                                        className="w-full flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-green-500 hover:bg-green-50/50 transition-all text-left group"
+                                    >
+                                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-green-100 group-hover:text-green-600">
+                                            <Building2 className="w-5 h-5" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-gray-900 group-hover:text-green-700">
+                                                {account.displayName}
+                                            </p>
+                                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                                                <span className="font-medium text-gray-400">
+                                                    {account.phoneNumber}
+                                                    {account.wabaName && account.wabaName !== account.displayName && (
+                                                        <span className="ml-1 opacity-70">({account.wabaName})</span>
+                                                    )}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity text-green-600">
+                                            <Check className="w-5 h-5" />
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    setShowSelectionModal(false);
+                                    setIsProcessing(false);
+                                }}
+                                className="mt-6 w-full py-3 text-gray-400 font-bold text-sm hover:text-gray-600"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    }
