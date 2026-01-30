@@ -116,15 +116,57 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                         </div>
                     </div>
 
-                    {/* Active Filters */}
+                    {/* Dedicated Agent Filter */}
+                    <div className="mb-6">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Filtrar por Agente</label>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={() => {
+                                    // Remove agent filter if exists
+                                    const newFilters = filters.filter(f => f.field !== 'agentId');
+                                    setFilters(newFilters);
+                                }}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${!filters.find(f => f.field === 'agentId')
+                                        ? 'bg-[#21AC96] text-white border-[#21AC96] shadow-lg shadow-[#21AC96]/20'
+                                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                    }`}
+                            >
+                                Todos
+                            </button>
+                            {agents.map(agent => {
+                                const isActive = filters.some(f => f.field === 'agentId' && f.value === agent.id);
+                                return (
+                                    <button
+                                        key={agent.id}
+                                        onClick={() => {
+                                            // Remove existing agent filter
+                                            const newFilters = filters.filter(f => f.field !== 'agentId');
+                                            // Add new one
+                                            newFilters.push({ field: 'agentId', operator: 'equals', value: agent.id });
+                                            setFilters(newFilters);
+                                            setPage(1);
+                                        }}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${isActive
+                                                ? 'bg-[#21AC96] text-white border-[#21AC96] shadow-lg shadow-[#21AC96]/20'
+                                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                            }`}
+                                    >
+                                        {agent.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Active Filters (Generic) */}
                     <div className="space-y-3 mb-6">
-                        {filters.length === 0 && (
-                            <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
+                        {filters.filter(f => f.field !== 'agentId').length === 0 && (
+                            <div className="text-center py-8 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
                                 <FilterIcon className="w-8 h-8 text-gray-300 mx-auto mb-2 opacity-50" />
-                                <p className="text-xs font-medium text-gray-400">No hay filtros activos</p>
+                                <p className="text-xs font-medium text-gray-400">No hay otros filtros activos</p>
                             </div>
                         )}
-                        {filters.map((filter, idx) => (
+                        {filters.filter(f => f.field !== 'agentId').map((filter, idx) => (
                             <div key={idx} className="bg-white p-4 rounded-xl flex items-center justify-between border border-gray-100 text-sm shadow-sm hover:shadow-md transition-all group">
                                 <div className="flex flex-col gap-1">
                                     <span className="font-bold text-gray-800 text-xs uppercase tracking-wide">{getFieldLabel(filter.field)}</span>
@@ -139,13 +181,16 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                         </span>
                                         {filter.operator !== 'isSet' && filter.operator !== 'isNotSet' && (
                                             <span className="text-[#21AC96] font-bold">
-                                                {filter.field === 'agentId' ? getAgentName(filter.value) : `"${filter.value}"`}
+                                                {`"${filter.value}"`}
                                             </span>
                                         )}
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => removeFilter(idx)}
+                                    onClick={() => {
+                                        const realIdx = filters.indexOf(filter);
+                                        removeFilter(realIdx);
+                                    }}
                                     className="w-8 h-8 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
                                 >
                                     <X className="w-4 h-4" />
@@ -169,14 +214,12 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                             setSelectedOperator('equals');
                                         } else {
                                             setSelectedOperator('equals');
+                                            setSelectedOperator('equals');
+                                            setFilterValue('');
                                         }
-                                        setFilterValue('');
-                                    }}
+                                    }
                                 >
                                     <option value="">Seleccionar campo...</option>
-                                    <optgroup label="Agentes">
-                                        <option value="agentId" className="font-bold text-[#21AC96]">👤 Agente Asignado</option>
-                                    </optgroup>
                                     <optgroup label="Campos Estándar">
                                         <option value="name">Nombre Completo</option>
                                         <option value="email">Email</option>
@@ -343,7 +386,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                 >
                                                     <td className="px-8 py-5">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-200">
+                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-200 overflow-hidden">
                                                                 {(contact.name?.[0] || contact.id[0] || 'U').toUpperCase()}
                                                             </div>
                                                             <div>
