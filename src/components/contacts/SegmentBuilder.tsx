@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Filter as FilterIcon, Search, Users, Plus, X, ChevronRight, Save, Play, Loader2 } from 'lucide-react';
+import { Filter as FilterIcon, Search, Users, Plus, X, ChevronRight, Save, Play, Loader2, UserCircle, Phone } from 'lucide-react';
 import { CustomFieldDefinition } from '@prisma/client';
 import { toast } from 'sonner';
 import { getContacts, FilterCondition } from '@/lib/actions/contacts';
@@ -397,9 +397,18 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                     style={{ animationDelay: `${idx * 0.05}s` }}
                                                 >
                                                     <td className="px-8 py-5">
-                                                        <div>
-                                                            <div className="font-bold text-gray-900">{contact.name || 'Sin Nombre'}</div>
-                                                            <div className="text-[10px] text-gray-400 font-mono mt-0.5 truncate max-w-[100px] bg-gray-100 px-1.5 py-0.5 rounded-md inline-block">{contact.id.slice(-6)}</div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-2xl bg-[#21AC96]/5 flex items-center justify-center text-[#21AC96] shadow-sm flex-shrink-0">
+                                                                <UserCircle className="w-6 h-6" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <div className="font-extrabold text-gray-900 tracking-tight">{contact.name || 'Sin Nombre'}</div>
+                                                                <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
+                                                                    <span className="bg-gray-100 px-1.5 py-0.5 rounded-md font-mono text-[10px] text-gray-500">
+                                                                        #{contact.id.slice(-6)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-5">
