@@ -129,10 +129,19 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                 <div className="flex flex-col gap-1">
                                     <span className="font-bold text-gray-800 text-xs uppercase tracking-wide">{getFieldLabel(filter.field)}</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-gray-400 text-xs lowercase bg-gray-50 px-2 py-0.5 rounded-md">{filter.operator}</span>
-                                        <span className="text-[#21AC96] font-bold">
-                                            {filter.field === 'agentId' ? getAgentName(filter.value) : `"${filter.value}"`}
+                                        <span className="text-gray-400 text-xs lowercase bg-gray-50 px-2 py-0.5 rounded-md">
+                                            {filter.operator === 'equals' && 'Es igual a'}
+                                            {filter.operator === 'contains' && 'Contiene'}
+                                            {filter.operator === 'gt' && 'Mayor que'}
+                                            {filter.operator === 'lt' && 'Menor que'}
+                                            {filter.operator === 'isSet' && 'Tiene valor'}
+                                            {filter.operator === 'isNotSet' && 'Vacío'}
                                         </span>
+                                        {filter.operator !== 'isSet' && filter.operator !== 'isNotSet' && (
+                                            <span className="text-[#21AC96] font-bold">
+                                                {filter.field === 'agentId' ? getAgentName(filter.value) : `"${filter.value}"`}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 <button
@@ -165,11 +174,13 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                     }}
                                 >
                                     <option value="">Seleccionar campo...</option>
+                                    <optgroup label="Agentes">
+                                        <option value="agentId" className="font-bold text-[#21AC96]">👤 Agente Asignado</option>
+                                    </optgroup>
                                     <optgroup label="Campos Estándar">
                                         <option value="name">Nombre Completo</option>
                                         <option value="email">Email</option>
                                         <option value="phone">Teléfono</option>
-                                        <option value="agentId">Agente Asignado</option>
                                     </optgroup>
                                     <optgroup label="Campos Personalizados">
                                         {customFields.map(field => (
@@ -332,7 +343,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                 >
                                                     <td className="px-8 py-5">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-200">
+                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-200">
                                                                 {(contact.name?.[0] || contact.id[0] || 'U').toUpperCase()}
                                                             </div>
                                                             <div>
