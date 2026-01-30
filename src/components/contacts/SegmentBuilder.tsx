@@ -384,11 +384,9 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                     style={{ animationDelay: `${idx * 0.05}s` }}
                                                 >
                                                     <td className="px-8 py-5">
-                                                        <div className="flex items-center gap-3">
-                                                            <div>
-                                                                <div className="font-bold text-gray-900">{contact.name || 'Sin Nombre'}</div>
-                                                                <div className="text-[10px] text-gray-400 font-mono mt-0.5 truncate max-w-[100px] bg-gray-100 px-1.5 py-0.5 rounded-md inline-block">{contact.id.slice(-6)}</div>
-                                                            </div>
+                                                        <div>
+                                                            <div className="font-bold text-gray-900">{contact.name || 'Sin Nombre'}</div>
+                                                            <div className="text-[10px] text-gray-400 font-mono mt-0.5 truncate max-w-[100px] bg-gray-100 px-1.5 py-0.5 rounded-md inline-block">{contact.id.slice(-6)}</div>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-5">
