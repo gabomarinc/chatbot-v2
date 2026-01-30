@@ -127,8 +127,8 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                     setFilters(newFilters);
                                 }}
                                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${!filters.find(f => f.field === 'agentId')
-                                        ? 'bg-[#21AC96] text-white border-[#21AC96] shadow-lg shadow-[#21AC96]/20'
-                                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                    ? 'bg-[#21AC96] text-white border-[#21AC96] shadow-lg shadow-[#21AC96]/20'
+                                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
                                     }`}
                             >
                                 Todos
@@ -147,8 +147,8 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                             setPage(1);
                                         }}
                                         className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${isActive
-                                                ? 'bg-[#21AC96] text-white border-[#21AC96] shadow-lg shadow-[#21AC96]/20'
-                                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                            ? 'bg-[#21AC96] text-white border-[#21AC96] shadow-lg shadow-[#21AC96]/20'
+                                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         {agent.name}
@@ -214,10 +214,9 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                             setSelectedOperator('equals');
                                         } else {
                                             setSelectedOperator('equals');
-                                            setSelectedOperator('equals');
                                             setFilterValue('');
                                         }
-                                    }
+                                    }}
                                 >
                                     <option value="">Seleccionar campo...</option>
                                     <optgroup label="Campos Estándar">
