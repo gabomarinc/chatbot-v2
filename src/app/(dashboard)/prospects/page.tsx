@@ -39,15 +39,10 @@ export default async function ProspectsBuilderPage() {
     // Debug logging
     console.log(`[ProspectsPage] Found workspace ${workspace.id} with ${workspace.agents.length} agents. Total fields: ${allCustomFields.length}`);
 
-    // Deduplicate fields by key to avoid duplicates in the filter dropdown
-    const uniqueFieldsMap = new Map();
-    allCustomFields.forEach(field => {
-        if (!uniqueFieldsMap.has(field.key)) {
-            uniqueFieldsMap.set(field.key, field);
-        }
-    });
-    const uniqueFields = Array.from(uniqueFieldsMap.values());
-    console.log(`[ProspectsPage] Unique fields passing to builder:`, uniqueFields.map(f => f.key));
+    // Pass all custom fields to the builder, so it can filter them by agentId on the client side.
+    // We do NOT deduplicate here anymore, because we need to know which agent owns which field.
+    const uniqueFields = allCustomFields;
+    console.log(`[ProspectsPage] Passing ${uniqueFields.length} fields to builder`);
 
     // Fetch agents for the filter dropdown
     const agents = workspace.agents.map(a => ({

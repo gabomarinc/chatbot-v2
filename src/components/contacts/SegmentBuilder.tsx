@@ -101,6 +101,15 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
         return agent ? agent.name : id;
     };
 
+    // Derived state for agent-specific logic
+    const activeAgentFilter = filters.find(f => f.field === 'agentId' && f.operator === 'equals');
+    const activeAgentId = activeAgentFilter ? activeAgentFilter.value : null;
+
+    // Filter available custom fields based on selected agent
+    const availableCustomFields = activeAgentId
+        ? customFields.filter(f => f.agentId === activeAgentId)
+        : Array.from(new Map(customFields.map(f => [f.key, f])).values()); // Deduplicate if showing all
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Filter Builder Panel */}
@@ -225,9 +234,13 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                         <option value="phone">Teléfono</option>
                                     </optgroup>
                                     <optgroup label="Campos Personalizados">
-                                        {customFields.map(field => (
-                                            <option key={field.id} value={field.key}>{field.label}</option>
-                                        ))}
+                                        {availableCustomFields.length > 0 ? (
+                                            availableCustomFields.map(field => (
+                                                <option key={field.id} value={field.key}>{field.label}</option>
+                                            ))
+                                        ) : (
+                                            <option disabled>Selecciona un agente para ver sus campos</option>
+                                        )}
                                     </optgroup>
                                 </select>
                                 <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none rotate-90" />
@@ -369,7 +382,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                             <tr>
                                                 <th className="px-8 py-5">Nombre</th>
                                                 <th className="px-6 py-5">Email / Teléfono</th>
-                                                {customFields.slice(0, 3).map(f => ( // Show first 3 custom fields
+                                                {availableCustomFields.slice(0, 3).map(f => ( // Show first 3 relevant custom fields
                                                     <th key={f.id} className="px-6 py-5">{f.label}</th>
                                                 ))}
                                                 <th className="px-6 py-5">Contactado</th>
@@ -393,7 +406,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                         {contact.email && <div className="text-sm font-medium text-gray-700">{contact.email}</div>}
                                                         {contact.phone && <div className="text-xs text-gray-500 font-mono mt-0.5">{contact.phone}</div>}
                                                     </td>
-                                                    {customFields.slice(0, 3).map(f => (
+                                                    {availableCustomFields.slice(0, 3).map(f => (
                                                         <td key={f.id} className="px-6 py-5">
                                                             {contact.customData?.[f.key] ? (
                                                                 <span className="px-2.5 py-1.5 bg-[#21AC96]/10 text-[#21AC96] rounded-lg text-xs font-bold inline-block border border-[#21AC96]/20">
