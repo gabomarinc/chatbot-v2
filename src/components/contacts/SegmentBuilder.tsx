@@ -385,9 +385,6 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                 >
                                                     <td className="px-8 py-5">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-200 overflow-hidden">
-                                                                {(contact.name?.[0] || contact.id[0] || 'U').toUpperCase()}
-                                                            </div>
                                                             <div>
                                                                 <div className="font-bold text-gray-900">{contact.name || 'Sin Nombre'}</div>
                                                                 <div className="text-[10px] text-gray-400 font-mono mt-0.5 truncate max-w-[100px] bg-gray-100 px-1.5 py-0.5 rounded-md inline-block">{contact.id.slice(-6)}</div>
