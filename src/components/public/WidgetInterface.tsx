@@ -24,6 +24,7 @@ interface WidgetInterfaceProps {
         configJson: any;
         agent: {
             name: string;
+            avatarUrl?: string | null;
         };
     };
 }
@@ -130,10 +131,10 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         // 2. Optimistic UI
         const tempId = Date.now().toString();
         // Store initial metadata for images (base64 preview) or PDFs
-        const initialMetadata = filePreview && fileType === 'image' 
-            ? { type: 'image' as const, url: filePreview, fileName: file?.name } 
+        const initialMetadata = filePreview && fileType === 'image'
+            ? { type: 'image' as const, url: filePreview, fileName: file?.name }
             : (file && fileType === 'pdf' ? { type: 'pdf' as const, fileName: file.name, url: '' } : undefined);
-        
+
         const userMsg: Message = {
             id: tempId,
             role: 'USER',
@@ -152,7 +153,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
             let fileTypeUploaded: 'pdf' | 'image' | undefined;
             let imageBase64: string | undefined;
             let extractedText: string | undefined;
-            
+
             if (file) {
                 try {
                     const formData = new FormData();
@@ -209,16 +210,16 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
 
             // 5. Update UI with Real User Message (update with real fileUrl from server)
             // Update the optimistic message with the real URL from server (replace base64 preview with R2 URL)
-            const finalMetadata = fileUrl 
-                ? { 
-                    type: fileTypeUploaded || 'image', 
+            const finalMetadata = fileUrl
+                ? {
+                    type: fileTypeUploaded || 'image',
                     url: fileUrl, // Use the real URL from R2, not the base64 preview
-                    fileName: file?.name 
+                    fileName: file?.name
                 }
                 : initialMetadata; // Fallback to initial metadata if no fileUrl
-            
-            setMessages(prev => prev.map(msg => 
-                msg.id === tempId 
+
+            setMessages(prev => prev.map(msg =>
+                msg.id === tempId
                     ? {
                         ...msg,
                         id: savedUserMsg.id,
@@ -226,7 +227,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                     }
                     : msg
             ));
-            
+
             // 5.5. Update UI with Real Agent Reply (only if bot responded)
             if (agentMsg) {
                 const realAgentMsg: Message = {
@@ -244,10 +245,10 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
             console.error('Error sending message:', error);
             setIsLoading(false);
             setIsUploadingFile(false);
-            
+
             // Remove the optimistic message on error
             setMessages(prev => prev.filter(msg => msg.id !== tempId));
-            
+
             // Show error message to user
             const errorMsg: Message = {
                 id: `error-${Date.now()}`,
@@ -266,8 +267,16 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                 className="h-16 px-4 flex items-center gap-3 shadow-md z-10 text-white"
                 style={{ backgroundColor: primaryColor }}
             >
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-white uppercase backdrop-blur-sm">
-                    {channel.agent.name.charAt(0)}
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-white uppercase backdrop-blur-sm overflow-hidden">
+                    {channel.agent.avatarUrl ? (
+                        <img
+                            src={channel.agent.avatarUrl}
+                            alt={channel.agent.name}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        channel.agent.name.charAt(0)
+                    )}
                 </div>
                 <div>
                     <h1 className="font-bold text-sm tracking-wide">{config.title || channel.displayName}</h1>
@@ -299,12 +308,12 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                                     const metadataObj = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
                                     const imageType = metadataObj?.type;
                                     const imageUrl = metadataObj?.url;
-                                    
+
                                     if (imageType === 'image' && imageUrl) {
                                         return (
                                             <div className="mb-2 rounded-xl overflow-hidden max-w-xs">
-                                                <img 
-                                                    src={imageUrl} 
+                                                <img
+                                                    src={imageUrl}
                                                     alt="Imagen adjunta"
                                                     className="w-full h-auto object-contain"
                                                     onError={(e) => {
@@ -317,7 +326,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                                     }
                                     return null;
                                 })()}
-                                
+
                                 {/* Show PDF link if present */}
                                 {(() => {
                                     const metadata = msg.metadata;
@@ -325,7 +334,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                                     const metadataObj = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
                                     const pdfType = metadataObj?.type;
                                     const pdfUrl = metadataObj?.url;
-                                    
+
                                     if (pdfType === 'pdf' && pdfUrl) {
                                         return (
                                             <div className="mb-2 p-3 bg-gray-50 rounded-xl border border-gray-200 max-w-xs">
@@ -337,9 +346,9 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                                                         <p className="text-xs font-medium text-gray-700 truncate">
                                                             {metadataObj.fileName || 'Documento PDF'}
                                                         </p>
-                                                        <a 
-                                                            href={pdfUrl} 
-                                                            target="_blank" 
+                                                        <a
+                                                            href={pdfUrl}
+                                                            target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                                                         >
@@ -381,8 +390,8 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                 {filePreview && fileType === 'image' && (
                     <div className="mb-3 relative inline-block">
                         <div className="relative rounded-xl overflow-hidden max-w-[200px] border-2" style={{ borderColor: primaryColor }}>
-                            <img 
-                                src={filePreview} 
+                            <img
+                                src={filePreview}
                                 alt="Preview"
                                 className="w-full h-auto object-contain max-h-32"
                             />
@@ -397,7 +406,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                         </div>
                     </div>
                 )}
-                
+
                 {/* PDF Preview */}
                 {selectedFile && fileType === 'pdf' && (
                     <div className="mb-3 p-3 bg-gray-50 rounded-xl border-2" style={{ borderColor: primaryColor }}>
@@ -418,7 +427,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                         </div>
                     </div>
                 )}
-                
+
                 <form onSubmit={handleSendMessage} className="flex items-end gap-2">
                     <input
                         ref={fileInputRef}

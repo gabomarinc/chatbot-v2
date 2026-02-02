@@ -12,7 +12,14 @@ export default async function WidgetPage({ params }: WidgetPageProps) {
     const { channelId } = await params;
     const channel = await prisma.channel.findUnique({
         where: { id: channelId },
-        include: { agent: true }
+        include: {
+            agent: {
+                select: {
+                    name: true,
+                    avatarUrl: true
+                }
+            }
+        }
     });
 
     if (!channel || channel.type !== 'WEBCHAT') {
