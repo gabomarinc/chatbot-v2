@@ -2,14 +2,7 @@ import { useState } from 'react';
 import { Bot, Sparkles, Wand2, Upload, Loader2, RefreshCw, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { generatePreviewAvatar } from '@/lib/actions/agent-avatar';
-import { uploadFileToR2Proxy } from '@/lib/r2-client-proxy'; // Or distinct manual upload action? 
-// Wait, for manual upload in wizard, we need to upload to R2 and get URL.
-// We can reuse `uploadAgentAvatar` but that needs agentId.
-// We need a generic `uploadAvatarPreview` or similar. 
-// Actually, let's create a specific action for this or just use a client-side helper if possible? 
-// No, R2 keys are server-side.
-// We need a server action `uploadPreviewAvatar(formData)` similar to `generatePreviewAvatar`.
+import { generatePreviewAvatar, uploadPreviewAvatar } from '@/lib/actions/agent-avatar';
 
 interface StepAvatarProps {
     name: string;
@@ -60,11 +53,6 @@ export function StepAvatar({ name, intent, avatarUrl, onChange }: StepAvatarProp
         formData.append('file', file);
 
         try {
-            // We need a new action for this: uploadPreviewAvatar
-            // Since we can't import it yet as I haven't written it, I will assume it exists
-            // or I can write it in `agent-avatar.ts` quickly.
-            // For now, let's assume we add it. 
-            const { uploadPreviewAvatar } = await import('@/lib/actions/agent-avatar');
             const result = await uploadPreviewAvatar(formData);
 
             if (result.success && result.url) {
