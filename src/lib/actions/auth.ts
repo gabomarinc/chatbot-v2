@@ -70,7 +70,7 @@ export async function registerUser(prevState: any, formData: FormData) {
             await tx.creditBalance.create({
                 data: {
                     workspaceId: workspace.id,
-                    balance: 5000, // Initial credits from Freshie plan
+                    balance: 2500, // Initial credits from Freshie plan
                 },
             })
 
