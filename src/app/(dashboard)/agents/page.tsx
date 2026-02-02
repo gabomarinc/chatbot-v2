@@ -2,6 +2,9 @@ import { getAgents } from '@/lib/actions/dashboard';
 import { AgentsPageClient } from '@/components/agents/AgentsPageClient';
 import { getUserWorkspaceRole } from '@/lib/actions/workspace';
 
+// Force revalidation to get fresh data
+export const revalidate = 0;
+
 export default async function AgentsPage() {
     const agents = await getAgents();
     const userRole = await getUserWorkspaceRole();
