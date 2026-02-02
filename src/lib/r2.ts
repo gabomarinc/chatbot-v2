@@ -4,11 +4,11 @@ function getR2Client() {
     const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
     const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
     const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-    
+
     if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
         throw new Error('R2 credentials not configured');
     }
-    
+
     return new S3Client({
         region: 'auto',
         endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -26,7 +26,7 @@ export async function uploadFileToR2(
 ): Promise<string> {
     const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
     const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-    
+
     if (!R2_BUCKET_NAME || !R2_ACCOUNT_ID) {
         const errorMsg = 'R2 credentials missing. Please configure R2_BUCKET_NAME and R2_ACCOUNT_ID environment variables.';
         console.error(errorMsg);
@@ -58,9 +58,9 @@ export async function uploadFileToR2(
             finalUrl = `${cleanDomain}/${key}`;
         } else {
             // Fallback: Try to construct R2.dev public URL
-            // Format: https://pub-{account-id}.r2.dev/{key}
-            // Note: This might not work if the bucket doesn't have a public R2.dev subdomain
-            finalUrl = `https://pub-${R2_ACCOUNT_ID}.r2.dev/${key}`;
+            // Defaulting to the known public bucket URL if usage is local/missing env
+            const fallbackDomain = "https://pub-5e59c87fa6664e4e91ada693f54a5a6c.r2.dev";
+            finalUrl = `${fallbackDomain}/${key}`;
         }
 
         console.log('[R2] Uploaded file, key:', key, 'URL:', finalUrl);

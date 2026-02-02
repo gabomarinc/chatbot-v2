@@ -5,6 +5,7 @@ import { updateAgent } from '@/lib/actions/dashboard';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, Bot, Sparkles, Wand2, Upload } from 'lucide-react';
 import { generateAgentAvatar, uploadAgentAvatar } from '@/lib/actions/agent-avatar';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface AgentProfileFormProps {
@@ -41,7 +42,7 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
             setTimeout(() => setIsSaved(false), 3000);
         } catch (error) {
             console.error('Error updating agent:', error);
-            alert('Error al guardar los cambios.');
+            toast.error('Error al guardar los cambios.');
         } finally {
             setIsLoading(false);
         }
@@ -51,15 +52,17 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
         setIsGeneratingAvatar(true);
         try {
             const result = await generateAgentAvatar(agent.id);
+            console.log("Avatar generation result:", result);
             if (result.success && result.url) {
-                setFormData({ ...formData, avatarUrl: result.url });
+                setFormData(prev => ({ ...prev, avatarUrl: result.url }));
+                toast.success('Avatar generado con IA correctamente');
                 router.refresh();
             } else {
                 throw new Error(result.error);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error generating avatar:', error);
-            alert('Error generando avatar. Inténtalo de nuevo.');
+            toast.error(error.message || 'Error generando avatar. Inténtalo de nuevo.');
         } finally {
             setIsGeneratingAvatar(false);
         }
@@ -70,7 +73,7 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
         if (!file) return;
 
         if (file.size > 5 * 1024 * 1024) {
-            alert('El archivo no debe superar los 5MB');
+            toast.error('El archivo no debe superar los 5MB');
             return;
         }
 
@@ -82,13 +85,14 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
             const result = await uploadAgentAvatar(agent.id, uploadForm);
             if (result.success && result.url) {
                 setFormData(prev => ({ ...prev, avatarUrl: result.url }));
+                toast.success('Foto subida correctamente');
                 router.refresh();
             } else {
                 throw new Error(result.error);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error uploading avatar:', error);
-            alert('Error subiendo imagen. Inténtalo de nuevo.');
+            toast.error(error.message || 'Error subiendo imagen. Inténtalo de nuevo.');
         } finally {
             setIsUploading(false);
         }
@@ -140,7 +144,7 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                                 className="text-xs font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1.5 rounded-lg hover:bg-[#21AC96]/20 transition-colors flex items-center gap-2 disabled:opacity-50"
                             >
                                 {isGeneratingAvatar ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                                {isGeneratingAvatar ? 'Diseñando...' : 'Generar con IA (50cr)'}
+                                {isGeneratingAvatar ? 'Diseñando...' : 'Generar con IA (50 Créditos)'}
                             </button>
 
                             <label className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 cursor-pointer">

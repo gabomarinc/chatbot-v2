@@ -41,7 +41,7 @@ export async function generateAgentAvatar(agentId: string) {
             prompt += `Professional studio headshot, clear face, neutral background. `;
         }
 
-        prompt += `High resolution, 4k, photorealistic, 3d render style or high-end photography. The image should be a square close-up suitable for a profile avatar.`;
+        prompt += `Hyper-realistic, 8k resolution, raw photo style, shot on 85mm lens, sharp focus on eyes, soft skin texture. NOT illustration, NOT 3d render, NOT cartoon. Cinematic lighting.`;
 
         console.log(`[AvatarGen] Generating with prompt: ${prompt}`);
 
