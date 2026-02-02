@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Globe, FileText, Upload, BrainCircuit, CheckCircle2, Bot, Loader2 } from 'lucide-react';
+import { Globe, FileText, Upload, BrainCircuit, CheckCircle2, Bot, Loader2, LayoutTemplate } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { analyzeUrlAndGenerateQuestions, generateAgentPersonalities, WizardAnalysisResult, WizardPersonalityOption } from '@/lib/actions/wizard';
+import { AGENT_TEMPLATES } from '@/lib/agent-templates';
 import { toast } from 'sonner';
 
 interface StepKnowledgeProps {
@@ -16,7 +17,7 @@ interface StepKnowledgeProps {
 type AnalysisState = 'INPUT' | 'ANALYZING' | 'QUESTIONS' | 'GENERATING_OPTIONS' | 'SELECTION' | 'DONE';
 
 export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKnowledgeProps) {
-    const [sourceType, setSourceType] = useState<'WEB' | 'PDF' | 'TEXT'>('WEB');
+    const [sourceType, setSourceType] = useState<'WEB' | 'PDF' | 'TEXT' | 'TEMPLATE'>('WEB');
     const [inputVal, setInputVal] = useState('');
     const [file, setFile] = useState<File | null>(null);
 
@@ -61,8 +62,14 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
         setAnalysisState('GENERATING_OPTIONS');
         try {
             const qaPairs = analysisResult.questions.map(q => ({ question: q.text, answer: answers[q.id] }));
-            // Pass agent name
-            const options = await generateAgentPersonalities(analysisResult.summary, qaPairs, intent, name);
+            // Pass agent name and company name
+            const options = await generateAgentPersonalities(
+                analysisResult.summary,
+                qaPairs,
+                intent,
+                name,
+                analysisResult.detectedCompanyName // Pasamos el nombre detectado
+            );
             setPersonalityOptions(options);
             setAnalysisState('SELECTION');
         } catch (error) {
@@ -121,6 +128,25 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const handleSelectTemplate = (templateId: string) => {
+        const template = AGENT_TEMPLATES.find(t => t.id === templateId);
+        if (!template) return;
+
+        onChange({
+            type: 'TEMPLATE',
+            source: template.systemPrompt, // We pass the raw prompt as source
+            personality: {
+                id: template.id,
+                name: template.label,
+                description: template.description,
+                systemPrompt: template.systemPrompt,
+                temperature: 0.5,
+                communicationStyle: 'NORMAL'
+            }
+        });
+        setAnalysisState('DONE');
     };
 
 
@@ -318,9 +344,12 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
             </div>
 
             {/* Tabs */}
-            <div className="flex justify-center gap-4 mb-8">
+            <div className="flex justify-center gap-4 mb-8 flex-wrap">
                 <button onClick={() => setSourceType('WEB')} className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${sourceType === 'WEB' ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20' : 'bg-white border hover:bg-gray-50'}`}>
-                    <Globe className="w-4 h-4" /> Sitio Web (Recomendado)
+                    <Globe className="w-4 h-4" /> Sitio Web
+                </button>
+                <button onClick={() => setSourceType('TEMPLATE')} className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${sourceType === 'TEMPLATE' ? 'bg-[#21AC96] text-white shadow-lg' : 'bg-white border hover:bg-gray-50'}`}>
+                    <LayoutTemplate className="w-4 h-4" /> Plantillas
                 </button>
                 <button onClick={() => setSourceType('PDF')} className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${sourceType === 'PDF' ? 'bg-[#21AC96] text-white shadow-lg' : 'bg-white border hover:bg-gray-50'}`}>
                     <FileText className="w-4 h-4" /> PDF
@@ -330,9 +359,9 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                 </button>
             </div>
 
-            <div className="max-w-xl mx-auto bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="max-w-4xl mx-auto">
                 {sourceType === 'WEB' && (
-                    <div className="space-y-4">
+                    <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm max-w-xl mx-auto space-y-4">
                         <label className="font-semibold text-gray-700">URL del Sitio Web</label>
                         <div className="flex gap-2">
                             <Input
@@ -366,8 +395,44 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                     </div>
                 )}
 
+                {sourceType === 'TEMPLATE' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
+                        {AGENT_TEMPLATES.map(template => (
+                            <div
+                                key={template.id}
+                                onClick={() => handleSelectTemplate(template.id)}
+                                className="group relative bg-white border border-gray-200 hover:border-[#21AC96] hover:shadow-lg rounded-xl p-6 cursor-pointer transition-all duration-300"
+                            >
+                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="bg-[#21AC96] text-white p-1 rounded-full">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-[#21AC96] transition-colors">
+                                    {template.label}
+                                </h3>
+                                <div className="mb-4">
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded bg-gray-100 uppercase tracking-wide ${template.intent === 'SALES' ? 'text-blue-600 bg-blue-50' : template.intent === 'SUPPORT' ? 'text-purple-600 bg-purple-50' : 'text-gray-600'
+                                        }`}>
+                                        {template.intent === 'SALES' ? 'Ventas' : template.intent === 'SUPPORT' ? 'Soporte' : 'Servicio'}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-500 mb-4 h-10 overflow-hidden text-ellipsis line-clamp-2">
+                                    {template.description}
+                                </p>
+                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                    <p className="text-xs text-gray-400 font-bold mb-1 uppercase">Preview</p>
+                                    <p className="text-xs text-gray-600 line-clamp-3 italic">
+                                        "{template.systemPrompt.slice(0, 100)}..."
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {sourceType === 'PDF' && (
-                    <div className="space-y-4 text-center border-2 border-dashed border-gray-200 rounded-xl p-8 hover:bg-gray-50 transition-colors cursor-pointer relative">
+                    <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm max-w-xl mx-auto space-y-4 text-center border-2 border-dashed border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer relative">
                         <input
                             type="file"
                             accept="application/pdf"
@@ -383,7 +448,7 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                 )}
 
                 {sourceType === 'TEXT' && (
-                    <div className="space-y-4">
+                    <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm max-w-xl mx-auto space-y-4">
                         <label className="font-semibold text-gray-700">Pega el texto de entrenamiento</label>
                         <Textarea
                             placeholder="Información sobre tu empresa, productos, precios..."

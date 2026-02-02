@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { updateAgent } from '@/lib/actions/dashboard';
 import { useRouter } from 'next/navigation';
-import { Loader2, CheckCircle2, Bot, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle2, Bot, Sparkles, Wand2, Upload } from 'lucide-react';
+import { generateAgentAvatar, uploadAgentAvatar } from '@/lib/actions/agent-avatar';
 import { cn } from '@/lib/utils';
 
 interface AgentProfileFormProps {
@@ -12,6 +13,7 @@ interface AgentProfileFormProps {
         name: string;
         communicationStyle: string;
         personalityPrompt: string;
+        avatarUrl?: string | null;
     };
 }
 
@@ -23,7 +25,10 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
         name: agent.name,
         communicationStyle: agent.communicationStyle,
         personalityPrompt: agent.personalityPrompt,
+        avatarUrl: agent.avatarUrl,
     });
+    const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,6 +44,53 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
             alert('Error al guardar los cambios.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleGenerateAvatar = async () => {
+        setIsGeneratingAvatar(true);
+        try {
+            const result = await generateAgentAvatar(agent.id);
+            if (result.success && result.url) {
+                setFormData({ ...formData, avatarUrl: result.url });
+                router.refresh();
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('Error generating avatar:', error);
+            alert('Error generando avatar. Inténtalo de nuevo.');
+        } finally {
+            setIsGeneratingAvatar(false);
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('El archivo no debe superar los 5MB');
+            return;
+        }
+
+        setIsUploading(true);
+        const uploadForm = new FormData();
+        uploadForm.append('file', file);
+
+        try {
+            const result = await uploadAgentAvatar(agent.id, uploadForm);
+            if (result.success && result.url) {
+                setFormData(prev => ({ ...prev, avatarUrl: result.url }));
+                router.refresh();
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            alert('Error subiendo imagen. Inténtalo de nuevo.');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -66,6 +118,44 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full px-6 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:bg-white focus:border-[#21AC96] transition-all font-medium"
                     />
+                </div>
+
+                {/* Avatar Section */}
+                <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div className="relative w-20 h-20 bg-white rounded-full flex items-center justify-center border-2 border-dashed border-gray-200 overflow-hidden shrink-0">
+                        {formData.avatarUrl ? (
+                            <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                            <Bot className="w-8 h-8 text-gray-300" />
+                        )}
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-extrabold text-gray-700 uppercase tracking-wider mb-1">Foto de Perfil</h3>
+                        <p className="text-xs text-gray-500 mb-3">Genera una identidad visual única con IA o sube tu propia imagen.</p>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={handleGenerateAvatar}
+                                disabled={isGeneratingAvatar || isUploading}
+                                className="text-xs font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1.5 rounded-lg hover:bg-[#21AC96]/20 transition-colors flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {isGeneratingAvatar ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                                {isGeneratingAvatar ? 'Diseñando...' : 'Generar con IA (50cr)'}
+                            </button>
+
+                            <label className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 cursor-pointer">
+                                {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                {isUploading ? 'Subiendo...' : 'Subir Foto'}
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleFileUpload}
+                                    disabled={isGeneratingAvatar || isUploading}
+                                />
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Communication Style */}

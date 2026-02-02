@@ -8,6 +8,7 @@ import OpenAI from 'openai'
 // Interfaces
 export interface WizardAnalysisResult {
     summary: string;
+    detectedCompanyName?: string;
     questions: {
         id: string;
         text: string;
@@ -166,12 +167,16 @@ export async function analyzeUrlAndGenerateQuestions(url: string, intent: string
     const systemPrompt = `Eres un experto en configuración de Chatbots de IA para negocios.
 Tu objetivo es analizar el contenido de un sitio web y generar:
 1. Un resumen breve del negocio.
-2. 3 preguntas estratégicas para definir la personalidad del bot.
-3. Para cada pregunta, sugiere 2 o 3 respuestas predefinidas (cortas) que cubran los casos más comunes.
+2. Identificar el nombre de la empresa.
+   - PISTA CRÍTICA: Mira la URL/Dominio proporcionado. Si el dominio es "arrobapunto.com" y encuentras "Arrobapunto" en el texto (incluso en el footer o créditos), ESE es el nombre del negocio.
+   - Ignora "Powered by" externos (ej: "Powered by Shopify"), pero si el "Powered by" coincide con el dominio, entonces ES la empresa.
+3. 3 preguntas estratégicas para definir la personalidad del bot.
+4. Para cada pregunta, sugiere 2 o 3 respuestas predefinidas (cortas) que cubran los casos más comunes.
 
 Salida estrictamente en JSON:
 {
   "summary": "Resumen del negocio...",
+  "detectedCompanyName": "Nombre de la Empresa",
   "questions": [
     { 
       "id": "q1", 
@@ -182,7 +187,8 @@ Salida estrictamente en JSON:
   ]
 }`;
 
-    const userPrompt = `Sitio Web Content: "${textContent}"
+    const userPrompt = `Sitio Web URL: "${targetUrl}"
+Sitio Web Content: "${textContent}"
 Intención del Bot: ${intent} (e.g. Ventas, Soporte)
 
 Genera el JSON de análisis. Las preguntas y opciones deben ayudar a decidir el tono y comportamiento del bot.`;
@@ -227,38 +233,44 @@ export async function generateAgentPersonalities(
     webSummary: string,
     answers: { question: string, answer: string }[],
     intent: string,
-    agentName: string
+    agentName: string,
+    companyName?: string
 ): Promise<WizardPersonalityOption[]> {
 
+    const companyContext = companyName ? `La empresa es: ${companyName}.` : '';
+
     const systemPrompt = `Eres un arquitecto de Prompts para IA. 
-Tu tarea es diseñar 2 personalidades distintas para un Chatbot llamado "${agentName}" basado en las respuestas del usuario.
+Tu tarea es diseñar 2 personalidades distintas para un Chatbot llamado "${agentName}" ${companyContext}.
+Basado en las respuestas del usuario y la intención "${intent}".
+
+IMPORTANTE: Debes generar instrucciones de comportamiento "AFILADAS" y específicas para el rol.
+- Si es VENTAS: Debe presentarse, pedir nombre, identificar necesidad, vender beneficios y PEDIR EL CIERRE.
+- Si es SOPORTE: Debe diagnosticar, pedir detalles técnicos, guiar paso a paso y confirmar solución.
 
 Salida estrictamente en JSON (Array de 2 opciones).
-Para "systemPrompt": USA EL PLADEHOLDER "{AGENT_NAME}" para referirte al nombre del agente. NO digas "Eres un Chatbot", di "Eres {AGENT_NAME}...".
+Para "systemPrompt": USA EL PLADEHOLDER "{AGENT_NAME}" para referirte al nombre del agente.
 
 JSON Schema:
 [
   {
     "id": "A",
-    "name": "Nombre de la Personalidad (Ej: Consultor Experto)",
-    "description": "Descripción DETALLADA de 2-3 lineas sobre cómo se comportará, su tono, y cómo abordará al usuario.",
-    "systemPrompt": "El Prompt de Sistema COMPLETO...",
+    "name": "Nombre de la Personalidad",
+    "description": "Descripción DETALLADA...",
+    "systemPrompt": "Eres {AGENT_NAME}... (Incluye: Objetivo, Tone of Voice, INSTRUCCIONES DE COMPORTAMIENTO numeradas y 2 EJEMPLOS DE CONVERSACIÓN)",
     "temperature": 0.3,
-    "communicationStyle": "FORMAL" // Valores permitidos: FORMAL, CASUAL, NORMAL
+    "communicationStyle": "FORMAL"
   },
-  {
-    "id": "B", 
-     ...
-  }
+  ...
 ]`;
 
     const qaText = answers.map(a => `P: ${a.question}\nR: ${a.answer}`).join('\n');
     const userPrompt = `Contexto del Negocio: ${webSummary}
 Intención: ${intent}
+Nombre Empresa: ${companyName || 'No especificado'}
 Entrevista de Configuración:
 ${qaText}
 
-Genera 2 opciones contrastantes pero útiles para "${agentName}".`;
+Genera 2 opciones contrastantes. ASEGÚRATE de incluir "Instrucciones de Comportamiento" y "Ejemplos de Conversación" en el systemPrompt.`;
 
     const rawJson = await callLLM(systemPrompt, userPrompt);
     const cleanJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -296,7 +308,7 @@ export async function createAgentFromWizard(data: {
     name: string,
     intent: string,
     knowledge: {
-        type: 'WEB' | 'PDF' | 'TEXT';
+        type: 'WEB' | 'PDF' | 'TEXT' | 'TEMPLATE';
         source: string | File;
         personality?: WizardPersonalityOption;
         fileName?: string;
@@ -386,6 +398,7 @@ export async function createAgentFromWizard(data: {
         let sourceType: 'TEXT' | 'WEBSITE' | 'VIDEO' | 'DOCUMENT' = 'TEXT';
         if (data.knowledge.type === 'WEB') sourceType = 'WEBSITE';
         else if (data.knowledge.type === 'PDF') sourceType = 'DOCUMENT';
+        else if (data.knowledge.type === 'TEMPLATE') sourceType = 'TEXT'; // Templates are just text rules
         else sourceType = data.knowledge.type as any;
 
         let sourceData: any = {
@@ -402,6 +415,7 @@ export async function createAgentFromWizard(data: {
             sourceData.url = sourceUrl;
             sourceData.crawlSubpages = true;
         } else if (sourceType === 'TEXT') {
+            // If it's a template, we can add the prompt as "Behavioral Rules" in knowledge base too, or just some metadata
             sourceData.text = data.knowledge.source as string;
         } else if (sourceType === 'DOCUMENT') {
             sourceData.fileContent = data.knowledge.source as string;
