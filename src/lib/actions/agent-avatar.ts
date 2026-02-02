@@ -37,21 +37,49 @@ export async function generateAgentAvatar(agentId: string) {
         } else if (agent.jobType === 'SUPPORT') {
             prompt += `Patient, empathetic expression. Professional but comfortable clothing. `;
         } else {
-            prompt += `Professional appearance, neutral expression. `;
+            prompt += `Professional appearance, neutral expression. `
         }
 
-        prompt += `Taken with iPhone 15 Pro in Portrait Mode. Natural office lighting from window. Unposed, authentic moment captured during workday. Shallow depth of field (f/1.8), soft bokeh background. Visible skin texture, natural imperfections, real human features. Slight asymmetry in face. NOT a professional headshot, NOT studio lighting, NOT AI generated, NOT 3D render, NOT perfect skin. Documentary photography style, photojournalism aesthetic, candid street photography look.`;
+        // ULTRA-REALISTIC PHOTOGRAPHY PROMPT
+        prompt += `CRITICAL: This must be an actual photograph, NOT illustration, NOT digital art, NOT 3D render, NOT AI art style.
 
-        console.log(`[AvatarGen] Generating with prompt: ${prompt}`);
+PHOTOGRAPHY SPECIFICATIONS:
+- Shot on Canon EOS R5 with 85mm f/1.4 lens
+- Professional corporate headshot photography
+- Studio lighting with softbox and natural window light
+- Shallow depth of field (f/1.4), creamy bokeh background
+- Sharp focus on eyes, slight blur on background
+- RAW photo quality, high resolution
 
-        // 3. Call DALL-E 3
+REALISM REQUIREMENTS:
+- Real human skin with visible pores, texture, and natural imperfections
+- Natural facial asymmetry (no perfect symmetry)
+- Authentic eye reflections and catchlights
+- Real hair with individual strands visible
+- Natural skin tones with subtle color variations
+- Slight blemishes, freckles, or natural marks
+- Authentic depth and dimensionality
+
+AVOID AT ALL COSTS:
+- Cartoon style, anime style, illustration
+- 3D rendered look, CGI appearance
+- Overly smooth or airbrushed skin
+- Perfect symmetry or artificial features
+- Digital art aesthetic
+- Painting or drawing style
+
+STYLE: Professional LinkedIn headshot, corporate photography, business portrait. Photorealistic, authentic, natural. Think professional photographer hired for corporate headshots, not AI generation.`;
+
+        console.log(`[AvatarGen] Generating PHOTOREALISTIC avatar with enhanced prompt`);
+
+        // 3. Call DALL-E 3 with HD quality for maximum realism
         const response = await openai.images.generate({
             model: "dall-e-3",
             prompt: prompt,
             n: 1,
             size: "1024x1024",
-            response_format: "b64_json", // We get base64 directly to avoid strict URL download issues if any, but URL is also fine.
-            // DALL-E 3 standard quality
+            quality: "hd", // HD quality for better photorealism
+            response_format: "b64_json",
         });
 
         const imageBase64 = response.data?.[0]?.b64_json;
