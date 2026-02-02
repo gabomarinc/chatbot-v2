@@ -213,12 +213,12 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                     <p className="text-gray-500">Selecciona el estilo que mejor represente a tu agente</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+                <div className="flex flex-wrap justify-center gap-6 max-w-4xl mx-auto">
                     {personalityOptions.map((option) => (
                         <button
                             key={option.id}
                             onClick={() => handleSelectPersonality(option)}
-                            className="p-6 bg-white border-2 border-gray-100 rounded-2xl hover:border-[#21AC96] hover:shadow-lg transition-all text-left group"
+                            className="flex-1 min-w-[280px] max-w-[360px] p-6 bg-white border-2 border-gray-100 rounded-2xl hover:border-[#21AC96] hover:shadow-lg transition-all text-left group"
                         >
                             <h3 className="font-bold text-lg text-gray-900 group-hover:text-[#21AC96] transition-colors">
                                 {option.name}
@@ -234,13 +234,31 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
     // DONE STATE
     if (analysisState === 'DONE') {
         return (
-            <div className="flex flex-col items-center justify-center py-20 space-y-6 animate-in fade-in">
-                <div className="w-16 h-16 bg-[#21AC96]/10 rounded-full flex items-center justify-center">
-                    <Globe className="w-8 h-8 text-[#21AC96]" />
+            <div className="flex flex-col items-center justify-center py-20 space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                {/* Success Icon with Animation */}
+                <div className="relative">
+                    <div className="absolute inset-0 bg-[#21AC96]/20 rounded-full blur-2xl animate-pulse"></div>
+                    <div className="relative w-24 h-24 bg-gradient-to-br from-[#21AC96] to-[#1a8c78] rounded-full flex items-center justify-center shadow-2xl animate-in zoom-in duration-700">
+                        <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
                 </div>
-                <div className="text-center">
-                    <h3 className="text-xl font-bold text-gray-900">✅ Fuente principal configurada</h3>
-                    <p className="text-gray-500">Continúa para agregar plantillas y fuentes adicionales</p>
+
+                {/* Success Message */}
+                <div className="text-center space-y-3 max-w-md">
+                    <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+                        🎉 Fuente de Entrenamiento Principal Configurada
+                    </h3>
+                    <p className="text-gray-600 text-lg">
+                        Tu agente ya conoce tu negocio. Ahora agreguemos plantillas para perfeccionar su comportamiento.
+                    </p>
+                </div>
+
+                {/* Progress Indicator */}
+                <div className="flex items-center gap-2 bg-[#21AC96]/10 px-6 py-3 rounded-full">
+                    <div className="w-2 h-2 bg-[#21AC96] rounded-full animate-pulse"></div>
+                    <span className="text-sm font-semibold text-[#21AC96]">Paso 1 de 2 completado</span>
                 </div>
             </div>
         );

@@ -137,7 +137,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
 
             // Success
             toast.success('¡Agente configurado exitosamente!');
-            setStep(6); // Success Step
+            setStep(7); // Success Step (step 7, not 6)
             if (onAgentCreated) onAgentCreated();
         } catch (error: any) {
             console.error('Wizard finish error:', error);
