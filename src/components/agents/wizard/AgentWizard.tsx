@@ -56,11 +56,14 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
     const handleNext = async () => {
         if (step === 1 && !data.name) return toast.error('Escribe un nombre');
         if (step === 2 && !data.intent) return toast.error('Selecciona el propósito');
-        // Step 3 (Avatar) is optional, no validation needed
-        if (step === 4 && !data.knowledge) return toast.error('Configura el conocimiento');
+        if (step === 3 && !data.knowledge) return toast.error('Configura el conocimiento');
+        // Step 4 (Avatar) is optional, no validation needed
 
-        if (step === 4) {
-            // STEP 4 -> 5: CREATE AGENT
+        if (step === 3) {
+            // STEP 3 -> 4: After Knowledge, move to Avatar (no agent creation yet)
+            setStep(s => s + 1);
+        } else if (step === 4) {
+            // STEP 4 -> 5: CREATE AGENT (after Avatar)
             await handleCreateAgent();
         } else if (step < totalSteps) {
             setStep(s => s + 1);
@@ -149,13 +152,27 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 onEmojisChange={e => setData({ ...data, allowEmojis: e })}
             />;
             case 2: return <StepIntent intent={data.intent} onChange={i => setData({ ...data, intent: i })} />;
-            case 3: return <StepAvatar
-                name={data.name}
-                intent={data.intent}
-                avatarUrl={data.avatarUrl}
-                onChange={url => setData({ ...data, avatarUrl: url })}
-            />;
-            case 4: return <StepKnowledge intent={data.intent} name={data.name} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
+            case 3: return <StepKnowledge intent={data.intent} name={data.name} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
+            case 4: {
+                // Extract company name from knowledge if available
+                let companyName: string | undefined;
+                if (data.knowledge?.type === 'WEB' && typeof data.knowledge.source === 'string') {
+                    try {
+                        const url = data.knowledge.source.startsWith('http') ? data.knowledge.source : `https://${data.knowledge.source}`;
+                        const hostname = new URL(url).hostname.replace('www.', '');
+                        companyName = hostname.split('.')[0];
+                        companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
+                    } catch (e) { }
+                }
+
+                return <StepAvatar
+                    name={data.name}
+                    intent={data.intent}
+                    companyName={companyName}
+                    avatarUrl={data.avatarUrl}
+                    onChange={url => setData({ ...data, avatarUrl: url })}
+                />;
+            }
             case 5: return <StepChannels
                 channels={data.channels}
                 webConfig={data.webConfig}
@@ -253,8 +270,8 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
 
                         <Button
                             onClick={handleNext}
-                            disabled={isLoading || (step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 4 && !data.knowledge)}
-                            className={`rounded-full px-8 h-12 shadow-lg transition-all ${(step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 4 && !data.knowledge)
+                            disabled={isLoading || (step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.knowledge)}
+                            className={`rounded-full px-8 h-12 shadow-lg transition-all ${(step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.knowledge)
                                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' // Disabled style
                                 : 'bg-[#21AC96] hover:bg-[#21AC96]/90 hover:shadow-xl text-white'
                                 }`}

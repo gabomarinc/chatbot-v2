@@ -7,14 +7,15 @@ import { generatePreviewAvatar, uploadPreviewAvatar } from '@/lib/actions/agent-
 interface StepAvatarProps {
     name: string;
     intent: string;
+    companyName?: string;
     avatarUrl?: string | null;
     onChange: (url: string | null) => void;
 }
 
-export function StepAvatar({ name, intent, avatarUrl, onChange }: StepAvatarProps) {
+export function StepAvatar({ name, intent, companyName, avatarUrl, onChange }: StepAvatarProps) {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl || null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl ?? null);
 
     const handleGenerate = async () => {
         setIsGenerating(true);
@@ -22,7 +23,7 @@ export function StepAvatar({ name, intent, avatarUrl, onChange }: StepAvatarProp
             // We can try to extract company name from the previous step context if available, 
             // but for now we pass what we have. 
             // Ideally we'd pass companyName if known.
-            const result = await generatePreviewAvatar({ name, intent });
+            const result = await generatePreviewAvatar({ name, intent, companyName });
 
             if (result.success && result.url) {
                 setPreviewUrl(result.url);

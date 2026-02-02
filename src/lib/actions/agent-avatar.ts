@@ -25,24 +25,22 @@ export async function generateAgentAvatar(agentId: string) {
 
         const openai = new OpenAI({ apiKey });
 
-        let prompt = `A professional, high-quality, realistic profile picture of a ${agent.jobType === 'SALES' ? 'friendly sales representative' : agent.jobType === 'SUPPORT' ? 'helpful support specialist' : 'professional assistant'}. `;
+        let prompt = `Candid portrait photograph of a real ${agent.jobType === 'SALES' ? 'sales professional' : agent.jobType === 'SUPPORT' ? 'customer support specialist' : 'business professional'}. `;
 
         if (agent.jobCompany) {
-            prompt += `Named "${agent.name}", working for "${agent.jobCompany}". `;
-        } else {
-            prompt += `Named "${agent.name}". `;
+            prompt += `Working at ${agent.jobCompany}. `;
         }
 
-        // Add visual style details based on role
+        // Add role-specific context
         if (agent.jobType === 'SALES') {
-            prompt += `The person should look approachable, confident, wearing smart detailed business attire. Soft office lighting, blurred office background. `;
+            prompt += `Approachable, confident demeanor. Smart business casual attire. `;
         } else if (agent.jobType === 'SUPPORT') {
-            prompt += `The person should look emphatic, patient, wearing professional but comfortable clothes. Clean, bright, modern workspace background. `;
+            prompt += `Patient, empathetic expression. Professional but comfortable clothing. `;
         } else {
-            prompt += `Professional headshot, clear face, neutral background. `;
+            prompt += `Professional appearance, neutral expression. `;
         }
 
-        prompt += `Shot on Canon EOS 5D Mark IV, 85mm f/1.2 lens. Extremely detailed skin texture, pores, vellus hair. Natural lighting, slight imperfections, authentic look. Candid photography style, NOT AI generated look, NOT 3d render, NOT plastic skin. Raw photo.`;
+        prompt += `Taken with iPhone 15 Pro in Portrait Mode. Natural office lighting from window. Unposed, authentic moment captured during workday. Shallow depth of field (f/1.8), soft bokeh background. Visible skin texture, natural imperfections, real human features. Slight asymmetry in face. NOT a professional headshot, NOT studio lighting, NOT AI generated, NOT 3D render, NOT perfect skin. Documentary photography style, photojournalism aesthetic, candid street photography look.`;
 
         console.log(`[AvatarGen] Generating with prompt: ${prompt}`);
 
@@ -157,24 +155,22 @@ export async function generatePreviewAvatar(data: { name: string, intent: string
         if (!apiKey) throw new Error("OpenAI API Key not configured");
         const openai = new OpenAI({ apiKey });
 
-        let prompt = `A professional, high-quality, realistic profile picture of a ${jobType === 'SALES' ? 'friendly sales representative' : jobType === 'SUPPORT' ? 'helpful support specialist' : 'professional assistant'}. `;
+        let prompt = `Candid portrait photograph of a real ${jobType === 'SALES' ? 'sales professional' : jobType === 'SUPPORT' ? 'customer support specialist' : 'business professional'}. `;
 
         if (data.companyName) {
-            prompt += `Named "${data.name}", working for "${data.companyName}". `;
-        } else {
-            prompt += `Named "${data.name}". `;
+            prompt += `Working at ${data.companyName}. `;
         }
 
-        // Add visual style details based on role
+        // Add role-specific context
         if (jobType === 'SALES') {
-            prompt += `The person should look approachable, confident, wearing smart detailed business attire. Soft office lighting, blurred office background. `;
+            prompt += `Approachable, confident demeanor. Smart business casual attire. `;
         } else if (jobType === 'SUPPORT') {
-            prompt += `The person should look emphatic, patient, wearing professional but comfortable clothes. Clean, bright, modern workspace background. `;
+            prompt += `Patient, empathetic expression. Professional but comfortable clothing. `;
         } else {
-            prompt += `Professional headshot, clear face, neutral background. `;
+            prompt += `Professional appearance, neutral expression. `;
         }
 
-        prompt += `Shot on Canon EOS 5D Mark IV, 85mm f/1.2 lens. Extremely detailed skin texture, pores, vellus hair. Natural lighting, slight imperfections, authentic look. Candid photography style, NOT AI generated look, NOT 3d render, NOT plastic skin. Raw photo.`;
+        prompt += `Taken with iPhone 15 Pro in Portrait Mode. Natural office lighting from window. Unposed, authentic moment captured during workday. Shallow depth of field (f/1.8), soft bokeh background. Visible skin texture, natural imperfections, real human features. Slight asymmetry in face. NOT a professional headshot, NOT studio lighting, NOT AI generated, NOT 3D render, NOT perfect skin. Documentary photography style, photojournalism aesthetic, candid street photography look.`;
 
         console.log(`[AvatarPreview] Generating with prompt: ${prompt}`);
 
