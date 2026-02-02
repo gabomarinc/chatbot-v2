@@ -17,6 +17,7 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ a
                 name: agent.name,
                 communicationStyle: agent.communicationStyle,
                 personalityPrompt: agent.personalityPrompt,
+                avatarUrl: agent.avatarUrl,
             }}
         />
     );
