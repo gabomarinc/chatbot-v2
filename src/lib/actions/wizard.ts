@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { load } from 'cheerio'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
+import { AGENT_TEMPLATES } from '@/lib/agent-templates';
 
 // Interfaces
 export interface WizardAnalysisResult {
@@ -308,13 +309,16 @@ export async function createAgentFromWizard(data: {
     name: string,
     intent: string,
     avatarUrl?: string | null;
-    knowledge: {
-        type: 'WEB' | 'PDF' | 'TEXT' | 'TEMPLATE';
-        source: string | File;
+    primarySource: {
+        type: 'WEB';
+        source: string;
         personality?: WizardPersonalityOption;
-        fileName?: string;
         analysisSummary?: string;
-    },
+    };
+    additionalSources: {
+        templates: string[];
+        pdf?: File | null;
+    };
     channels: {
         web: boolean;
         whatsapp: boolean;
@@ -335,7 +339,7 @@ export async function createAgentFromWizard(data: {
 }) {
     try {
         // 1. Create Base Agent
-        const personality = data.knowledge.personality;
+        const personality = data.primarySource.personality;
         const { createAgent } = await import('./dashboard');
         const { addKnowledgeSource } = await import('./knowledge');
 
@@ -353,11 +357,11 @@ export async function createAgentFromWizard(data: {
         else if (rawStyle.includes('FORMAL') || rawStyle.includes('SERIO')) commStyle = 'FORMAL';
         else commStyle = 'NORMAL';
 
-        // Extract extra fields (Website, Company)
+        // Extract extra fields (Website, Company) from primarySource
         let jobWebsiteUrl: string | null = null;
         let jobCompany: string | null = null;
-        if (data.knowledge.type === 'WEB' && typeof data.knowledge.source === 'string') {
-            jobWebsiteUrl = data.knowledge.source;
+        if (data.primarySource.type === 'WEB' && typeof data.primarySource.source === 'string') {
+            jobWebsiteUrl = data.primarySource.source;
             try {
                 const urlObj = new URL(jobWebsiteUrl.startsWith('http') ? jobWebsiteUrl : `https://${jobWebsiteUrl}`);
                 const hostname = urlObj.hostname.replace('www.', '');
@@ -366,7 +370,7 @@ export async function createAgentFromWizard(data: {
             } catch (e) { }
         }
 
-        const jobDescription = data.knowledge.analysisSummary || `Agente de ${data.intent}`;
+        const jobDescription = data.primarySource.analysisSummary || `Agente de ${data.intent}`;
 
         // Determine default system prompt if not provided by personality generator
         let defaultPrompt = DEFAULT_PROMPTS.PERSONAL(data.name, jobCompany);
@@ -390,44 +394,64 @@ export async function createAgentFromWizard(data: {
             communicationStyle: commStyle,
             allowEmojis: data.allowEmojis ?? true,
             signMessages: false,
-            avatarUrl: data.avatarUrl // Include avatarUrl
+            avatarUrl: data.avatarUrl
         });
 
         if (!agent) throw new Error('Failed to create agent record');
 
-        // 2. Add Knowledge Source
-        // FIX: Map 'WEB' to 'WEBSITE' correctly
-        let sourceType: 'TEXT' | 'WEBSITE' | 'VIDEO' | 'DOCUMENT' = 'TEXT';
-        if (data.knowledge.type === 'WEB') sourceType = 'WEBSITE';
-        else if (data.knowledge.type === 'PDF') sourceType = 'DOCUMENT';
-        else if (data.knowledge.type === 'TEMPLATE') sourceType = 'TEXT'; // Templates are just text rules
-        else sourceType = data.knowledge.type as any;
+        // 2. Add Knowledge Sources (Primary + Additional)
 
-        let sourceData: any = {
-            type: sourceType,
-            updateInterval: 'NEVER',
-            crawlSubpages: false
-        };
-
-        if (sourceType === 'WEBSITE') {
-            // Ensure URL is string
-            const sourceUrl = typeof data.knowledge.source === 'string' ? data.knowledge.source : '';
-            if (!sourceUrl) console.warn("Website source URL is missing or invalid");
-
-            sourceData.url = sourceUrl;
-            sourceData.crawlSubpages = true;
-        } else if (sourceType === 'TEXT') {
-            // If it's a template, we can add the prompt as "Behavioral Rules" in knowledge base too, or just some metadata
-            sourceData.text = data.knowledge.source as string;
-        } else if (sourceType === 'DOCUMENT') {
-            sourceData.fileContent = data.knowledge.source as string;
-            sourceData.fileName = data.knowledge.fileName || 'documento.pdf';
+        // 2a. Add Primary Source (Web - always present)
+        try {
+            await addKnowledgeSource(agent.id, {
+                type: 'WEBSITE',
+                url: data.primarySource.source,
+                updateInterval: 'NEVER',
+                crawlSubpages: true
+            });
+        } catch (sourceError) {
+            console.error('Warning: Failed to add primary web source:', sourceError);
         }
 
-        try {
-            await addKnowledgeSource(agent.id, sourceData);
-        } catch (sourceError) {
-            console.error('Warning: Failed to add knowledge source during creation, but continuing:', sourceError);
+        // 2b. Add Templates (required - at least one)
+        for (const templateId of data.additionalSources.templates) {
+            const template = AGENT_TEMPLATES.find(t => t.id === templateId);
+            if (template) {
+                try {
+                    await addKnowledgeSource(agent.id, {
+                        type: 'TEXT',
+                        text: template.systemPrompt,
+                        updateInterval: 'NEVER',
+                        crawlSubpages: false
+                    });
+                } catch (err) {
+                    console.error(`Warning: Failed to add template ${templateId}:`, err);
+                }
+            }
+        }
+
+        // 2c. Add PDF (optional)
+        if (data.additionalSources.pdf) {
+            try {
+                const reader = new FileReader();
+                const base64Promise = new Promise<string>((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(data.additionalSources.pdf!);
+                });
+
+                const base64Content = await base64Promise;
+
+                await addKnowledgeSource(agent.id, {
+                    type: 'DOCUMENT',
+                    fileContent: base64Content,
+                    fileName: data.additionalSources.pdf.name,
+                    updateInterval: 'NEVER',
+                    crawlSubpages: false
+                });
+            } catch (pdfError) {
+                console.error('Warning: Failed to add PDF source:', pdfError);
+            }
         }
 
         // 3. Create Channels
@@ -480,13 +504,20 @@ export async function createAgentFromWizard(data: {
             }
         }
 
-        // 4. Return Full Agent with Channels
+        // 4. Return Agent ID and Web Channel ID
         const fullAgent = await prisma.agent.findUnique({
             where: { id: agent.id },
             include: { channels: true }
         });
 
-        return { success: true, data: fullAgent };
+        const webChannel = fullAgent?.channels.find(ch => ch.type === 'WEBCHAT');
+
+        return {
+            success: true,
+            agentId: agent.id,
+            webChannelId: webChannel?.id || null,
+            data: fullAgent
+        };
 
     } catch (e: any) {
         console.error('Error in wizard creation flow:', e);

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Wand2, Loader2 } from 'lucide-react';
+import { X, Loader2, Wand2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StepIdentity } from './steps/StepIdentity';
 import { StepIntent } from './steps/StepIntent';
-import { StepKnowledge } from './steps/StepKnowledge';
+import { StepPrimarySource } from './steps/StepPrimarySource';
+import { StepAdditionalSources } from './steps/StepAdditionalSources';
 import { StepChannels } from './steps/StepChannels';
 import { StepSuccess } from './steps/StepSuccess';
 import { StepAvatar } from './steps/StepAvatar';
@@ -27,8 +28,12 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
         name: '',
         intent: '',
         allowEmojis: true,
-        avatarUrl: null as string | null, // New field
-        knowledge: null as any,
+        primarySource: null as any,
+        additionalSources: {
+            templates: [] as string[],
+            pdf: null as File | null
+        },
+        avatarUrl: null as string | null,
         channels: {
             web: true,
             whatsapp: false,
@@ -51,24 +56,28 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
 
     if (!isOpen) return null;
 
-    const totalSteps = 5; // 6 is success, so 5 input steps
+    const totalSteps = 6; // 7 is success, so 6 input steps
 
     const handleNext = async () => {
         if (step === 1 && !data.name) return toast.error('Escribe un nombre');
         if (step === 2 && !data.intent) return toast.error('Selecciona el propósito');
-        if (step === 3 && !data.knowledge) return toast.error('Configura el conocimiento');
-        // Step 4 (Avatar) is optional, no validation needed
+        if (step === 3 && !data.primarySource) return toast.error('Analiza tu sitio web');
+        if (step === 4 && data.additionalSources.templates.length === 0) return toast.error('Selecciona al menos una plantilla');
+        // Step 5 (Avatar) is optional, no validation needed
 
         if (step === 3) {
-            // STEP 3 -> 4: After Knowledge, move to Avatar (no agent creation yet)
+            // STEP 3 -> 4: After Primary Source, move to Additional Sources
             setStep(s => s + 1);
         } else if (step === 4) {
-            // STEP 4 -> 5: CREATE AGENT (after Avatar)
+            // STEP 4 -> 5: After Additional Sources, move to Avatar
+            setStep(s => s + 1);
+        } else if (step === 5) {
+            // STEP 5 -> 6: CREATE AGENT (after Avatar)
             await handleCreateAgent();
         } else if (step < totalSteps) {
             setStep(s => s + 1);
         } else {
-            // FINISH (Step 5 -> 6)
+            // FINISH (Step 6 -> 7)
             await handleFinish();
         }
     };
@@ -83,9 +92,10 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             const wizardPayload = {
                 name: data.name,
                 intent: data.intent,
-                avatarUrl: data.avatarUrl, // Pass avatar URL
-                knowledge: data.knowledge,
-                channels: { // Default channels for creation
+                avatarUrl: data.avatarUrl,
+                primarySource: data.primarySource,
+                additionalSources: data.additionalSources,
+                channels: {
                     web: true,
                     whatsapp: false,
                     instagram: false,
@@ -98,22 +108,17 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
 
             const result = await createAgentFromWizard(wizardPayload);
 
-            if (result && (result as any).success === false) {
-                throw new Error((result as any).error || 'Error creando el agente');
+            if (result.success && result.agentId) {
+                setCreatedAgentId(result.agentId);
+                setWebChannelId(result.webChannelId || null);
+                toast.success('¡Agente creado!');
+                setStep(s => s + 1); // Move to Channels step
+            } else {
+                throw new Error(result.error || 'Error desconocido');
             }
-
-            const newAgentId = (result as any).data.id;
-            const channels = (result as any).data.channels || [];
-            const webChannel = channels.find((c: any) => c.type === 'WEBCHAT');
-            setCreatedAgentId(newAgentId);
-            if (webChannel) setWebChannelId(webChannel.id);
-
-            toast.success('Agente inicializado correctamente');
-            setStep(5); // Move to Channels Step
-
         } catch (error: any) {
-            console.error('Wizard create error:', error);
-            toast.error(`Error al iniciar el agente: ${error.message}`);
+            console.error('Error creating agent:', error);
+            toast.error(error.message || 'Error al crear el agente');
         } finally {
             setIsLoading(false);
         }
@@ -136,7 +141,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             if (onAgentCreated) onAgentCreated();
         } catch (error: any) {
             console.error('Wizard finish error:', error);
-            toast.error(`Error al finalizar configuración: ${error.message}`);
+            toast.error(`Error al finalizar configuración: ${error.message} `);
         } finally {
             setIsLoading(false);
         }
@@ -152,13 +157,14 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 onEmojisChange={e => setData({ ...data, allowEmojis: e })}
             />;
             case 2: return <StepIntent intent={data.intent} onChange={i => setData({ ...data, intent: i })} />;
-            case 3: return <StepKnowledge intent={data.intent} name={data.name} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
-            case 4: {
-                // Extract company name from knowledge if available
+            case 3: return <StepPrimarySource intent={data.intent} name={data.name} primarySource={data.primarySource} onChange={ps => setData({ ...data, primarySource: ps })} />;
+            case 4: return <StepAdditionalSources additionalSources={data.additionalSources} onChange={as => setData({ ...data, additionalSources: as })} />;
+            case 5: {
+                // Extract company name from primarySource if available
                 let companyName: string | undefined;
-                if (data.knowledge?.type === 'WEB' && typeof data.knowledge.source === 'string') {
+                if (data.primarySource?.type === 'WEB' && typeof data.primarySource.source === 'string') {
                     try {
-                        const url = data.knowledge.source.startsWith('http') ? data.knowledge.source : `https://${data.knowledge.source}`;
+                        const url = data.primarySource.source.startsWith('http') ? data.primarySource.source : `https://${data.primarySource.source}`;
                         const hostname = new URL(url).hostname.replace('www.', '');
                         companyName = hostname.split('.')[0];
                         companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
@@ -173,7 +179,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                     onChange={url => setData({ ...data, avatarUrl: url })}
                 />;
             }
-            case 5: return <StepChannels
+            case 6: return <StepChannels
                 channels={data.channels}
                 webConfig={data.webConfig}
                 whatsappConfig={data.whatsappConfig}
@@ -183,7 +189,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 onWebConfigChange={c => setData({ ...data, webConfig: c })}
                 onWhatsappConfigChange={c => setData({ ...data, whatsappConfig: c })}
             />;
-            case 6: return <StepSuccess onClose={onClose} />;
+            case 7: return <StepSuccess onClose={onClose} />;
             default: return null;
         }
     };
@@ -256,7 +262,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                     </div>
                 </div>
 
-                {/* Footer Navigation (only for steps 1-5) */}
+                {/* Footer Navigation (only for steps 1-6) */}
                 {step <= totalSteps && (
                     <div className="h-20 border-t border-gray-100 px-8 flex items-center justify-between bg-white flex-none">
                         <Button
@@ -268,17 +274,31 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                             <ChevronLeft className="w-4 h-4 mr-2" /> Atrás
                         </Button>
 
-                        <Button
-                            onClick={handleNext}
-                            disabled={isLoading || (step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.knowledge)}
-                            className={`rounded-full px-8 h-12 shadow-lg transition-all ${(step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.knowledge)
-                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' // Disabled style
-                                : 'bg-[#21AC96] hover:bg-[#21AC96]/90 hover:shadow-xl text-white'
-                                }`}
-                        >
-                            {isLoading ? 'Creando...' : step === totalSteps ? 'Finalizar y Crear' : 'Siguiente'}
-                            {!isLoading && step < totalSteps && <ChevronRight className="w-4 h-4 ml-2" />}
-                        </Button>
+                        <div className="flex items-center gap-3">
+                            {/* Show "Skip" option for Avatar step */}
+                            {step === 5 && !data.avatarUrl && (
+                                <Button
+                                    variant="ghost"
+                                    onClick={handleNext}
+                                    disabled={isLoading}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    Hacerlo más tarde
+                                </Button>
+                            )}
+
+                            <Button
+                                onClick={handleNext}
+                                disabled={isLoading || (step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.primarySource) || (step === 4 && data.additionalSources.templates.length === 0)}
+                                className={`rounded-full px-8 h-12 shadow-lg transition-all ${(step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.primarySource) || (step === 4 && data.additionalSources.templates.length === 0)
+                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                    : 'bg-[#21AC96] hover:bg-[#21AC96]/90 hover:shadow-xl text-white'
+                                    }`}
+                            >
+                                {isLoading ? 'Creando...' : step === totalSteps ? 'Finalizar y Crear' : step === 5 && data.avatarUrl ? 'Continuar' : 'Siguiente'}
+                                {!isLoading && step < totalSteps && <ChevronRight className="w-4 h-4 ml-2" />}
+                            </Button>
+                        </div>
                     </div>
                 )}
             </div>
