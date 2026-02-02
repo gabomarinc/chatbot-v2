@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import OpenAI from 'openai';
 import { uploadFileToR2 } from '@/lib/r2';
 import { getUserWorkspace } from './dashboard';
+import { revalidatePath } from 'next/cache';
 
 export async function generateAgentAvatar(agentId: string) {
     try {
@@ -93,6 +94,9 @@ export async function generateAgentAvatar(agentId: string) {
             })
         ]);
 
+        revalidatePath(`/agents/${agent.id}`);
+        revalidatePath(`/agents/${agent.id}/settings`);
+
         return { success: true, url: avatarUrl };
 
     } catch (error: any) {
@@ -126,6 +130,9 @@ export async function uploadAgentAvatar(agentId: string, formData: FormData) {
             where: { id: agent.id },
             data: { avatarUrl }
         });
+
+        revalidatePath(`/agents/${agent.id}`);
+        revalidatePath(`/agents/${agent.id}/settings`);
 
         return { success: true, url: avatarUrl };
     } catch (error: any) {
