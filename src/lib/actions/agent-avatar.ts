@@ -35,14 +35,14 @@ export async function generateAgentAvatar(agentId: string) {
 
         // Add visual style details based on role
         if (agent.jobType === 'SALES') {
-            prompt += `The person should look approachable, confident, wearing smart casual business attire. Warm lighting, neutral modern background. `;
+            prompt += `The person should look approachable, confident, wearing smart detailed business attire. Soft office lighting, blurred office background. `;
         } else if (agent.jobType === 'SUPPORT') {
-            prompt += `The person should look patient, tech-savvy, wearing a headset or professional attire. Clean, bright background. `;
+            prompt += `The person should look emphatic, patient, wearing professional but comfortable clothes. Clean, bright, modern workspace background. `;
         } else {
-            prompt += `Professional studio headshot, clear face, neutral background. `;
+            prompt += `Professional headshot, clear face, neutral background. `;
         }
 
-        prompt += `Hyper-realistic, 8k resolution, raw photo style, shot on 85mm lens, sharp focus on eyes, soft skin texture. NOT illustration, NOT 3d render, NOT cartoon. Cinematic lighting.`;
+        prompt += `Shot on Canon EOS 5D Mark IV, 85mm f/1.2 lens. Extremely detailed skin texture, pores, vellus hair. Natural lighting, slight imperfections, authentic look. Candid photography style, NOT AI generated look, NOT 3d render, NOT plastic skin. Raw photo.`;
 
         console.log(`[AvatarGen] Generating with prompt: ${prompt}`);
 

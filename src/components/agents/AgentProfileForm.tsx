@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { updateAgent } from '@/lib/actions/dashboard';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, Bot, Sparkles, Wand2, Upload } from 'lucide-react';
@@ -30,6 +30,17 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
     });
     const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+
+    // Sync state with server/prop changes
+    useEffect(() => {
+        setFormData(prev => ({
+            ...prev,
+            name: agent.name,
+            communicationStyle: agent.communicationStyle,
+            personalityPrompt: agent.personalityPrompt,
+            avatarUrl: agent.avatarUrl
+        }));
+    }, [agent]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
