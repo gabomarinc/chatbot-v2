@@ -99,7 +99,7 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
         try {
             const genAI = new GoogleGenerativeAI(googleKey);
             const model = genAI.getGenerativeModel({
-                model: "gemini-pro",
+                model: "gemini-2.0-flash-exp", // Faster model for personality generation
                 // Force JSON if possible via prompt, specific models support response_schema but flash works well with instruction
             });
 
@@ -244,24 +244,22 @@ export async function generateAgentPersonalities(
 Tu tarea es diseñar 2 personalidades distintas para un Chatbot llamado "${agentName}" ${companyContext}.
 Basado en las respuestas del usuario y la intención "${intent}".
 
-IMPORTANTE: Debes generar instrucciones de comportamiento "AFILADAS" y específicas para el rol.
-- Si es VENTAS: Debe presentarse, pedir nombre, identificar necesidad, vender beneficios y PEDIR EL CIERRE.
-- Si es SOPORTE: Debe diagnosticar, pedir detalles técnicos, guiar paso a paso y confirmar solución.
+IMPORTANTE: Genera instrucciones de comportamiento específicas y accionables.
+- VENTAS: Presentarse, pedir nombre, identificar necesidad, vender beneficios y PEDIR EL CIERRE.
+- SOPORTE: Diagnosticar, pedir detalles técnicos, guiar paso a paso y confirmar solución.
 
-Salida estrictamente en JSON (Array de 2 opciones).
-Para "systemPrompt": USA EL PLADEHOLDER "{AGENT_NAME}" para referirte al nombre del agente.
+Salida en JSON (Array de 2 opciones). USA "{AGENT_NAME}" como placeholder para el nombre.
 
 JSON Schema:
 [
   {
     "id": "A",
-    "name": "Nombre de la Personalidad",
-    "description": "Descripción DETALLADA...",
-    "systemPrompt": "Eres {AGENT_NAME}... (Incluye: Objetivo, Tone of Voice, INSTRUCCIONES DE COMPORTAMIENTO numeradas y 2 EJEMPLOS DE CONVERSACIÓN)",
+    "name": "Nombre Personalidad",
+    "description": "Descripción breve",
+    "systemPrompt": "Eres {AGENT_NAME}... (Objetivo, Tono, Instrucciones numeradas, 1 ejemplo)",
     "temperature": 0.3,
     "communicationStyle": "FORMAL"
-  },
-  ...
+  }
 ]`;
 
     const qaText = answers.map(a => `P: ${a.question}\nR: ${a.answer}`).join('\n');
@@ -382,13 +380,18 @@ export async function createAgentFromWizard(data: {
             defaultPrompt = DEFAULT_PROMPTS.SERVICE(data.name, jobCompany);
         }
 
+        // Replace {AGENT_NAME} placeholder with actual agent name
+        const personalityPrompt = personality?.systemPrompt
+            ? personality.systemPrompt.replace(/{AGENT_NAME}/g, data.name)
+            : defaultPrompt.replace(/{AGENT_NAME}/g, data.name);
+
         const agent = await createAgent({
             name: data.name,
             jobDescription: jobDescription,
             jobCompany: jobCompany,
             jobWebsiteUrl: jobWebsiteUrl,
             model: 'gemini-1.5-flash',
-            personalityPrompt: personality?.systemPrompt || defaultPrompt,
+            personalityPrompt: personalityPrompt,
             jobType: jobType,
             temperature: personality?.temperature || 0.7,
             communicationStyle: commStyle,
