@@ -240,27 +240,45 @@ export async function generateAgentPersonalities(
 
     const companyContext = companyName ? `La empresa es: ${companyName}.` : '';
 
-    const systemPrompt = `Eres un arquitecto de Prompts para IA. 
-Tu tarea es diseñar 2 personalidades distintas para un Chatbot llamado "${agentName}" ${companyContext}.
+    const systemPrompt = `Eres un arquitecto experto de Prompts para IA conversacional. 
+Tu tarea es diseñar 2 personalidades COMPLETAS Y DETALLADAS para un Chatbot llamado "${agentName}" ${companyContext}.
 Basado en las respuestas del usuario y la intención "${intent}".
 
-IMPORTANTE: Genera instrucciones de comportamiento específicas y accionables.
-- VENTAS: Presentarse, pedir nombre, identificar necesidad, vender beneficios y PEDIR EL CIERRE.
-- SOPORTE: Diagnosticar, pedir detalles técnicos, guiar paso a paso y confirmar solución.
+REQUISITOS CRÍTICOS:
+1. Cada systemPrompt debe tener MÍNIMO 800 palabras
+2. Incluir 5-8 instrucciones de comportamiento específicas y numeradas
+3. Incluir 2 ejemplos COMPLETOS de conversación (mínimo 6 intercambios cada uno)
+4. Definir tono de voz, estilo de comunicación y manejo de objeciones
 
-Salida en JSON (Array de 2 opciones). USA "{AGENT_NAME}" como placeholder para el nombre.
+DIRECTRICES POR TIPO:
+- VENTAS: Debe presentarse, construir rapport, identificar necesidad, presentar solución con beneficios, manejar objeciones y PEDIR EL CIERRE de forma natural
+- SOPORTE: Debe saludar profesionalmente, diagnosticar con preguntas técnicas, guiar paso a paso, confirmar solución y ofrecer ayuda adicional
+- SERVICIO: Debe ser empático, resolver dudas rápidamente, anticipar necesidades y escalar cuando sea necesario
 
-JSON Schema:
+IMPORTANTE: USA "{AGENT_NAME}" como placeholder para el nombre del agente en el systemPrompt.
+
+Salida ESTRICTAMENTE en JSON (Array de 2 opciones contrastantes):
+
 [
   {
     "id": "A",
-    "name": "Nombre Personalidad",
-    "description": "Descripción breve",
-    "systemPrompt": "Eres {AGENT_NAME}... (Objetivo, Tono, Instrucciones numeradas, 1 ejemplo)",
+    "name": "Nombre descriptivo de la personalidad",
+    "description": "Descripción detallada de 2-3 líneas explicando el enfoque y cuándo usar esta personalidad",
+    "systemPrompt": "Eres {AGENT_NAME}, [ROL COMPLETO]...\n\nOBJETIVO:\n[Objetivo específico]\n\nTONO DE VOZ:\n[Descripción del tono]\n\nINSTRUCCIONES DE COMPORTAMIENTO:\n1. [Instrucción detallada]\n2. [Instrucción detallada]\n3. [Instrucción detallada]\n4. [Instrucción detallada]\n5. [Instrucción detallada]\n\nMANEJO DE OBJECIONES:\n[Cómo manejar objeciones]\n\nEJEMPLO DE CONVERSACIÓN 1:\nUsuario: [mensaje]\n{AGENT_NAME}: [respuesta completa]\nUsuario: [mensaje]\n{AGENT_NAME}: [respuesta completa]\n[... mínimo 6 intercambios]\n\nEJEMPLO DE CONVERSACIÓN 2:\n[Similar estructura, escenario diferente]",
     "temperature": 0.3,
     "communicationStyle": "FORMAL"
+  },
+  {
+    "id": "B",
+    "name": "...",
+    "description": "...",
+    "systemPrompt": "...",
+    "temperature": 0.7,
+    "communicationStyle": "CASUAL"
   }
-]`;
+]
+
+CRÍTICO: El systemPrompt debe ser EXTENSO y DETALLADO. No escatimes en ejemplos ni instrucciones.`;
 
     const qaText = answers.map(a => `P: ${a.question}\nR: ${a.answer}`).join('\n');
     const userPrompt = `Contexto del Negocio: ${webSummary}
@@ -269,7 +287,16 @@ Nombre Empresa: ${companyName || 'No especificado'}
 Entrevista de Configuración:
 ${qaText}
 
-Genera 2 opciones contrastantes. ASEGÚRATE de incluir "Instrucciones de Comportamiento" y "Ejemplos de Conversación" en el systemPrompt.`;
+GENERA 2 PERSONALIDADES COMPLETAS Y CONTRASTANTES.
+
+REQUISITOS:
+- Cada systemPrompt debe tener MÍNIMO 800 palabras
+- Incluir 5-8 instrucciones de comportamiento numeradas y específicas
+- Incluir 2 ejemplos COMPLETOS de conversación (mínimo 6 intercambios cada uno)
+- Definir claramente: Objetivo, Tono de Voz, Manejo de Objeciones
+- Las 2 opciones deben ser DIFERENTES en enfoque (ej: una formal/directa, otra casual/consultiva)
+
+NO ESCATIMES EN DETALLES. Cuanto más completo el prompt, mejor funcionará el agente.`;
 
     const rawJson = await callLLM(systemPrompt, userPrompt);
     const cleanJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
