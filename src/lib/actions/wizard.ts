@@ -266,7 +266,7 @@ Salida ESTRICTAMENTE en JSON (Array de 2 opciones contrastantes):
     "description": "Descripción detallada de 2-3 líneas explicando el enfoque y cuándo usar esta personalidad",
     "systemPrompt": "Eres {AGENT_NAME}, [ROL COMPLETO]...\n\nOBJETIVO:\n[Objetivo específico]\n\nTONO DE VOZ:\n[Descripción del tono]\n\nINSTRUCCIONES DE COMPORTAMIENTO:\n1. [Instrucción detallada]\n2. [Instrucción detallada]\n3. [Instrucción detallada]\n4. [Instrucción detallada]\n5. [Instrucción detallada]\n\nMANEJO DE OBJECIONES:\n[Cómo manejar objeciones]\n\nEJEMPLO DE CONVERSACIÓN 1:\nUsuario: [mensaje]\n{AGENT_NAME}: [respuesta completa]\nUsuario: [mensaje]\n{AGENT_NAME}: [respuesta completa]\n[... mínimo 6 intercambios]\n\nEJEMPLO DE CONVERSACIÓN 2:\n[Similar estructura, escenario diferente]",
     "temperature": 0.3,
-    "communicationStyle": "FORMAL"
+    "communicationStyle": "NORMAL"
   },
   {
     "id": "B",
@@ -274,7 +274,7 @@ Salida ESTRICTAMENTE en JSON (Array de 2 opciones contrastantes):
     "description": "...",
     "systemPrompt": "...",
     "temperature": 0.7,
-    "communicationStyle": "CASUAL"
+    "communicationStyle": "NORMAL"
   }
 ]
 

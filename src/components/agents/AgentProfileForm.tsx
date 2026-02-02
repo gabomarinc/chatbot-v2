@@ -139,7 +139,12 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                 <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                     <div className="relative w-20 h-20 bg-white rounded-full flex items-center justify-center border-2 border-dashed border-gray-200 overflow-hidden shrink-0">
                         {formData.avatarUrl ? (
-                            <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                            <img
+                                src={`${formData.avatarUrl}?t=${Date.now()}`}
+                                alt="Avatar"
+                                className="w-full h-full object-cover"
+                                key={formData.avatarUrl}
+                            />
                         ) : (
                             <Bot className="w-8 h-8 text-gray-300" />
                         )}
