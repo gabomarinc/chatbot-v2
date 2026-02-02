@@ -480,6 +480,8 @@ export async function updateAgent(agentId: string, data: any) {
     })
 
     revalidatePath(`/agents/${agentId}`)
+    revalidatePath(`/agents/${agentId}/settings`)
+    revalidatePath(`/agents/${agentId}/profile`)
     revalidatePath('/agents')
     return agent
 }

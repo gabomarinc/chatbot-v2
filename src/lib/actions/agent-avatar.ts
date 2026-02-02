@@ -96,6 +96,7 @@ export async function generateAgentAvatar(agentId: string) {
 
         revalidatePath(`/agents/${agent.id}`);
         revalidatePath(`/agents/${agent.id}/settings`);
+        revalidatePath(`/agents/${agent.id}/profile`);
 
         return { success: true, url: avatarUrl };
 
@@ -133,6 +134,7 @@ export async function uploadAgentAvatar(agentId: string, formData: FormData) {
 
         revalidatePath(`/agents/${agent.id}`);
         revalidatePath(`/agents/${agent.id}/settings`);
+        revalidatePath(`/agents/${agent.id}/profile`);
 
         return { success: true, url: avatarUrl };
     } catch (error: any) {
