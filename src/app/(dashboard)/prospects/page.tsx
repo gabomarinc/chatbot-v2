@@ -1,16 +1,28 @@
 import { SegmentBuilder } from '@/components/contacts/SegmentBuilder';
 import { prisma } from '@/lib/prisma';
+import { getUserWorkspace } from '@/lib/actions/dashboard';
 import { redirect } from 'next/navigation';
 
 export default async function ProspectsBuilderPage() {
-    // Determine the active workspace.
-    // In a real app, this would come from the user's session or selected workspace context.
-    // For this implementation, we will fetch the first available workspace to ensure functionality.
-    const workspace = await prisma.workspace.findFirst({
+    // Get the current user's active workspace
+    const userWorkspace = await getUserWorkspace();
+
+    if (!userWorkspace) {
+        return (
+            <div className="flex h-full items-center justify-center p-10">
+                <div className="text-center">
+                    <h2 className="text-xl font-bold text-gray-900">No se encontró un espacio de trabajo</h2>
+                    <p className="text-gray-500">Por favor, crea un espacio de trabajo primero.</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Now fetch the full workspace data including agents and their custom fields
+    // We use findUnique because we have the ID from getUserWorkspace
+    const workspace = await prisma.workspace.findUnique({
         where: {
-            agents: {
-                some: {} // Ensure we pick a workspace that actually has agents
-            }
+            id: userWorkspace.id
         },
         include: {
             agents: {
@@ -25,8 +37,8 @@ export default async function ProspectsBuilderPage() {
         return (
             <div className="flex h-full items-center justify-center p-10">
                 <div className="text-center">
-                    <h2 className="text-xl font-bold text-gray-900">No se encontró un espacio de trabajo</h2>
-                    <p className="text-gray-500">Por favor, crea un espacio de trabajo primero.</p>
+                    <h2 className="text-xl font-bold text-gray-900">Error al cargar datos</h2>
+                    <p className="text-gray-500">No se pudo recuperar la información del espacio de trabajo.</p>
                 </div>
             </div>
         );

@@ -24,6 +24,53 @@ export interface WizardPersonalityOption {
     communicationStyle: 'FORMAL' | 'CASUAL' | 'NORMAL';
 }
 
+const DEFAULT_PROMPTS = {
+    SALES: (name: string, company: string | null) => {
+        const companyIntro = company ? ` de ${company}` : '';
+        return `Eres ${name}, un experto asistente de ventas${companyIntro}.
+Tu objetivo es captar clientes, entender sus necesidades y persuadirlos para cerrar ventas o conseguir sus datos.
+
+Instrucciones de Comportamiento:
+1. PRESÉNTATE SIEMPRE al inicio: "Hola, soy ${name}${companyIntro}..."
+2. PREGUNTA EL NOMBRE del usuario en el primer turno para personalizar la charla.
+3. IDENTIFICA LA NECESIDAD: Pregunta qué está buscando o en qué producto tiene interés.
+4. DESTACA BENEFICIOS: No solo des características, explica cómo ${company || 'nuestra empresa'} resuelve su problema.
+5. CIERRA LA VENTA: Si hay interés, pide el email/teléfono o invita a agendar una reunión. Sé proactivo.`;
+    },
+
+    SUPPORT: (name: string, company: string | null) => {
+        const companyIntro = company ? ` de ${company}` : '';
+        return `Eres ${name}, especialista de soporte técnico${companyIntro}.
+Tu objetivo es resolver problemas técnicos de manera eficiente y empática.
+
+Instrucciones de Comportamiento:
+1. PRESÉNTATE: "Hola, soy ${name}${companyIntro}, ¿en qué puedo ayudarte hoy?"
+2. DIAGNOSTICA: Pregunta "¿Qué problema estás experimentando?" o "¿Te aparece algún mensaje de error?".
+3. PIDE DETALLES: Solicita capturas, versiones o pasos que realizó el usuario.
+4. GUÍA PASO A PASO: Da instrucciones claras y numeradas.
+5. VERIFICA: Al final, pregunta "¿Se ha solucionado el problema?" antes de despedirte.`;
+    },
+
+    SERVICE: (name: string, company: string | null) => {
+        const companyIntro = company ? ` de ${company}` : '';
+        return `Eres ${name}, asistente de atención al cliente${companyIntro}.
+Tu objetivo es resolver dudas generales y brindar una excelente experiencia.
+
+Instrucciones de Comportamiento:
+1. PRESÉNTATE amablemente: "Soy ${name}${companyIntro}".
+2. RESPONDE DIRECTO: Si preguntan horarios o ubicación, da la información exacta.
+3. ANTICÍPATE: Si preguntan por envíos, menciona también los tiempos de entrega.
+4. SÉ AMABLE: Usa emojis si aplica y mantén un tono servicial.
+5. ESCALA SI ES NECESARIO: Si no sabes algo, ofrece conectar con un humano.`;
+    },
+
+    PERSONAL: (name: string, company: string | null) => {
+        const companyIntro = company ? ` de ${company}` : '';
+        return `Eres ${name}, asistente virtual profesional${companyIntro}.
+Tu objetivo es asistir al usuario con la información de tu base de conocimientos.
+Responde de manera precisa y útil.`;
+    }
+};
 
 async function getApiKeys() {
     let openaiKey = process.env.OPENAI_API_KEY;
@@ -308,13 +355,23 @@ export async function createAgentFromWizard(data: {
 
         const jobDescription = data.knowledge.analysisSummary || `Agente de ${data.intent}`;
 
+        // Determine default system prompt if not provided by personality generator
+        let defaultPrompt = DEFAULT_PROMPTS.PERSONAL(data.name, jobCompany);
+        if (jobType === 'SALES') defaultPrompt = DEFAULT_PROMPTS.SALES(data.name, jobCompany);
+        else if (jobType === 'SUPPORT') defaultPrompt = DEFAULT_PROMPTS.SUPPORT(data.name, jobCompany);
+
+        // Check for 'SERVICE' intent explicitly
+        if (normalizedIntent.includes('ATENCIÓN') || normalizedIntent.includes('SERVICE')) {
+            defaultPrompt = DEFAULT_PROMPTS.SERVICE(data.name, jobCompany);
+        }
+
         const agent = await createAgent({
             name: data.name,
             jobDescription: jobDescription,
             jobCompany: jobCompany,
             jobWebsiteUrl: jobWebsiteUrl,
             model: 'gemini-1.5-flash',
-            personalityPrompt: personality?.systemPrompt || `Eres ${data.name}, un asistente útil.`,
+            personalityPrompt: personality?.systemPrompt || defaultPrompt,
             jobType: jobType,
             temperature: personality?.temperature || 0.7,
             communicationStyle: commStyle,
