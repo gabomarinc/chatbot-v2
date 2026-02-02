@@ -138,16 +138,23 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                 {/* Avatar Section */}
                 <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                     <div className="relative w-20 h-20 bg-white rounded-full flex items-center justify-center border-2 border-dashed border-gray-200 overflow-hidden shrink-0">
-                        {formData.avatarUrl ? (
-                            <img
-                                src={`${formData.avatarUrl}?t=${Date.now()}`}
-                                alt="Avatar"
-                                className="w-full h-full object-cover"
-                                key={formData.avatarUrl}
-                            />
-                        ) : (
-                            <Bot className="w-8 h-8 text-gray-300" />
-                        )}
+                        {(() => {
+                            console.log('[AgentProfileForm] Avatar URL:', formData.avatarUrl);
+                            return formData.avatarUrl ? (
+                                <img
+                                    src={`${formData.avatarUrl}?t=${Date.now()}`}
+                                    alt="Avatar"
+                                    className="w-full h-full object-cover"
+                                    key={formData.avatarUrl}
+                                    onError={(e) => {
+                                        console.error('[AgentProfileForm] Avatar load error:', e);
+                                        console.error('[AgentProfileForm] Failed URL:', formData.avatarUrl);
+                                    }}
+                                />
+                            ) : (
+                                <Bot className="w-8 h-8 text-gray-300" />
+                            );
+                        })()}
                     </div>
                     <div>
                         <h3 className="text-sm font-extrabold text-gray-700 uppercase tracking-wider mb-1">Foto de Perfil</h3>
@@ -207,7 +214,7 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                     <div className="flex items-center justify-between ml-1">
                         <label className="text-sm font-extrabold text-gray-700 uppercase tracking-wider">Prompt de Comportamiento</label>
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                            {formData.personalityPrompt.length} / 2000
+                            {formData.personalityPrompt.length} / 3000
                         </span>
                     </div>
                     <div className="relative">
