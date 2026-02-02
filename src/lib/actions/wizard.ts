@@ -245,10 +245,12 @@ Tu tarea es diseñar 2 personalidades COMPLETAS Y DETALLADAS para un Chatbot lla
 Basado en las respuestas del usuario y la intención "${intent}".
 
 REQUISITOS CRÍTICOS:
-1. Cada systemPrompt debe tener entre 1500-2000 palabras (MÍNIMO 1500)
-2. Incluir 6-10 instrucciones de comportamiento específicas y numeradas
-3. Incluir 2-3 ejemplos COMPLETOS de conversación (mínimo 8 intercambios cada uno)
-4. Definir tono de voz, estilo de comunicación, manejo de objeciones y casos edge
+1. Cada systemPrompt debe tener entre 2000-2500 CARACTERES (NO palabras - CARACTERES)
+2. Incluir 5-7 instrucciones de comportamiento específicas y numeradas
+3. Incluir 2 ejemplos COMPLETOS de conversación (mínimo 6 intercambios cada uno)
+4. Definir tono de voz, estilo de comunicación y manejo de objeciones
+
+IMPORTANTE: El límite MÁXIMO es 3000 caracteres. Sé conciso pero completo.
 
 DIRECTRICES POR TIPO:
 - VENTAS: Debe presentarse, construir rapport, identificar necesidad, presentar solución con beneficios, manejar objeciones y PEDIR EL CIERRE de forma natural
@@ -264,7 +266,7 @@ Salida ESTRICTAMENTE en JSON (Array de 2 opciones contrastantes):
     "id": "A",
     "name": "Nombre descriptivo de la personalidad",
     "description": "Descripción detallada de 2-3 líneas explicando el enfoque y cuándo usar esta personalidad",
-    "systemPrompt": "Eres {AGENT_NAME}, [ROL COMPLETO]...\n\nOBJETIVO:\n[Objetivo específico y detallado]\n\nTONO DE VOZ:\n[Descripción completa del tono]\n\nINSTRUCCIONES DE COMPORTAMIENTO:\n1. [Instrucción muy detallada]\n2. [Instrucción muy detallada]\n3. [Instrucción muy detallada]\n4. [Instrucción muy detallada]\n5. [Instrucción muy detallada]\n6. [Instrucción muy detallada]\n\nMANEJO DE OBJECIONES:\n[Cómo manejar objeciones con ejemplos]\n\nCASOS ESPECIALES:\n[Situaciones edge y cómo manejarlas]\n\nEJEMPLO DE CONVERSACIÓN 1:\nUsuario: [mensaje]\n{AGENT_NAME}: [respuesta completa y detallada]\nUsuario: [mensaje]\n{AGENT_NAME}: [respuesta completa]\n[... mínimo 8 intercambios]\n\nEJEMPLO DE CONVERSACIÓN 2:\n[Similar estructura, escenario diferente]\n\nEJEMPLO DE CONVERSACIÓN 3:\n[Escenario con objeción o caso complejo]",
+    "systemPrompt": "Eres {AGENT_NAME}, [ROL COMPLETO]...\n\nOBJETIVO:\n[Objetivo específico]\n\nTONO DE VOZ:\n[Descripción del tono]\n\nINSTRUCCIONES DE COMPORTAMIENTO:\n1. [Instrucción detallada]\n2. [Instrucción detallada]\n3. [Instrucción detallada]\n4. [Instrucción detallada]\n5. [Instrucción detallada]\n\nMANEJO DE OBJECIONES:\n[Cómo manejar objeciones]\n\nEJEMPLO DE CONVERSACIÓN 1:\nUsuario: [mensaje]\n{AGENT_NAME}: [respuesta completa]\nUsuario: [mensaje]\n{AGENT_NAME}: [respuesta completa]\n[... 6 intercambios]\n\nEJEMPLO DE CONVERSACIÓN 2:\n[Similar estructura, escenario diferente]",
     "temperature": 0.3,
     "communicationStyle": "NORMAL"
   },
@@ -278,7 +280,7 @@ Salida ESTRICTAMENTE en JSON (Array de 2 opciones contrastantes):
   }
 ]
 
-CRÍTICO: El systemPrompt debe ser MUY EXTENSO Y DETALLADO (1500-2000 palabras). No escatimes en ejemplos ni instrucciones.`;
+CRÍTICO: El systemPrompt debe tener 2000-2500 CARACTERES. NO exceder 2800 caracteres para dejar margen.`;
 
     const qaText = answers.map(a => `P: ${a.question}\nR: ${a.answer}`).join('\n');
     const userPrompt = `Contexto del Negocio: ${webSummary}
@@ -289,15 +291,15 @@ ${qaText}
 
 GENERA 2 PERSONALIDADES COMPLETAS Y CONTRASTANTES.
 
-REQUISITOS:
-- Cada systemPrompt debe tener entre 1500-2000 palabras (MÍNIMO 1500 palabras)
-- Incluir 6-10 instrucciones de comportamiento numeradas y muy específicas
-- Incluir 2-3 ejemplos COMPLETOS de conversación (mínimo 8 intercambios cada uno)
-- Incluir sección de "CASOS ESPECIALES" para situaciones edge
+REQUISITOS ESTRICTOS:
+- Cada systemPrompt debe tener entre 2000-2500 CARACTERES (NO palabras)
+- MÁXIMO ABSOLUTO: 2800 caracteres por systemPrompt
+- Incluir 5-7 instrucciones de comportamiento numeradas y específicas
+- Incluir 2 ejemplos COMPLETOS de conversación (6 intercambios cada uno)
 - Definir claramente: Objetivo, Tono de Voz, Manejo de Objeciones
 - Las 2 opciones deben ser DIFERENTES en enfoque (ej: una formal/directa, otra casual/consultiva)
 
-NO ESCATIMES EN DETALLES. Cuanto más completo y extenso el prompt (1500-2000 palabras), mejor funcionará el agente.`;
+SÉ COMPLETO PERO CONCISO. El límite de 3000 caracteres es ESTRICTO.`;
 
     const rawJson = await callLLM(systemPrompt, userPrompt);
     const cleanJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -409,9 +411,16 @@ export async function createAgentFromWizard(data: {
         }
 
         // Replace {AGENT_NAME} placeholder with actual agent name
-        const personalityPrompt = personality?.systemPrompt
+        let personalityPrompt = personality?.systemPrompt
             ? personality.systemPrompt.replace(/{AGENT_NAME}/g, data.name)
             : defaultPrompt.replace(/{AGENT_NAME}/g, data.name);
+
+        // CRITICAL: Enforce 3000 character limit
+        const MAX_PROMPT_LENGTH = 3000;
+        if (personalityPrompt.length > MAX_PROMPT_LENGTH) {
+            console.warn(`[Wizard] Personality prompt too long (${personalityPrompt.length} chars), truncating to ${MAX_PROMPT_LENGTH}`);
+            personalityPrompt = personalityPrompt.substring(0, MAX_PROMPT_LENGTH - 50) + '\n\n[Prompt truncado para cumplir límite de 3000 caracteres]';
+        }
 
         const agent = await createAgent({
             name: data.name,
