@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Wand2, Loader2 } from 'lucide-react';
 import { StepIdentity } from './steps/StepIdentity';
@@ -7,6 +5,7 @@ import { StepIntent } from './steps/StepIntent';
 import { StepKnowledge } from './steps/StepKnowledge';
 import { StepChannels } from './steps/StepChannels';
 import { StepSuccess } from './steps/StepSuccess';
+import { StepAvatar } from './steps/StepAvatar';
 import { Button } from '@/components/ui/button';
 import { createAgentFromWizard, updateAgentWizard, WizardPersonalityOption } from '@/lib/actions/wizard';
 import { toast } from 'sonner';
@@ -28,6 +27,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
         name: '',
         intent: '',
         allowEmojis: true,
+        avatarUrl: null as string | null, // New field
         knowledge: null as any,
         channels: {
             web: true,
@@ -51,20 +51,21 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
 
     if (!isOpen) return null;
 
-    const totalSteps = 4; // 5 is success, so 4 input steps
+    const totalSteps = 5; // 6 is success, so 5 input steps
 
     const handleNext = async () => {
         if (step === 1 && !data.name) return toast.error('Escribe un nombre');
         if (step === 2 && !data.intent) return toast.error('Selecciona el propósito');
-        if (step === 3 && !data.knowledge) return toast.error('Configura el conocimiento');
+        // Step 3 (Avatar) is optional, no validation needed
+        if (step === 4 && !data.knowledge) return toast.error('Configura el conocimiento');
 
-        if (step === 3) {
-            // STEP 3 -> 4: CREATE AGENT
+        if (step === 4) {
+            // STEP 4 -> 5: CREATE AGENT
             await handleCreateAgent();
         } else if (step < totalSteps) {
             setStep(s => s + 1);
         } else {
-            // FINISH
+            // FINISH (Step 5 -> 6)
             await handleFinish();
         }
     };
@@ -79,6 +80,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             const wizardPayload = {
                 name: data.name,
                 intent: data.intent,
+                avatarUrl: data.avatarUrl, // Pass avatar URL
                 knowledge: data.knowledge,
                 channels: { // Default channels for creation
                     web: true,
@@ -104,7 +106,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             if (webChannel) setWebChannelId(webChannel.id);
 
             toast.success('Agente inicializado correctamente');
-            setStep(4); // Move to Channels Step
+            setStep(5); // Move to Channels Step
 
         } catch (error: any) {
             console.error('Wizard create error:', error);
@@ -127,7 +129,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
 
             // Success
             toast.success('¡Agente configurado exitosamente!');
-            setStep(5); // Success Step
+            setStep(6); // Success Step
             if (onAgentCreated) onAgentCreated();
         } catch (error: any) {
             console.error('Wizard finish error:', error);
@@ -147,8 +149,14 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 onEmojisChange={e => setData({ ...data, allowEmojis: e })}
             />;
             case 2: return <StepIntent intent={data.intent} onChange={i => setData({ ...data, intent: i })} />;
-            case 3: return <StepKnowledge intent={data.intent} name={data.name} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
-            case 4: return <StepChannels
+            case 3: return <StepAvatar
+                name={data.name}
+                intent={data.intent}
+                avatarUrl={data.avatarUrl}
+                onChange={url => setData({ ...data, avatarUrl: url })}
+            />;
+            case 4: return <StepKnowledge intent={data.intent} name={data.name} knowledgeData={data.knowledge} onChange={k => setData({ ...data, knowledge: k })} />;
+            case 5: return <StepChannels
                 channels={data.channels}
                 webConfig={data.webConfig}
                 whatsappConfig={data.whatsappConfig}
@@ -158,7 +166,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 onWebConfigChange={c => setData({ ...data, webConfig: c })}
                 onWhatsappConfigChange={c => setData({ ...data, whatsappConfig: c })}
             />;
-            case 5: return <StepSuccess onClose={onClose} />;
+            case 6: return <StepSuccess onClose={onClose} />;
             default: return null;
         }
     };
@@ -231,7 +239,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                     </div>
                 </div>
 
-                {/* Footer Navigation (only for 1-4) */}
+                {/* Footer Navigation (only for steps 1-5) */}
                 {step <= totalSteps && (
                     <div className="h-20 border-t border-gray-100 px-8 flex items-center justify-between bg-white flex-none">
                         <Button
@@ -245,8 +253,8 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
 
                         <Button
                             onClick={handleNext}
-                            disabled={isLoading || (step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.knowledge)}
-                            className={`rounded-full px-8 h-12 shadow-lg transition-all ${(step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 3 && !data.knowledge)
+                            disabled={isLoading || (step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 4 && !data.knowledge)}
+                            className={`rounded-full px-8 h-12 shadow-lg transition-all ${(step === 1 && !data.name) || (step === 2 && !data.intent) || (step === 4 && !data.knowledge)
                                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' // Disabled style
                                 : 'bg-[#21AC96] hover:bg-[#21AC96]/90 hover:shadow-xl text-white'
                                 }`}

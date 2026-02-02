@@ -134,11 +134,116 @@ export async function uploadAgentAvatar(agentId: string, formData: FormData) {
 
         revalidatePath(`/agents/${agent.id}`);
         revalidatePath(`/agents/${agent.id}/settings`);
-        revalidatePath(`/agents/${agent.id}/profile`);
+    } catch (error: any) {
+        console.error("Manual avatar upload failed:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function generatePreviewAvatar(data: { name: string, intent: string, companyName?: string }) {
+    try {
+        // 1. Auth Check
+        const workspace = await getUserWorkspace();
+        if (!workspace) throw new Error("Unauthorized");
+
+        // 2. Derive Job Type from Intent
+        const normalizedIntent = data.intent.toUpperCase();
+        let jobType = 'PERSONAL';
+        if (normalizedIntent.includes('VENTA') || normalizedIntent.includes('COMERCIAL') || normalizedIntent.includes('SALES')) jobType = 'SALES';
+        else if (normalizedIntent.includes('SOPORTE') || normalizedIntent.includes('ATENCIÓN') || normalizedIntent.includes('SUPPORT') || normalizedIntent.includes('SERVICE')) jobType = 'SUPPORT';
+
+        // 3. Prepare Prompt
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) throw new Error("OpenAI API Key not configured");
+        const openai = new OpenAI({ apiKey });
+
+        let prompt = `A professional, high-quality, realistic profile picture of a ${jobType === 'SALES' ? 'friendly sales representative' : jobType === 'SUPPORT' ? 'helpful support specialist' : 'professional assistant'}. `;
+
+        if (data.companyName) {
+            prompt += `Named "${data.name}", working for "${data.companyName}". `;
+        } else {
+            prompt += `Named "${data.name}". `;
+        }
+
+        // Add visual style details based on role
+        if (jobType === 'SALES') {
+            prompt += `The person should look approachable, confident, wearing smart detailed business attire. Soft office lighting, blurred office background. `;
+        } else if (jobType === 'SUPPORT') {
+            prompt += `The person should look emphatic, patient, wearing professional but comfortable clothes. Clean, bright, modern workspace background. `;
+        } else {
+            prompt += `Professional headshot, clear face, neutral background. `;
+        }
+
+        prompt += `Shot on Canon EOS 5D Mark IV, 85mm f/1.2 lens. Extremely detailed skin texture, pores, vellus hair. Natural lighting, slight imperfections, authentic look. Candid photography style, NOT AI generated look, NOT 3d render, NOT plastic skin. Raw photo.`;
+
+        console.log(`[AvatarPreview] Generating with prompt: ${prompt}`);
+
+        // 4. Call DALL-E 3
+        const response = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: prompt,
+            n: 1,
+            size: "1024x1024",
+            response_format: "b64_json",
+        });
+
+        const imageBase64 = response.data?.[0]?.b64_json;
+        if (!imageBase64) throw new Error("No image generated");
+
+        // 5. Save to R2
+        const buffer = Buffer.from(imageBase64, 'base64');
+        const fileName = `avatar-preview-${workspace.id}-${Date.now()}.png`;
+        const avatarUrl = await uploadFileToR2(buffer, fileName, 'image/png');
+
+        // 6. Track Usage & Cost
+        const COST_IN_CREDITS = 50;
+
+        await prisma.$transaction([
+            // Log Usage - Using workspaceId only since agent doesn't exist yet
+            prisma.usageLog.create({
+                data: {
+                    workspaceId: workspace.id,
+                    agentId: null,
+                    tokensUsed: 0,
+                    creditsUsed: COST_IN_CREDITS,
+                    model: 'dall-e-3',
+                }
+            }),
+            // Deduct Credits
+            prisma.creditBalance.update({
+                where: { workspaceId: workspace.id },
+                data: {
+                    balance: { decrement: COST_IN_CREDITS },
+                    totalUsed: { increment: COST_IN_CREDITS }
+                }
+            })
+        ]);
+
+        return { success: true, url: avatarUrl };
+
+    } catch (error: any) {
+        console.error("Avatar preview generation failed:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function uploadPreviewAvatar(formData: FormData) {
+    try {
+        const file = formData.get('file') as File;
+        if (!file) throw new Error("No file provided");
+
+        // 1. Auth Check
+        const workspace = await getUserWorkspace();
+        if (!workspace) throw new Error("Unauthorized");
+
+        // 2. Upload to R2
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const fileName = `avatar-manual-preview-${workspace.id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+        const avatarUrl = await uploadFileToR2(buffer, fileName, file.type);
 
         return { success: true, url: avatarUrl };
     } catch (error: any) {
-        console.error("Manual avatar upload failed:", error);
+        console.error("Manual avatar preview upload failed:", error);
         return { success: false, error: error.message };
     }
 }

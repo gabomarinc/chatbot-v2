@@ -28,7 +28,7 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
         personalityPrompt: agent.personalityPrompt,
         avatarUrl: agent.avatarUrl,
     });
-    const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
+    const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false); // Kept to avoid lint break if widely used, but unused now
     const [isUploading, setIsUploading] = useState(false);
 
     // Sync state with server/prop changes
@@ -93,13 +93,13 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
         uploadForm.append('file', file);
 
         try {
-            const result = await uploadAgentAvatar(agent.id, uploadForm);
-            if (result.success && result.url) {
+            const result = await uploadAgentAvatar(agent.id, uploadForm) as { success: boolean, url?: string, error?: string };
+            if (result?.success && result?.url) {
                 setFormData(prev => ({ ...prev, avatarUrl: result.url }));
                 toast.success('Foto subida correctamente');
                 router.refresh();
             } else {
-                throw new Error(result.error);
+                throw new Error(result?.error || 'Error desconocido');
             }
         } catch (error: any) {
             console.error('Error uploading avatar:', error);
@@ -146,18 +146,9 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                     </div>
                     <div>
                         <h3 className="text-sm font-extrabold text-gray-700 uppercase tracking-wider mb-1">Foto de Perfil</h3>
-                        <p className="text-xs text-gray-500 mb-3">Genera una identidad visual única con IA o sube tu propia imagen.</p>
+                        <p className="text-xs text-gray-500 mb-3">Sube una imagen personalizada para tu agente.</p>
                         <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={handleGenerateAvatar}
-                                disabled={isGeneratingAvatar || isUploading}
-                                className="text-xs font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1.5 rounded-lg hover:bg-[#21AC96]/20 transition-colors flex items-center gap-2 disabled:opacity-50"
-                            >
-                                {isGeneratingAvatar ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                                {isGeneratingAvatar ? 'Diseñando...' : 'Generar con IA (50 Créditos)'}
-                            </button>
-
+                            {/* AI Generation Removed */}
                             <label className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 cursor-pointer">
                                 {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                                 {isUploading ? 'Subiendo...' : 'Subir Foto'}
@@ -166,12 +157,13 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                                     className="hidden"
                                     accept="image/*"
                                     onChange={handleFileUpload}
-                                    disabled={isGeneratingAvatar || isUploading}
+                                    disabled={isUploading}
                                 />
                             </label>
                         </div>
                     </div>
                 </div>
+
 
                 {/* Communication Style */}
                 <div className="space-y-4">
@@ -226,10 +218,10 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Actions */}
-            <div className="flex items-center gap-4">
+            < div className="flex items-center gap-4" >
                 <button
                     disabled={isLoading}
                     className="px-10 py-4 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
@@ -244,13 +236,15 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
                     )}
                 </button>
 
-                {isSaved && (
-                    <div className="flex items-center gap-2 text-green-600 font-bold text-sm animate-in fade-in slide-in-from-left-4 duration-300">
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span>¡Guardado correctamente!</span>
-                    </div>
-                )}
-            </div>
-        </form>
+                {
+                    isSaved && (
+                        <div className="flex items-center gap-2 text-green-600 font-bold text-sm animate-in fade-in slide-in-from-left-4 duration-300">
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span>¡Guardado correctamente!</span>
+                        </div>
+                    )
+                }
+            </div >
+        </form >
     );
 }

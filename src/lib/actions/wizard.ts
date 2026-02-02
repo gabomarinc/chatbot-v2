@@ -307,6 +307,7 @@ Genera 2 opciones contrastantes. ASEGÚRATE de incluir "Instrucciones de Comport
 export async function createAgentFromWizard(data: {
     name: string,
     intent: string,
+    avatarUrl?: string | null;
     knowledge: {
         type: 'WEB' | 'PDF' | 'TEXT' | 'TEMPLATE';
         source: string | File;
@@ -388,7 +389,8 @@ export async function createAgentFromWizard(data: {
             temperature: personality?.temperature || 0.7,
             communicationStyle: commStyle,
             allowEmojis: data.allowEmojis ?? true,
-            signMessages: false
+            signMessages: false,
+            avatarUrl: data.avatarUrl // Include avatarUrl
         });
 
         if (!agent) throw new Error('Failed to create agent record');
