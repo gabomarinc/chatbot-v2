@@ -137,7 +137,7 @@ export function AgentProfileForm({ agent }: AgentProfileFormProps) {
 
                 {/* Avatar Section */}
                 <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                    <div className="relative w-20 h-20 bg-white rounded-full flex items-center justify-center border-2 border-dashed border-gray-200 overflow-hidden shrink-0">
+                    <div className="relative w-20 h-20 bg-white rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-200 overflow-hidden shrink-0">
                         {(() => {
                             console.log('[AgentProfileForm] Avatar URL:', formData.avatarUrl);
                             return formData.avatarUrl ? (
