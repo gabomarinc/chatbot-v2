@@ -15,6 +15,7 @@ export default async function AgentsPage() {
         id: agent.id,
         name: agent.name,
         jobCompany: agent.jobCompany,
+        avatarUrl: agent.avatarUrl,
         _count: {
             channels: agent._count.channels,
             conversations: agent._count.conversations
