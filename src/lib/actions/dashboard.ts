@@ -348,6 +348,7 @@ export async function getTopAgents() {
         return {
             id: agent.id,
             name: agent.name,
+            avatarUrl: agent.avatarUrl,
             role: 'Agente de Ventas',
             conversations: agent._count.conversations,
             creditsUsed: creditsByAgent[agent.id] || 0,

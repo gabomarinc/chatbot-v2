@@ -36,7 +36,7 @@ interface DashboardClientProps {
 // Custom clickable dot component
 const ClickableDot = ({ cx, cy, payload, onClick }: any) => {
     if (!payload || payload.count === 0) return null;
-    
+
     return (
         <g>
             <circle
@@ -74,17 +74,17 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
     const [conversations, setConversations] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoadingConversations, setIsLoadingConversations] = useState(false);
-    
+
     // Credits modal state
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
     const [creditsData, setCreditsData] = useState<any>(null);
     const [isLoadingCredits, setIsLoadingCredits] = useState(false);
-    
+
     // Response rate modal state
     const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
     const [responseData, setResponseData] = useState<any>(null);
     const [isLoadingResponse, setIsLoadingResponse] = useState(false);
-    
+
     // Weekly navigation state
     const [weekOffset, setWeekOffset] = useState(0);
     const [weeklyData, setWeeklyData] = useState(() => {
@@ -130,7 +130,7 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
 
     const handlePointClick = async (data: any) => {
         if (!data || data.count === 0) return;
-        
+
         const date = typeof data.date === 'string' ? new Date(data.date) : data.date;
         setSelectedDate(date);
         setIsLoadingConversations(true);
@@ -180,35 +180,35 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
     };
 
     const statCards = [
-        { 
-            label: 'Total de Conversaciones', 
-            value: stats.conversaciones.toLocaleString(), 
-            change: '0%', 
-            isPositive: true, 
+        {
+            label: 'Total de Conversaciones',
+            value: stats.conversaciones.toLocaleString(),
+            change: '0%',
+            isPositive: true,
             icon: CheckCircle,
             onClick: () => router.push('/chat')
         },
-        { 
-            label: 'Créditos Disponibles', 
-            value: stats.creditos.toLocaleString(), 
-            change: '0%', 
-            isPositive: true, 
+        {
+            label: 'Créditos Disponibles',
+            value: stats.creditos.toLocaleString(),
+            change: '0%',
+            isPositive: true,
             icon: Coins,
             onClick: handleCreditsClick
         },
-        { 
-            label: 'Nuevos Contactos', 
-            value: stats.contactos.toLocaleString(), 
-            change: '0%', 
-            isPositive: true, 
+        {
+            label: 'Nuevos Contactos',
+            value: stats.contactos.toLocaleString(),
+            change: '0%',
+            isPositive: true,
             icon: Users,
             onClick: () => router.push('/prospects')
         },
-        { 
-            label: 'Tasa de Respuesta', 
-            value: `${stats.tasaRespuesta}%`, 
-            change: '0%', 
-            isPositive: true, 
+        {
+            label: 'Tasa de Respuesta',
+            value: `${stats.tasaRespuesta}%`,
+            change: '0%',
+            isPositive: true,
             icon: Calendar,
             onClick: handleResponseRateClick
         },
@@ -229,8 +229,8 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                 {statCards.map((stat, index) => {
                     const Icon = stat.icon;
                     return (
-                        <div 
-                            key={index} 
+                        <div
+                            key={index}
                             onClick={stat.onClick}
                             className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-[#21AC96]/5 transition-all group overflow-hidden relative cursor-pointer"
                         >
@@ -264,7 +264,7 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                             <p className="text-sm text-gray-400 font-medium">Total de conversaciones iniciadas por día</p>
                         </div>
                     </div>
-                    
+
                     {/* Week Navigation */}
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
@@ -311,8 +311,8 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                             </div>
                         ) : weeklyData.data.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart 
-                                    data={weeklyData.data} 
+                                <LineChart
+                                    data={weeklyData.data}
                                     margin={{ top: 20, right: 10, left: 10, bottom: 5 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -376,7 +376,7 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                                                         fill="#21AC96"
                                                         stroke="#fff"
                                                         strokeWidth={3}
-                                                        style={{ 
+                                                        style={{
                                                             cursor: 'pointer',
                                                             filter: 'drop-shadow(0 4px 8px rgba(33, 172, 150, 0.4))'
                                                         }}
@@ -433,8 +433,8 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                                         </div>
                                     </div>
                                     <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${channel.isActive
-                                            ? 'bg-green-100/50 text-green-700'
-                                            : 'bg-gray-100 text-gray-500'
+                                        ? 'bg-green-100/50 text-green-700'
+                                        : 'bg-gray-100 text-gray-500'
                                         }`}>
                                         <CheckCircle className="w-3.5 h-3.5" />
                                         {channel.isActive ? 'Conectado' : 'Desconectado'}
@@ -466,8 +466,16 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                                 {/* Header with Avatar and Rank */}
                                 <div className="flex items-start justify-between mb-5">
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-14 h-14 bg-gradient-to-br ${agent.color} rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-lg relative group-hover:rotate-6 transition-transform`}>
-                                            {agent.name.charAt(0).toUpperCase()}
+                                        <div className={`w-14 h-14 bg-gradient-to-br ${agent.color} rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-lg relative group-hover:rotate-6 transition-transform overflow-hidden`}>
+                                            {agent.avatarUrl ? (
+                                                <img
+                                                    src={`${agent.avatarUrl}?t=${Date.now()}`}
+                                                    alt={agent.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                agent.name.charAt(0).toUpperCase()
+                                            )}
                                             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] font-bold text-gray-900 shadow-sm border border-gray-100">
                                                 #{index + 1}
                                             </div>
