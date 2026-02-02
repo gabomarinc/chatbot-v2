@@ -18,67 +18,88 @@ export async function generateAgentAvatar(agentId: string) {
 
         if (!agent) throw new Error("Agent not found");
 
-        // 2. Prepare Prompt
-        // Use OpenAI directly for DALL-E 3 (Gemini image gen supported? Let's stick to DALL-E 3 as requested)
+        // 2. Prepare Culturally Appropriate Prompt
         const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) throw new Error("OpenAI API Key not configured");
 
         const openai = new OpenAI({ apiKey });
 
-        let prompt = `Candid portrait photograph of a real ${agent.jobType === 'SALES' ? 'sales professional' : agent.jobType === 'SUPPORT' ? 'customer support specialist' : 'business professional'}. `;
+        // Determine role-specific attributes
+        let roleDesc = '';
+        let attireDesc = '';
+        let expressionDesc = '';
 
-        if (agent.jobCompany) {
-            prompt += `Working at ${agent.jobCompany}. `;
-        }
-
-        // Add role-specific context
         if (agent.jobType === 'SALES') {
-            prompt += `Approachable, confident demeanor. Smart business casual attire. `;
+            roleDesc = 'sales professional';
+            attireDesc = 'Smart business casual attire: dress shirt, blazer, professional appearance';
+            expressionDesc = 'Approachable, confident, warm smile';
         } else if (agent.jobType === 'SUPPORT') {
-            prompt += `Patient, empathetic expression. Professional but comfortable clothing. `;
+            roleDesc = 'customer support specialist';
+            attireDesc = 'Professional but comfortable clothing: button-down shirt or polo';
+            expressionDesc = 'Patient, empathetic, friendly expression';
         } else {
-            prompt += `Professional appearance, neutral expression. `
+            roleDesc = 'business professional';
+            attireDesc = 'Professional business attire';
+            expressionDesc = 'Professional, neutral, approachable expression';
         }
 
-        // ULTRA-REALISTIC PHOTOGRAPHY PROMPT
-        prompt += `CRITICAL: This must be an actual photograph, NOT illustration, NOT digital art, NOT 3D render, NOT AI art style.
+        const companyContext = agent.jobCompany ? ` working at ${agent.jobCompany}` : '';
+
+        // CRITICAL: Specify ethnicity and appearance for Latin American/Spanish market
+        let prompt = `Professional corporate headshot photograph of a ${roleDesc}${companyContext}.
+
+CRITICAL ETHNICITY & APPEARANCE REQUIREMENTS:
+- Latin American, Spanish, or Southern European appearance
+- Light to medium skin tone (NOT Middle Eastern, NOT South Asian)
+- Western professional styling and grooming
+- Clean-shaven or well-groomed facial hair
+- Modern Western hairstyle
+- NO turbans, NO traditional Middle Eastern clothing
+- European or Latin American facial features
+
+SPECIFIC APPEARANCE:
+- ${expressionDesc}
+- ${attireDesc}
+- Age: 28-40 years old
+- Modern, professional grooming
+- Natural, authentic expression
 
 PHOTOGRAPHY SPECIFICATIONS:
-- Shot on Canon EOS R5 with 85mm f/1.4 lens
+- Shot on Canon EOS R5 with 85mm f/1.4 lens at f/2.0
 - Professional corporate headshot photography
-- Studio lighting with softbox and natural window light
-- Shallow depth of field (f/1.4), creamy bokeh background
-- Sharp focus on eyes, slight blur on background
-- RAW photo quality, high resolution
+- Soft studio lighting with natural window fill light
+- Neutral gray or soft bokeh office background
+- Sharp focus on eyes, shallow depth of field
+- Professional color grading, natural skin tones
+- High resolution, RAW photo quality
 
 REALISM REQUIREMENTS:
-- Real human skin with visible pores, texture, and natural imperfections
-- Natural facial asymmetry (no perfect symmetry)
+- Actual photograph, NOT illustration or 3D render
+- Real human skin with natural texture and pores
 - Authentic eye reflections and catchlights
+- Natural facial asymmetry
 - Real hair with individual strands visible
-- Natural skin tones with subtle color variations
-- Slight blemishes, freckles, or natural marks
-- Authentic depth and dimensionality
+- Slight natural imperfections (subtle)
 
-AVOID AT ALL COSTS:
-- Cartoon style, anime style, illustration
-- 3D rendered look, CGI appearance
-- Overly smooth or airbrushed skin
-- Perfect symmetry or artificial features
-- Digital art aesthetic
-- Painting or drawing style
+AVOID COMPLETELY:
+- Middle Eastern appearance or features
+- South Asian appearance
+- Traditional ethnic clothing or accessories
+- Cartoon, illustration, or digital art style
+- Overly airbrushed or perfect skin
+- Artificial or CGI appearance
 
-STYLE: Professional LinkedIn headshot, corporate photography, business portrait. Photorealistic, authentic, natural. Think professional photographer hired for corporate headshots, not AI generation.`;
+STYLE: Professional LinkedIn headshot, Western corporate photography, business portrait. Think Fortune 500 company employee headshot for Latin American or Spanish market.`;
 
-        console.log(`[AvatarGen] Generating PHOTOREALISTIC avatar with enhanced prompt`);
+        console.log(`[AvatarGen] Generating culturally appropriate PHOTOREALISTIC avatar`);
 
-        // 3. Call DALL-E 3 with HD quality for maximum realism
+        // 3. Call DALL-E 3 with HD quality
         const response = await openai.images.generate({
             model: "dall-e-3",
             prompt: prompt,
             n: 1,
             size: "1024x1024",
-            quality: "hd", // HD quality for better photorealism
+            quality: "hd",
             response_format: "b64_json",
         });
 
