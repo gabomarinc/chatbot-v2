@@ -19,6 +19,7 @@ interface Agent {
     id: string;
     name: string;
     jobCompany?: string | null;
+    avatarUrl?: string | null;
     _count: {
         channels: number;
         conversations: number;
@@ -82,8 +83,16 @@ function AgentCard({ agent }: { agent: Agent }) {
                     {/* Header */}
                     <div className="flex items-start justify-between mb-8 relative z-10">
                         <div className="flex items-center gap-5">
-                            <div className="w-16 h-16 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-2xl flex items-center justify-center text-3xl shadow-lg group-hover:rotate-6 transition-transform text-white font-bold">
-                                {agent.name.charAt(0).toUpperCase()}
+                            <div className="w-16 h-16 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-2xl flex items-center justify-center text-3xl shadow-lg group-hover:rotate-6 transition-transform text-white font-bold overflow-hidden">
+                                {agent.avatarUrl ? (
+                                    <img
+                                        src={`${agent.avatarUrl}?t=${Date.now()}`}
+                                        alt={agent.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    agent.name.charAt(0).toUpperCase()
+                                )}
                             </div>
                             <div>
                                 <h3 className="text-gray-900 text-xl font-extrabold tracking-tight mb-1">{agent.name}</h3>
@@ -327,8 +336,16 @@ function AgentListItem({ agent }: { agent: Agent }) {
             <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all group flex flex-col md:flex-row items-center gap-6">
                 {/* Avatar + Basic Info */}
                 <div className="flex items-center gap-6 flex-1 w-full md:w-auto">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-2xl flex items-center justify-center text-3xl shadow-lg text-white font-bold flex-none">
-                        {agent.name.charAt(0).toUpperCase()}
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-2xl flex items-center justify-center text-3xl shadow-lg text-white font-bold flex-none overflow-hidden">
+                        {agent.avatarUrl ? (
+                            <img
+                                src={`${agent.avatarUrl}?t=${Date.now()}`}
+                                alt={agent.name}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            agent.name.charAt(0).toUpperCase()
+                        )}
                     </div>
                     <div>
                         <div className="flex items-center gap-3">

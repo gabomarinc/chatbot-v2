@@ -448,7 +448,11 @@ export async function getAgents() {
 
     return prisma.agent.findMany({
         where: { workspaceId: workspace.id },
-        include: {
+        select: {
+            id: true,
+            name: true,
+            jobCompany: true,
+            avatarUrl: true,
             _count: {
                 select: {
                     conversations: true,
