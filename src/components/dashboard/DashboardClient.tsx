@@ -466,16 +466,18 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                                 {/* Header with Avatar and Rank */}
                                 <div className="flex items-start justify-between mb-5">
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-14 h-14 bg-gradient-to-br ${agent.color} rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-lg relative group-hover:rotate-6 transition-transform overflow-hidden`}>
-                                            {agent.avatarUrl ? (
-                                                <img
-                                                    src={`${agent.avatarUrl}?t=${Date.now()}`}
-                                                    alt={agent.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                agent.name.charAt(0).toUpperCase()
-                                            )}
+                                        <div className="relative">
+                                            <div className={`w-14 h-14 bg-gradient-to-br ${agent.color} rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-lg group-hover:rotate-6 transition-transform overflow-hidden`}>
+                                                {agent.avatarUrl ? (
+                                                    <img
+                                                        src={`${agent.avatarUrl}?t=${Date.now()}`}
+                                                        alt={agent.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    agent.name.charAt(0).toUpperCase()
+                                                )}
+                                            </div>
                                             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] font-bold text-gray-900 shadow-sm border border-gray-100">
                                                 #{index + 1}
                                             </div>
