@@ -240,14 +240,20 @@ export async function sendWidgetMessage(data: {
             console.log('[MODEL SELECTION] Agent model:', model, 'fileType:', fileType, 'has imageBase64:', !!imageBase64, 'has fileUrl:', !!fileUrl);
 
             // If there's an image (even if base64 conversion failed), we need gpt-4o (gpt-4o-mini doesn't support vision)
+            // Also if we have URL but no base64, we force OpenAI (gpt-4o) because Gemini SDK needs base64 (inlineData) whereas OpenAI takes URL.
+            const needsOpenAIForURL = fileType === 'image' && fileUrl && !imageBase64;
+
             if (!model.includes('gemini') && fileType === 'image') {
                 if (model === 'gpt-4o-mini') {
                     console.log('[MODEL SELECTION] gpt-4o-mini does not support vision, forcing gpt-4o');
                     modelUsedForLogging = 'gpt-4o'; // Force gpt-4o for images (gpt-4o-mini doesn't support vision)
-                } else if (imageBase64) {
+                } else if (imageBase64 || fileUrl) {
                     modelUsedForLogging = 'gpt-4o'; // Override for images when using OpenAI
-                    console.log('[MODEL SELECTION] Overriding to gpt-4o for image processing');
+                    console.log('[MODEL SELECTION] Overriding to gpt-4o for image processing (has image)');
                 }
+            } else if (model.includes('gemini') && needsOpenAIForURL) {
+                console.log('[MODEL SELECTION] Gemini selected but image Base64 missing. Force OpenAI (gpt-4o) to use URL.');
+                modelUsedForLogging = 'gpt-4o';
             } else {
                 console.log('[MODEL SELECTION] Using agent model:', modelUsedForLogging);
             }
@@ -446,7 +452,15 @@ When calling 'update_contact':
             // Try Gemini first if model is Gemini, with fallback to OpenAI
             let useOpenAI = false;
             let fallbackModel = 'gpt-4o'; // Default fallback model
-            if (model.includes('gemini')) {
+
+            // Check if we need to force OpenAI due to missing base64 for image
+            if (model.includes('gemini') && fileType === 'image' && fileUrl && !imageBase64) {
+                console.log('[GEMINI] Image present but Base64 missing. Forcing OpenAI to use URL.');
+                useOpenAI = true;
+                modelUsedForLogging = fallbackModel;
+            }
+
+            if (model.includes('gemini') && !useOpenAI) {
                 // Google Gemini Logic
                 console.log('[GEMINI] Attempting to use Gemini model:', model);
                 console.log('[GEMINI] Has googleKey:', !!googleKey, 'Key length:', googleKey?.length || 0);
@@ -683,7 +697,7 @@ When calling 'update_contact':
                     }),
                     (() => {
                         // If image is present, use multimodal format
-                        if (fileType === 'image' && imageBase64) {
+                        if (fileType === 'image' && (imageBase64 || fileUrl)) {
                             return {
                                 role: 'user',
                                 content: [
@@ -694,7 +708,7 @@ When calling 'update_contact':
                                     {
                                         type: 'image_url',
                                         image_url: {
-                                            url: imageBase64 // OpenAI accepts data URLs directly
+                                            url: imageBase64 || fileUrl // OpenAI accepts data URLs or public URLs
                                         }
                                     }
                                 ]
