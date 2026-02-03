@@ -20,6 +20,7 @@ interface AgentSettingsFormProps {
         allowReminders: boolean;
         smartRetrieval: boolean;
         transferToHuman: boolean;
+        responseDelay?: number;
     };
 }
 
@@ -157,6 +158,19 @@ export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
                                     <option value="Europe/Madrid">Madrid (CET)</option>
                                 </select>
                             </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 ml-1">Tiempo de Respuesta</label>
+                                <select
+                                    value={formData.responseDelay || 0}
+                                    onChange={(e) => setFormData({ ...formData, responseDelay: parseInt(e.target.value) })}
+                                    className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:bg-white focus:border-[#21AC96] transition-all font-medium appearance-none cursor-pointer"
+                                >
+                                    <option value={0}>Inmediato</option>
+                                    <option value={5}>5 Segundos</option>
+                                    <option value={10}>10 Segundos</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -252,6 +266,6 @@ export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
                     </div>
                 </div>
             </div>
-        </form>
+        </form >
     );
 }
