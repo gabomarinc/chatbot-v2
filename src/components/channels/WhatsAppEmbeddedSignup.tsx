@@ -213,40 +213,51 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
     }
 
     const launchSignup = () => {
-        // Manually construct the OAuth URL
-        // Redirect URI: Must be the CLEAN path (no params) to match Allowlist + Strict Mode
-        const redirectUri = window.location.origin + window.location.pathname;
+        if (!window.FB) return;
 
-        let url = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
+        setIsProcessing(true);
 
-        if (configId) {
-            console.log('Usando Config ID (Manual Flow):', configId);
-            url += `&config_id=${configId}`;
+        // Standard extras for Tech Provider (Embedded Signup)
+        const extras = {
+            "setup": {},
+            "featureType": "whatsapp_business_app_onboarding",
+            "sessionInfoVersion": "3"
+        };
 
-            // Extras for Coexistence
-            // Extras for Coexistence
-            // NOTE: Passing 'extras' directly in URL might be causing "Error requesting code"
-            // Let's try relying on config_id alone first.
-            const extras = {
-                "setup": {},
-                "featureType": "whatsapp_business_app_onboarding",
-                "sessionInfoVersion": "3"
-            };
-            url += `&extras=${encodeURIComponent(JSON.stringify(extras))}`;
+        console.log("Launching WhatsApp Signup via FB SDK...");
 
-            console.log('Manual OAuth URL:', url);
+        window.FB.login((response: any) => {
+            console.log("FB.login response:", response);
 
-        } else {
-            // Manual Scopes Fallback
-            url += `&scope=whatsapp_business_management,whatsapp_business_messaging,business_management`;
-        }
-
-        const width = 600;
-        const height = 700;
-        const left = (window.innerWidth - width) / 2;
-        const top = (window.innerHeight - height) / 2;
-
-        window.open(url, 'fb_oauth', `width=${width},height=${height},top=${top},left=${left}`);
+            if (response.authResponse) {
+                const code = response.authResponse.code;
+                if (code) {
+                    console.log("Got Code from SDK Callback:", code);
+                    onPopupCodeReceived(code);
+                } else {
+                    console.error("No code received in SDK callback", response);
+                    toast.error("No se recibió el código de autorización.");
+                }
+            } else {
+                setIsProcessing(false);
+                if (response.error) {
+                    console.error("FB Login Error:", response.error);
+                    toast.error(`Error: ${response.error.message}`);
+                } else {
+                    console.log('User cancelled login or closed popup');
+                    toast.info('Conexión cancelada.');
+                }
+            }
+        }, {
+            // These scopes are standard for WABA
+            scope: 'whatsapp_business_management,whatsapp_business_messaging',
+            // Config ID is required for the specific Tech Provider flow
+            config_id: configId || "1388941242686989",
+            // We need a code to exchange server-side
+            response_type: 'code',
+            // Pass the extras for onboarding
+            extras: JSON.stringify(extras)
+        });
     };
 
 
