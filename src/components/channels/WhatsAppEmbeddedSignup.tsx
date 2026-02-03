@@ -167,14 +167,12 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             // Extras for Coexistence
             // NOTE: Passing 'extras' directly in URL might be causing "Error requesting code"
             // Let's try relying on config_id alone first.
-            /*
             const extras = {
                 "setup": {},
                 "featureType": "whatsapp_business_app_onboarding",
                 "sessionInfoVersion": "3"
             };
             url += `&extras=${encodeURIComponent(JSON.stringify(extras))}`;
-            */
 
             console.log('Manual OAuth URL:', url);
 
