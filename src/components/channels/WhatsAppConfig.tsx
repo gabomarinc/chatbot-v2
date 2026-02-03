@@ -238,7 +238,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
     // Automatic Setup Mode (Default if App ID exists and Manual Mode not requested)
     if (metaAppId && !showManual && !existingChannel) {
-        import { useRouter, useSearchParams } from 'next/navigation';
+
         const searchParams = useSearchParams();
         const hasCode = searchParams?.get('code');
         // New Selection State
