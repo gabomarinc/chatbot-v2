@@ -691,16 +691,22 @@ export async function deleteChannel(channelId: string) {
     revalidatePath('/agents')
 }
 
-export async function getConversations() {
+export async function getConversations(page: number = 1, pageSize: number = 20) {
     const workspace = await getUserWorkspace()
     if (!workspace) return []
+
+    const skip = (page - 1) * pageSize;
 
     return prisma.conversation.findMany({
         where: {
             agent: { workspaceId: workspace.id }
         },
         include: {
-            agent: true,
+            agent: {
+                include: {
+                    integrations: true // Needed for "Agendar Cita" checks
+                }
+            },
             channel: true,
             assignedUser: {
                 select: {
@@ -717,7 +723,9 @@ export async function getConversations() {
                 select: { messages: true }
             }
         },
-        orderBy: { lastMessageAt: 'desc' }
+        orderBy: { lastMessageAt: 'desc' },
+        skip: skip,
+        take: pageSize
     })
 }
 
