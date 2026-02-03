@@ -103,11 +103,11 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             // The redirect_uri used in the manual dialog is EXACTLY this (clean):
             const currentUrl = window.location.origin + window.location.pathname;
 
-            // Priority: State Param (from URL) > Prop (which might be stale/default)
-            // This fixes the race condition where parent updates state after child mounts
+            // Priority: State Param > Session Storage > Prop
             const params = new URLSearchParams(window.location.search);
             const stateAgentId = params.get('state');
-            const finalAgentId = stateAgentId || agentId;
+            const storedAgentId = sessionStorage.getItem('wa_pending_agent_id');
+            const finalAgentId = stateAgentId || storedAgentId || agentId;
 
             const result = await handleEmbeddedSignupV2({
                 code: code,
@@ -249,6 +249,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
         // Pass agentId in state to persist across redirect
         if (agentId) {
             url += `&state=${agentId}`;
+            sessionStorage.setItem('wa_pending_agent_id', agentId);
         }
 
         const width = 600;
@@ -265,7 +266,8 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             // Determine agentId again to be safe
             const params = new URLSearchParams(window.location.search);
             const stateAgentId = params.get('state');
-            const finalAgentId = stateAgentId || agentId;
+            const storedAgentId = sessionStorage.getItem('wa_pending_agent_id');
+            const finalAgentId = stateAgentId || storedAgentId || agentId;
 
             const result = await finishWhatsAppSetup({
                 accessToken: longLivedToken,
