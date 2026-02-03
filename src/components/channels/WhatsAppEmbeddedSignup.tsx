@@ -93,17 +93,21 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
     // Because Meta Strict Mode rejects the SDK's internal redirect_uri (mismatch or domain error),
     // we use a manual popup where we explicitly control the redirect_uri to be the CLEAN current URL.
 
+    const [callbackMode, setCallbackMode] = useState(false);
+
     useEffect(() => {
         // Child Mode: If this component is loaded inside the popup with a code
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         if (code) {
+            setCallbackMode(true);
             // We are in the popup! Send code to parent and close.
             if (window.opener) {
                 console.log('Sending Code to parent:', code);
                 window.opener.postMessage({ type: 'WA_OAUTH_CODE', code }, window.location.origin);
-                window.close();
+                setTimeout(() => window.close(), 1500); // Small delay to show success state
             }
+            return; // Don't setup listener in child mode
         }
 
         // Parent Mode: Listen for the code
@@ -117,6 +121,33 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
     }, []);
+
+    if (callbackMode) {
+        return (
+            <div className="flex flex-col items-center justify-center p-10 bg-white h-screen w-full fixed inset-0 z-50">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center animate-pulse mb-6">
+                    <Check className="w-8 h-8 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-black text-gray-900 mb-2">¡Conexión Exitosa!</h2>
+                <p className="text-gray-500 text-center max-w-md font-medium">
+                    Hemos recibido la confirmación de meta.
+                    <br />
+                    Esta ventana se cerrará automáticamente...
+                </p>
+
+                {!window.opener && (
+                    <div className="mt-8 p-4 bg-yellow-50 rounded-xl border border-yellow-100 text-center max-w-sm">
+                        <p className="text-sm text-yellow-800 font-bold mb-2">
+                            ¿No se cerró la ventana?
+                        </p>
+                        <p className="text-xs text-yellow-700">
+                            Ya puedes cerrar esta pestaña manualmente y volver a la pantalla de configuración.
+                        </p>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     const onPopupCodeReceived = async (code: string) => {
         setIsProcessing(true);
