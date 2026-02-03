@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createChannel, updateChannel } from '@/lib/actions/dashboard';
 import { Loader2, Check, Phone, Copy, ArrowRight, ShieldCheck, Settings2, Info } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { WhatsAppEmbeddedSignup } from './WhatsAppEmbeddedSignup';
 import { YcloudSetup } from './YcloudSetup';
@@ -238,8 +238,11 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
     // Automatic Setup Mode (Default if App ID exists and Manual Mode not requested)
     if (metaAppId && !showManual && !existingChannel) {
+        import { useRouter, useSearchParams } from 'next/navigation';
+        const searchParams = useSearchParams();
+        const hasCode = searchParams?.get('code');
         // New Selection State
-        const [connectionMethod, setConnectionMethod] = useState<'SELECTION' | 'OFFICIAL' | 'YCLOUD'>('SELECTION');
+        const [connectionMethod, setConnectionMethod] = useState<'SELECTION' | 'OFFICIAL' | 'YCLOUD'>(hasCode ? 'OFFICIAL' : 'SELECTION');
 
         if (connectionMethod === 'SELECTION') {
             return (
