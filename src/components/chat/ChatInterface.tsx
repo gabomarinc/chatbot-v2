@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send, MoreVertical, Phone, Video, UserPlus, X, Calendar, MessageCircle, Bot, Paperclip, User, Hand, ArrowLeft } from 'lucide-react';
+import { Search, Send, MoreVertical, Phone, Video, UserPlus, X, Calendar, MessageCircle, Bot, Paperclip, User, Hand, ArrowLeft, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getChatMessages } from '@/lib/actions/dashboard';
 import { format } from 'date-fns';
@@ -71,8 +71,8 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
         if (userId) {
             const user = teamMembers.find(m => m.user.id === userId);
             if (user) {
-                setConversations(prev => prev.map(conv => 
-                    conv.id === conversationId 
+                setConversations(prev => prev.map(conv =>
+                    conv.id === conversationId
                         ? {
                             ...conv,
                             assignedTo: userId,
@@ -86,8 +86,8 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                 ));
             }
         } else {
-            setConversations(prev => prev.map(conv => 
-                conv.id === conversationId 
+            setConversations(prev => prev.map(conv =>
+                conv.id === conversationId
                     ? {
                         ...conv,
                         assignedTo: null,
@@ -241,7 +241,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                         activeConversation.assignedUser ? "bg-blue-500" : "bg-green-500"
                                     )}></span>
                                     <p className="text-xs text-gray-500 font-medium">
-                                        {activeConversation.assignedUser 
+                                        {activeConversation.assignedUser
                                             ? `Manejada por ${activeConversation.assignedUser.name || activeConversation.assignedUser.email.split('@')[0]}`
                                             : `Atendido por ${activeConversation.agent.name} (Bot)`
                                         }
@@ -292,12 +292,12 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                                     const metadataObj = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
                                                     const imageType = metadataObj?.type;
                                                     const imageUrl = metadataObj?.url;
-                                                    
+
                                                     if (imageType === 'image' && imageUrl) {
                                                         return (
                                                             <div className="mb-3 rounded-xl overflow-hidden max-w-full">
-                                                                <img 
-                                                                    src={imageUrl} 
+                                                                <img
+                                                                    src={imageUrl}
                                                                     alt="Imagen adjunta"
                                                                     className="w-full h-auto object-contain max-h-64 rounded-lg"
                                                                     onError={(e) => {
@@ -310,7 +310,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                                     }
                                                     return null;
                                                 })()}
-                                                
+
                                                 {/* Show PDF link if present */}
                                                 {(() => {
                                                     const metadata = msg.metadata;
@@ -318,7 +318,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                                     const metadataObj = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
                                                     const pdfType = metadataObj?.type;
                                                     const pdfUrl = metadataObj?.url;
-                                                    
+
                                                     if (pdfType === 'pdf' && pdfUrl) {
                                                         return (
                                                             <div className="mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
@@ -330,9 +330,9 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                                                         <p className="text-xs font-medium text-gray-700 truncate">
                                                                             {metadataObj.fileName || 'Documento PDF'}
                                                                         </p>
-                                                                        <a 
-                                                                            href={pdfUrl} 
-                                                                            target="_blank" 
+                                                                        <a
+                                                                            href={pdfUrl}
+                                                                            target="_blank"
                                                                             rel="noopener noreferrer"
                                                                             className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                                                                         >
@@ -345,13 +345,13 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                                     }
                                                     return null;
                                                 })()}
-                                                
+
                                                 {/* Message content */}
                                                 {(() => {
                                                     const metadata = msg.metadata;
                                                     const metadataObj = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
                                                     const hasMetadata = metadataObj?.type;
-                                                    
+
                                                     if (msg.content) {
                                                         return (
                                                             <div className={hasMetadata ? 'mt-2' : ''}>
@@ -454,10 +454,10 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                     <p className="text-xs text-yellow-700 font-medium">No asignada - El bot está manejando la conversación</p>
                                 </div>
                             )}
-                            
+
                             {/* Asumir Conversación - Solo mostrar si NO está asignada */}
                             {!activeConversation.assignedUser && (
-                                <button 
+                                <button
                                     onClick={async () => {
                                         if (!selectedConvId || isProcessing || !currentUserId) return;
                                         setIsProcessing(true);
@@ -489,7 +489,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
 
                             {/* Delegar Conversación - Solo mostrar si está asignada Y es del usuario actual */}
                             {activeConversation.assignedUser && activeConversation.assignedUser.id === currentUserId && (
-                                <button 
+                                <button
                                     onClick={async () => {
                                         if (!selectedConvId || isProcessing) return;
                                         setIsProcessing(true);
@@ -519,7 +519,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
 
                             {/* Cambiar asignación - Solo para OWNER/MANAGER o si está asignada */}
                             {(userRole === 'OWNER' || userRole === 'MANAGER' || activeConversation.assignedUser) && (
-                                <button 
+                                <button
                                     onClick={() => setIsAssignModalOpen(true)}
                                     className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors font-bold text-xs group"
                                 >
