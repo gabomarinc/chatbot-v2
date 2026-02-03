@@ -346,6 +346,37 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                                     return null;
                                                 })()}
 
+                                                {/* Audio Support */}
+                                                {(() => {
+                                                    const metadata = msg.metadata;
+                                                    const metadataObj = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+                                                    const type = metadataObj?.type;
+                                                    const url = metadataObj?.url;
+                                                    const transcription = metadataObj?.transcription;
+
+                                                    if (type === 'audio' && url) {
+                                                        return (
+                                                            <div className="mb-3 p-3 bg-gray-50 rounded-xl border border-gray-200 min-w-[200px]">
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                                                                        <Mic className="w-4 h-4 text-green-600" />
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-500 font-medium">Nota de voz</div>
+                                                                </div>
+
+                                                                <audio controls src={url} className="w-full h-8 mb-2" />
+
+                                                                {transcription && (
+                                                                    <div className="text-xs text-gray-600 italic border-l-2 border-gray-300 pl-2 mt-2">
+                                                                        "{transcription}"
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+
                                                 {/* Message content */}
                                                 {(() => {
                                                     const metadata = msg.metadata;
