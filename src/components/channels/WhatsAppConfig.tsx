@@ -391,6 +391,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                     <WhatsAppEmbeddedSignup
                         appId={metaAppId}
                         agentId={formData.agentId}
+                        configId={existingChannel?.configJson?.configId || "1388941242686989"}
                         onSuccess={() => router.refresh()}
                     />
                 </div>
