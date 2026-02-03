@@ -186,6 +186,13 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
 
     useEffect(() => {
+        const stateAgent = searchParams?.get('state');
+        if (stateAgent && stateAgent !== formData.agentId) {
+            setFormData(prev => ({ ...prev, agentId: stateAgent }));
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
         if (existingChannel?.configJson?.wabaId && existingChannel?.configJson?.accessToken) {
             fetchTemplates();
         }

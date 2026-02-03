@@ -103,10 +103,16 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             // The redirect_uri used in the manual dialog is EXACTLY this (clean):
             const currentUrl = window.location.origin + window.location.pathname;
 
+            // Priority: State Param (from URL) > Prop (which might be stale/default)
+            // This fixes the race condition where parent updates state after child mounts
+            const params = new URLSearchParams(window.location.search);
+            const stateAgentId = params.get('state');
+            const finalAgentId = stateAgentId || agentId;
+
             const result = await handleEmbeddedSignupV2({
                 code: code,
                 redirectUri: currentUrl,
-                agentId
+                agentId: finalAgentId
             });
 
             if (result.success) {
@@ -256,11 +262,16 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
     const handleAccountSelection = async (account: any) => {
         // Keep isProcessing true
         try {
+            // Determine agentId again to be safe
+            const params = new URLSearchParams(window.location.search);
+            const stateAgentId = params.get('state');
+            const finalAgentId = stateAgentId || agentId;
+
             const result = await finishWhatsAppSetup({
                 accessToken: longLivedToken,
                 wabaId: account.wabaId,
                 phoneNumberId: account.phoneNumberId,
-                agentId,
+                agentId: finalAgentId,
                 displayName: account.displayName
             });
 
