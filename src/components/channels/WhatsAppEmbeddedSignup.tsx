@@ -114,7 +114,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 setIsProcessing(false);
                 if (onSuccess) onSuccess();
 
-                // If we are in the child window (callback mode) OR we simply have a code in URL and no opener
+                // If we are in the child window (callbackMode) OR we simply have a code in URL and no opener
                 // We force a redirect to ensure the user ends up in the app
                 if (window.location.search.includes('code=')) {
                     // Force hard redirection/navigation to channels
@@ -213,54 +213,39 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
     }
 
     const launchSignup = () => {
-        if (!window.FB) return;
+        // Manually construct the OAuth URL
+        // Redirect URI: Must be the CLEAN path (no params) to match Allowlist + Strict Mode
+        const redirectUri = window.location.origin + window.location.pathname;
 
-        setIsProcessing(true);
+        let url = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
 
-        // Standard extras for Tech Provider (Embedded Signup)
-        const extras = {
-            "setup": {},
-            "featureType": "whatsapp_business_app_onboarding",
-            "sessionInfoVersion": "3"
-        };
+        if (configId) {
+            console.log('Usando Config ID (Manual Flow):', configId);
+            url += `&config_id=${configId}`;
 
-        console.log("Launching WhatsApp Signup via FB SDK...");
+            // Extras for Coexistence
+            // Note: Passing 'extras' directly in URL works for Tech Provider flow manual URL
+            const extras = {
+                "setup": {},
+                "featureType": "whatsapp_business_app_onboarding",
+                "sessionInfoVersion": "3"
+            };
+            url += `&extras=${encodeURIComponent(JSON.stringify(extras))}`;
 
-        window.FB.login((response: any) => {
-            console.log("FB.login response:", response);
+            console.log('Manual OAuth URL:', url);
 
-            if (response.authResponse) {
-                const code = response.authResponse.code;
-                if (code) {
-                    console.log("Got Code from SDK Callback:", code);
-                    onPopupCodeReceived(code);
-                } else {
-                    console.error("No code received in SDK callback", response);
-                    toast.error("No se recibió el código de autorización.");
-                }
-            } else {
-                setIsProcessing(false);
-                if (response.error) {
-                    console.error("FB Login Error:", response.error);
-                    toast.error(`Error: ${response.error.message}`);
-                } else {
-                    console.log('User cancelled login or closed popup');
-                    toast.info('Conexión cancelada.');
-                }
-            }
-        }, {
-            // These scopes are standard for WABA
-            scope: 'whatsapp_business_management,whatsapp_business_messaging',
-            // Config ID is required for the specific Tech Provider flow
-            config_id: configId || "1388941242686989",
-            // We need a code to exchange server-side
-            response_type: 'code',
-            // Pass the extras for onboarding
-            extras: JSON.stringify(extras)
-        });
+        } else {
+            // Manual Scopes Fallback
+            url += `&scope=whatsapp_business_management,whatsapp_business_messaging,business_management`;
+        }
+
+        const width = 600;
+        const height = 700;
+        const left = (window.innerWidth - width) / 2;
+        const top = (window.innerHeight - height) / 2;
+
+        window.open(url, 'fb_oauth', `width=${width},height=${height},top=${top},left=${left}`);
     };
-
-
 
     const handleAccountSelection = async (account: any) => {
         // Keep isProcessing true
