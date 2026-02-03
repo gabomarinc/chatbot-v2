@@ -1,3 +1,19 @@
+
+/**
+ * Helper to convert Markdown to WhatsApp formatting
+ */
+export function formatForWhatsApp(text: string): string {
+    return text
+        // Replace double asterisks **bold** with single *bold*
+        .replace(/\*\*(.*?)\*\*/g, '*$1*')
+        // Replace markdown headers ### Header with *Header*
+        .replace(/^#{1,6}\s+(.*)$/gm, '*$1*')
+        // Replace markdown links [text](url) with text (url)
+        .replace(/\[(.*?)\]\((.*?)\)/g, '$1 ($2)')
+        // Replace bullet points - Item with • Item
+        .replace(/^\s*-\s/gm, '• ');
+}
+
 export async function sendWhatsAppMessage(
     phoneNumberId: string,
     accessToken: string,
@@ -5,6 +21,9 @@ export async function sendWhatsAppMessage(
     text: string
 ) {
     const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+
+    // Apply formatting
+    const formattedText = formatForWhatsApp(text);
 
     const response = await fetch(url, {
         method: 'POST',
@@ -19,7 +38,7 @@ export async function sendWhatsAppMessage(
             type: 'text',
             text: {
                 preview_url: false,
-                body: text,
+                body: formattedText,
             },
         }),
     });
