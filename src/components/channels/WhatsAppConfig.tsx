@@ -187,8 +187,12 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
     useEffect(() => {
         const stateAgent = searchParams?.get('state');
-        if (stateAgent && stateAgent !== formData.agentId) {
-            setFormData(prev => ({ ...prev, agentId: stateAgent }));
+        const storedAgent = typeof window !== 'undefined' ? sessionStorage.getItem('wa_pending_agent_id') : null;
+
+        const targetAgent = stateAgent || storedAgent;
+
+        if (targetAgent && targetAgent !== formData.agentId) {
+            setFormData(prev => ({ ...prev, agentId: targetAgent }));
         }
     }, [searchParams]);
 
