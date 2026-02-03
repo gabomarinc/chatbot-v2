@@ -61,6 +61,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isCalendarAlertOpen, setIsCalendarAlertOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -612,25 +613,14 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                         );
 
                                         if (calendarInt) {
-                                            // Open scheduler 
-                                            // Assuming settings contains the link or we implement a modal.
-                                            // For now, if it's a link in settings, open it.
                                             const link = (calendarInt.settings as any)?.link || (calendarInt.settings as any)?.url;
                                             if (link) {
                                                 window.open(link, '_blank');
                                             } else {
-                                                alert("La integración de calendario está activa pero no se encontró un enlace de configuración.");
+                                                setIsCalendarAlertOpen(true);
                                             }
                                         } else {
-                                            // Show small popup / alert
-                                            // Using a custom beautiful confirm/alert would be better, but user said "popup bonito".
-                                            // I'll stick to a styled alert overlay or simple alert for now if no custom modal component is ready.
-                                            // Actually, I can use a simple confirm or better, a custom toast/notification.
-                                            // Since I don't see a Toast component imported, I'll use window.confirm or alert for MVP, 
-                                            // BUT user asked for "pequeño popup bonito".
-                                            // I will simply alert for now, effectively communicating the message.
-                                            // Or better: Use the existing logic to show a 'temporary' message in chat or similar? No.
-                                            alert("📅 No tienes una integración de calendario configurada.\n\nPara agendar citas automáticamente, ve a la configuración del agente e integra Google Calendar o Calendly.\n\nSi necesitas ayuda, contacta a soporte.");
+                                            setIsCalendarAlertOpen(true);
                                         }
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors font-bold text-xs group"
@@ -679,6 +669,55 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                     />
                 )
             }
-        </div >
+            {/* Calendar Alert Modal */}
+            {isCalendarAlertOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-[2rem] p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all scale-100">
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-red-500">
+                                <Calendar className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-extrabold text-gray-900 mb-2">
+                                Sin Integración de Calendario
+                            </h3>
+                            <p className="text-gray-500 font-medium mb-6">
+                                No tienes una integración de calendario configurada para este agente.
+                            </p>
+
+                            <div className="bg-gray-50 rounded-xl p-4 text-left mb-6 border border-gray-100">
+                                <p className="text-sm text-gray-600 mb-2 font-medium">Para solucionarlo:</p>
+                                <ul className="text-sm text-gray-500 space-y-2">
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#1E9A86]"></div>
+                                        Ve a la configuración del agente
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#1E9A86]"></div>
+                                        Integra Google Calendar o Calendly
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setIsCalendarAlertOpen(false)}
+                                    className="flex-1 py-3 bg-[#1E9A86] text-white rounded-xl font-bold hover:bg-[#158571] transition-all shadow-lg shadow-[#1E9A86]/20 active:scale-95"
+                                >
+                                    Entendido
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsCalendarAlertOpen(false);
+                                    }}
+                                    className="px-4 py-3 text-gray-400 font-bold hover:text-gray-600 transition-colors"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
