@@ -681,19 +681,29 @@ When calling 'update_contact':
                 const openAiMessages: any[] = [
                     { role: 'system', content: systemPrompt },
                     ...history.reverse().map((m: Message) => {
-                        const baseMessage: any = {
+                        const isImage = m.metadata && typeof m.metadata === 'object' && (m.metadata as any).type === 'image' && (m.metadata as any).url;
+
+                        if (isImage) {
+                            return {
+                                role: m.role === 'USER' ? 'user' : 'assistant',
+                                content: [
+                                    {
+                                        type: 'text', text: m.role === 'HUMAN'
+                                            ? `[Intervención humana]: ${m.content}`
+                                            : (m.content || 'Imagen enviada')
+                                    },
+                                    { type: 'image_url', image_url: { url: (m.metadata as any).url } }
+                                ]
+                            };
+                        }
+
+                        // Text only message
+                        return {
                             role: m.role === 'USER' ? 'user' : 'assistant',
                             content: m.role === 'HUMAN'
                                 ? `[Intervención humana]: ${m.content}`
                                 : m.content
                         };
-
-                        // If message has image metadata, reference it (can't load old images in history easily)
-                        if (m.metadata && typeof m.metadata === 'object' && (m.metadata as any).type === 'image') {
-                            baseMessage.content = `${baseMessage.content}\n[Imagen adjunta anteriormente]`;
-                        }
-
-                        return baseMessage;
                     }),
                     (() => {
                         // If image is present, use multimodal format
