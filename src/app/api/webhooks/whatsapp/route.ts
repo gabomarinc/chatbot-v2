@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
 
       // Find the channel
       const channels = await prisma.channel.findMany({
-        where: { type: 'WHATSAPP', isActive: true }
+        where: { type: 'WHATSAPP', isActive: true },
+        include: { agent: true }
       });
 
       const channel = channels.find(c => (c.configJson as any).phoneNumberId === phoneNumberId);
@@ -201,10 +202,14 @@ export async function POST(req: NextRequest) {
               mimeType
             );
 
-            // 3. Transcribe with Whisper
-            // Import dynamically or assume imported. I need to add import at top.
+            // 3. Transcribe with Whisper or Gemini depending on Agent Model
+            const agentModel = (channel as any).agent?.model || '';
+            const transcriptionProvider = agentModel.toLowerCase().includes('gemini') ? 'google' : 'openai';
+
+            console.log(`[WhatsApp Audio] Using provider: ${transcriptionProvider} for model: ${agentModel}`);
+
             const { transcribeAudio } = await import('@/lib/audio');
-            const transcription = await transcribeAudio(audioBuffer, fileName);
+            const transcription = await transcribeAudio(audioBuffer, fileName, transcriptionProvider);
 
             if (transcription) {
               console.log(`[WhatsApp Audio] Transcribed: "${transcription}"`);
