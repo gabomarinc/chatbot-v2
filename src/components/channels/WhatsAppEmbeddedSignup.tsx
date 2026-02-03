@@ -239,6 +239,12 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
             url += `&scope=whatsapp_business_management,whatsapp_business_messaging,business_management`;
         }
 
+
+        // Pass agentId in state to persist across redirect
+        if (agentId) {
+            url += `&state=${agentId}`;
+        }
+
         const width = 600;
         const height = 700;
         const left = (window.innerWidth - width) / 2;

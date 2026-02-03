@@ -30,6 +30,7 @@ interface WhatsAppConfigProps {
 
 export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgentId }: WhatsAppConfigProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [showManual, setShowManual] = useState(false);
@@ -146,7 +147,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
 
     const [formData, setFormData] = useState({
-        agentId: existingChannel?.agentId || defaultAgentId || (agents.length > 0 ? agents[0].id : ''),
+        agentId: searchParams?.get('state') || existingChannel?.agentId || defaultAgentId || (agents.length > 0 ? agents[0].id : ''),
         displayName: existingChannel?.displayName || 'WhatsApp Business',
         accessToken: existingChannel?.configJson?.accessToken || '',
         phoneNumberId: existingChannel?.configJson?.phoneNumberId || '',
@@ -239,7 +240,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     // Automatic Setup Mode (Default if App ID exists and Manual Mode not requested)
     if (metaAppId && !showManual && !existingChannel) {
 
-        const searchParams = useSearchParams();
+
         const hasCode = searchParams?.get('code');
         // New Selection State
         const [connectionMethod, setConnectionMethod] = useState<'SELECTION' | 'OFFICIAL' | 'YCLOUD'>(hasCode ? 'OFFICIAL' : 'SELECTION');
