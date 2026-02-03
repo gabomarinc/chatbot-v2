@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2, MessageSquare, ShieldCheck, Check, Smartphone, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleEmbeddedSignupV2, finishWhatsAppSetup } from '@/lib/actions/whatsapp-auth';
@@ -94,6 +95,48 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
     // we use a manual popup where we explicitly control the redirect_uri to be the CLEAN current URL.
 
     const [callbackMode, setCallbackMode] = useState(false);
+    const router = useRouter();
+
+    const onPopupCodeReceived = async (code: string) => {
+        setIsProcessing(true);
+        try {
+            // The redirect_uri used in the manual dialog is EXACTLY this (clean):
+            const currentUrl = window.location.origin + window.location.pathname;
+
+            const result = await handleEmbeddedSignupV2({
+                code: code,
+                redirectUri: currentUrl,
+                agentId
+            });
+
+            if (result.success) {
+                toast.success('¡WhatsApp conectado correctamente!');
+                setIsProcessing(false);
+                if (onSuccess) onSuccess();
+
+                // If we are in the child window (callback mode) OR we simply have a code in URL and no opener
+                // We force a redirect to ensure the user ends up in the app
+                if (window.location.search.includes('code=')) {
+                    // Force hard redirection/navigation to channels
+                    router.push('/dashboard/channels');
+                }
+            }
+            else if ('requiresSelection' in result && result.requiresSelection) {
+                setAvailableAccounts((result as any).accounts);
+                setLongLivedToken((result as any).accessToken || '');
+                setShowSelectionModal(true);
+            }
+            else {
+                const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
+                toast.error(errorMsg);
+            }
+        } catch (err) {
+            console.error('Error processing code:', err);
+            toast.error('Error procesando la conexión.');
+        } finally {
+            // setIsProcessing(false); // Handled in success/error branches or modal
+        }
+    };
 
     useEffect(() => {
         // Child Mode: If this component is loaded inside the popup with a code
@@ -101,13 +144,20 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
         const code = params.get('code');
         if (code) {
             setCallbackMode(true);
-            // We are in the popup! Send code to parent and close.
+
+            // Scenario 1: Parent window exists (Popup Mode)
             if (window.opener) {
                 console.log('Sending Code to parent:', code);
                 window.opener.postMessage({ type: 'WA_OAUTH_CODE', code }, window.location.origin);
-                setTimeout(() => window.close(), 1500); // Small delay to show success state
+                setTimeout(() => window.close(), 1500);
             }
-            return; // Don't setup listener in child mode
+            // Scenario 2: No parent window (New Tab Mode)
+            else {
+                console.log('No parent window found. Processing in current tab...');
+                // Trigger processing directly!
+                onPopupCodeReceived(code);
+            }
+            return;
         }
 
         // Parent Mode: Listen for the code
@@ -126,62 +176,41 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
         return (
             <div className="flex flex-col items-center justify-center p-10 bg-white h-screen w-full fixed inset-0 z-50">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center animate-pulse mb-6">
-                    <Check className="w-8 h-8 text-green-600" />
+                    <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
                 </div>
-                <h2 className="text-2xl font-black text-gray-900 mb-2">¡Conexión Exitosa!</h2>
+                <h2 className="text-2xl font-black text-gray-900 mb-2">Finalizando Conexión...</h2>
                 <p className="text-gray-500 text-center max-w-md font-medium">
-                    Hemos recibido la confirmación de meta.
+                    Estamos configurando tu canal de WhatsApp.
                     <br />
-                    Esta ventana se cerrará automáticamente...
+                    Por favor no cierres esta ventana.
                 </p>
 
-                {!window.opener && (
-                    <div className="mt-8 p-4 bg-yellow-50 rounded-xl border border-yellow-100 text-center max-w-sm">
-                        <p className="text-sm text-yellow-800 font-bold mb-2">
-                            ¿No se cerró la ventana?
-                        </p>
-                        <p className="text-xs text-yellow-700">
-                            Ya puedes cerrar esta pestaña manualmente y volver a la pantalla de configuración.
-                        </p>
+                {/* Selection Modal inside Callback Mode if needed */}
+                {showSelectionModal && (
+                    <div className="mt-8 bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+                        <h3 className="font-bold text-lg mb-4 text-center">Selecciona un Número</h3>
+                        <div className="space-y-3">
+                            {availableAccounts.map((account, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => handleAccountSelection(account)}
+                                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-green-500 hover:bg-green-50 text-left transition-all"
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                        <Smartphone className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-bold text-sm">{account.displayName}</p>
+                                        <p className="text-xs text-gray-500">{account.phoneNumber}</p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
         );
     }
-
-    const onPopupCodeReceived = async (code: string) => {
-        setIsProcessing(true);
-        try {
-            // The redirect_uri used in the manual dialog is EXACTLY this (clean):
-            const currentUrl = window.location.origin + window.location.pathname;
-
-            const result = await handleEmbeddedSignupV2({
-                code: code,
-                redirectUri: currentUrl,
-                agentId
-            });
-
-            if (result.success) {
-                toast.success('¡WhatsApp conectado correctamente!');
-                setIsProcessing(false);
-                if (onSuccess) onSuccess();
-            }
-            else if ('requiresSelection' in result && result.requiresSelection) {
-                setAvailableAccounts((result as any).accounts);
-                setLongLivedToken((result as any).accessToken || '');
-                setShowSelectionModal(true);
-            }
-            else {
-                const errorMsg = 'error' in result ? result.error : 'Error al conectar WhatsApp';
-                toast.error(errorMsg);
-            }
-        } catch (err) {
-            console.error('Error processing code:', err);
-            toast.error('Error procesando la conexión.');
-        } finally {
-            // setIsProcessing(false); // Handled in success/error branches or modal
-        }
-    };
 
     const launchSignup = () => {
         // Manually construct the OAuth URL
