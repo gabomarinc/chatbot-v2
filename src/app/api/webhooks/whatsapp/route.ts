@@ -117,8 +117,9 @@ export async function POST(req: NextRequest) {
               // Save to database with metadata
               const result = await sendWidgetMessage({
                 channelId: channel.id,
-                content: caption,
+                content: caption || 'Imagen recibida',
                 visitorId: senderNumber,
+                imageUrl: r2Url,
                 metadata: {
                   type: 'image',
                   url: r2Url,
