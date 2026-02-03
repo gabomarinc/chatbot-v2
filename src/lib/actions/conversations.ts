@@ -331,4 +331,68 @@ export async function delegateToBot(conversationId: string) {
     }
 }
 
+/**
+ * Close conversation - Mark as CLOSED and unassign
+ */
+export async function closeConversation(conversationId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { error: 'No autorizado' }
+        }
+
+        const workspace = await getUserWorkspace()
+        if (!workspace) {
+            return { error: 'Workspace no encontrado' }
+        }
+
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                id: conversationId,
+                agent: {
+                    workspaceId: workspace.id
+                }
+            }
+        })
+
+        if (!conversation) {
+            return { error: 'Conversación no encontrada' }
+        }
+
+        // Check permissions (same as delegate)
+        const membership = await prisma.workspaceMember.findFirst({
+            where: {
+                userId: session.user.id,
+                workspaceId: workspace.id
+            }
+        })
+
+        if (!membership) {
+            return { error: 'Usuario no es miembro del workspace' }
+        }
+
+        if (conversation.assignedTo && conversation.assignedTo !== session.user.id) {
+            if (membership.role !== 'OWNER' && membership.role !== 'MANAGER') {
+                return { error: 'No tienes permiso para cerrar esta conversación' }
+            }
+        }
+
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: {
+                status: 'CLOSED',
+                assignedTo: null,
+                assignedAt: null
+            }
+        })
+
+        revalidatePath('/dashboard')
+        revalidatePath('/chat')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error closing conversation:', error)
+        return { error: error.message || 'Error al cerrar conversación' }
+    }
+}
+
 

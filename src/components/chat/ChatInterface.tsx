@@ -7,7 +7,7 @@ import { getChatMessages, getConversations } from '@/lib/actions/dashboard';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AssignConversationModal } from './AssignConversationModal';
-import { assumeConversation, delegateToBot } from '@/lib/actions/conversations';
+import { assumeConversation, delegateToBot, closeConversation } from '@/lib/actions/conversations';
 import { useRouter } from 'next/navigation';
 
 interface Message {
@@ -628,9 +628,32 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                     <Calendar className="w-4 h-4 text-gray-400 group-hover:text-[#1E9A86] transition-colors" />
                                     Agendar cita
                                 </button>
-                                <button className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-red-50 hover:text-red-600 transition-colors font-bold text-xs group">
+                                <button
+                                    onClick={async () => {
+                                        if (confirm('¿Estás seguro de que deseas cerrar esta atención? La conversación se marcará como CERRADA y se desasignará.')) {
+                                            if (isProcessing) return;
+                                            setIsProcessing(true);
+                                            try {
+                                                const result = await closeConversation(activeConversation.id);
+                                                if (result.error) {
+                                                    alert(result.error);
+                                                } else {
+                                                    setSelectedConvId(null);
+                                                    router.refresh();
+                                                }
+                                            } catch (error) {
+                                                console.error('Error closing conversation:', error);
+                                                alert('Error al cerrar la conversación');
+                                            } finally {
+                                                setIsProcessing(false);
+                                            }
+                                        }
+                                    }}
+                                    disabled={isProcessing}
+                                    className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-red-50 hover:text-red-600 transition-colors font-bold text-xs group disabled:opacity-50"
+                                >
                                     <X className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors" />
-                                    Cerrar atención
+                                    {isProcessing ? 'Cerrando...' : 'Cerrar atención'}
                                 </button>
                             </div>
 
