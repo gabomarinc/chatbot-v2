@@ -181,6 +181,59 @@ export async function POST(req: NextRequest) {
           }
         }
       }
+      // Handle audio messages (Voice Notes)
+      else if (messageType === 'audio') {
+        const mediaId = message.audio?.id;
+        const mimeType = message.audio?.mime_type || 'audio/ogg'; // WhatsApp usually sends OGG
+        // extension mapping
+        const ext = mimeType.split('/')[1]?.split(';')[0] || 'ogg';
+        const fileName = `${Date.now()}-${senderNumber}.${ext}`;
+
+        if (mediaId) {
+          // 1. Download audio from WhatsApp
+          const audioBuffer = await downloadWhatsAppMedia(mediaId, config.accessToken);
+
+          if (audioBuffer) {
+            // 2. Upload to R2 (Store original audio)
+            const r2Url = await uploadFileToR2(
+              audioBuffer,
+              fileName,
+              mimeType
+            );
+
+            // 3. Transcribe with Whisper
+            // Import dynamically or assume imported. I need to add import at top.
+            const { transcribeAudio } = await import('@/lib/audio');
+            const transcription = await transcribeAudio(audioBuffer, fileName);
+
+            if (transcription) {
+              console.log(`[WhatsApp Audio] Transcribed: "${transcription}"`);
+
+              // 4. Process as if it were a text message from the user
+              // pass original R2 URL in metadata so we can show audio player in UI eventually
+              const result = await sendWidgetMessage({
+                channelId: channel.id,
+                content: transcription, // The AI reads the text
+                visitorId: senderNumber,
+                metadata: {
+                  type: 'audio',
+                  url: r2Url || '',
+                  originalMediaId: mediaId,
+                  transcription: transcription
+                }
+              });
+
+              // 5. Send AI Response back to WhatsApp
+              await sendWhatsAppMessage(
+                phoneNumberId,
+                config.accessToken,
+                senderNumber,
+                result.agentMsg.content
+              );
+            }
+          }
+        }
+      }
     }
 
     return NextResponse.json({ status: 'ok' });
