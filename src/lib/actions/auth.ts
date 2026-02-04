@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { signIn } from '@/auth'
+import { signIn, auth } from '@/auth'
 
 const registerSchema = z.object({
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -341,4 +341,9 @@ export async function updateUserProfileWithTimezone(userId: string, name?: strin
             error: 'Ocurrió un error inesperado. Inténtalo de nuevo.',
         }
     }
+}
+
+export async function getCurrentUser() {
+    const session = await auth()
+    return session?.user
 }
