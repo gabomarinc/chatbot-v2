@@ -37,6 +37,22 @@ import { useRouter } from 'next/navigation';
 import { addKnowledgeSource } from '@/lib/actions/knowledge';
 import { toast } from 'sonner';
 
+function getFriendlyErrorMessage(error: string | null | undefined): string {
+    if (!error) return "Error desconocido";
+
+    const e = error.toLowerCase();
+
+    if (e.includes('404')) return "No encontramos la página (Error 404). Verifica el enlace.";
+    if (e.includes('403') || e.includes('access denied')) return "Acceso denegado. La página bloquea bots.";
+    if (e.includes('500') || e.includes('502') || e.includes('503')) return "La página web tiene error de servidor.";
+    if (e.includes('timeout') || e.includes('time out') || e.includes('timed out')) return "La página tardó mucho en responder.";
+    if (e.includes('jina') || e.includes('scraping')) return "No pudimos leer el contenido. Intenta otra vez.";
+    if (e.includes('pdf')) return "El PDF está dañado o protegido.";
+    if (e.includes('empty body') || e.includes('no text')) return "La página parece estar vacía.";
+
+    return `Error técnico: ${error.substring(0, 50)}${error.length > 50 ? '...' : ''}`;
+}
+
 export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingClientProps) {
     const [activeTab, setActiveTab] = useState('sources');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -190,7 +206,7 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                                                         Analizando
                                                     </div>
                                                 ) : (
-                                                    <Tooltip content={source.errorMessage || "Error desconocido"}>
+                                                    <Tooltip content={getFriendlyErrorMessage(source.errorMessage)}>
                                                         <div className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-red-100 flex items-center gap-1.5 cursor-help">
                                                             <AlertCircle className="w-3 h-3" />
                                                             Error
