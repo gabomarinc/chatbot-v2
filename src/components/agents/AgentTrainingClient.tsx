@@ -49,6 +49,10 @@ function getFriendlyErrorMessage(error: string | null | undefined): string {
     if (e.includes('jina') || e.includes('scraping')) return "No pudimos leer el contenido. Intenta otra vez.";
     if (e.includes('pdf')) return "El PDF está dañado o protegido.";
     if (e.includes('empty body') || e.includes('no text')) return "La página parece estar vacía.";
+    if (e.includes('enotfound') || e.includes('dns')) return "No existe el dominio o servidor.";
+    if (e.includes('invalid url') || e.includes('parse url')) return "La URL no tiene un formato válido.";
+    if (e.includes('429')) return "Demasiadas peticiones. Intenta más tarde.";
+    if (e.includes('unauthorized') || e.includes('401')) return "Se requiere autenticación para ver esto.";
 
     return `Error técnico: ${error.substring(0, 50)}${error.length > 50 ? '...' : ''}`;
 }
