@@ -107,6 +107,7 @@ model KnowledgeSource {
   url             String?
   fileUrl         String?
   status          KnowledgeStatus
+  errorMessage    String?
   updateInterval  UpdateInterval      @default(NEVER)
   crawlSubpages   Boolean             @default(false)
   createdAt       DateTime            @default(now())

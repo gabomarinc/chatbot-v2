@@ -186,9 +186,13 @@ export async function addKnowledgeSource(agentId: string, data: {
                     data: { status: 'READY' }
                 });
             } catch (e) {
+                const errorMessage = e instanceof Error ? e.message : 'Unknown video processing error';
                 await prisma.knowledgeSource.update({
                     where: { id: source.id },
-                    data: { status: 'FAILED' }
+                    data: {
+                        status: 'FAILED',
+                        errorMessage: errorMessage
+                    }
                 });
             }
         }
@@ -245,17 +249,25 @@ export async function addKnowledgeSource(agentId: string, data: {
                 }
             } catch (error) {
                 console.error("Document parsing error:", error);
+                const errorMessage = error instanceof Error ? error.message : 'Unknown document error';
                 await prisma.knowledgeSource.update({
                     where: { id: source.id },
-                    data: { status: 'FAILED' }
+                    data: {
+                        status: 'FAILED',
+                        errorMessage: errorMessage
+                    }
                 })
             }
         }
 
     } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : 'Unknown knowledge source error';
         await prisma.knowledgeSource.update({
             where: { id: source.id },
-            data: { status: 'FAILED' }
+            data: {
+                status: 'FAILED',
+                errorMessage: errorMessage
+            }
         })
     }
 

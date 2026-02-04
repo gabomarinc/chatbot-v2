@@ -9,6 +9,7 @@ import { AddSourceModal } from './AddSourceModal';
 import { deleteKnowledgeSource } from '@/lib/actions/knowledge';
 import { Trash2 } from 'lucide-react';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface KnowledgeSource {
     id: string;
@@ -16,6 +17,7 @@ interface KnowledgeSource {
     displayName: string;
     sourceUrl: string | null;
     status: string;
+    errorMessage?: string | null;
     createdAt: Date;
 }
 
@@ -188,10 +190,12 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                                                         Analizando
                                                     </div>
                                                 ) : (
-                                                    <div className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-red-100 flex items-center gap-1.5">
-                                                        <AlertCircle className="w-3 h-3" />
-                                                        Error
-                                                    </div>
+                                                    <Tooltip content={source.errorMessage || "Error desconocido"}>
+                                                        <div className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-red-100 flex items-center gap-1.5 cursor-help">
+                                                            <AlertCircle className="w-3 h-3" />
+                                                            Error
+                                                        </div>
+                                                    </Tooltip>
                                                 )}
                                                 <div className="relative">
                                                     <button
