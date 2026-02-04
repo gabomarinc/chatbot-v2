@@ -53,6 +53,23 @@ export async function POST(req: NextRequest) {
       const phoneNumberId = value.metadata.phone_number_id;
       const senderNumber = message.from;
       const messageType = message.type;
+      const wamid = message.id;
+
+      // 0. Idempotency Check
+      // Check if we already processed this message ID
+      const existingMessage = await prisma.message.findFirst({
+        where: {
+          metadata: {
+            path: ['whatsappMessageId'],
+            equals: wamid
+          }
+        }
+      });
+
+      if (existingMessage) {
+        console.log(`[WhatsApp] Skipping duplicate message ${wamid}`);
+        return NextResponse.json({ status: 'ok' });
+      }
 
       // Find the channel
       const channels = await prisma.channel.findMany({
@@ -78,16 +95,21 @@ export async function POST(req: NextRequest) {
           const result = await sendWidgetMessage({
             channelId: channel.id,
             content: text,
-            visitorId: senderNumber
+            visitorId: senderNumber,
+            metadata: {
+              whatsappMessageId: wamid
+            }
           });
 
           // Send response back to WhatsApp
-          await sendWhatsAppMessage(
-            phoneNumberId,
-            config.accessToken,
-            senderNumber,
-            result.agentMsg.content
-          );
+          if (result.agentMsg) {
+            await sendWhatsAppMessage(
+              phoneNumberId,
+              config.accessToken,
+              senderNumber,
+              result.agentMsg.content
+            );
+          }
         }
       }
       // Handle image messages
@@ -123,17 +145,20 @@ export async function POST(req: NextRequest) {
                 metadata: {
                   type: 'image',
                   url: r2Url,
-                  originalMediaId: mediaId
+                  originalMediaId: mediaId,
+                  whatsappMessageId: wamid
                 }
               });
 
               // Acknowledge receipt
-              await sendWhatsAppMessage(
-                phoneNumberId,
-                config.accessToken,
-                senderNumber,
-                result.agentMsg.content
-              );
+              if (result.agentMsg) {
+                await sendWhatsAppMessage(
+                  phoneNumberId,
+                  config.accessToken,
+                  senderNumber,
+                  result.agentMsg.content
+                );
+              }
             }
           }
         }
@@ -168,17 +193,20 @@ export async function POST(req: NextRequest) {
                   url: r2Url,
                   fileName: fileName,
                   mimeType: mimeType,
-                  originalMediaId: mediaId
+                  originalMediaId: mediaId,
+                  whatsappMessageId: wamid
                 }
               });
 
               // Acknowledge receipt
-              await sendWhatsAppMessage(
-                phoneNumberId,
-                config.accessToken,
-                senderNumber,
-                result.agentMsg.content
-              );
+              if (result.agentMsg) {
+                await sendWhatsAppMessage(
+                  phoneNumberId,
+                  config.accessToken,
+                  senderNumber,
+                  result.agentMsg.content
+                );
+              }
             }
           }
         }
@@ -225,17 +253,20 @@ export async function POST(req: NextRequest) {
                   type: 'audio',
                   url: r2Url || '',
                   originalMediaId: mediaId,
-                  transcription: transcription
+                  transcription: transcription,
+                  whatsappMessageId: wamid
                 }
               });
 
               // 5. Send AI Response back to WhatsApp
-              await sendWhatsAppMessage(
-                phoneNumberId,
-                config.accessToken,
-                senderNumber,
-                result.agentMsg.content
-              );
+              if (result.agentMsg) {
+                await sendWhatsAppMessage(
+                  phoneNumberId,
+                  config.accessToken,
+                  senderNumber,
+                  result.agentMsg.content
+                );
+              }
             }
           }
         }
