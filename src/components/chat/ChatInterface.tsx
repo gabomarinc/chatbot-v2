@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AssignConversationModal } from './AssignConversationModal';
 import { assumeConversation, delegateToBot, closeConversation } from '@/lib/actions/conversations';
+import { sendManualMessage } from '@/lib/actions/chat';
 import { useRouter } from 'next/navigation';
 
 interface Message {
@@ -62,7 +63,9 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
     const [newMessage, setNewMessage] = useState('');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [isCalendarAlertOpen, setIsCalendarAlertOpen] = useState(false);
+
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isSending, setIsSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Pagination state
@@ -163,21 +166,35 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
         scrollToBottom();
     }, [messages]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || !selectedConvId || isSending) return;
 
-        // Mock local send for immediate feedback
-        const tempMsg: Message = {
-            id: Date.now().toString(),
-            role: 'HUMAN', // Acting as human operator
-            content: newMessage,
-            createdAt: new Date()
-        };
+        setIsSending(true);
+        try {
+            const result = await sendManualMessage(selectedConvId, newMessage);
 
-        setMessages(prev => [...prev, tempMsg]);
-        setNewMessage('');
-        // NOTE: Real implementation would verify with server
+            if (result.success && result.message) {
+                // Append the real message from server
+                const newMsg: Message = {
+                    ...result.message,
+                    metadata: result.message.metadata as any || null,
+                    role: 'HUMAN' // Ensure role is correctly typed for UI
+                };
+                setMessages(prev => [...prev, newMsg]);
+                setNewMessage('');
+                // Also update conversation in list to show last message?
+                // router.refresh() handles this usually, but we can do it locally if needed
+            } else {
+                console.error('Error sending message:', result.error);
+                alert(result.error || 'Error al enviar mensaje');
+            }
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            alert('Error inesperado al enviar mensaje');
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (
@@ -474,9 +491,10 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                     placeholder="Escribe un mensaje..."
                                     className="flex-1 bg-gray-50 border-0 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1E9A86]/20 transition-all placeholder-gray-400"
                                 />
+
                                 <button
                                     type="submit"
-                                    disabled={!newMessage.trim()}
+                                    disabled={!newMessage.trim() || isSending}
                                     className="p-4 bg-[#1E9A86] text-white rounded-2xl shadow-lg shadow-[#1E9A86]/20 hover:bg-[#158571] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                                 >
                                     <Send className="w-5 h-5" />
