@@ -144,9 +144,12 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
 
         const pollInterval = setInterval(async () => {
             try {
-                // Don't use loadMessages directly as it sets loading state
                 const msgs = await getChatMessages(selectedConvId);
-                const transformedMessages = msgs.map(m => ({ ...m, createdAt: new Date(m.createdAt) }));
+                const transformedMessages = msgs.map(m => ({
+                    ...m,
+                    createdAt: new Date(m.createdAt),
+                    metadata: m.metadata as any
+                }));
 
                 setMessages(prev => {
                     const currentIds = new Set(prev.map(m => m.id));
