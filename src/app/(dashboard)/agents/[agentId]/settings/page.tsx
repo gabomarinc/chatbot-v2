@@ -24,6 +24,7 @@ export default async function AgentSettingsPage({ params }: { params: Promise<{ 
                 allowReminders: agent.allowReminders,
                 smartRetrieval: agent.smartRetrieval,
                 transferToHuman: agent.transferToHuman,
+                responseDelay: agent.responseDelay,
             }}
         />
     );
