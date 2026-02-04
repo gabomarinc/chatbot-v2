@@ -23,15 +23,11 @@ export async function sendManualMessage(
             return { success: false, error: 'No autorizado' };
         }
 
-        // 1. Fetch conversation details including agent integrations
+        // 1. Fetch conversation details including channel
         const conversation = await prisma.conversation.findUnique({
             where: { id: conversationId },
             include: {
-                agent: {
-                    include: {
-                        integrations: true
-                    }
-                },
+                agent: true,
                 channel: true
             }
         });
@@ -39,9 +35,6 @@ export async function sendManualMessage(
         if (!conversation) {
             return { success: false, error: 'Conversación no encontrada' };
         }
-
-        // 2. Validate Assignment (Optional: only assigned user or manager can send?)
-        // For now, we allow any authorized user with team access to help.
 
         // 3. Create Message in Database FIRST (Source of Truth)
         const newMessage = await prisma.message.create({
@@ -61,33 +54,24 @@ export async function sendManualMessage(
             where: { id: conversationId },
             data: {
                 lastMessageAt: new Date(),
-                // If status was CLOSED, maybe reopen? Leaving as is for now.
             }
         });
 
         // 5. Dispatch to External Channels
-        const channelType = conversation.channel?.type;
+        const channel = conversation.channel;
 
-        if (channelType === 'WHATSAPP') {
-            const whatsappIntegration = conversation.agent.integrations.find(
-                i => i.provider === 'WHATSAPP' && i.isActive
-            );
-
-            if (!whatsappIntegration) {
-                // Return success (saved to DB) but warning? 
-                // Or error? Let's return error so UI knows it wasn't delivered.
-                // But message IS in DB.
-                console.error('No active WhatsApp integration found for this agent');
-                return { success: true, message: newMessage, error: 'Mensaje guardado pero no enviado: Integración WhatsApp no activa' };
+        if (channel?.type === 'WHATSAPP') {
+            // For WhatsApp, we check if the channel is active
+            if (!channel.isActive) {
+                console.warn('WhatsApp channel is inactive');
             }
 
-            const { phoneNumberId, accessToken } = whatsappIntegration.configJson as any;
+            const { phoneNumberId, accessToken } = channel.configJson as any;
 
             if (!phoneNumberId || !accessToken) {
-                return { success: true, message: newMessage, error: 'Credenciales WhatsApp inválidas' };
+                return { success: true, message: newMessage, error: 'Credenciales WhatsApp inválidas en configuración del canal' };
             }
 
-            // External ID is usually the phone number for WhatsApp
             await sendWhatsAppMessage(
                 phoneNumberId,
                 accessToken,
@@ -95,32 +79,28 @@ export async function sendManualMessage(
                 content
             );
 
-        } else if (channelType === 'INSTAGRAM') {
-            const instaIntegration = conversation.agent.integrations.find(
-                i => i.provider === 'INSTAGRAM' && i.isActive
-            );
-
-            if (!instaIntegration) {
-                return { success: true, message: newMessage, error: 'Mensaje guardado pero no enviado: Integración Instagram no activa' };
+        } else if (channel?.type === 'INSTAGRAM') {
+            if (!channel.isActive) {
+                console.warn('Instagram channel is inactive');
             }
 
-            const { pageAccessToken } = instaIntegration.configJson as any;
+            const { pageAccessToken } = channel.configJson as any;
 
             if (!pageAccessToken) {
-                return { success: true, message: newMessage, error: 'Credenciales Instagram inválidas' };
+                return { success: true, message: newMessage, error: 'Credenciales Instagram inválidas en configuración del canal' };
             }
 
             await sendInstagramMessage(
                 pageAccessToken,
-                conversation.externalId, // Scoped User ID (PSID)
+                conversation.externalId,
                 content
             );
         }
 
         // 6. Revalidate Cache
         revalidatePath('/dashboard');
-        revalidatePath(`/dashboard/conversations/${conversationId}`); // If explicit page exists
-        revalidatePath('/chat'); // If chat path exists
+        revalidatePath(`/dashboard/conversations/${conversationId}`);
+        revalidatePath('/chat');
 
         return { success: true, message: newMessage };
 
