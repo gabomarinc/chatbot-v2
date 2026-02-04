@@ -138,6 +138,32 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
         }
     }, [selectedConvId]);
 
+    // Polling for new messages
+    useEffect(() => {
+        if (!selectedConvId) return;
+
+        const pollInterval = setInterval(async () => {
+            try {
+                // Don't use loadMessages directly as it sets loading state
+                const msgs = await getChatMessages(selectedConvId);
+                const transformedMessages = msgs.map(m => ({ ...m, createdAt: new Date(m.createdAt) }));
+
+                setMessages(prev => {
+                    const currentIds = new Set(prev.map(m => m.id));
+                    const newMsgs = transformedMessages.filter(m => !currentIds.has(m.id));
+
+                    if (newMsgs.length === 0) return prev;
+
+                    return [...prev, ...newMsgs].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+                });
+            } catch (error) {
+                console.error('Polling error:', error);
+            }
+        }, 4000);
+
+        return () => clearInterval(pollInterval);
+    }, [selectedConvId]);
+
     const loadMessages = async (id: string) => {
         setIsLoadingMessages(true);
         try {
