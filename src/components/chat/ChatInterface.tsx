@@ -10,6 +10,7 @@ import { AssignConversationModal } from './AssignConversationModal';
 import { assumeConversation, delegateToBot, closeConversation } from '@/lib/actions/conversations';
 import { sendManualMessage } from '@/lib/actions/chat';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface Message {
     id: string;
@@ -197,6 +198,12 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (activeConversation && !activeConversation.assignedTo) {
+            toast.error("Debes asumir la conversación para enviar mensajes.");
+            return;
+        }
+
         if (!newMessage.trim() || !selectedConvId || isSending) return;
 
         setIsSending(true);
