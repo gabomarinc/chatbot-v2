@@ -63,6 +63,47 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         scrollToBottom();
     }, [messages]);
 
+    // Polling for new messages
+    useEffect(() => {
+        const fetchMessages = async () => {
+            const visitorId = localStorage.getItem('konsul_visitor_id');
+            if (!visitorId) return;
+
+            try {
+                const { getWidgetMessages } = await import('@/lib/actions/widget');
+                const serverMessages = await getWidgetMessages(channel.id, visitorId);
+
+                if (serverMessages && serverMessages.length > 0) {
+                    setMessages(prev => {
+                        const currentIds = new Set(prev.map(p => p.id));
+                        const newMessages = serverMessages.filter((m: any) => !currentIds.has(m.id));
+
+                        if (newMessages.length === 0) return prev;
+
+                        const mapped = newMessages.map((m: any) => ({
+                            id: m.id,
+                            role: m.role as 'USER' | 'AGENT' | 'HUMAN',
+                            content: m.content,
+                            createdAt: new Date(m.createdAt),
+                            metadata: m.metadata as any
+                        }));
+
+                        return [...prev, ...mapped].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+                    });
+                }
+            } catch (error) {
+                console.error("Polling error:", error);
+            }
+        };
+
+        const interval = setInterval(fetchMessages, 3000);
+
+        // Initial fetch
+        fetchMessages();
+
+        return () => clearInterval(interval);
+    }, [channel.id]);
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;

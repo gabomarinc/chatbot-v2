@@ -1047,3 +1047,28 @@ When calling 'update_contact':
         throw new Error(`Error procesando mensaje: ${errorMessage}`);
     }
 }
+
+export async function getWidgetMessages(channelId: string, visitorId: string) {
+    try {
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                channelId: channelId,
+                externalId: visitorId
+            },
+            include: {
+                messages: {
+                    orderBy: { createdAt: 'asc' }
+                }
+            }
+        });
+
+        if (!conversation) {
+            return [];
+        }
+
+        return conversation.messages;
+    } catch (error) {
+        console.error("Error fetching widget messages:", error);
+        return [];
+    }
+}
