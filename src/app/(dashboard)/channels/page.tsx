@@ -27,14 +27,16 @@ export default async function ChannelsPage() {
                             <div className="flex items-center gap-6">
                                 {/* Icon / Avatar Logic */}
                                 {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.profilePictureUrl) ? (
-                                    <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#E1306C]/20 shadow-sm group-hover:scale-110 transition-transform duration-300 relative">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={(channel.configJson as any).profilePictureUrl}
-                                            alt="IG Profile"
-                                            className="w-full h-full object-cover"
-                                        />
-                                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] shadow-sm border border-gray-100">
+                                    <div className="relative group-hover:scale-110 transition-transform duration-300">
+                                        <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#E1306C]/20 shadow-sm relative">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={(channel.configJson as any).profilePictureUrl}
+                                                alt="IG Profile"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] shadow-sm border border-gray-100 z-10">
                                             {channel.isActive ? '✅' : '🕙'}
                                         </div>
                                     </div>
