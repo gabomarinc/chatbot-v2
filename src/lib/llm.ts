@@ -356,6 +356,7 @@ ADEMÁS, TU OBJETIVO PRINCIPAL ES IDENTIFICAR Y GUARDAR LOS SIGUIENTES DATOS DE 
 INSTRUCCIONES CRÍTICAS PARA DATOS DE CONTACTO:
 1. SI el usuario menciona su nombre, email o teléfono espontáneamente, USA INMEDIATAMENTE la herramienta "update_contact".
 2. ES MUY COMÚN que el usuario responda directamente a tus preguntas.
+   - Si preguntaste "¿Cuál es tu nombre?" y el usuario responde "Omar" o "Soy Omar", ASUME que "Omar" es el nombre y guárdalo.
    - Si preguntaste "¿Cuál es tu correo?" y el usuario responde "juan@gmail.com", ASUME que es su email y guárdalo.
    - Si preguntaste por el teléfono y responden "5551234", ASUME que es el teléfono y guárdalo.
 3. NO esperes al final de la conversación. Guárdalo apenas lo tengas.
