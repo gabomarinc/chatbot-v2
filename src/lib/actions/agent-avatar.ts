@@ -6,6 +6,48 @@ import { uploadFileToR2 } from '@/lib/r2';
 import { getUserWorkspace } from './workspace';
 import { revalidatePath } from 'next/cache';
 
+// Helper to generate image using Google Imagen 3 (Gemini)
+async function generateImageWithGemini(prompt: string, apiKey: string): Promise<string | null> {
+    try {
+        console.log('[AvatarGen] Attempting generation with Google Imagen 3...');
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                instances: [
+                    { prompt: prompt + " photorealistic, 8k, highly detailed, sharp focus" }
+                ],
+                parameters: {
+                    sampleCount: 1,
+                    aspectRatio: "1:1",
+                    personGeneration: "allow_adult" // Required for generating people in some versions, or 'allow_all'
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.warn(`[AvatarGen] Google Imagen 3 failed (${response.status}): ${errorText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        const base64Image = data.predictions?.[0]?.bytesBase64Encoded;
+
+        if (!base64Image) {
+            console.warn('[AvatarGen] Google Imagen 3 returned no image data');
+            return null;
+        }
+
+        return base64Image;
+    } catch (error) {
+        console.warn('[AvatarGen] Error calling Google Imagen 3:', error);
+        return null;
+    }
+}
+
 export async function generateAgentAvatar(agentId: string) {
     try {
         // 1. Auth Check
@@ -19,10 +61,8 @@ export async function generateAgentAvatar(agentId: string) {
         if (!agent) throw new Error("Agent not found");
 
         // 2. Prepare Culturally Appropriate Prompt
-        const apiKey = process.env.OPENAI_API_KEY;
-        if (!apiKey) throw new Error("OpenAI API Key not configured");
-
-        const openai = new OpenAI({ apiKey });
+        const openaiKey = process.env.OPENAI_API_KEY;
+        const googleKey = process.env.GOOGLE_API_KEY;
 
         // Determine role-specific attributes
         let roleDesc = '';
@@ -46,8 +86,8 @@ export async function generateAgentAvatar(agentId: string) {
         const companyContext = agent.jobCompany ? ` working at ${agent.jobCompany}` : '';
 
         // CRITICAL: Specify ethnicity and appearance for Latin American/Spanish market
-        let prompt = `Professional corporate headshot photograph of a ${roleDesc}${companyContext}.
-
+        let prompt = `Professional corporate headshot photograph of a ${roleDesc}${companyContext}. The person is named "${agent.name}", so the gender and appearance should match this name.
+        
 CRITICAL ETHNICITY & APPEARANCE REQUIREMENTS:
 - Latin American, Spanish, or Southern European appearance
 - Light to medium skin tone (NOT Middle Eastern, NOT South Asian)
@@ -91,20 +131,33 @@ AVOID COMPLETELY:
 
 STYLE: Professional LinkedIn headshot, Western corporate photography, business portrait. Think Fortune 500 company employee headshot for Latin American or Spanish market.`;
 
-        console.log(`[AvatarGen] Generating culturally appropriate PHOTOREALISTIC avatar`);
+        console.log(`[AvatarGen] Generating culturally appropriate PHOTOREALISTIC avatar for ${agent.name}`);
 
-        // 3. Call DALL-E 3 with HD quality
-        const response = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: prompt,
-            n: 1,
-            size: "1024x1024",
-            quality: "hd",
-            response_format: "b64_json",
-        });
+        let imageBase64: string | null = null;
+        let modelUsed = 'dall-e-3';
 
-        const imageBase64 = response.data?.[0]?.b64_json;
-        if (!imageBase64) throw new Error("No image generated");
+        // 3a. Try Google Imagen 3 First (if key exists)
+        if (googleKey) {
+            imageBase64 = await generateImageWithGemini(prompt, googleKey);
+            if (imageBase64) modelUsed = 'imagen-3';
+        }
+
+        // 3b. Fallback to OpenAI DALL-E 3
+        if (!imageBase64 && openaiKey) {
+            console.log('[AvatarGen] Falling back to OpenAI DALL-E 3...');
+            const openai = new OpenAI({ apiKey: openaiKey });
+            const response = await openai.images.generate({
+                model: "dall-e-3",
+                prompt: prompt,
+                n: 1,
+                size: "1024x1024",
+                quality: "hd",
+                response_format: "b64_json",
+            });
+            imageBase64 = response.data?.[0]?.b64_json || null;
+        }
+
+        if (!imageBase64) throw new Error("No image generated (Both providers failed)");
 
         // 4. Save to R2
         const buffer = Buffer.from(imageBase64, 'base64');
@@ -118,7 +171,7 @@ STYLE: Professional LinkedIn headshot, Western corporate photography, business p
         });
 
         // 6. Track Usage & Cost
-        const COST_IN_CREDITS = 50; // Approx $0.04-0.05 value based on token/credit ratio (10cr ~ $0.01)
+        const COST_IN_CREDITS = 50;
 
         await prisma.$transaction([
             // Log Usage
@@ -126,9 +179,9 @@ STYLE: Professional LinkedIn headshot, Western corporate photography, business p
                 data: {
                     workspaceId: workspace.id,
                     agentId: agent.id,
-                    tokensUsed: 0, // No tokens for image
+                    tokensUsed: 0,
                     creditsUsed: COST_IN_CREDITS,
-                    model: 'dall-e-3',
+                    model: modelUsed,
                 }
             }),
             // Deduct Credits
@@ -200,9 +253,8 @@ export async function generatePreviewAvatar(data: { name: string, intent: string
         else if (normalizedIntent.includes('SOPORTE') || normalizedIntent.includes('ATENCIÓN') || normalizedIntent.includes('SUPPORT') || normalizedIntent.includes('SERVICE')) jobType = 'SUPPORT';
 
         // 3. Prepare Prompt
-        const apiKey = process.env.OPENAI_API_KEY;
-        if (!apiKey) throw new Error("OpenAI API Key not configured");
-        const openai = new OpenAI({ apiKey });
+        const openaiKey = process.env.OPENAI_API_KEY;
+        const googleKey = process.env.GOOGLE_API_KEY;
 
         let prompt = `Candid portrait photograph of a real ${jobType === 'SALES' ? 'sales professional' : jobType === 'SUPPORT' ? 'customer support specialist' : 'business professional'}. The person is named "${data.name}", so the gender and appearance should match this name. `;
 
@@ -223,17 +275,30 @@ export async function generatePreviewAvatar(data: { name: string, intent: string
 
         console.log(`[AvatarPreview] Generating with prompt: ${prompt}`);
 
-        // 4. Call DALL-E 3
-        const response = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: prompt,
-            n: 1,
-            size: "1024x1024",
-            response_format: "b64_json",
-        });
+        let imageBase64: string | null = null;
+        let modelUsed = 'dall-e-3';
 
-        const imageBase64 = response.data?.[0]?.b64_json;
-        if (!imageBase64) throw new Error("No image generated");
+        // 3a. Try Google Imagen 3 First
+        if (googleKey) {
+            imageBase64 = await generateImageWithGemini(prompt, googleKey);
+            if (imageBase64) modelUsed = 'imagen-3';
+        }
+
+        // 3b. Fallback to OpenAI DALL-E 3
+        if (!imageBase64 && openaiKey) {
+            console.log('[AvatarPreview] Falling back to OpenAI DALL-E 3...');
+            const openai = new OpenAI({ apiKey: openaiKey });
+            const response = await openai.images.generate({
+                model: "dall-e-3",
+                prompt: prompt,
+                n: 1,
+                size: "1024x1024",
+                response_format: "b64_json",
+            });
+            imageBase64 = response.data?.[0]?.b64_json || null;
+        }
+
+        if (!imageBase64) throw new Error("No image generated (Both providers failed)");
 
         // 5. Save to R2
         const buffer = Buffer.from(imageBase64, 'base64');
@@ -251,7 +316,7 @@ export async function generatePreviewAvatar(data: { name: string, intent: string
                     agentId: null,
                     tokensUsed: 0,
                     creditsUsed: COST_IN_CREDITS,
-                    model: 'dall-e-3',
+                    model: modelUsed,
                 }
             }),
             // Deduct Credits
