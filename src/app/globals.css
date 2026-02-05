@@ -243,3 +243,44 @@ div.driver-popover .driver-popover-close-btn {
 div.driver-popover .driver-popover-close-btn:hover {
   color: #ef4444;
 }
+
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  50% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-up {
+
+  0%,
+  20% {
+    transform: translateY(0);
+  }
+
+  25%,
+  45% {
+    transform: translateY(-20%);
+  }
+
+  50%,
+  70% {
+    transform: translateY(-40%);
+  }
+
+  75%,
+  95% {
+    transform: translateY(-60%);
+  }
+
+  100% {
+    transform: translateY(-80%);
+  }
+}

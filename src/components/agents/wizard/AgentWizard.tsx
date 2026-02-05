@@ -242,18 +242,38 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                 <div className="flex-1 overflow-y-auto">
                     <div className="max-w-3xl mx-auto px-6 py-12">
                         {isLoading ? (
-                            <div className="flex flex-col items-center justify-center h-full py-20 animate-in fade-in space-y-6">
-                                <div className="relative">
-                                    <div className="w-20 h-20 border-4 border-[#21AC96]/30 border-t-[#21AC96] rounded-full animate-spin"></div>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <Wand2 className="w-8 h-8 text-[#21AC96] animate-pulse" />
+                            <div className="flex flex-col items-center justify-center h-full py-20 animate-in fade-in space-y-8">
+                                <div className="relative mb-4">
+                                    <div className="w-24 h-24 bg-[#21AC96]/10 rounded-full flex items-center justify-center animate-pulse">
+                                        <Wand2 className="w-10 h-10 text-[#21AC96]" />
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-lg border border-gray-100">
+                                        <Loader2 className="w-5 h-5 text-[#21AC96] animate-spin" />
                                     </div>
                                 </div>
-                                <div className="text-center space-y-2">
-                                    <h3 className="text-2xl font-bold text-gray-900">Creando tu Agente...</h3>
-                                    <p className="text-gray-500 max-w-sm mx-auto">
-                                        Estamos configurando el cerebro, conectando los canales y preparando todo para ti.
-                                    </p>
+
+                                <div className="w-full max-w-md space-y-6 text-center">
+                                    <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+                                        Creando tu Agente...
+                                    </h3>
+
+                                    {/* Progress Bar & Status Text */}
+                                    <div className="space-y-3">
+                                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-[#21AC96] animate-[progress_2s_ease-in-out_infinite] w-full origin-left"></div>
+                                        </div>
+
+                                        <div className="h-6 overflow-hidden relative">
+                                            <div className="animate-[slide-up_4s_linear_infinite] space-y-6">
+                                                <p className="text-sm font-medium text-gray-500">Diseñando personalidad...</p>
+                                                <p className="text-sm font-medium text-gray-500">Entrenando modelo de IA...</p>
+                                                <p className="text-sm font-medium text-gray-500">Configurando canales...</p>
+                                                <p className="text-sm font-medium text-gray-500">Optimizando respuestas...</p>
+                                                {/* Duplicate first one for seamless loop */}
+                                                <p className="text-sm font-medium text-gray-500">Diseñando personalidad...</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
