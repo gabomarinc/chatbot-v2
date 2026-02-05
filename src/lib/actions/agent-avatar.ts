@@ -204,7 +204,7 @@ export async function generatePreviewAvatar(data: { name: string, intent: string
         if (!apiKey) throw new Error("OpenAI API Key not configured");
         const openai = new OpenAI({ apiKey });
 
-        let prompt = `Candid portrait photograph of a real ${jobType === 'SALES' ? 'sales professional' : jobType === 'SUPPORT' ? 'customer support specialist' : 'business professional'}. `;
+        let prompt = `Candid portrait photograph of a real ${jobType === 'SALES' ? 'sales professional' : jobType === 'SUPPORT' ? 'customer support specialist' : 'business professional'}. The person is named "${data.name}", so the gender and appearance should match this name. `;
 
         if (data.companyName) {
             prompt += `Working at ${data.companyName}. `;
