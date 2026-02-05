@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
-import { getUserWorkspace } from './dashboard'
+import { getUserWorkspace } from './workspace'
 import { cache } from 'react'
 import { subDays, startOfDay, endOfDay } from 'date-fns'
 
@@ -155,7 +155,7 @@ export const getAgentPersonalStats = cache(async () => {
     for (const conv of conversationsWithHumanMessages) {
         const firstUserMessage = conv.messages.find(m => m.role === 'USER')
         const firstHumanMessage = conv.messages.find(m => m.role === 'HUMAN')
-        
+
         if (firstUserMessage && firstHumanMessage && firstHumanMessage.createdAt > firstUserMessage.createdAt) {
             const responseTime = firstHumanMessage.createdAt.getTime() - firstUserMessage.createdAt.getTime()
             totalResponseTime += responseTime

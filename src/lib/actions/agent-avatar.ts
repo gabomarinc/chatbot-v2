@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import OpenAI from 'openai';
 import { uploadFileToR2 } from '@/lib/r2';
-import { getUserWorkspace } from './dashboard';
+import { getUserWorkspace } from './workspace';
 import { revalidatePath } from 'next/cache';
 
 export async function generateAgentAvatar(agentId: string) {

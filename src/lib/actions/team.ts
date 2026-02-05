@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getUserWorkspace } from './dashboard'
+import { getUserWorkspace } from './workspace'
 import { auth } from '@/auth'
 import bcrypt from 'bcryptjs'
 import { sendTeamInvitationEmail } from '@/lib/email'
@@ -222,7 +222,7 @@ export async function getMemberStats(memberUserId: string) {
         for (const conv of conversationsWithHumanMessages) {
             const firstUserMessage = conv.messages.find(m => m.role === 'USER')
             const firstHumanMessage = conv.messages.find(m => m.role === 'HUMAN')
-            
+
             if (firstUserMessage && firstHumanMessage && firstHumanMessage.createdAt > firstUserMessage.createdAt) {
                 const responseTime = firstHumanMessage.createdAt.getTime() - firstUserMessage.createdAt.getTime()
                 totalResponseTime += responseTime

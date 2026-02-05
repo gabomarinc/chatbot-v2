@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
-import { getUserWorkspace } from './dashboard'
+import { getUserWorkspace } from './workspace'
 import { revalidatePath } from 'next/cache'
 import { load } from 'cheerio'
 import { generateEmbedding } from '@/lib/ai'

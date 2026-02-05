@@ -1,9 +1,21 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getUserWorkspace } from './dashboard'
 import { auth } from '@/auth'
 import { cache } from 'react'
+
+export const getUserWorkspace = cache(async () => {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    // Get the first workspace where the user is a member
+    const membership = await prisma.workspaceMember.findFirst({
+        where: { userId: session.user.id },
+        include: { workspace: true }
+    })
+
+    return membership?.workspace || null
+})
 
 export async function getWorkspaceInfo() {
     const session = await auth()

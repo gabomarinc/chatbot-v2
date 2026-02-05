@@ -585,7 +585,7 @@ export async function updateAgentWizard(agentId: string, data: {
         const { updateChannel, getChannels } = await import('./dashboard');
         // We need raw prisma access to find channels by agentId quickly or use getChannels
         // Let's use prisma directly for efficiency in this transactional-like operation
-        const workspace = await (await import('./dashboard')).getUserWorkspace();
+        const workspace = await (await import('./workspace')).getUserWorkspace();
         if (!workspace) throw new Error("Unauthorized");
 
         const agent = await prisma.agent.findFirst({

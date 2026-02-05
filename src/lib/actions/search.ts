@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { getUserWorkspace } from './dashboard'
+import { getUserWorkspace } from './workspace'
 
 export async function globalSearch(query: string) {
     const workspace = await getUserWorkspace()

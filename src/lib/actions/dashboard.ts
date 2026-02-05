@@ -7,18 +7,9 @@ import { es } from 'date-fns/locale'
 import { revalidatePath } from 'next/cache'
 import { cache } from 'react'
 
-export const getUserWorkspace = cache(async () => {
-    const session = await auth()
-    if (!session?.user?.id) return null
+import { getUserWorkspace } from './workspace'
 
-    // Get the first workspace where the user is a member
-    const membership = await prisma.workspaceMember.findFirst({
-        where: { userId: session.user.id },
-        include: { workspace: true }
-    })
-
-    return membership?.workspace || null
-})
+export { getUserWorkspace }
 
 export const getDashboardStats = cache(async () => {
     const workspace = await getUserWorkspace()
