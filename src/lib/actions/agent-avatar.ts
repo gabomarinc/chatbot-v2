@@ -15,14 +15,15 @@ async function generateImageWithGemini(prompt: string, apiKey: string): Promise<
             headers: {
                 'Content-Type': 'application/json'
             },
+
             body: JSON.stringify({
                 instances: [
-                    { prompt: prompt + " photorealistic, 8k, highly detailed, sharp focus" }
+                    { prompt: prompt + " natural lighting, authentic look, smartphone photography style" }
                 ],
                 parameters: {
                     sampleCount: 1,
                     aspectRatio: "1:1",
-                    personGeneration: "allow_adult" // Required for generating people in some versions, or 'allow_all'
+                    personGeneration: "allow_adult"
                 }
             })
         });
@@ -86,7 +87,7 @@ export async function generateAgentAvatar(agentId: string) {
         const companyContext = agent.jobCompany ? ` working at ${agent.jobCompany}` : '';
 
         // CRITICAL: Specify ethnicity and appearance for Latin American/Spanish market
-        let prompt = `Professional corporate headshot photograph of a ${roleDesc}${companyContext}. The person is named "${agent.name}", so the gender and appearance should match this name.
+        let prompt = `Candid portrait photograph of a ${roleDesc}${companyContext}. The person is named "${agent.name}", so the gender and appearance should match this name.
         
 CRITICAL ETHNICITY & APPEARANCE REQUIREMENTS:
 - Latin American, Spanish, or Southern European appearance
@@ -100,26 +101,23 @@ CRITICAL ETHNICITY & APPEARANCE REQUIREMENTS:
 SPECIFIC APPEARANCE:
 - ${expressionDesc}
 - ${attireDesc}
-- Age: 28-40 years old
-- Modern, professional grooming
-- Natural, authentic expression
+- Age: 25-45 years old
+- Natural grooming
+- Authentic expression, slight smile or neutral
 
 PHOTOGRAPHY SPECIFICATIONS:
-- Shot on Canon EOS R5 with 85mm f/1.4 lens at f/2.0
-- Professional corporate headshot photography
-- Soft studio lighting with natural window fill light
-- Neutral gray or soft bokeh office background
-- Sharp focus on eyes, shallow depth of field
-- Professional color grading, natural skin tones
-- High resolution, RAW photo quality
+- Shot on iPhone or high-end smartphone
+- Natural office lighting or window light
+- Realistic background, maybe slightly messy office blur
+- Standard focus
+- Natural colors, no heavy filters
 
 REALISM REQUIREMENTS:
-- Actual photograph, NOT illustration or 3D render
-- Real human skin with natural texture and pores
-- Authentic eye reflections and catchlights
-- Natural facial asymmetry
-- Real hair with individual strands visible
-- Slight natural imperfections (subtle)
+- Actual photograph look
+- Real human skin texture (imperfections, pores)
+- Natural eye reflections
+- Not too perfect
+- Look like a real employee, not a stock model
 
 AVOID COMPLETELY:
 - Middle Eastern appearance or features
@@ -128,8 +126,9 @@ AVOID COMPLETELY:
 - Cartoon, illustration, or digital art style
 - Overly airbrushed or perfect skin
 - Artificial or CGI appearance
+- Studio lighting or "perfect" corporate headshot look
 
-STYLE: Professional LinkedIn headshot, Western corporate photography, business portrait. Think Fortune 500 company employee headshot for Latin American or Spanish market.`;
+STYLE: Candid business portrait, smartphone photography, authentic linkedin profile picture. Natural, approachable, not overly produced.`;
 
         console.log(`[AvatarGen] Generating culturally appropriate PHOTOREALISTIC avatar for ${agent.name}`);
 
