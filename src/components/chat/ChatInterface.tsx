@@ -62,6 +62,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [newMessage, setNewMessage] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [isCalendarAlertOpen, setIsCalendarAlertOpen] = useState(false);
 
@@ -98,6 +99,17 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
         }
     };
 
+
+    const filteredConversations = conversations.filter(conv => {
+        const query = searchQuery.toLowerCase().trim();
+        if (!query) return true;
+
+        const name = (conv.contactName || '').toLowerCase();
+        const id = (conv.externalId || '').toLowerCase();
+        const email = (conv.assignedUser?.email || '').toLowerCase();
+
+        return name.includes(query) || id.includes(query) || email.includes(query);
+    });
 
     const activeConversation = conversations.find(c => c.id === selectedConvId);
 
@@ -242,6 +254,8 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                         <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1E9A86] transition-colors" />
                         <input
                             type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Buscar chats..."
                             className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#1E9A86]/5 focus:bg-white focus:border-[#1E9A86] transition-all font-medium placeholder-gray-400"
                         />
@@ -249,7 +263,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {conversations.map((conv) => (
+                    {filteredConversations.map((conv) => (
                         <button
                             key={conv.id}
                             onClick={() => setSelectedConvId(conv.id)}
@@ -297,7 +311,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                         </button>
                     ))}
 
-                    {conversations.length === 0 && (
+                    {filteredConversations.length === 0 && (
                         <div className="text-center py-10 px-6">
                             <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">
                                 <MessageCircle className="w-6 h-6" />
@@ -308,7 +322,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                 </div>
 
                 {/* Pagination / Load More */}
-                {hasMore && conversations.length >= 20 && (
+                {hasMore && filteredConversations.length >= 20 && !searchQuery && (
                     <div className="p-4 border-t border-gray-50 bg-gray-50/50">
                         <button
                             onClick={handleLoadMore}
