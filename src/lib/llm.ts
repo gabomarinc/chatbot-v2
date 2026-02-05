@@ -128,7 +128,7 @@ export async function generateAgentReply(
           properties: {
             updates: {
               type: 'object',
-              description: 'Key-value pairs of data to update. Keys must match the defined custom fields.',
+              description: 'Key-value pairs of data to update. Keys can be standard fields ("name", "email", "phone") or defined custom fields.',
               additionalProperties: true
             }
           },
@@ -343,8 +343,22 @@ function buildSystemPrompt(agent: any, contextChunks: string[]): string {
     });
     prompt += '\nCuando el usuario te proporcione esta información, USA LA HERRAMIENTA "update_contact" para guardarla.\n';
     prompt += 'Para campos con Opciones válidas, DEBES ajustar la respuesta del usuario a una de las opciones exactas si es posible, o pedir clarificación.\n';
-    prompt += 'No seas intrusivo. Pregunta por estos datos de manera natural durante la conversación.\n';
+    prompt += 'No seas intrusivo. Pregunta por estos datos de manera natural durante la conversación.\n\n';
   }
+
+  // STANDARD CONTACT INFO COLLECTION (Always Active)
+  prompt += `
+ADEMÁS, TU OBJETIVO PRINCIPAL ES IDENTIFICAR Y GUARDAR LOS SIGUIENTES DATOS DE CONTACTO SI EL USUARIO LOS MENCIONA:
+- Nombre completo (key: "name")
+- Correo electrónico (key: "email")
+- Número de teléfono (key: "phone")
+
+INSTRUCCIONES CRÍTICAS PARA DATOS DE CONTACTO:
+1. SI el usuario menciona su nombre, email o teléfono espontáneamente, USA INMEDIATAMENTE la herramienta "update_contact".
+2. NO esperes al final de la conversación. Guárdalo apenas lo tengas.
+3. Si el usuario dice "me llamo Juan", llama a update_contact con { "name": "Juan" }.
+4. Si ya tienes el dato (ej. el sistema ya sabe el nombre), NO lo vuelvas a preguntar ni a guardar a menos que el usuario lo corrija.
+`;
 
   return prompt.trim();
 }
