@@ -87,48 +87,37 @@ export async function generateAgentAvatar(agentId: string) {
         const companyContext = agent.jobCompany ? ` working at ${agent.jobCompany}` : '';
 
         // CRITICAL: Specify ethnicity and appearance for Latin American/Spanish market
-        let prompt = `Candid portrait photograph of a ${roleDesc}${companyContext}. The person is named "${agent.name}", so the gender and appearance should match this name.
-        
-CRITICAL ETHNICITY & APPEARANCE REQUIREMENTS:
-- Latin American, Spanish, or Southern European appearance
-- Light to medium skin tone (NOT Middle Eastern, NOT South Asian)
-- Western professional styling and grooming
-- Clean-shaven or well-groomed facial hair
-- Modern Western hairstyle
-- NO turbans, NO traditional Middle Eastern clothing
-- European or Latin American facial features
+        // EXTREME REALISM: Focus on "average person", "imperfect", "non-model"
+        let prompt = `Amateur photo / Selfie of a normal everyday person (${roleDesc})${companyContext}. The person is named "${agent.name}", so the gender and appearance should match this name.
 
-SPECIFIC APPEARANCE:
+CRITICAL:
+- This must look like a REAL PERSON, not a model.
+- Average attractiveness, natural imperfections, slight asymmetry.
+- NOT a professional headshot.
+- NOT studio lighting.
+- NO makeup or very natural makeup.
+
+APPEARANCE:
 - ${expressionDesc}
 - ${attireDesc}
-- Age: 25-45 years old
-- Natural grooming
-- Authentic expression, slight smile or neutral
+- Age: 25-50 years old
+- Messy hair or natural style (not perfect salon hair)
+- Skin texture: Pores, blemishes, wrinkles, natural oils (CRITICAL)
 
-PHOTOGRAPHY SPECIFICATIONS:
-- Shot on iPhone or high-end smartphone
-- Natural office lighting or window light
-- Realistic background, maybe slightly messy office blur
-- Standard focus
-- Natural colors, no heavy filters
+STYLE:
+- Smartphone camera quality (iPhone/Pixel)
+- Bad/Natural lighting (fluorescent office light or window)
+- Slight blur or noise
+- Candid angle, maybe looking slightly away or smiling naturally
+- Background: Busy office, authentic workplace, not a blurred grey studio background
 
-REALISM REQUIREMENTS:
-- Actual photograph look
-- Real human skin texture (imperfections, pores)
-- Natural eye reflections
-- Not too perfect
-- Look like a real employee, not a stock model
-
-AVOID COMPLETELY:
-- Middle Eastern appearance or features
-- South Asian appearance
-- Traditional ethnic clothing or accessories
-- Cartoon, illustration, or digital art style
-- Overly airbrushed or perfect skin
-- Artificial or CGI appearance
-- Studio lighting or "perfect" corporate headshot look
-
-STYLE: Candid business portrait, smartphone photography, authentic linkedin profile picture. Natural, approachable, not overly produced.`;
+AVOID:
+- "Perfect" beauty
+- Professional lighting
+- Bokeh that looks fake
+- Airbrushed skin
+- 3D render style
+- Illustration`;
 
         console.log(`[AvatarGen] Generating culturally appropriate PHOTOREALISTIC avatar for ${agent.name}`);
 
@@ -255,7 +244,7 @@ export async function generatePreviewAvatar(data: { name: string, intent: string
         const openaiKey = process.env.OPENAI_API_KEY;
         const googleKey = process.env.GOOGLE_API_KEY;
 
-        let prompt = `Candid portrait photograph of a real ${jobType === 'SALES' ? 'sales professional' : jobType === 'SUPPORT' ? 'customer support specialist' : 'business professional'}. The person is named "${data.name}", so the gender and appearance should match this name. `;
+        let prompt = `Amateur photo / Selfie of a normal everyday person (${jobType === 'SALES' ? 'sales professional' : jobType === 'SUPPORT' ? 'customer support specialist' : 'business professional'}). The person is named "${data.name}", so the gender and appearance should match this name. `;
 
         if (data.companyName) {
             prompt += `Working at ${data.companyName}. `;
@@ -263,14 +252,22 @@ export async function generatePreviewAvatar(data: { name: string, intent: string
 
         // Add role-specific context
         if (jobType === 'SALES') {
-            prompt += `Approachable, confident demeanor. Smart business casual attire. `;
+            prompt += `Approachable, confident. Smart business casual. `;
         } else if (jobType === 'SUPPORT') {
-            prompt += `Patient, empathetic expression. Professional but comfortable clothing. `;
+            prompt += `Patient, friendly. T-shirt or polo. `;
         } else {
-            prompt += `Professional appearance, neutral expression. `;
+            prompt += `Professional but casual. `;
         }
 
-        prompt += `Taken with iPhone 15 Pro in Portrait Mode. Natural office lighting from window. Unposed, authentic moment captured during workday. Shallow depth of field (f/1.8), soft bokeh background. Visible skin texture, natural imperfections, real human features. Slight asymmetry in face. NOT a professional headshot, NOT studio lighting, NOT AI generated, NOT 3D render, NOT perfect skin. Documentary photography style, photojournalism aesthetic, candid street photography look.`;
+        prompt += `
+CRITICAL:
+- REAL PERSON look, NOT a model.
+- Average attractiveness, natural imperfections.
+- Messy hair, pores, natural skin oils.
+- Smartphone camera quality (iPhone/Pixel).
+- Bad/Natural lighting (fluorescent office light or window).
+- Background: Busy office, authentic workplace.
+- NO professional lighting, NO airbrushing.`;
 
         console.log(`[AvatarPreview] Generating with prompt: ${prompt}`);
 
