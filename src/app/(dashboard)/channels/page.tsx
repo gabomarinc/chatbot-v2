@@ -27,7 +27,7 @@ export default async function ChannelsPage() {
                             <div className="flex items-center gap-6">
                                 {/* Icon / Avatar Logic */}
                                 {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.profilePictureUrl) ? (
-                                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#E1306C]/20 shadow-sm group-hover:scale-110 transition-transform duration-300 relative">
+                                    <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#E1306C]/20 shadow-sm group-hover:scale-110 transition-transform duration-300 relative">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={(channel.configJson as any).profilePictureUrl}
