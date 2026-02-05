@@ -1,5 +1,5 @@
 import { getChannels } from '@/lib/actions/dashboard';
-import { Plus, Search, Filter, Smartphone, MessageSquare, Globe, Instagram, Send, MoreVertical, Smartphone as PhoneIcon } from 'lucide-react';
+import { Plus, Search, Filter, Smartphone, MessageSquare, Globe, Instagram, Send, MoreVertical, Smartphone as PhoneIcon, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { NewChannelButton } from '@/components/channels/NewChannelButton';
@@ -25,25 +25,44 @@ export default async function ChannelsPage() {
                     channels.map((channel) => (
                         <div key={channel.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#21AC96]/20 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 cursor-pointer">
                             <div className="flex items-center gap-6">
-                                {/* Icon Channel */}
-                                <div className={cn(
-                                    "w-16 h-16 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-sm relative",
-                                    channel.type === 'WHATSAPP' ? 'bg-green-50 text-green-600' :
-                                        channel.type === 'INSTAGRAM' ? 'bg-pink-50 text-pink-600' :
-                                            'bg-indigo-50 text-indigo-600'
-                                )}>
-                                    {channel.type === 'WHATSAPP' && <PhoneIcon className="w-7 h-7" />}
-                                    {channel.type === 'INSTAGRAM' && <Instagram className="w-7 h-7" />}
-                                    {channel.type === 'WEBCHAT' && <Globe className="w-7 h-7" />}
-
-                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] shadow-sm border border-gray-100">
-                                        {channel.isActive ? '✅' : '🕙'}
+                                {/* Icon / Avatar Logic */}
+                                {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.profilePictureUrl) ? (
+                                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#E1306C]/20 shadow-sm group-hover:scale-110 transition-transform duration-300 relative">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={(channel.configJson as any).profilePictureUrl}
+                                            alt="IG Profile"
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] shadow-sm border border-gray-100">
+                                            {channel.isActive ? '✅' : '🕙'}
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className={cn(
+                                        "w-16 h-16 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-sm relative",
+                                        channel.type === 'WHATSAPP' ? 'bg-green-50 text-green-600' :
+                                            channel.type === 'INSTAGRAM' ? 'bg-pink-50 text-pink-600' :
+                                                'bg-indigo-50 text-indigo-600'
+                                    )}>
+                                        {channel.type === 'WHATSAPP' && <PhoneIcon className="w-7 h-7" />}
+                                        {channel.type === 'INSTAGRAM' && <Instagram className="w-7 h-7" />}
+                                        {channel.type === 'WEBCHAT' && <Globe className="w-7 h-7" />}
+
+                                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] shadow-sm border border-gray-100">
+                                            {channel.isActive ? '✅' : '🕙'}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-3 mb-1">
-                                        <h3 className="text-gray-900 font-extrabold text-lg tracking-tight">{channel.displayName}</h3>
+                                        <h3 className="text-gray-900 font-extrabold text-lg tracking-tight">
+                                            {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.username)
+                                                ? `@${(channel.configJson as any).username}`
+                                                : channel.displayName
+                                            }
+                                        </h3>
                                         <span className={cn(
                                             "px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border",
                                             channel.isActive
@@ -53,11 +72,20 @@ export default async function ChannelsPage() {
                                             {channel.isActive ? 'Conectado' : 'Desconectado'}
                                         </span>
                                     </div>
+                                    {/* Additional Metadata Row */}
                                     <div className="flex items-center gap-4 text-sm text-gray-400 font-medium">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-[#21AC96] font-bold text-xs uppercase tracking-tight">Agente:</span>
-                                            {channel.agent.name}
-                                        </div>
+                                        {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.followersCount !== undefined) ? (
+                                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-md">
+                                                <Users className="w-3 h-3 text-gray-500" />
+                                                <span className="text-gray-600 text-xs font-bold">{(channel.configJson as any).followersCount} seguidores</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[#21AC96] font-bold text-xs uppercase tracking-tight">Agente:</span>
+                                                {channel.agent.name}
+                                            </div>
+                                        )}
+
                                         <div className="w-1 h-1 bg-gray-200 rounded-full"></div>
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-indigo-400 font-bold text-xs uppercase tracking-tight">Tipo:</span>
