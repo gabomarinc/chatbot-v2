@@ -312,20 +312,35 @@ SÉ COMPLETO PERO CONCISO. El límite de 3000 caracteres es ESTRICTO.`;
     } catch (e) {
         console.error('[Wizard] Personality Gen error:', e);
         // Fallback
+        // Falback: Use DEFAULT_PROMPTS to ensure high quality even without LLM
+        let defaultPromptFn = DEFAULT_PROMPTS.PERSONAL;
+        const normalizedIntent = intent.toUpperCase();
+
+        if (normalizedIntent.includes('VENTA') || normalizedIntent.includes('COMERCIAL') || normalizedIntent.includes('SALES')) {
+            defaultPromptFn = DEFAULT_PROMPTS.SALES;
+        } else if (normalizedIntent.includes('SOPORTE') || normalizedIntent.includes('TECNICO') || normalizedIntent.includes('SUPPORT')) {
+            defaultPromptFn = DEFAULT_PROMPTS.SUPPORT;
+        } else if (normalizedIntent.includes('ATENCIÓN') || normalizedIntent.includes('CLIENTE') || normalizedIntent.includes('SERVICE')) {
+            defaultPromptFn = DEFAULT_PROMPTS.SERVICE;
+        }
+
+        const basePrompt = defaultPromptFn(agentName, companyName || null);
+
         return [
             {
                 id: 'A',
                 name: "Estándar Profesional",
-                description: "Un asistente equilibrado y profesional que prioriza la claridad y la eficiencia en cada respuesta.",
-                systemPrompt: `Eres ${agentName}, un asistente virtual profesional...`,
-                temperature: 0.5,
+                description: "Un enfoque equilibrado, ideal para la mayoría de los casos. Prioriza la claridad y la eficiencia.",
+                systemPrompt: basePrompt,
+                temperature: 0.3,
                 communicationStyle: 'NORMAL'
             },
             {
                 id: 'B',
-                name: "Asesor Amigable",
-                description: "Un asistente con tono cercano, cálido y empático, diseñado para conectar emocionalmente con el usuario.",
-                systemPrompt: `Eres ${agentName}, un asistente virtual amigable...`,
+                name: "Empático y Cercano",
+                description: "Un tono más cálido y humano. Ideal si buscas conectar emocionalmente con el usuario.",
+                // Append instruction for empathy to differentiate
+                systemPrompt: basePrompt.replace('Instrucciones de Comportamiento:', 'Instrucciones de Comportamiento:\n0. TONO: Sé muy amable, cercano y usa emojis ocasionalmente.\n'),
                 temperature: 0.7,
                 communicationStyle: 'CASUAL'
             }
