@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { MessageCircle, Globe, Instagram, Send, Sparkles } from 'lucide-react';
+import { MessageCircle, Globe, Instagram, Send, Sparkles, Users } from 'lucide-react';
 import { getAgentFull } from '@/lib/actions/dashboard';
 import { ConnectChannelButton } from '@/components/agents/ConnectChannelButton';
 
@@ -57,11 +57,38 @@ export default async function AgentChannelsPage({ params }: { params: Promise<{ 
                         {channels.map((channel) => (
                             <div key={channel.id} className="bg-white rounded-[1.5rem] p-6 border border-gray-100 flex items-center justify-between hover:border-[#21AC96]/20 hover:shadow-xl hover:shadow-[#21AC96]/5 transition-all group">
                                 <div className="flex items-center gap-5">
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300 ${getChannelColor(channel.type)}`}>
-                                        {getChannelIcon(channel.type)}
-                                    </div>
+                                    {/* Icon / Avatar Logic */}
+                                    {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.profilePictureUrl) ? (
+                                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#E1306C]/20 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={(channel.configJson as any).profilePictureUrl}
+                                                alt="IG Profile"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300 ${getChannelColor(channel.type)}`}>
+                                            {getChannelIcon(channel.type)}
+                                        </div>
+                                    )}
+
                                     <div>
-                                        <div className="text-lg font-bold text-gray-900 mb-1">{getChannelName(channel.type)}</div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="text-lg font-bold text-gray-900">
+                                                {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.username)
+                                                    ? `@${(channel.configJson as any).username}`
+                                                    : getChannelName(channel.type)
+                                                }
+                                            </div>
+                                            {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.followersCount !== undefined) && (
+                                                <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full text-[10px] font-bold text-gray-500">
+                                                    <Users className="w-3 h-3" />
+                                                    <span>{(channel.configJson as any).followersCount}</span>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="flex items-center gap-2">
                                             <div className={`w-2 h-2 rounded-full ${channel.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
                                             <span className={`text-xs font-bold uppercase tracking-wider ${channel.isActive ? 'text-green-600' : 'text-gray-400'}`}>

@@ -189,10 +189,10 @@ export async function connectInstagramAccount(data: {
             throw new Error('Workspace not found');
         }
 
-        // 2. Verify Token (Double check it works)
-        // We can do a quick call to get the account info to ensure permissions are active
+        // 2. Verify Token & Fetch Profile Data for Meta Review Display
+        // We fetching profile_picture_url, followers_count, and biography to display in the UI
         const verifyRes = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/${data.accountId}?fields=username&access_token=${data.pageAccessToken}`
+            `https://graph.facebook.com/${META_API_VERSION}/${data.accountId}?fields=username,profile_picture_url,followers_count,biography&access_token=${data.pageAccessToken}`
         );
 
         if (!verifyRes.ok) {
@@ -200,6 +200,9 @@ export async function connectInstagramAccount(data: {
             console.error('Verify Token Failed:', JSON.stringify(errData));
             throw new Error(`Meta validation failed: ${errData.error?.message || 'Invalid token'}`);
         }
+
+        const profileData = await verifyRes.json();
+        console.log('IG Profile Data fetched:', JSON.stringify(profileData));
 
         // 2.5 Subscribe Page to App (Enable Webhooks)
         // This is CRITICAL. Without this, the App works but the Page doesn't send events.
@@ -231,7 +234,12 @@ export async function connectInstagramAccount(data: {
             pageAccessToken: data.pageAccessToken,
             instagramAccountId: data.accountId,
             pageId: data.pageId,
-            verifyToken: Math.random().toString(36).substring(7)
+            verifyToken: Math.random().toString(36).substring(7),
+            // Store profile metadata for UI display (Meta Requirement)
+            username: profileData.username,
+            profilePictureUrl: profileData.profile_picture_url,
+            followersCount: profileData.followers_count,
+            biography: profileData.biography
         };
 
         if (existingChannel) {
