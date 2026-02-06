@@ -662,7 +662,8 @@ export async function createAgentFromWizard(data: {
             success: true,
             agentId: agent.id,
             webChannelId: webChannel?.id || null,
-            data: fullAgent
+            // Removed fullAgent to prevent "Server Components render" serialization errors
+            // data: fullAgent 
         };
 
     } catch (e: any) {
