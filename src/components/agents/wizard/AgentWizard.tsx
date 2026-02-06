@@ -104,10 +104,7 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
             let additionalPdfBase64: string | null = null;
             let additionalPdfName: string | null = null;
 
-            if (data.primarySource?.type === 'MANUAL' && data.primarySource.pdf) {
-                primaryJsPdfBase64 = await fileToBase64(data.primarySource.pdf);
-                primaryJsPdfName = data.primarySource.pdf.name;
-            }
+
 
             if (data.additionalSources.pdf) {
                 additionalPdfBase64 = await fileToBase64(data.additionalSources.pdf);
@@ -208,8 +205,6 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                         companyName = hostname.split('.')[0];
                         companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
                     } catch (e) { }
-                } else if (data.primarySource?.type === 'MANUAL' && data.primarySource.companyName) {
-                    companyName = data.primarySource.companyName;
                 }
 
                 return <StepAvatar

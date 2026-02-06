@@ -3,7 +3,7 @@ import { Globe, Loader2, Upload, FileText, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { analyzeUrlAndGenerateQuestions, analyzeDescriptionAndGenerateQuestions, generateAgentPersonalities, WizardAnalysisResult, WizardPersonalityOption } from '@/lib/actions/wizard';
+import { analyzeUrlAndGenerateQuestions, generateAgentPersonalities, WizardAnalysisResult, WizardPersonalityOption } from '@/lib/actions/wizard';
 import { toast } from 'sonner';
 
 interface StepPrimarySourceProps {
@@ -16,12 +16,7 @@ interface StepPrimarySourceProps {
 type AnalysisState = 'INPUT' | 'ANALYZING' | 'QUESTIONS' | 'GENERATING_OPTIONS' | 'SELECTION' | 'DONE';
 
 export function StepPrimarySource({ intent, name, primarySource, onChange }: StepPrimarySourceProps) {
-    const [inputType, setInputType] = useState<'WEB' | 'MANUAL'>('WEB');
-    const [inputVal, setInputVal] = useState(''); // Web URL
 
-    // Manual Input State
-    const [companyName, setCompanyName] = useState('');
-    const [businessDesc, setBusinessDesc] = useState('');
 
     const [analysisState, setAnalysisState] = useState<AnalysisState>('INPUT');
     const [analysisResult, setAnalysisResult] = useState<WizardAnalysisResult | null>(null);
@@ -51,24 +46,8 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
         }
     };
 
-    const handleManualAnalysis = async () => {
-        if (!companyName) return toast.error('Ingresa el nombre de la empresa');
-        // Optional description: if empty, send a default or keep empty
-        // if (!businessDesc) return toast.error('Ingresa una descripción de tu negocio');
 
-        setAnalysisState('ANALYZING');
-        setScreenshotUrl(null); // No screenshot for manual
-
-        try {
-            const result = await analyzeDescriptionAndGenerateQuestions(businessDesc || `Empresa: ${companyName}`, intent, companyName);
-            setAnalysisResult(result);
-            setAnalysisState('QUESTIONS');
-        } catch (error) {
-            console.error(error);
-            toast.error('Error al analizar la descripción.');
-            setAnalysisState('INPUT');
-        }
-    };
+    const [inputVal, setInputVal] = useState(''); // Web URL
 
     const handleGeneratePersonalities = async () => {
         if (!analysisResult) return;
@@ -84,7 +63,7 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                 qaPairs,
                 intent,
                 name,
-                analysisResult.detectedCompanyName || companyName
+                analysisResult.detectedCompanyName
             );
             setPersonalityOptions(options);
             setAnalysisState('SELECTION');
@@ -96,22 +75,12 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
     };
 
     const handleSelectPersonality = (option: WizardPersonalityOption) => {
-        if (inputType === 'WEB') {
-            onChange({
-                type: 'WEB',
-                source: inputVal,
-                personality: option,
-                analysisSummary: analysisResult?.summary
-            });
-        } else {
-            onChange({
-                type: 'MANUAL',
-                companyName: companyName,
-                description: businessDesc,
-                personality: option,
-                analysisSummary: analysisResult?.summary
-            });
-        }
+        onChange({
+            type: 'WEB',
+            source: inputVal,
+            personality: option,
+            analysisSummary: analysisResult?.summary
+        });
         setAnalysisState('DONE');
     };
 
@@ -119,61 +88,47 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
     if (analysisState === 'ANALYZING') {
         return (
             <div className="flex flex-col items-center justify-center py-12 space-y-8 animate-in fade-in max-w-2xl mx-auto">
-                {inputType === 'WEB' ? (
-                    <div className="w-full bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100 relative">
-                        <div className="bg-gray-50 border-b border-gray-100 p-3 flex items-center gap-2">
-                            <div className="flex gap-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                                <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-                                <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
-                            </div>
-                            <div className="flex-1 bg-white h-6 rounded-md border border-gray-200 flex items-center px-3 mx-4">
-                                <span className="text-[10px] text-gray-400 font-mono truncate">{inputVal}</span>
-                            </div>
+                <div className="w-full bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100 relative">
+                    <div className="bg-gray-50 border-b border-gray-100 p-3 flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
                         </div>
-                        <div className="h-64 bg-gray-50 relative overflow-hidden flex flex-col items-center justify-center">
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#21AC96]/10 to-transparent animate-scan z-20 pointer-events-none"></div>
+                        <div className="flex-1 bg-white h-6 rounded-md border border-gray-200 flex items-center px-3 mx-4">
+                            <span className="text-[10px] text-gray-400 font-mono truncate">{inputVal}</span>
+                        </div>
+                    </div>
+                    <div className="h-64 bg-gray-50 relative overflow-hidden flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#21AC96]/10 to-transparent animate-scan z-20 pointer-events-none"></div>
 
-                            {screenshotUrl ? (
-                                <img
-                                    src={screenshotUrl}
-                                    alt="Website Preview"
-                                    className="w-full h-full object-cover object-top opacity-0 animate-in fade-in duration-1000 fill-mode-forwards"
-                                    onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
-                                />
-                            ) : (
-                                <div className="space-y-4 w-full opacity-30 blur-[1px] p-8">
-                                    <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
-                                    <div className="h-32 bg-gray-200 rounded w-full"></div>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div className="h-20 bg-gray-200 rounded"></div>
-                                        <div className="h-20 bg-gray-200 rounded"></div>
-                                        <div className="h-20 bg-gray-200 rounded"></div>
-                                    </div>
+                        {screenshotUrl ? (
+                            <img
+                                src={screenshotUrl}
+                                alt="Website Preview"
+                                className="w-full h-full object-cover object-top opacity-0 animate-in fade-in duration-1000 fill-mode-forwards"
+                                onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
+                            />
+                        ) : (
+                            <div className="space-y-4 w-full opacity-30 blur-[1px] p-8">
+                                <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+                                <div className="h-32 bg-gray-200 rounded w-full"></div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="h-20 bg-gray-200 rounded"></div>
+                                    <div className="h-20 bg-gray-200 rounded"></div>
+                                    <div className="h-20 bg-gray-200 rounded"></div>
                                 </div>
-                            )}
+                            </div>
+                        )}
 
-                            <div className="absolute inset-x-0 bottom-6 flex justify-center z-30">
-                                <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-gray-100 flex items-center gap-3">
-                                    <div className="w-4 h-4 border-2 border-[#21AC96] border-t-transparent rounded-full animate-spin"></div>
-                                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Analizando sitio web...</span>
-                                </div>
+                        <div className="absolute inset-x-0 bottom-6 flex justify-center z-30">
+                            <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-lg border border-gray-100 flex items-center gap-3">
+                                <div className="w-4 h-4 border-2 border-[#21AC96] border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Analizando sitio web...</span>
                             </div>
                         </div>
                     </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-10 space-y-6">
-                        <div className="relative">
-                            <div className="w-24 h-24 bg-[#21AC96]/10 rounded-full flex items-center justify-center animate-pulse">
-                                <FileText className="w-10 h-10 text-[#21AC96]" />
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-lg border border-gray-100">
-                                <div className="w-5 h-5 border-2 border-[#21AC96] border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900">Analizando información...</h3>
-                    </div>
-                )}
+                </div>
 
                 <div className="text-center">
                     <h3 className="text-xl font-bold text-gray-900">Analizando el ADN de tu negocio</h3>
@@ -318,89 +273,41 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
         <div className="space-y-6 max-w-2xl mx-auto">
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Entrena a tu Agente 📚</h2>
-                <p className="text-gray-500">¿Cómo quieres educar a tu agente sobre tu negocio?</p>
+                <p className="text-gray-500">
+                    Ingresa el sitio web de tu negocio para que el agente aprenda sobre ti.
+                </p>
             </div>
 
-            {/* Input Type Toggle */}
-            <div className="flex bg-gray-100 p-1 rounded-lg mb-6">
-                <button
-                    onClick={() => setInputType('WEB')}
-                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${inputType === 'WEB' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                >
-                    Sitio Web
-                </button>
-                <button
-                    onClick={() => setInputType('MANUAL')}
-                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${inputType === 'MANUAL' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                >
-                    No Tengo Web
-                </button>
-            </div>
-
-            {inputType === 'WEB' ? (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                    {webError && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
-                            ⚠️ Error analizando la web. Verifica la URL e intenta de nuevo.
-                        </div>
-                    )}
-                    <div className="flex gap-3">
-                        <div className="flex-1">
-                            <Input
-                                placeholder="https://tuempresa.com"
-                                value={inputVal}
-                                onChange={(e) => setInputVal(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleWebAnalysis()}
-                                className="h-12"
-                                autoFocus
-                            />
-                        </div>
-                        <Button
-                            onClick={handleWebAnalysis}
-                            disabled={!inputVal}
-                            className="bg-[#21AC96] hover:bg-[#21AC96]/90 h-12 px-8"
-                        >
-                            <Globe className="w-4 h-4 mr-2" />
-                            Analizar Web
-                        </Button>
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                {webError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+                        ⚠️ Error analizando la web. Verifica la URL e intenta de nuevo.
                     </div>
-                </div>
-            ) : (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Nombre de la Empresa</label>
+                )}
+                <div className="flex gap-3">
+                    <div className="flex-1">
                         <Input
-                            placeholder="Ej. Consultores Asociados"
-                            value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
-                            className="h-11"
+                            placeholder="https://tuempresa.com"
+                            value={inputVal}
+                            onChange={(e) => setInputVal(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleWebAnalysis()}
+                            className="h-12"
                             autoFocus
                         />
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Descripción del Negocio</label>
-                        <Textarea
-                            placeholder="Describa brevemente qué hace su empresa, qué productos vende o qué servicios ofrece..."
-                            value={businessDesc}
-                            onChange={(e) => setBusinessDesc(e.target.value)}
-                            className="h-24 resize-none"
-                        />
-                    </div>
-                    <div className="pt-2">
-                        <Button
-                            onClick={handleManualAnalysis}
-                            disabled={!companyName}
-                            className="w-full bg-[#21AC96] hover:bg-[#21AC96]/90 h-12"
-                        >
-                            Analizar Información
-                        </Button>
-                    </div>
+                    <Button
+                        onClick={handleWebAnalysis}
+                        disabled={!inputVal}
+                        className="bg-[#21AC96] hover:bg-[#21AC96]/90 h-12 px-8"
+                    >
+                        <Globe className="w-4 h-4 mr-2" />
+                        Analizar Web
+                    </Button>
                 </div>
-            )}
-
-            <p className="text-xs text-center text-gray-400">
-                Analizaremos la información para personalizar el agente
-            </p>
+                <p className="text-xs text-center text-gray-400 mt-4">
+                    Analizaremos tu sitio web para personalizar el agente automáticamente.
+                </p>
+            </div>
         </div>
     );
 }

@@ -418,7 +418,7 @@ export async function createAgentFromWizard(data: {
     intent: string,
     avatarUrl?: string | null;
     primarySource: {
-        type: 'WEB' | 'MANUAL';
+        type: 'WEB';
         source?: string;
         companyName?: string;
         description?: string;
@@ -484,9 +484,6 @@ export async function createAgentFromWizard(data: {
                 jobCompany = hostname.split('.')[0];
                 jobCompany = jobCompany.charAt(0).toUpperCase() + jobCompany.slice(1);
             } catch (e) { }
-        } else if (data.primarySource.type === 'MANUAL') {
-            jobCompany = data.primarySource.companyName || null;
-            jobWebsiteUrl = null;
         }
 
         const jobDescription = data.primarySource.analysisSummary || `Agente de ${data.intent}`;
@@ -544,20 +541,6 @@ export async function createAgentFromWizard(data: {
                     updateInterval: 'NEVER',
                     crawlSubpages: true
                 });
-            } else if (data.primarySource.type === 'MANUAL') {
-                // For manual, we just need to add the PDF if provided in primarySource
-                if (data.primarySource.pdfBase64) {
-                    console.log('[WIZARD] Adding Manual PDF...');
-                    await addKnowledgeSource(agent.id, {
-                        type: 'DOCUMENT',
-                        fileContent: data.primarySource.pdfBase64,
-                        fileName: data.primarySource.pdfName || 'manual.pdf',
-                        updateInterval: 'NEVER',
-                        crawlSubpages: false
-                    });
-                } else {
-                    console.log('[WIZARD] No manual PDF provided, skipping.');
-                }
             }
         } catch (sourceError) {
             console.error('Warning: Failed to add primary source:', sourceError);
