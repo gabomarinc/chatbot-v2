@@ -422,13 +422,15 @@ export async function createAgentFromWizard(data: {
         source?: string;
         companyName?: string;
         description?: string;
-        pdf?: File | null;
+        pdfBase64?: string | null;
+        pdfName?: string | null;
         personality?: WizardPersonalityOption;
         analysisSummary?: string;
     };
     additionalSources: {
         templates: string[];
-        pdf?: File | null;
+        pdfBase64?: string | null;
+        pdfName?: string | null;
     };
     channels: {
         web: boolean;
@@ -539,20 +541,11 @@ export async function createAgentFromWizard(data: {
                 });
             } else if (data.primarySource.type === 'MANUAL') {
                 // For manual, we just need to add the PDF if provided in primarySource
-                if (data.primarySource.pdf) {
-                    const reader = new FileReader();
-                    const base64Promise = new Promise<string>((resolve, reject) => {
-                        reader.onload = () => resolve(reader.result as string);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(data.primarySource.pdf!);
-                    });
-
-                    const base64Content = await base64Promise;
-
+                if (data.primarySource.pdfBase64) {
                     await addKnowledgeSource(agent.id, {
                         type: 'DOCUMENT',
-                        fileContent: base64Content,
-                        fileName: data.primarySource.pdf.name,
+                        fileContent: data.primarySource.pdfBase64,
+                        fileName: data.primarySource.pdfName || 'manual.pdf',
                         updateInterval: 'NEVER',
                         crawlSubpages: false
                     });
@@ -580,21 +573,12 @@ export async function createAgentFromWizard(data: {
         }
 
         // 2c. Add PDF (optional)
-        if (data.additionalSources.pdf) {
+        if (data.additionalSources.pdfBase64) {
             try {
-                const reader = new FileReader();
-                const base64Promise = new Promise<string>((resolve, reject) => {
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(data.additionalSources.pdf!);
-                });
-
-                const base64Content = await base64Promise;
-
                 await addKnowledgeSource(agent.id, {
                     type: 'DOCUMENT',
-                    fileContent: base64Content,
-                    fileName: data.additionalSources.pdf.name,
+                    fileContent: data.additionalSources.pdfBase64,
+                    fileName: data.additionalSources.pdfName || 'additional.pdf',
                     updateInterval: 'NEVER',
                     crawlSubpages: false
                 });

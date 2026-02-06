@@ -346,7 +346,7 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                     onClick={() => setInputType('MANUAL')}
                     className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${inputType === 'MANUAL' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                 >
-                    No tengo web
+                    No Tengo Web
                 </button>
             </div>
 

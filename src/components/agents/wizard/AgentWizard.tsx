@@ -86,15 +86,54 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
         if (step > 1) setStep(s => s - 1);
     };
 
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+    };
+
     const handleCreateAgent = async () => {
         setIsLoading(true);
         try {
+            // Prepare payload - convert files to base64 to avoid serialization issues
+            let primaryJsPdfBase64: string | null = null;
+            let primaryJsPdfName: string | null = null;
+            let additionalPdfBase64: string | null = null;
+            let additionalPdfName: string | null = null;
+
+            if (data.primarySource?.type === 'MANUAL' && data.primarySource.pdf) {
+                primaryJsPdfBase64 = await fileToBase64(data.primarySource.pdf);
+                primaryJsPdfName = data.primarySource.pdf.name;
+            }
+
+            if (data.additionalSources.pdf) {
+                additionalPdfBase64 = await fileToBase64(data.additionalSources.pdf);
+                additionalPdfName = data.additionalSources.pdf.name;
+            }
+
+            // Sanitize payload: Remove File objects (pdf) to prevent serialization errors
+            // We use the Base64 versions instead
+            const { pdf: _pPdf, ...sanitizedPrimarySource } = data.primarySource || {};
+            const { pdf: _aPdf, ...sanitizedAdditionalSources } = data.additionalSources || {};
+
             const wizardPayload = {
                 name: data.name,
                 intent: data.intent,
                 avatarUrl: data.avatarUrl,
-                primarySource: data.primarySource,
-                additionalSources: data.additionalSources,
+                primarySource: {
+                    ...sanitizedPrimarySource,
+                    type: data.primarySource?.type, // Ensure type is preserved if lost in destructuring (though it shouldn't be)
+                    pdfBase64: primaryJsPdfBase64,
+                    pdfName: primaryJsPdfName
+                },
+                additionalSources: {
+                    templates: data.additionalSources.templates,
+                    pdfBase64: additionalPdfBase64,
+                    pdfName: additionalPdfName
+                },
                 channels: {
                     web: true,
                     whatsapp: false,
