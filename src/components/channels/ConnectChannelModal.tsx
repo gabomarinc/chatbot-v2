@@ -66,7 +66,7 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
             color: 'bg-blue-500',
             textColor: 'text-blue-600',
             href: '/channels/setup/messenger',
-            enabled: true
+            enabled: false
         }
     ];
 
