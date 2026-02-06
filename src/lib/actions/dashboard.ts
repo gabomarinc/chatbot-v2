@@ -432,10 +432,14 @@ export async function createAgent(data: any) {
         })
         console.log('[DASHBOARD] Agent created in DB:', agent.id);
 
-        console.log('[DASHBOARD] Revalidating paths...');
-        revalidatePath('/agents')
-        revalidatePath('/dashboard')
-        console.log('[DASHBOARD] Revalidation done.');
+        try {
+            console.log('[DASHBOARD] Revalidating paths...');
+            revalidatePath('/agents')
+            revalidatePath('/dashboard')
+            console.log('[DASHBOARD] Revalidation done.');
+        } catch (revalError) {
+            console.error('[DASHBOARD] Revalidation warning (ignored):', revalError);
+        }
         return agent
     } catch (e) {
         console.error('[DASHBOARD] createAgent failed:', e);
