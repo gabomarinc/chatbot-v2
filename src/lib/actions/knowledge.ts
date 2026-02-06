@@ -204,19 +204,17 @@ export async function addKnowledgeSource(agentId: string, data: {
                 if (data.fileContent.startsWith('data:application/pdf')) {
                     const base64Data = data.fileContent.split(',')[1];
                     const buffer = Buffer.from(base64Data, 'base64');
-                    // Lazy load pdf-parse with robust import logic
-                    const pdfImp = await import('pdf-parse');
-                    // Handle potential ESM/CJS interop issues where class might be default export or named export
-                    const PDFParseClass = (pdfImp as any).PDFParse || ((pdfImp as any).default?.PDFParse) || (pdfImp as any).default;
 
-                    if (typeof PDFParseClass !== 'function') {
-                        throw new Error(`PDFParse class not found in exports. Keys: ${Object.keys(pdfImp)}`);
+                    const pdfImp = await import('pdf-parse');
+                    // pdf-parse is typically a default export function
+                    const pdfParse = (pdfImp as any).default || pdfImp;
+
+                    if (typeof pdfParse !== 'function') {
+                        throw new Error(`PDFParse library not found or not a function. Keys: ${Object.keys(pdfImp)}`);
                     }
 
-                    const parser = new PDFParseClass({ data: buffer });
-                    const pdfData = await parser.getText();
+                    const pdfData = await pdfParse(buffer);
                     text = pdfData.text;
-                    if (parser.destroy) await parser.destroy();
                 } else {
                     // Assume text
                     text = data.fileContent; // Might contain data:text/plain;base64, if readAsDataURL was used for txt? 
