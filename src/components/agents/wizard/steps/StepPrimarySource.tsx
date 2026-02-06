@@ -22,7 +22,6 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
     // Manual Input State
     const [companyName, setCompanyName] = useState('');
     const [businessDesc, setBusinessDesc] = useState('');
-    const [manualPdf, setManualPdf] = useState<File | null>(null);
 
     const [analysisState, setAnalysisState] = useState<AnalysisState>('INPUT');
     const [analysisResult, setAnalysisResult] = useState<WizardAnalysisResult | null>(null);
@@ -30,7 +29,6 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
     const [personalityOptions, setPersonalityOptions] = useState<WizardPersonalityOption[]>([]);
     const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
     const [webError, setWebError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleWebAnalysis = async () => {
         if (!inputVal) return toast.error('Ingresa una URL válida');
@@ -55,14 +53,14 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
 
     const handleManualAnalysis = async () => {
         if (!companyName) return toast.error('Ingresa el nombre de la empresa');
-        if (!businessDesc) return toast.error('Ingresa una descripción de tu negocio');
-        if (!manualPdf) return toast.error('Debes subir un PDF (Presentación o Información)');
+        // Optional description: if empty, send a default or keep empty
+        // if (!businessDesc) return toast.error('Ingresa una descripción de tu negocio');
 
         setAnalysisState('ANALYZING');
         setScreenshotUrl(null); // No screenshot for manual
 
         try {
-            const result = await analyzeDescriptionAndGenerateQuestions(businessDesc, intent, companyName);
+            const result = await analyzeDescriptionAndGenerateQuestions(businessDesc || `Empresa: ${companyName}`, intent, companyName);
             setAnalysisResult(result);
             setAnalysisState('QUESTIONS');
         } catch (error) {
@@ -110,22 +108,11 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                 type: 'MANUAL',
                 companyName: companyName,
                 description: businessDesc,
-                pdf: manualPdf,
                 personality: option,
                 analysisSummary: analysisResult?.summary
             });
         }
         setAnalysisState('DONE');
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (file.type !== 'application/pdf') return toast.error('Solo PDF');
-            if (file.size > 10 * 1024 * 1024) return toast.error('Máximo 10MB');
-            setManualPdf(file);
-            toast.success('PDF agregado');
-        }
     };
 
     // ANALYZING STATE
@@ -399,46 +386,10 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                             className="h-24 resize-none"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Presentación o Información (PDF)</label>
-                        <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer group ${manualPdf ? 'border-[#21AC96] bg-[#21AC96]/5' : 'border-gray-300 hover:border-[#21AC96] hover:bg-gray-50'}`}
-                        >
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="application/pdf"
-                                onChange={handleFileChange}
-                                className="hidden"
-                            />
-                            {manualPdf ? (
-                                <div className="flex items-center justify-center gap-3">
-                                    <div className="w-10 h-10 bg-[#21AC96]/10 rounded-lg flex items-center justify-center">
-                                        <FileText className="w-5 h-5 text-[#21AC96]" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-medium text-gray-900 text-sm">{manualPdf.name}</p>
-                                        <p className="text-xs text-gray-500">{(manualPdf.size / 1024 / 1024).toFixed(2)} MB</p>
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 ml-2 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); setManualPdf(null); }}>
-                                        <X className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center gap-2">
-                                    <Upload className="w-8 h-8 text-gray-400 group-hover:text-[#21AC96]" />
-                                    <p className="text-sm font-medium text-gray-600 group-hover:text-[#21AC96]">Subir PDF informativo</p>
-                                    <p className="text-xs text-gray-400">Requerido para el entrenamiento</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
                     <div className="pt-2">
                         <Button
                             onClick={handleManualAnalysis}
-                            disabled={!companyName || !businessDesc || !manualPdf}
+                            disabled={!companyName}
                             className="w-full bg-[#21AC96] hover:bg-[#21AC96]/90 h-12"
                         >
                             Analizar Información
