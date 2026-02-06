@@ -229,6 +229,71 @@ Genera el JSON de análisis. Las preguntas y opciones deben ayudar a decidir el 
     }
 }
 
+export async function analyzeDescriptionAndGenerateQuestions(description: string, intent: string, companyName: string): Promise<WizardAnalysisResult> {
+    // Generate Analysis and Questions based on manual description
+    const systemPrompt = `Eres un experto en configuración de Chatbots de IA para negocios.
+Tu objetivo es analizar la descripción de un negocio y generar:
+1. Un resumen breve y profesional.
+2. 3 preguntas estratégicas para definir la personalidad del bot.
+3. Para cada pregunta, sugiere 2 o 3 respuestas predefinidas (cortas).
+
+Salida estrictamente en JSON:
+{
+  "summary": "Resumen profesional...",
+  "detectedCompanyName": "${companyName}",
+  "questions": [
+    { 
+      "id": "q1", 
+      "text": "¿Pregunta 1?", 
+      "options": ["Opción A", "Opción B"] 
+    },
+    ...
+  ]
+}`;
+
+    const userPrompt = `Nombre Empresa: "${companyName}"
+Descripción del Negocio: "${description}"
+Intención del Bot: ${intent}
+
+Genera el JSON de análisis.`;
+
+    let rawJson = "";
+    try {
+        rawJson = await callLLM(systemPrompt, userPrompt);
+    } catch (error) {
+        console.error('[Wizard] LLM Generation form Description failed:', error);
+        return {
+            summary: description.slice(0, 200) + "...",
+            detectedCompanyName: companyName,
+            questions: [
+                { id: "q1", text: "¿Cuál es el tono de voz de tu marca?", options: ["Formal y serio", "Amigable y cercano", "Enérgico"] },
+                { id: "q2", text: "¿Qué información es la más crítica para tus clientes?", options: ["Precios y Costos", "Características Técnicas", "Garantías"] },
+                { id: "q3", text: "¿Cómo manejas las objeciones de venta?", options: ["Ofrecer descuentos", "Explicar valor", "Redirigir a humano"] }
+            ]
+        };
+    }
+
+    const cleanJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    try {
+        const parsed = JSON.parse(cleanJson);
+        // Force detectedCompanyName to be what user entered if not returned or different
+        parsed.detectedCompanyName = companyName;
+        return parsed as WizardAnalysisResult;
+    } catch (e) {
+        console.error('[Wizard] JSON Parse error (Description):', e);
+        return {
+            summary: description,
+            detectedCompanyName: companyName,
+            questions: [
+                { id: "q1", text: "¿Cuál es el tono de voz de tu marca?", options: ["Formal", "Casual"] },
+                { id: "q2", text: "¿Qué prioridad debe tener el bot?", options: ["Vender", "Informar"] },
+                { id: "q3", text: "¿Nivel de tecnicismo?", options: ["Alto", "Bajo"] }
+            ]
+        };
+    }
+}
+
 
 export async function generateAgentPersonalities(
     webSummary: string,
@@ -353,8 +418,11 @@ export async function createAgentFromWizard(data: {
     intent: string,
     avatarUrl?: string | null;
     primarySource: {
-        type: 'WEB';
-        source: string;
+        type: 'WEB' | 'MANUAL';
+        source?: string;
+        companyName?: string;
+        description?: string;
+        pdf?: File | null;
         personality?: WizardPersonalityOption;
         analysisSummary?: string;
     };
@@ -403,7 +471,8 @@ export async function createAgentFromWizard(data: {
         // Extract extra fields (Website, Company) from primarySource
         let jobWebsiteUrl: string | null = null;
         let jobCompany: string | null = null;
-        if (data.primarySource.type === 'WEB' && typeof data.primarySource.source === 'string') {
+
+        if (data.primarySource.type === 'WEB' && data.primarySource.source && typeof data.primarySource.source === 'string') {
             jobWebsiteUrl = data.primarySource.source;
             try {
                 const urlObj = new URL(jobWebsiteUrl.startsWith('http') ? jobWebsiteUrl : `https://${jobWebsiteUrl}`);
@@ -411,6 +480,9 @@ export async function createAgentFromWizard(data: {
                 jobCompany = hostname.split('.')[0];
                 jobCompany = jobCompany.charAt(0).toUpperCase() + jobCompany.slice(1);
             } catch (e) { }
+        } else if (data.primarySource.type === 'MANUAL') {
+            jobCompany = data.primarySource.companyName || null;
+            jobWebsiteUrl = null;
         }
 
         const jobDescription = data.primarySource.analysisSummary || `Agente de ${data.intent}`;
@@ -456,16 +528,38 @@ export async function createAgentFromWizard(data: {
 
         // 2. Add Knowledge Sources (Primary + Additional)
 
-        // 2a. Add Primary Source (Web - always present)
+        // 2a. Add Primary Source 
         try {
-            await addKnowledgeSource(agent.id, {
-                type: 'WEBSITE',
-                url: data.primarySource.source,
-                updateInterval: 'NEVER',
-                crawlSubpages: true
-            });
+            if (data.primarySource.type === 'WEB' && data.primarySource.source) {
+                await addKnowledgeSource(agent.id, {
+                    type: 'WEBSITE',
+                    url: data.primarySource.source,
+                    updateInterval: 'NEVER',
+                    crawlSubpages: true
+                });
+            } else if (data.primarySource.type === 'MANUAL') {
+                // For manual, we just need to add the PDF if provided in primarySource
+                if (data.primarySource.pdf) {
+                    const reader = new FileReader();
+                    const base64Promise = new Promise<string>((resolve, reject) => {
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(data.primarySource.pdf!);
+                    });
+
+                    const base64Content = await base64Promise;
+
+                    await addKnowledgeSource(agent.id, {
+                        type: 'DOCUMENT',
+                        fileContent: base64Content,
+                        fileName: data.primarySource.pdf.name,
+                        updateInterval: 'NEVER',
+                        crawlSubpages: false
+                    });
+                }
+            }
         } catch (sourceError) {
-            console.error('Warning: Failed to add primary web source:', sourceError);
+            console.error('Warning: Failed to add primary source:', sourceError);
         }
 
         // 2b. Add Templates (required - at least one)

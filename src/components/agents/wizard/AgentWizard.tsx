@@ -169,6 +169,8 @@ export function AgentWizard({ isOpen, onClose, onAgentCreated }: AgentWizardProp
                         companyName = hostname.split('.')[0];
                         companyName = companyName.charAt(0).toUpperCase() + companyName.slice(1);
                     } catch (e) { }
+                } else if (data.primarySource?.type === 'MANUAL' && data.primarySource.companyName) {
+                    companyName = data.primarySource.companyName;
                 }
 
                 return <StepAvatar
