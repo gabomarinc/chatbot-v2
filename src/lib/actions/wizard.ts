@@ -450,8 +450,10 @@ export async function createAgentFromWizard(data: {
         verifyToken: string;
     };
 }) {
+    console.log('[WIZARD] Starting agent creation:', data.name);
     try {
         // 1. Create Base Agent
+        console.log('[WIZARD] Importing actions...');
         const personality = data.primarySource.personality;
         const { createAgent } = await import('./dashboard');
         const { addKnowledgeSource } = await import('./knowledge');
@@ -511,6 +513,7 @@ export async function createAgentFromWizard(data: {
             personalityPrompt = personalityPrompt.substring(0, MAX_PROMPT_LENGTH - 50) + '\n\n[Prompt truncado para cumplir límite de 3000 caracteres]';
         }
 
+        console.log('[WIZARD] Creating agent record in DB...');
         const agent = await createAgent({
             name: data.name,
             jobDescription: jobDescription,
@@ -527,11 +530,13 @@ export async function createAgentFromWizard(data: {
         });
 
         if (!agent) throw new Error('Failed to create agent record');
+        console.log('[WIZARD] Agent created:', agent.id);
 
         // 2. Add Knowledge Sources (Primary + Additional)
 
         // 2a. Add Primary Source 
         try {
+            console.log('[WIZARD] Adding primary source...');
             if (data.primarySource.type === 'WEB' && data.primarySource.source) {
                 await addKnowledgeSource(agent.id, {
                     type: 'WEBSITE',
@@ -542,6 +547,7 @@ export async function createAgentFromWizard(data: {
             } else if (data.primarySource.type === 'MANUAL') {
                 // For manual, we just need to add the PDF if provided in primarySource
                 if (data.primarySource.pdfBase64) {
+                    console.log('[WIZARD] Adding Manual PDF...');
                     await addKnowledgeSource(agent.id, {
                         type: 'DOCUMENT',
                         fileContent: data.primarySource.pdfBase64,
@@ -549,6 +555,8 @@ export async function createAgentFromWizard(data: {
                         updateInterval: 'NEVER',
                         crawlSubpages: false
                     });
+                } else {
+                    console.log('[WIZARD] No manual PDF provided, skipping.');
                 }
             }
         } catch (sourceError) {
@@ -556,6 +564,7 @@ export async function createAgentFromWizard(data: {
         }
 
         // 2b. Add Templates (required - at least one)
+        console.log('[WIZARD] Adding templates...');
         for (const templateId of data.additionalSources.templates) {
             const template = AGENT_TEMPLATES.find(t => t.id === templateId);
             if (template) {
@@ -575,6 +584,7 @@ export async function createAgentFromWizard(data: {
         // 2c. Add PDF (optional)
         if (data.additionalSources.pdfBase64) {
             try {
+                console.log('[WIZARD] Adding additional PDF...');
                 await addKnowledgeSource(agent.id, {
                     type: 'DOCUMENT',
                     fileContent: data.additionalSources.pdfBase64,
@@ -588,6 +598,7 @@ export async function createAgentFromWizard(data: {
         }
 
         // 3. Create Channels
+        console.log('[WIZARD] Creating channels...');
         const channelsToCreate: any[] = [];
 
         // WEB
@@ -638,12 +649,14 @@ export async function createAgentFromWizard(data: {
         }
 
         // 4. Return Agent ID and Web Channel ID
+        console.log('[WIZARD] Fetching full agent...');
         const fullAgent = await prisma.agent.findUnique({
             where: { id: agent.id },
             include: { channels: true }
         });
 
         const webChannel = fullAgent?.channels.find(ch => ch.type === 'WEBCHAT');
+        console.log('[WIZARD] Done!');
 
         return {
             success: true,
@@ -654,11 +667,12 @@ export async function createAgentFromWizard(data: {
 
     } catch (e: any) {
         console.error('Error in wizard creation flow:', e);
-        return { success: false, error: e.message || 'Unknown error during creation' };
+        // Ensure we return a serializable error object, NOT throw, to avoid 500 pages
+        return {
+            success: false,
+            error: e instanceof Error ? e.message : 'Unknown error during creation'
+        };
     }
-
-
-
 }
 
 export async function updateAgentWizard(agentId: string, data: {

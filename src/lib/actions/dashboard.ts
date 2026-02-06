@@ -406,6 +406,7 @@ export const getAgentFull = cache(async (agentId: string) => {
 // Restore missing functions
 
 export async function createAgent(data: any) {
+    console.log('[DASHBOARD] createAgent called', data.name);
     const workspace = await getUserWorkspace()
     if (!workspace) throw new Error("Unauthorized")
 
@@ -416,22 +417,30 @@ export async function createAgent(data: any) {
         throw new Error("No tienes permisos para crear agentes")
     }
 
-    const agent = await prisma.agent.create({
-        data: {
-            ...data,
-            workspaceId: workspace.id,
-            // Add default knowledge base
-            knowledgeBases: {
-                create: {
-                    name: `${data.name} KB`
+    try {
+        const agent = await prisma.agent.create({
+            data: {
+                ...data,
+                workspaceId: workspace.id,
+                // Add default knowledge base
+                knowledgeBases: {
+                    create: {
+                        name: `${data.name} KB`
+                    }
                 }
             }
-        }
-    })
+        })
+        console.log('[DASHBOARD] Agent created in DB:', agent.id);
 
-    revalidatePath('/agents')
-    revalidatePath('/dashboard')
-    return agent
+        console.log('[DASHBOARD] Revalidating paths...');
+        revalidatePath('/agents')
+        revalidatePath('/dashboard')
+        console.log('[DASHBOARD] Revalidation done.');
+        return agent
+    } catch (e) {
+        console.error('[DASHBOARD] createAgent failed:', e);
+        throw e;
+    }
 }
 
 export async function getAgents() {
