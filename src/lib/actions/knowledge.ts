@@ -205,16 +205,30 @@ export async function addKnowledgeSource(agentId: string, data: {
                     const base64Data = data.fileContent.split(',')[1];
                     const buffer = Buffer.from(base64Data, 'base64');
 
-                    const pdfImp = await import('pdf-parse');
-                    // pdf-parse is typically a default export function
-                    const pdfParse = (pdfImp as any).default || pdfImp;
+                    console.log('[KNOWLEDGE] Processing PDF with v1 adapter...');
 
-                    if (typeof pdfParse !== 'function') {
-                        throw new Error(`PDFParse library not found or not a function. Keys: ${Object.keys(pdfImp)}`);
+                    try {
+                        const pdfImp = await import('pdf-parse');
+                        const pdfParse = (pdfImp as any).default || pdfImp;
+
+                        if (typeof pdfParse !== 'function') {
+                            throw new Error('pdf-parse is not a function');
+                        }
+
+                        const pdfData = await pdfParse(buffer);
+
+                        if (!pdfData || !pdfData.text) {
+                            throw new Error('PDF parsed but returned empty text');
+                        }
+
+                        text = pdfData.text;
+                        console.log('[KNOWLEDGE] PDF parsed successfully (v1). Length:', text.length);
+
+                    } catch (pdfError) {
+                        console.error('[KNOWLEDGE] PDF Parse Failed:', pdfError);
+                        // Fallback so we don't crash
+                        text = `[ERROR: No se pudo leer el contenido del PDF. Detalle: ${(pdfError as Error).message}]`;
                     }
-
-                    const pdfData = await pdfParse(buffer);
-                    text = pdfData.text;
                 } else {
                     // Assume text
                     text = data.fileContent; // Might contain data:text/plain;base64, if readAsDataURL was used for txt? 
