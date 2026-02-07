@@ -43,32 +43,21 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
             return;
         }
 
-        // Limit to 3MB (Base64 encoding increases size by ~33%, keeping it under Vercel's 4.5MB limit)
-        if (file.size > 3 * 1024 * 1024) {
-            toast.error('El archivo no debe superar los 3MB (Límite del servidor)');
+        // Limit to 4MB (Safe margin for Vercel's 4.5MB limit)
+        if (file.size > 4 * 1024 * 1024) {
+            toast.error('El archivo no debe superar los 4MB (Límite del servidor)');
             return;
         }
 
         setIsUploading(true);
         try {
-            console.log('[UPLOAD] Reading file as Base64...');
-
-            // 1. Convert to Base64
-            const base64Content = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    const result = reader.result as string;
-                    // Remove data:application/pdf;base64, prefix
-                    const base64 = result.split(',')[1];
-                    resolve(base64);
-                };
-                reader.onerror = error => reject(error);
-            });
+            console.log('[UPLOAD] Preparing FormData...');
+            const formData = new FormData();
+            formData.append('file', file);
 
             // 2. Upload via Server Action
             console.log('[UPLOAD] Sending to server...');
-            const result = await uploadFile(base64Content, file.name, file.type);
+            const result = await uploadFile(formData);
 
             if (!result.success || !result.publicUrl) {
                 throw new Error(result.error || 'Upload failed');
@@ -464,7 +453,7 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                                             <p className="text-sm font-medium text-gray-600">
                                                 {isUploading ? 'Subiendo...' : 'Sube un PDF con información'}
                                             </p>
-                                            <p className="text-xs text-gray-400 mt-1">Máx 3MB</p>
+                                            <p className="text-xs text-gray-400 mt-1">Máx 4MB</p>
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-between">
