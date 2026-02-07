@@ -197,7 +197,8 @@ export async function addKnowledgeSource(agentId: string, data: {
             }
         }
         // Handle DOCUMENT type
-        else if (data.type === 'DOCUMENT' && data.fileContent) {
+        else if (data.type === 'DOCUMENT' && (data.fileContent || data.url)) { // Ensure we enter if url is present
+            console.log(`[KNOWLEDGE] Starting DOCUMENT processing. Type: ${data.type}, URL: ${data.url ? 'Yes' : 'No'}, Content: ${data.fileContent ? 'Yes' : 'No'}`);
             let text = '';
 
             try {
@@ -206,6 +207,7 @@ export async function addKnowledgeSource(agentId: string, data: {
 
                 // Case 1: Base64 Content (Legacy/Direct)
                 if (data.fileContent && data.fileContent.startsWith('data:application/pdf')) {
+                    console.log('[KNOWLEDGE] Processing Base64 content');
                     const base64Data = data.fileContent.split(',')[1];
                     buffer = Buffer.from(base64Data, 'base64');
                 }
@@ -213,18 +215,20 @@ export async function addKnowledgeSource(agentId: string, data: {
                 else if (data.url) {
                     console.log(`[KNOWLEDGE] Fetching remote document from: ${data.url}`);
                     const response = await fetch(data.url);
-                    if (!response.ok) throw new Error(`Failed to fetch document: ${response.statusText}`);
+                    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`);
                     const arrayBuffer = await response.arrayBuffer();
                     buffer = Buffer.from(arrayBuffer);
+                    console.log(`[KNOWLEDGE] Document fetched. Size: ${buffer.length} bytes`);
                 }
                 // Case 3: Plain Text (treated as content)
                 else if (data.fileContent) {
+                    console.log('[KNOWLEDGE] Processing plain text content');
                     text = data.fileContent;
                 }
 
                 // If we have a buffer (PDF), parse it
                 if (buffer) {
-                    console.log('[KNOWLEDGE] Processing PDF...');
+                    console.log('[KNOWLEDGE] Buffer ready. Importing pdf-parse...');
                     try {
                         const pdfImp = await import('pdf-parse');
                         const pdfParse = (pdfImp as any).default || pdfImp;
@@ -233,6 +237,7 @@ export async function addKnowledgeSource(agentId: string, data: {
                             throw new Error('pdf-parse is not a function');
                         }
 
+                        console.log('[KNOWLEDGE] Parsing PDF buffer...');
                         const pdfData = await pdfParse(buffer);
 
                         if (!pdfData || !pdfData.text) {
@@ -240,11 +245,14 @@ export async function addKnowledgeSource(agentId: string, data: {
                         }
 
                         text = pdfData.text;
-                        console.log('[KNOWLEDGE] PDF parsed successfully. Length:', text.length);
+                        console.log('[KNOWLEDGE] PDF parsed successfully. Text length:', text.length);
 
                     } catch (pdfError) {
                         console.error('[KNOWLEDGE] PDF Parse Failed:', pdfError);
                         text = `[ERROR: No se pudo leer el contenido del PDF. Detalle: ${(pdfError as Error).message}]`;
+                        // Consider throwing here to mark as failed instead of saving error text? 
+                        // For now, let's throw to ensure we don't index garbage.
+                        throw pdfError;
                     }
                 }
 
@@ -252,7 +260,9 @@ export async function addKnowledgeSource(agentId: string, data: {
                 text = text.replace(/\s+/g, ' ').trim();
 
                 if (text.length > 0) {
+                    console.log('[KNOWLEDGE] Chunking text...');
                     const chunks = text.match(/.{1,1000}/g) || [text];
+                    console.log(`[KNOWLEDGE] Created ${chunks.length} chunks. Generating embeddings...`);
 
                     for (const chunk of chunks) {
                         const embedding = await generateEmbedding(chunk);
@@ -265,15 +275,17 @@ export async function addKnowledgeSource(agentId: string, data: {
                         })
                     }
 
+                    console.log('[KNOWLEDGE] Embeddings generated. Updating source status to READY.');
                     await prisma.knowledgeSource.update({
                         where: { id: source.id },
                         data: { status: 'READY' }
                     })
                 } else {
+                    console.warn('[KNOWLEDGE] No text content found after processing.');
                     throw new Error("No text content found in document");
                 }
             } catch (error) {
-                console.error("Document parsing error:", error);
+                console.error("[KNOWLEDGE] Document processing error:", error);
                 const errorMessage = error instanceof Error ? error.message : 'Unknown document error';
                 await prisma.knowledgeSource.update({
                     where: { id: source.id },
