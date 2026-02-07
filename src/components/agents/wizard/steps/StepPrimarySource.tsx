@@ -464,7 +464,7 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                                             <p className="text-sm font-medium text-gray-600">
                                                 {isUploading ? 'Subiendo...' : 'Sube un PDF con información'}
                                             </p>
-                                            <p className="text-xs text-gray-400 mt-1">Máx 10MB</p>
+                                            <p className="text-xs text-gray-400 mt-1">Máx 4MB</p>
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-between">
