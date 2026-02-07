@@ -43,8 +43,8 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
             return;
         }
 
-        if (file.size > 10 * 1024 * 1024) { // 10MB limit (R2 can handle it, client upload)
-            toast.error('El archivo no debe superar los 10MB');
+        if (file.size > 5 * 1024 * 1024) { // 5MB prudent limit
+            toast.error('El archivo no debe superar los 5MB');
             return;
         }
 
@@ -465,7 +465,7 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                                             <p className="text-sm font-medium text-gray-600">
                                                 {isUploading ? 'Subiendo...' : 'Sube un PDF con información'}
                                             </p>
-                                            <p className="text-xs text-gray-400 mt-1">Máx 10MB</p>
+                                            <p className="text-xs text-gray-400 mt-1">Máx 5MB</p>
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-between">
