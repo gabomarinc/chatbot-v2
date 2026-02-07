@@ -31,13 +31,48 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
     const canManage = userRole === 'OWNER' || userRole === 'MANAGER';
     const pathname = usePathname();
     const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+    const [configMode, setConfigMode] = useState<'BASIC' | 'ADVANCED'>('BASIC');
+
+    const basicTabs = ['profile', 'job', 'training', 'channels'];
+    const visibleTabs = configMode === 'ADVANCED'
+        ? tabs
+        : tabs.filter(t => basicTabs.includes(t.id));
 
     return (
         <div className="space-y-10">
             <AgentTour hasSeenTour={hasSeenTour} />
 
             {/* Action Bar */}
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                {/* Config Toggle */}
+                <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Configuración</span>
+                    <div className="flex bg-gray-100/80 rounded-xl p-1 gap-1">
+                        <button
+                            onClick={() => setConfigMode('BASIC')}
+                            className={cn(
+                                "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
+                                configMode === 'BASIC'
+                                    ? 'bg-white text-[#21AC96] shadow-sm'
+                                    : 'text-gray-400 hover:text-gray-600'
+                            )}
+                        >
+                            Básica
+                        </button>
+                        <button
+                            onClick={() => setConfigMode('ADVANCED')}
+                            className={cn(
+                                "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
+                                configMode === 'ADVANCED'
+                                    ? 'bg-white text-[#21AC96] shadow-sm'
+                                    : 'text-gray-400 hover:text-gray-600'
+                            )}
+                        >
+                            Avanzada
+                        </button>
+                    </div>
+                </div>
+
                 <button
                     id="test-agent-btn"
                     onClick={() => setIsTestModalOpen(true)}
@@ -51,7 +86,7 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
             {/* Tabs Nav */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-2">
                 <div className="flex overflow-x-auto scrollbar-hide gap-1">
-                    {tabs.map((tab) => {
+                    {visibleTabs.map((tab) => {
                         const isActive = pathname === tab.href;
                         return (
                             <Link
