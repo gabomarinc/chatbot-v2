@@ -201,12 +201,30 @@ export async function addKnowledgeSource(agentId: string, data: {
             let text = '';
 
             try {
-                if (data.fileContent.startsWith('data:application/pdf')) {
+
+                let buffer: Buffer | null = null;
+
+                // Case 1: Base64 Content (Legacy/Direct)
+                if (data.fileContent && data.fileContent.startsWith('data:application/pdf')) {
                     const base64Data = data.fileContent.split(',')[1];
-                    const buffer = Buffer.from(base64Data, 'base64');
+                    buffer = Buffer.from(base64Data, 'base64');
+                }
+                // Case 2: Remote URL (R2/S3)
+                else if (data.url) {
+                    console.log(`[KNOWLEDGE] Fetching remote document from: ${data.url}`);
+                    const response = await fetch(data.url);
+                    if (!response.ok) throw new Error(`Failed to fetch document: ${response.statusText}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    buffer = Buffer.from(arrayBuffer);
+                }
+                // Case 3: Plain Text (treated as content)
+                else if (data.fileContent) {
+                    text = data.fileContent;
+                }
 
-                    console.log('[KNOWLEDGE] Processing PDF with v1 adapter...');
-
+                // If we have a buffer (PDF), parse it
+                if (buffer) {
+                    console.log('[KNOWLEDGE] Processing PDF...');
                     try {
                         const pdfImp = await import('pdf-parse');
                         const pdfParse = (pdfImp as any).default || pdfImp;
@@ -222,17 +240,12 @@ export async function addKnowledgeSource(agentId: string, data: {
                         }
 
                         text = pdfData.text;
-                        console.log('[KNOWLEDGE] PDF parsed successfully (v1). Length:', text.length);
+                        console.log('[KNOWLEDGE] PDF parsed successfully. Length:', text.length);
 
                     } catch (pdfError) {
                         console.error('[KNOWLEDGE] PDF Parse Failed:', pdfError);
-                        // Fallback so we don't crash
                         text = `[ERROR: No se pudo leer el contenido del PDF. Detalle: ${(pdfError as Error).message}]`;
                     }
-                } else {
-                    // Assume text
-                    text = data.fileContent; // Might contain data:text/plain;base64, if readAsDataURL was used for txt? 
-                    // AddSourceModal used readAsText for others. So it is plain text.
                 }
 
                 // Clean and chunk

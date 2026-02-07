@@ -418,18 +418,18 @@ export async function createAgentFromWizard(data: {
     intent: string,
     avatarUrl?: string | null;
     primarySource: {
-        type: 'WEB';
+        type: 'WEB' | 'MANUAL';
         source?: string;
         companyName?: string;
         description?: string;
-        pdfBase64?: string | null;
+        pdfUrl?: string | null;
         pdfName?: string | null;
         personality?: WizardPersonalityOption;
         analysisSummary?: string;
     };
     additionalSources: {
         templates: string[];
-        pdfBase64?: string | null;
+        pdfUrl?: string | null;
         pdfName?: string | null;
     };
     channels: {
@@ -484,6 +484,9 @@ export async function createAgentFromWizard(data: {
                 jobCompany = hostname.split('.')[0];
                 jobCompany = jobCompany.charAt(0).toUpperCase() + jobCompany.slice(1);
             } catch (e) { }
+        } else if (data.primarySource.type === 'MANUAL') {
+            jobCompany = data.primarySource.companyName || null;
+            jobWebsiteUrl = null;
         }
 
         const jobDescription = data.primarySource.analysisSummary || `Agente de ${data.intent}`;
@@ -541,6 +544,15 @@ export async function createAgentFromWizard(data: {
                     updateInterval: 'NEVER',
                     crawlSubpages: true
                 });
+            } else if (data.primarySource.type === 'MANUAL' && data.primarySource.pdfUrl) {
+                console.log('[WIZARD] Adding Manual PDF...');
+                await addKnowledgeSource(agent.id, {
+                    type: 'DOCUMENT',
+                    url: data.primarySource.pdfUrl,
+                    fileName: data.primarySource.pdfName || 'manual.pdf',
+                    updateInterval: 'NEVER',
+                    crawlSubpages: false
+                });
             }
         } catch (sourceError) {
             console.error('Warning: Failed to add primary source:', sourceError);
@@ -565,12 +577,12 @@ export async function createAgentFromWizard(data: {
         }
 
         // 2c. Add PDF (optional)
-        if (data.additionalSources.pdfBase64) {
+        if (data.additionalSources.pdfUrl) {
             try {
                 console.log('[WIZARD] Adding additional PDF...');
                 await addKnowledgeSource(agent.id, {
                     type: 'DOCUMENT',
-                    fileContent: data.additionalSources.pdfBase64,
+                    url: data.additionalSources.pdfUrl,
                     fileName: data.additionalSources.pdfName || 'additional.pdf',
                     updateInterval: 'NEVER',
                     crawlSubpages: false
