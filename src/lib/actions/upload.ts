@@ -3,25 +3,20 @@
 import { auth } from '@/auth';
 import { uploadFileToR2 } from '@/lib/r2';
 
-export async function uploadFile(formData: FormData) {
+export async function uploadFile(base64Content: string, fileName: string, contentType: string) {
     const session = await auth();
     if (!session?.user) {
         throw new Error('Unauthorized');
     }
 
     try {
-        const file = formData.get('file') as File;
-        if (!file) {
-            throw new Error('No file provided');
-        }
+        console.log(`[UPLOAD] Starting server-side upload for: ${fileName}`);
 
-        console.log(`[UPLOAD] Starting server-side upload for: ${file.name} (Size: ${file.size})`);
-
-        // Convert File to Buffer
-        const buffer = Buffer.from(await file.arrayBuffer());
+        // Convert Base64 to Buffer
+        const buffer = Buffer.from(base64Content, 'base64');
 
         // Upload to R2
-        const publicUrl = await uploadFileToR2(buffer, file.name, file.type);
+        const publicUrl = await uploadFileToR2(buffer, fileName, contentType);
 
         return { success: true, publicUrl };
     } catch (error: any) {
