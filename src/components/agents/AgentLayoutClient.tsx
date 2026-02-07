@@ -34,9 +34,9 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
     const [configMode, setConfigMode] = useState<'BASIC' | 'ADVANCED'>('BASIC');
 
     const basicTabs = ['profile', 'job', 'training', 'channels'];
-    const visibleTabs = configMode === 'ADVANCED'
-        ? tabs
-        : tabs.filter(t => basicTabs.includes(t.id));
+    const visibleTabs = configMode === 'BASIC'
+        ? tabs.filter(t => basicTabs.includes(t.id))
+        : tabs.filter(t => !basicTabs.includes(t.id));
 
     return (
         <div className="space-y-10">
