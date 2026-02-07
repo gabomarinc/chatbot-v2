@@ -1,22 +1,26 @@
 'use server'
 
 import { auth } from '@/auth';
-import { getPresignedUploadUrl } from '@/lib/r2';
+import { uploadFileToR2 } from '@/lib/r2';
 
-export async function getDocsUploadUrl(fileName: string, contentType: string) {
+export async function uploadFile(base64Content: string, fileName: string, contentType: string) {
     const session = await auth();
     if (!session?.user) {
         throw new Error('Unauthorized');
     }
 
-    // Optional: Add more specific permission checks here if needed
-    // For now, any authenticated user can upload docs for their agents
-
     try {
-        const result = await getPresignedUploadUrl(fileName, contentType);
-        return { success: true, ...result };
+        console.log(`[UPLOAD] Starting server-side upload for: ${fileName}`);
+
+        // Convert Base64 to Buffer
+        const buffer = Buffer.from(base64Content, 'base64');
+
+        // Upload to R2
+        const publicUrl = await uploadFileToR2(buffer, fileName, contentType);
+
+        return { success: true, publicUrl };
     } catch (error) {
-        console.error('Error generating upload URL:', error);
-        return { success: false, error: 'Failed to generate upload URL' };
+        console.error('Error uploading file:', error);
+        return { success: false, error: 'Failed to upload file' };
     }
 }
