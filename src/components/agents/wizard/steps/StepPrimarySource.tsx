@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { analyzeUrlAndGenerateQuestions, analyzeDescriptionAndGenerateQuestions, generateAgentPersonalities, WizardAnalysisResult, WizardPersonalityOption } from '@/lib/actions/wizard';
-import { uploadFile } from '@/lib/actions/upload';
+import { getDocsUploadUrl } from '@/lib/actions/upload';
 import { toast } from 'sonner';
 
 interface StepPrimarySourceProps {
@@ -43,41 +43,42 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
             return;
         }
 
-        // Limit to 3MB (Base64 encoding increases size by ~33%, keeping it under Vercel's 4.5MB limit)
-        if (file.size > 3 * 1024 * 1024) {
-            toast.error('El archivo no debe superar los 3MB (Límite del servidor)');
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit (R2 can handle it, client upload)
+            toast.error('El archivo no debe superar los 10MB');
             return;
         }
 
         setIsUploading(true);
         try {
-            console.log('[UPLOAD] Reading file as Base64...');
-
-            // 1. Convert to Base64
-            const base64Content = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    const result = reader.result as string;
-                    // Remove data:application/pdf;base64, prefix
-                    const base64 = result.split(',')[1];
-                    resolve(base64);
-                };
-                reader.onerror = error => reject(error);
-            });
-
-            // 2. Upload via Server Action
-            console.log('[UPLOAD] Sending to server...');
-            const result = await uploadFile(base64Content, file.name, file.type);
-
-            if (!result.success || !result.publicUrl) {
-                throw new Error(result.error || 'Upload failed');
+            // 1. Get Presigned URL
+            console.log('[UPLOAD] Getting presigned URL for:', file.name);
+            const presigned = await getDocsUploadUrl(file.name, file.type);
+            if (!presigned.success) {
+                console.error('[UPLOAD] Failed to get signed URL:', presigned.error);
+                throw new Error(presigned.error || 'Failed to get upload URL');
             }
 
-            console.log('[UPLOAD] Upload complete. Public URL:', result.publicUrl);
+            const { signedUrl, publicUrl } = presigned as { signedUrl: string, publicUrl: string };
+            console.log('[UPLOAD] Got signed URL. Uploading to R2...');
+
+            // 2. Upload to R2 directly
+            const uploadRes = await fetch(signedUrl, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                    'Content-Type': file.type
+                }
+            });
+
+            if (!uploadRes.ok) {
+                console.error('[UPLOAD] R2 Upload failed. Status:', uploadRes.status, uploadRes.statusText);
+                throw new Error(`Upload failed: ${uploadRes.status} ${uploadRes.statusText}`);
+            }
+
+            console.log('[UPLOAD] Upload complete. Public URL:', publicUrl);
 
             // 3. Save Public URL
-            setManualPdfUrl(result.publicUrl);
+            setManualPdfUrl(publicUrl || null);
             setManualPdfName(file.name);
             toast.success('PDF subido correctamente');
         } catch (error) {
@@ -464,7 +465,7 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                                             <p className="text-sm font-medium text-gray-600">
                                                 {isUploading ? 'Subiendo...' : 'Sube un PDF con información'}
                                             </p>
-                                            <p className="text-xs text-gray-400 mt-1">Máx 3MB</p>
+                                            <p className="text-xs text-gray-400 mt-1">Máx 10MB</p>
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-between">
