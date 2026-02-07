@@ -43,9 +43,9 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
             return;
         }
 
-        // Limit to 4MB for Server Actions (Vercel limit is 4.5MB)
-        if (file.size > 4 * 1024 * 1024) {
-            toast.error('El archivo no debe superar los 4MB (Límite del servidor)');
+        // Limit to 3MB (Base64 encoding increases size by ~33%, keeping it under Vercel's 4.5MB limit)
+        if (file.size > 3 * 1024 * 1024) {
+            toast.error('El archivo no debe superar los 3MB (Límite del servidor)');
             return;
         }
 
@@ -464,7 +464,7 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                                             <p className="text-sm font-medium text-gray-600">
                                                 {isUploading ? 'Subiendo...' : 'Sube un PDF con información'}
                                             </p>
-                                            <p className="text-xs text-gray-400 mt-1">Máx 4MB</p>
+                                            <p className="text-xs text-gray-400 mt-1">Máx 3MB</p>
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-between">
