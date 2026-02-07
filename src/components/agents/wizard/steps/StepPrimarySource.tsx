@@ -51,12 +51,15 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
         setIsUploading(true);
         try {
             // 1. Get Presigned URL
+            console.log('[UPLOAD] Getting presigned URL for:', file.name);
             const presigned = await getDocsUploadUrl(file.name, file.type);
             if (!presigned.success) {
+                console.error('[UPLOAD] Failed to get signed URL:', presigned.error);
                 throw new Error(presigned.error || 'Failed to get upload URL');
             }
 
             const { signedUrl, publicUrl } = presigned as { signedUrl: string, publicUrl: string };
+            console.log('[UPLOAD] Got signed URL. Uploading to R2...');
 
             // 2. Upload to R2 directly
             const uploadRes = await fetch(signedUrl, {
@@ -68,16 +71,20 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
             });
 
             if (!uploadRes.ok) {
-                throw new Error('Upload failed');
+                console.error('[UPLOAD] R2 Upload failed. Status:', uploadRes.status, uploadRes.statusText);
+                throw new Error(`Upload failed: ${uploadRes.status} ${uploadRes.statusText}`);
             }
+
+            console.log('[UPLOAD] Upload complete. Public URL:', publicUrl);
 
             // 3. Save Public URL
             setManualPdfUrl(publicUrl || null);
             setManualPdfName(file.name);
             toast.success('PDF subido correctamente');
         } catch (error) {
-            console.error('Upload error:', error);
-            toast.error('Error al subir el PDF');
+            console.error('[UPLOAD] Final Error:', error);
+            const msg = error instanceof Error ? error.message : 'Error desconocido';
+            toast.error(`Error al subir el PDF: ${msg}`);
         } finally {
             setIsUploading(false);
         }
@@ -427,7 +434,7 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                                     placeholder="Describe qué vendes, quiénes son tus clientes, y qué objetivos tienes..."
                                     value={manualDescription}
                                     onChange={(e) => setManualDescription(e.target.value)}
-                                    className="min-h-[120px]"
+                                    className="min-h-[120px] !border !border-gray-200 focus:!border-[#21AC96] focus:!ring-[#21AC96]"
                                 />
                             </div>
 
