@@ -212,15 +212,9 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                                                     </div>
                                                 ) : (
                                                     <Tooltip content={getFriendlyErrorMessage(source.errorMessage)}>
-                                                        <div className="flex flex-col items-center">
-                                                            <div className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-red-100 flex items-center gap-1.5 cursor-help">
-                                                                <AlertCircle className="w-3 h-3" />
-                                                                Error
-                                                            </div>
-                                                            {/* DEBUG ONLY: Show raw message */}
-                                                            <span className="text-[10px] text-red-400 mt-1 max-w-[150px] truncate">
-                                                                {source.errorMessage || "NULL ERROR"}
-                                                            </span>
+                                                        <div className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-red-100 flex items-center gap-1.5 cursor-help">
+                                                            <AlertCircle className="w-3 h-3" />
+                                                            Error
                                                         </div>
                                                     </Tooltip>
                                                 )}

@@ -231,23 +231,20 @@ export async function addKnowledgeSource(agentId: string, data: {
 
                 // If we have a buffer (PDF), parse it
                 if (buffer) {
-                    console.log('[KNOWLEDGE] Buffer ready. Importing pdf-parse...');
+                    console.log('[KNOWLEDGE] Buffer ready. Importing pdf2json...');
                     try {
-                        const pdfImp = await import('pdf-parse');
-                        const pdfParse = (pdfImp as any).default || pdfImp;
+                        const PDFParser = (await import('pdf2json')).default;
+                        const pdfParser = new PDFParser(null, 1); // 1 = Raw Text
 
-                        if (typeof pdfParse !== 'function') {
-                            throw new Error('pdf-parse is not a function');
-                        }
+                        text = await new Promise((resolve, reject) => {
+                            pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
+                            pdfParser.on("pdfParser_dataReady", () => {
+                                const rawText = pdfParser.getRawTextContent();
+                                resolve(rawText);
+                            });
+                            pdfParser.parseBuffer(buffer!);
+                        });
 
-                        console.log('[KNOWLEDGE] Parsing PDF buffer...');
-                        const pdfData = await pdfParse(buffer);
-
-                        if (!pdfData || !pdfData.text) {
-                            throw new Error('PDF parsed but returned empty text');
-                        }
-
-                        text = pdfData.text;
                         console.log('[KNOWLEDGE] PDF parsed successfully. Text length:', text.length);
 
                     } catch (pdfError) {
