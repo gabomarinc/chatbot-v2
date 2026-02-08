@@ -38,7 +38,7 @@ import { addKnowledgeSource } from '@/lib/actions/knowledge';
 import { toast } from 'sonner';
 
 function getFriendlyErrorMessage(error: string | null | undefined): string {
-    if (!error) return "Error desconocido";
+    if (!error) return "Error desconocido (Sin mensaje del servidor)";
 
     const e = error.toLowerCase();
 
@@ -54,7 +54,8 @@ function getFriendlyErrorMessage(error: string | null | undefined): string {
     if (e.includes('429')) return "Demasiadas peticiones. Intenta más tarde.";
     if (e.includes('unauthorized') || e.includes('401')) return "Se requiere autenticación para ver esto.";
 
-    return `Error técnico: ${error.substring(0, 50)}${error.length > 50 ? '...' : ''}`;
+    return `Error: ${error}`; // Temporary debug: show raw error
+    // return `Error técnico: ${error.substring(0, 50)}${error.length > 50 ? '...' : ''}`;
 }
 
 export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingClientProps) {
