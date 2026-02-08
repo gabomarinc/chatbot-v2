@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         // Validate file type (images or PDFs)
         const isImage = file.type.startsWith('image/');
         const isPDF = file.type === 'application/pdf';
-        
+
         if (!isImage && !isPDF) {
             return NextResponse.json(
                 { error: 'File must be an image or PDF' },
@@ -40,23 +40,24 @@ export async function POST(request: NextRequest) {
         let extractedText: string | undefined = undefined;
         if (isPDF) {
             try {
-                // Use require for pdf-parse (commonjs module)
-                const pdfParse = require('pdf-parse');
-                const pdfData = await pdfParse(buffer);
-                if (pdfData && pdfData.text && typeof pdfData.text === 'string') {
-                    let text = pdfData.text;
-                    // Limit extracted text to reasonable length (e.g., first 50000 chars)
-                    if (text.length > 50000) {
-                        text = text.substring(0, 50000) + '\n[... contenido truncado ...]';
-                    }
-                    extractedText = text;
+                const PDFParser = (await import('pdf2json')).default;
+                const pdfParser = new PDFParser(null, 1);
+
+                extractedText = await new Promise((resolve, reject) => {
+                    pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
+                    pdfParser.on("pdfParser_dataReady", () => {
+                        const rawText = pdfParser.getRawTextContent();
+                        resolve(rawText);
+                    });
+                    pdfParser.parseBuffer(buffer);
+                });
+
+                if (extractedText && extractedText.length > 50000) {
+                    extractedText = extractedText.substring(0, 50000) + '\n[... contenido truncado ...]';
                 }
             } catch (error) {
                 console.error('Error parsing PDF:', error);
-                return NextResponse.json(
-                    { error: 'Error al procesar el PDF. Por favor, verifica que el archivo sea válido.' },
-                    { status: 400 }
-                );
+                // Non-fatal error for upload route, but good to log
             }
         }
 
