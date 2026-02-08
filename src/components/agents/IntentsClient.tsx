@@ -95,19 +95,19 @@ export function IntentsClient({ agentId, intents }: IntentsClientProps) {
     if (intents.length === 0) {
         return (
             <>
-                <div className="max-w-3xl">
-                    <div className="bg-white rounded-3xl p-12 border border-gray-200 flex flex-col items-start justify-center min-h-[400px]">
-                        <div className="w-32 h-32 bg-purple-50 rounded-full flex items-center justify-center mb-6">
-                            <Target className="w-16 h-16 text-purple-500" />
+                <div className="max-w-4xl space-y-6">
+                    <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-50 rounded-full mb-4">
+                            <Target className="w-8 h-8 text-purple-600" />
                         </div>
-                        <h3 className="text-gray-900 mb-2 text-xl font-semibold">Crear una intención</h3>
-                        <div className="text-sm text-gray-600 mb-4 max-w-md space-y-2">
-                            <p className="font-medium text-gray-900">¿Qué son las intenciones?</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Crear una intención</h3>
+                        <div className="text-gray-500 mb-6 max-w-2xl mx-auto space-y-2">
+                            <p className="font-medium">¿Qué son las intenciones?</p>
                             <p>
                                 Las intenciones son acciones automáticas que tu agente puede realizar cuando detecta ciertas palabras clave en las conversaciones de los usuarios.
                             </p>
-                            <p className="text-gray-500 mt-3">
-                                <strong>Ejemplo:</strong> Si un usuario escribe "quiero agendar una visita", tu agente puede detectar esta intención y automáticamente llamar a un webhook para agendar la cita en tu sistema.
+                            <p className="text-sm mt-3 bg-gray-50 p-3 rounded-lg inline-block">
+                                <strong>Ejemplo:</strong> Si un usuario escribe "quiero agendar una visita", tu agente puede llamar a un webhook para crear la cita.
                             </p>
                         </div>
                         <button
