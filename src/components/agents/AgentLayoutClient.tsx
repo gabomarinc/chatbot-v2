@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Play } from 'lucide-react';
 import { useState } from 'react';
@@ -30,6 +30,7 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
     // Check if user can manage agents (OWNER or MANAGER)
     const canManage = userRole === 'OWNER' || userRole === 'MANAGER';
     const pathname = usePathname();
+    const router = useRouter(); // Import useRouter
     const [isTestModalOpen, setIsTestModalOpen] = useState(false);
     const [configMode, setConfigMode] = useState<'BASIC' | 'ADVANCED'>('BASIC');
 
@@ -49,7 +50,10 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Configuración</span>
                     <div className="flex bg-gray-100/80 rounded-xl p-1 gap-1">
                         <button
-                            onClick={() => setConfigMode('BASIC')}
+                            onClick={() => {
+                                setConfigMode('BASIC');
+                                router.push(`/agents/${agentId}/profile`);
+                            }}
                             className={cn(
                                 "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
                                 configMode === 'BASIC'
@@ -60,7 +64,10 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
                             Básica
                         </button>
                         <button
-                            onClick={() => setConfigMode('ADVANCED')}
+                            onClick={() => {
+                                setConfigMode('ADVANCED');
+                                router.push(`/agents/${agentId}/settings`);
+                            }}
                             className={cn(
                                 "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
                                 configMode === 'ADVANCED'

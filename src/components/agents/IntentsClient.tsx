@@ -96,12 +96,12 @@ export function IntentsClient({ agentId, intents }: IntentsClientProps) {
         return (
             <>
                 <div className="max-w-2xl mx-auto">
-                    <div className="bg-white rounded-3xl p-12 border border-gray-200 flex flex-col items-center justify-center min-h-[400px]">
+                    <div className="bg-white rounded-3xl p-12 border border-gray-200 flex flex-col items-start justify-center min-h-[400px]">
                         <div className="w-32 h-32 bg-purple-50 rounded-full flex items-center justify-center mb-6">
                             <Target className="w-16 h-16 text-purple-500" />
                         </div>
                         <h3 className="text-gray-900 mb-2 text-xl font-semibold">Crear una intención</h3>
-                        <div className="text-sm text-gray-600 mb-4 text-center max-w-md space-y-2">
+                        <div className="text-sm text-gray-600 mb-4 max-w-md space-y-2">
                             <p className="font-medium text-gray-900">¿Qué son las intenciones?</p>
                             <p>
                                 Las intenciones son acciones automáticas que tu agente puede realizar cuando detecta ciertas palabras clave en las conversaciones de los usuarios.
@@ -567,11 +567,10 @@ function IntentWizard({ agentId, intent, onClose }: { agentId: string; intent: I
                                 key={index}
                                 className={`flex-1 text-center ${index <= currentStep ? 'text-purple-600' : 'text-gray-400'}`}
                             >
-                                <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${
-                                    index < currentStep ? 'bg-purple-600 text-white' :
+                                <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${index < currentStep ? 'bg-purple-600 text-white' :
                                     index === currentStep ? 'bg-purple-100 text-purple-600 border-2 border-purple-600' :
-                                    'bg-gray-100 text-gray-400'
-                                }`}>
+                                        'bg-gray-100 text-gray-400'
+                                    }`}>
                                     {index < currentStep ? <CheckCircle2 className="w-5 h-5" /> : index + 1}
                                 </div>
                                 <p className="text-xs font-medium hidden sm:block">{step.title}</p>
