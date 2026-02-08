@@ -388,7 +388,13 @@ export const getAgentFull = cache(async (agentId: string) => {
         include: {
             knowledgeBases: {
                 include: {
-                    sources: true
+                    sources: {
+                        include: {
+                            _count: {
+                                select: { chunks: true }
+                            }
+                        }
+                    }
                 }
             },
             channels: true,
