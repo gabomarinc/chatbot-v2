@@ -11,6 +11,7 @@ export default async function AgentTrainingPage({ params }: { params: Promise<{ 
     }
 
     // Map database knowledge bases to client format
+    let knowledgeBases: any[] = [];
     try {
         knowledgeBases = agent.knowledgeBases.map(kb => ({
             id: kb.id,
