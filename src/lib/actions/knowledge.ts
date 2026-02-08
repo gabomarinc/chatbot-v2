@@ -234,7 +234,7 @@ export async function addKnowledgeSource(agentId: string, data: {
                     console.log('[KNOWLEDGE] Buffer ready. Importing pdf2json...');
                     try {
                         const PDFParser = (await import('pdf2json')).default;
-                        const pdfParser = new PDFParser(null, 1); // 1 = Raw Text
+                        const pdfParser = new PDFParser(null, true); // true = Raw Text
 
                         text = await new Promise((resolve, reject) => {
                             pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
