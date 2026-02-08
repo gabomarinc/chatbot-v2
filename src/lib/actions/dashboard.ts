@@ -388,7 +388,17 @@ export const getAgentFull = cache(async (agentId: string) => {
         include: {
             knowledgeBases: {
                 include: {
-                    sources: true
+                    sources: {
+                        select: {
+                            id: true,
+                            type: true,
+                            url: true,
+                            fileUrl: true,
+                            status: true,
+                            createdAt: true,
+                            // errorMessage: true // Commented out to verify if this column is missing in Prod DB
+                        }
+                    }
                 }
             },
             channels: true,

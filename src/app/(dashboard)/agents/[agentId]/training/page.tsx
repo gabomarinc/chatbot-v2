@@ -11,12 +11,11 @@ export default async function AgentTrainingPage({ params }: { params: Promise<{ 
     }
 
     // Map database knowledge bases to client format
-    let knowledgeBases: any[] = [];
     try {
         knowledgeBases = agent.knowledgeBases.map(kb => ({
             id: kb.id,
             name: kb.name,
-            sources: kb.sources.map(source => ({
+            sources: (kb.sources as any[]).map(source => ({
                 id: source.id,
                 type: source.type,
                 displayName: source.url || source.fileUrl || 'Documento de Texto',
