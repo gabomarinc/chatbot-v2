@@ -215,7 +215,10 @@ export async function addKnowledgeSource(agentId: string, data: {
                 else if (data.url) {
                     console.log(`[KNOWLEDGE] Fetching remote document from: ${data.url}`);
                     const response = await fetch(data.url);
-                    if (!response.ok) throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`);
+                    if (!response.ok) {
+                        const errorBody = await response.text().catch(() => 'No body');
+                        throw new Error(`Failed to fetch document: ${response.status} ${response.statusText} (${errorBody})`);
+                    }
                     const arrayBuffer = await response.arrayBuffer();
                     buffer = Buffer.from(arrayBuffer);
                     console.log(`[KNOWLEDGE] Document fetched. Size: ${buffer.length} bytes`);
@@ -249,10 +252,8 @@ export async function addKnowledgeSource(agentId: string, data: {
 
                     } catch (pdfError) {
                         console.error('[KNOWLEDGE] PDF Parse Failed:', pdfError);
-                        text = `[ERROR: No se pudo leer el contenido del PDF. Detalle: ${(pdfError as Error).message}]`;
-                        // Consider throwing here to mark as failed instead of saving error text? 
-                        // For now, let's throw to ensure we don't index garbage.
-                        throw pdfError;
+                        const msg = pdfError instanceof Error ? pdfError.message : String(pdfError);
+                        throw new Error(`PDF Parse Error: ${msg}`);
                     }
                 }
 
@@ -285,8 +286,9 @@ export async function addKnowledgeSource(agentId: string, data: {
                     throw new Error("No text content found in document");
                 }
             } catch (error) {
-                console.error("[KNOWLEDGE] Document processing error:", error);
-                const errorMessage = error instanceof Error ? error.message : 'Unknown document error';
+                console.error("[KNOWLEDGE] Document processing error details:", error);
+                const errorMessage = (error instanceof Error && error.message) ? error.message : String(error) || 'Unknown document error (empty)';
+
                 await prisma.knowledgeSource.update({
                     where: { id: source.id },
                     data: {
@@ -298,7 +300,9 @@ export async function addKnowledgeSource(agentId: string, data: {
         }
 
     } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : 'Unknown knowledge source error';
+        console.error("[KNOWLEDGE] Top-level error:", e);
+        const errorMessage = (e instanceof Error && e.message) ? e.message : String(e) || 'Unknown knowledge source error (empty)';
+
         await prisma.knowledgeSource.update({
             where: { id: source.id },
             data: {
