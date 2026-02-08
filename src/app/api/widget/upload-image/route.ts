@@ -39,26 +39,28 @@ export async function POST(request: NextRequest) {
         // Extract text from PDF if applicable
         let extractedText: string | undefined = undefined;
         if (isPDF) {
-            try {
-                const PDFParser = (await import('pdf2json')).default;
-                const pdfParser = new PDFParser(null, true);
-
-                extractedText = await new Promise((resolve, reject) => {
-                    pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
-                    pdfParser.on("pdfParser_dataReady", () => {
-                        const rawText = pdfParser.getRawTextContent();
-                        resolve(rawText);
-                    });
-                    pdfParser.parseBuffer(buffer);
-                });
-
-                if (extractedText && extractedText.length > 50000) {
-                    extractedText = extractedText.substring(0, 50000) + '\n[... contenido truncado ...]';
-                }
-            } catch (error) {
-                console.error('Error parsing PDF:', error);
-                // Non-fatal error for upload route, but good to log
-            }
+            // try {
+            //     const PDFParser = (await import('pdf2json')).default;
+            //     const pdfParser = new PDFParser(null, true);
+            //
+            //     extractedText = await new Promise((resolve, reject) => {
+            //         pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
+            //         pdfParser.on("pdfParser_dataReady", () => {
+            //             const rawText = pdfParser.getRawTextContent();
+            //             resolve(rawText);
+            //         });
+            //         pdfParser.parseBuffer(buffer);
+            //     });
+            //
+            //     if (extractedText && extractedText.length > 50000) {
+            //         extractedText = extractedText.substring(0, 50000) + '\n[... contenido truncado ...]';
+            //     }
+            // } catch (error) {
+            //     console.error('Error parsing PDF:', error);
+            //     // Non-fatal error for upload route, but good to log
+            // }
+            console.log("PDF Parsing disabled for debugging.");
+            extractedText = "PDF Content (Extraction Disabled)";
         }
 
         // Upload to R2
