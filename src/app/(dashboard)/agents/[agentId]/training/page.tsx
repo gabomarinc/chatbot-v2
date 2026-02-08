@@ -11,19 +11,25 @@ export default async function AgentTrainingPage({ params }: { params: Promise<{ 
     }
 
     // Map database knowledge bases to client format
-    const knowledgeBases = agent.knowledgeBases.map(kb => ({
-        id: kb.id,
-        name: kb.name,
-        sources: kb.sources.map(source => ({
-            id: source.id,
-            type: source.type,
-            displayName: source.url || source.fileUrl || 'Documento de Texto',
-            sourceUrl: source.url || source.fileUrl,
-            status: source.status,
-            errorMessage: source.errorMessage,
-            createdAt: source.createdAt
-        }))
-    }));
+    let knowledgeBases: any[] = [];
+    try {
+        knowledgeBases = agent.knowledgeBases.map(kb => ({
+            id: kb.id,
+            name: kb.name,
+            sources: kb.sources.map(source => ({
+                id: source.id,
+                type: source.type,
+                displayName: source.url || source.fileUrl || 'Documento de Texto',
+                sourceUrl: source.url || source.fileUrl,
+                status: source.status,
+                errorMessage: source.errorMessage ?? null, // Ensure explicit null
+                createdAt: source.createdAt
+            }))
+        }));
+    } catch (error) {
+        console.error("Error mapping knowledge bases:", error);
+        knowledgeBases = []; // Fallback to avoid crash
+    }
 
     return (
         <AgentTrainingClient
