@@ -95,7 +95,7 @@ export function IntentsClient({ agentId, intents }: IntentsClientProps) {
     if (intents.length === 0) {
         return (
             <>
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-3xl">
                     <div className="bg-white rounded-3xl p-12 border border-gray-200 flex flex-col items-start justify-center min-h-[400px]">
                         <div className="w-32 h-32 bg-purple-50 rounded-full flex items-center justify-center mb-6">
                             <Target className="w-16 h-16 text-purple-500" />
