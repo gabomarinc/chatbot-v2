@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   // Explicitly set the pages directory
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  serverExternalPackages: ['pdf2json'],
 };
 
 export default nextConfig;
