@@ -275,21 +275,42 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                 }))
             }];
 
-            // Map model names to correct API model identifiers (same as widget.ts)
-            let geminiModelName = agent.model;
-            if (agent.model === 'gemini-1.5-flash') {
-                geminiModelName = 'gemini-1.5-flash-001';
-            } else if (agent.model === 'gemini-1.5-pro') {
-                geminiModelName = 'gemini-1.5-pro-001';
-            }
-            console.log('[testAgent] Using Gemini model:', geminiModelName);
+            // Try multiple model name variations (production uses -001, but API might need different naming)
+            const modelVariations = [
+                agent.model, // Try original name first
+                `${agent.model}-001`, // Try with -001 suffix
+                `${agent.model}-latest`, // Try with -latest suffix
+                agent.model.replace('gemini-', 'models/gemini-') // Try with models/ prefix
+            ];
 
-            const model = genAI.getGenerativeModel({
-                model: geminiModelName,
-                systemInstruction: systemPrompt,
-                generationConfig: { temperature: agent.temperature },
-                tools: geminiTools as any
-            })
+            let lastError: any = null;
+            let model: any = null;
+            let geminiModelName = agent.model;
+
+            // Try each model variation until one works
+            for (const modelName of modelVariations) {
+                try {
+                    console.log(`[testAgent] Trying Gemini model: ${modelName}`);
+                    model = genAI.getGenerativeModel({
+                        model: modelName,
+                        systemInstruction: systemPrompt,
+                        generationConfig: { temperature: agent.temperature },
+                        tools: geminiTools as any
+                    });
+                    geminiModelName = modelName;
+                    console.log(`[testAgent] Successfully initialized model: ${modelName}`);
+                    break; // Success, exit loop
+                } catch (error: any) {
+                    console.warn(`[testAgent] Failed to initialize ${modelName}:`, error.message);
+                    lastError = error;
+                    model = null;
+                }
+            }
+
+            if (!model) {
+                // All variations failed
+                throw new Error(`No se pudo inicializar el modelo Gemini. Último error: ${lastError?.message || 'Desconocido'}`);
+            }
 
             const geminiHistory = history.map(h => ({
                 role: h.role === 'USER' ? 'user' : 'model',
