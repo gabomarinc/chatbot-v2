@@ -285,11 +285,10 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                 'gemini-1.5-pro-001',
                 'gemini-1.5-pro-latest',
                 'gemini-1.5-pro'
-            ];
-
             let result: any = null;
             let lastError: any = null;
             let successfulModel = '';
+            let chat: any = null; // Need this for tool call loop
 
             // Try each model variation
             for (const modelName of modelVariations) {
@@ -308,7 +307,7 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                         parts: [{ text: h.content }]
                     }));
 
-                    const chat = model.startChat({ history: geminiHistory });
+                    chat = model.startChat({ history: geminiHistory });
 
                     // This is where the error actually happens
                     result = await chat.sendMessage(content);
@@ -321,6 +320,7 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                     console.warn(`[testAgent] ❌ Failed with ${modelName}:`, error.message);
                     lastError = error;
                     result = null;
+                    chat = null;
                 }
             }
 
