@@ -28,19 +28,10 @@ export async function testAgent(
 
         if (!agent) throw new Error("Agent not found")
 
-        // 2. Try to fetch custom fields safely
-        let customFields: any[] = [];
-        try {
-            const agentWithFields = await prisma.agent.findUnique({
-                where: { id: agentId },
-                include: { customFieldDefinitions: true }
-            });
-            if (agentWithFields && agentWithFields.customFieldDefinitions) {
-                customFields = agentWithFields.customFieldDefinitions;
-            }
-        } catch (e) {
-            console.warn("[testAgent] Could not fetch customFieldDefinitions (Schema mismatch?):", e);
-        }
+        // NOTE: customFieldDefinitions and handoffTargets are disabled in test mode
+        // until production database is migrated. Test mode will work with basic features only.
+        const customFields: any[] = [];
+        const handoffTargets: any[] = [];
 
         // 0. Resolve API Keys (Same logic as widget)
         let openaiKey = process.env.OPENAI_API_KEY
@@ -162,7 +153,7 @@ INSTRUCCIONES CRÍTICAS PARA DATOS DE CONTACTO:
 3. NO esperes al final de la conversación. Guárdalo apenas lo tengas.
 `;
 
-        // ADDED: Human Handoff Protocol & Smart Routing (Same as llm.ts)
+        // ADDED: Human Handoff Protocol (Smart Routing disabled in test mode)
         if (agent.transferToHuman) {
             systemPrompt += `
 HUMAN HANDOFF PROTOCOL (CRITICAL):
@@ -171,18 +162,7 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
 3. Once you have the data (or if the user explicitly refuses but insists on transfer), THEN call 'escalate_to_human'.
 4. Provide a clear summary of the user's request in the tool call.
 `;
-            // Smart Routing Injection
-            const handoffTargets = (agent as any).handoffTargets;
-            if (handoffTargets && Array.isArray(handoffTargets) && handoffTargets.length > 0) {
-                systemPrompt += `
-AVAILABLE HANDOFF DEPARTMENTS:
-Select the 'departmentId' parameter for 'escalate_to_human' based on the user's need:
-`;
-                handoffTargets.forEach((target: any) => {
-                    systemPrompt += `- ID: "${target.id}" | Name: "${target.name}" | Context: ${target.description}\n`;
-                });
-                systemPrompt += `If no specific department matches, omit the 'departmentId' parameter.\n`;
-            }
+            // Smart Routing is disabled in test mode (requires schema migration)
         }
 
 
