@@ -285,6 +285,8 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                 'gemini-1.5-pro-001',
                 'gemini-1.5-pro-latest',
                 'gemini-1.5-pro'
+            ];
+
             let result: any = null;
             let lastError: any = null;
             let successfulModel = '';
