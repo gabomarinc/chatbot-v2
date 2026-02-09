@@ -480,10 +480,11 @@ export async function getAgents() {
             name: true,
             jobCompany: true,
             avatarUrl: true,
+            trainingScore: true,
             _count: {
                 select: {
-                    conversations: true,
-                    channels: true
+                    channels: true,
+                    conversations: true
                 }
             }
         },

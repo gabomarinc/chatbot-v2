@@ -16,6 +16,7 @@ export default async function AgentsPage() {
         name: agent.name,
         jobCompany: agent.jobCompany,
         avatarUrl: agent.avatarUrl,
+        trainingScore: agent.trainingScore,
         _count: {
             channels: agent._count.channels,
             conversations: agent._count.conversations

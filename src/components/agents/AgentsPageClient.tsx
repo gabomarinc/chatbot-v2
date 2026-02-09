@@ -20,6 +20,7 @@ interface Agent {
     name: string;
     jobCompany?: string | null;
     avatarUrl?: string | null;
+    trainingScore?: number | null;
     _count: {
         channels: number;
         conversations: number;
@@ -133,7 +134,7 @@ function AgentCard({ agent }: { agent: Agent }) {
                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-2 shadow-sm">
                                 <Zap className="w-4 h-4 text-orange-500" />
                             </div>
-                            <span className="text-lg text-gray-900 font-extrabold">0</span>
+                            <span className="text-lg text-gray-900 font-extrabold">{agent.trainingScore ?? 0}</span>
                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Puntos</span>
                         </div>
                     </div>
