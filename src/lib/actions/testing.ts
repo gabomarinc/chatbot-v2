@@ -15,17 +15,32 @@ export async function testAgent(
 ) {
     console.log(`[testAgent] Starting for agentId: ${agentId}`);
     try {
+        // 1. Fetch base agent (safest query)
         const agent = await prisma.agent.findUnique({
             where: { id: agentId },
             include: {
                 workspace: { include: { creditBalance: true } },
-                integrations: { where: { provider: 'GOOGLE_CALENDAR', enabled: true } },
-                customFieldDefinitions: true
+                integrations: { where: { provider: 'GOOGLE_CALENDAR', enabled: true } }
+                // customFieldDefinitions removed from here to prevent crash if client is outdated
             }
         })
-        console.log(`[testAgent] Agent found: ${agent?.name}, Model: ${agent?.model}`);
+        console.log(`[testAgent] Agent found: ${agent?.name}`);
 
         if (!agent) throw new Error("Agent not found")
+
+        // 2. Try to fetch custom fields safely
+        let customFields: any[] = [];
+        try {
+            const agentWithFields = await prisma.agent.findUnique({
+                where: { id: agentId },
+                include: { customFieldDefinitions: true }
+            });
+            if (agentWithFields && agentWithFields.customFieldDefinitions) {
+                customFields = agentWithFields.customFieldDefinitions;
+            }
+        } catch (e) {
+            console.warn("[testAgent] Could not fetch customFieldDefinitions (Schema mismatch?):", e);
+        }
 
         // 0. Resolve API Keys (Same logic as widget)
         let openaiKey = process.env.OPENAI_API_KEY
@@ -74,8 +89,6 @@ export async function testAgent(
         // ---------------------------------------------------------
         // SYSTEM PROMPT CONSTRUCTION (MATCHING llm.ts)
         // ---------------------------------------------------------
-        // We duplicate the logic here to ensure Test Mode behaves exactly like the real bot.
-        //Ideally, we should refactor this into a shared function, but for now we copy to fix the issue.
 
         const styleDescription = agent.communicationStyle === 'FORMAL' ? 'serio y profesional (FORMAL)' :
             agent.communicationStyle === 'CASUAL' ? 'amigable y cercano (DESENFADADO)' : 'equilibrado (NORMAL)';
@@ -120,8 +133,6 @@ INSTRUCCIONES DE EJECUCIÓN:
 `;
 
         // ADDED: Customer Fields & Contact Collection (Same as llm.ts)
-        // Defensive check: ensure customFieldDefinitions exists
-        const customFields = (agent as any).customFieldDefinitions || [];
         if (customFields.length > 0) {
             systemPrompt += 'TU OBJETIVO SECUNDARIO ES RECOLECTAR LA SIGUIENTE INFORMACIÓN DEL USUARIO:\n';
             customFields.forEach((field: any) => {
@@ -386,4 +397,5 @@ Select the 'departmentId' parameter for 'escalate_to_human' based on the user's 
         console.error("[testAgent] Critical Error:", error);
         throw error; // Let the UI handle it or return a safe error message
     }
+
 }
