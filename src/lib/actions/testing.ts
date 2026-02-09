@@ -17,7 +17,8 @@ export async function testAgent(
         where: { id: agentId },
         include: {
             workspace: { include: { creditBalance: true } },
-            integrations: { where: { provider: 'GOOGLE_CALENDAR', enabled: true } }
+            integrations: { where: { provider: 'GOOGLE_CALENDAR', enabled: true } },
+            customFieldDefinitions: true
         }
     })
 
@@ -62,6 +63,12 @@ export async function testAgent(
         console.error("Test RAG Error:", e)
     }
 
+    // ---------------------------------------------------------
+    // SYSTEM PROMPT CONSTRUCTION (MATCHING llm.ts)
+    // ---------------------------------------------------------
+    // We duplicate the logic here to ensure Test Mode behaves exactly like the real bot.
+    //Ideally, we should refactor this into a shared function, but for now we copy to fix the issue.
+
     const styleDescription = agent.communicationStyle === 'FORMAL' ? 'serio y profesional (FORMAL)' :
         agent.communicationStyle === 'CASUAL' ? 'amigable y cercano (DESENFADADO)' : 'equilibrado (NORMAL)';
 
@@ -74,7 +81,7 @@ export async function testAgent(
     const calendarIntegration = agent.integrations[0];
     const hasCalendar = !!calendarIntegration;
 
-    const systemPrompt = `IDENTIDAD Y CONTEXTO LABORAL (FUNDAMENTAL):
+    let systemPrompt = `IDENTIDAD Y CONTEXTO LABORAL (FUNDAMENTAL):
 Eres ${agent.name}, el asistente oficial de ${agent.jobCompany || 'la empresa'}.
 Sitio Web Oficial: ${agent.jobWebsiteUrl || 'No especificado'}
 Tu Objetivo: ${agent.jobType === 'SALES' ? 'COMERCIAL (Enfocado en ventas y conversión)' : agent.jobType === 'SUPPORT' ? 'SOPORTE (Ayuda técnica y resolución)' : 'ASISTENTE GENERAL'}
@@ -102,52 +109,147 @@ INSTRUCCIONES DE EJECUCIÓN:
 3. Actúa siempre como un miembro experto de ${agent.jobCompany || 'la empresa'}.
 4. Si la consulta se responde con el "Conocimiento Adicional", intégralo de forma natural.
 5. Mantén el Estilo de Comunicación (${styleDescription}) en cada palabra.
-`
+`;
 
-    let replyContent = "..."
+    // ADDED: Customer Fields & Contact Collection (Same as llm.ts)
+    if (agent.customFieldDefinitions && agent.customFieldDefinitions.length > 0) {
+        systemPrompt += 'TU OBJETIVO SECUNDARIO ES RECOLECTAR LA SIGUIENTE INFORMACIÓN DEL USUARIO:\n';
+        agent.customFieldDefinitions.forEach((field: any) => {
+            let fieldDesc = `- ${field.label} (ID: "${field.key}"): ${field.description || 'Sin descripción'}`;
+            if (field.type === 'SELECT' && field.options && field.options.length > 0) {
+                fieldDesc += ` [Opciones válidas: ${field.options.join(', ')}]`;
+            }
+            systemPrompt += fieldDesc + '\n';
+        });
+        systemPrompt += '\nCuando el usuario te proporcione esta información, USA LA HERRAMIENTA "update_contact" para guardarla.\n';
+        systemPrompt += 'Para campos con Opciones válidas, DEBES ajustar la respuesta del usuario a una de las opciones exactas si es posible, o pedir clarificación.\n';
+        systemPrompt += 'No seas intrusivo. Pregunta por estos datos de manera natural durante la conversación.\n\n';
+    }
 
-    // Define tools for Calendar
-    const tools: any[] = hasCalendar ? [
+    systemPrompt += `
+ADEMÁS, TU OBJETIVO PRINCIPAL ES IDENTIFICAR Y GUARDAR LOS SIGUIENTES DATOS DE CONTACTO SI EL USUARIO LOS MENCIONA:
+- Nombre completo (key: "name")
+- Correo electrónico (key: "email")
+- Número de teléfono (key: "phone")
+
+INSTRUCCIONES CRÍTICAS PARA DATOS DE CONTACTO:
+1. SI el usuario menciona su nombre, email o teléfono espontáneamente, USA INMEDIATAMENTE la herramienta "update_contact".
+2. ES MUY COMÚN que el usuario responda directamente a tus preguntas.
+   - Si preguntaste "¿Cuál es tu nombre?" y el usuario responde con frases como "Soy Omar", "Es Omar", "Si soy omar", EXTRAE SOLO EL NOMBRE ("Omar") y guárdalo. ¡NO guardes "Soy Omar" completo!
+   - Si preguntaste "¿Cuál es tu correo?" y el usuario responde "juan@gmail.com", ASUME que es su email y guárdalo.
+   - Si preguntaste por el teléfono y responden "5551234", ASUME que es el teléfono y guárdalo.
+3. NO esperes al final de la conversación. Guárdalo apenas lo tengas.
+`;
+
+    // ADDED: Human Handoff Protocol & Smart Routing (Same as llm.ts)
+    if (agent.transferToHuman) {
+        systemPrompt += `
+HUMAN HANDOFF PROTOCOL (CRITICAL):
+1. BEFORE calling 'escalate_to_human', you MUST verify you have the user's Name AND (Email OR Phone).
+2. If these details are missing, POLITELY ASK FOR THEM: "Para transferirte con un especialista, necesito tu nombre y un medio de contacto (email o teléfono). ¿Me los podrías facilitar?"
+3. Once you have the data (or if the user explicitly refuses but insists on transfer), THEN call 'escalate_to_human'.
+4. Provide a clear summary of the user's request in the tool call.
+`;
+        // Smart Routing Injection
+        if ((agent as any).handoffTargets && Array.isArray((agent as any).handoffTargets) && (agent as any).handoffTargets.length > 0) {
+            systemPrompt += `
+AVAILABLE HANDOFF DEPARTMENTS:
+Select the 'departmentId' parameter for 'escalate_to_human' based on the user's need:
+`;
+            (agent as any).handoffTargets.forEach((target: any) => {
+                systemPrompt += `- ID: "${target.id}" | Name: "${target.name}" | Context: ${target.description}\n`;
+            });
+            systemPrompt += `If no specific department matches, omit the 'departmentId' parameter.\n`;
+        }
+    }
+
+
+    // ---------------------------------------------------------
+    // TOOLS DEFINITION
+    // ---------------------------------------------------------
+
+    // Base tools (Contact & Handoff)
+    const activeTools: any[] = [
         {
-            name: "revisar_disponibilidad",
-            description: "Consulta los eventos ocupados en una fecha específica para ver disponibilidad.",
+            name: 'update_contact',
+            description: 'Update the contact information with collected data.',
             parameters: {
-                type: "object",
+                type: 'object',
                 properties: {
-                    fecha: { type: "string", description: "Fecha en formato YYYY-MM-DD" }
+                    updates: {
+                        type: 'object',
+                        description: 'Key-value pairs of data to update. Keys can be standard fields ("name", "email", "phone") or defined custom fields.',
+                        additionalProperties: true
+                    }
                 },
-                required: ["fecha"]
+                required: ['updates']
             }
         },
         {
-            name: "agendar_cita",
-            description: "Crea un evento en el calendario de Google.",
+            name: 'escalate_to_human',
+            description: 'Escalate the conversation to a human agent. USE ONLY AFTER COLLECTING USER CONTACT INFO (Name + Email/Phone) if possible.',
             parameters: {
-                type: "object",
+                type: 'object',
                 properties: {
-                    resumen: { type: "string", description: "Título de la cita" },
-                    descripcion: { type: "string", description: "Detalles adicionales" },
-                    inicio: { type: "string", description: "Fecha y hora de inicio (ISO 8601)" },
-                    fin: { type: "string", description: "Fecha y hora de fin (ISO 8601)" },
-                    email: { type: "string", description: "Email del invitado (opcional)" }
+                    summary: {
+                        type: 'string',
+                        description: 'Brief summary of the user\'s issue and why they need a human.'
+                    },
+                    departmentId: {
+                        type: 'string',
+                        description: 'The ID of the department to transfer to, based on user intent. Optional.'
+                    }
                 },
-                required: ["resumen", "inicio", "fin"]
+                required: ['summary']
             }
         }
-    ] : [];
+    ];
+
+    // Add Calendar tools if enabled
+    if (hasCalendar) {
+        activeTools.push(
+            {
+                name: "revisar_disponibilidad",
+                description: "Consulta los eventos ocupados en una fecha específica para ver disponibilidad.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        fecha: { type: "string", description: "Fecha en formato YYYY-MM-DD" }
+                    },
+                    required: ["fecha"]
+                }
+            },
+            {
+                name: "agendar_cita",
+                description: "Crea un evento en el calendario de Google.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        resumen: { type: "string", description: "Título de la cita" },
+                        descripcion: { type: "string", description: "Detalles adicionales" },
+                        inicio: { type: "string", description: "Fecha y hora de inicio (ISO 8601)" },
+                        fin: { type: "string", description: "Fecha y hora de fin (ISO 8601)" },
+                        email: { type: "string", description: "Email del invitado (opcional)" }
+                    },
+                    required: ["resumen", "inicio", "fin"]
+                }
+            }
+        );
+    }
+
+    let replyContent = "..."
 
     if (agent.model.includes('gemini')) {
         if (!googleKey) throw new Error("Google API Key not configured")
         const genAI = new GoogleGenerativeAI(googleKey)
-        const geminiTools = hasCalendar ? [{
-            functionDeclarations: tools.map(t => ({
+        const geminiTools = [{
+            functionDeclarations: activeTools.map(t => ({
                 name: t.name,
                 description: t.description,
                 parameters: t.parameters
             }))
-        }] : undefined;
+        }];
 
-        // Apply same model mapping as widget.ts
         let geminiModelName = agent.model;
         if (agent.model === 'gemini-1.5-flash') {
             geminiModelName = 'gemini-1.5-flash-001';
@@ -170,15 +272,24 @@ INSTRUCCIONES DE EJECUCIÓN:
         const chat = model.startChat({ history: geminiHistory })
         let result = await chat.sendMessage(content)
 
-        // Handle tool calls for Gemini
+        // Handle tool calls for Gemini (Simplified for Test Mode: We just acknowledge/mock logic)
+        // In real chat we execute DB updates. Here in test mode we might not have a real contact/conversation.
+        // We will just return a success message from the tool to let the agent continue.
         let call = result.response.functionCalls()?.[0];
         while (call) {
             const { name, args } = call;
-            let toolResult;
+            let toolResult = { success: true, message: "Action simulated in Test Mode." };
+
             if (name === "revisar_disponibilidad") {
-                toolResult = await listAvailableSlots(calendarIntegration.configJson, (args as any).fecha);
+                const slots = await listAvailableSlots(calendarIntegration.configJson, (args as any).fecha);
+                toolResult = { success: true, message: JSON.stringify(slots) };
             } else if (name === "agendar_cita") {
-                toolResult = await createCalendarEvent(calendarIntegration.configJson, args as any);
+                const event = await createCalendarEvent(calendarIntegration.configJson, args as any);
+                toolResult = { success: true, message: "Cita agendada: " + JSON.stringify(event) };
+            } else if (name === 'escalate_to_human') {
+                toolResult = { success: true, message: "[TEST MODE] Handoff triggered. Email would be sent to appropriate department." };
+            } else if (name === 'update_contact') {
+                toolResult = { success: true, message: "[TEST MODE] Contact data collected." };
             }
 
             result = await chat.sendMessage([{
@@ -204,14 +315,14 @@ INSTRUCCIONES DE EJECUCIÓN:
             { role: 'user', content: content }
         ];
 
-        const openAiTools = hasCalendar ? tools.map(t => ({
+        const openAiTools = activeTools.map(t => ({
             type: 'function',
             function: t
-        })) : undefined;
+        }));
 
         let completion = await openai.chat.completions.create({
             messages: openAiMessages,
-            model: agent.model, // Use configured model instead of hardcoded
+            model: agent.model,
             temperature: agent.temperature,
             tools: openAiTools as any,
         })
@@ -224,21 +335,29 @@ INSTRUCCIONES DE EJECUCIÓN:
             for (const toolCall of message.tool_calls as any[]) {
                 const { name, arguments: argsJson } = toolCall.function;
                 const args = JSON.parse(argsJson);
-                let toolResult;
+                let toolResult: any = { success: true, message: "Action simulated in Test Mode." };
+
                 if (name === "revisar_disponibilidad") {
-                    toolResult = await listAvailableSlots(calendarIntegration.configJson, args.fecha);
+                    const slots = await listAvailableSlots(calendarIntegration.configJson, args.fecha);
+                    toolResult = { success: true, message: JSON.stringify(slots) };
                 } else if (name === "agendar_cita") {
-                    toolResult = await createCalendarEvent(calendarIntegration.configJson, args);
+                    const event = await createCalendarEvent(calendarIntegration.configJson, args);
+                    toolResult = { success: true, message: "Cita agendada: " + JSON.stringify(event) };
+                } else if (name === 'escalate_to_human') {
+                    toolResult = { success: true, message: "[TEST MODE] Handoff triggered. Email would be sent to appropriate department." };
+                } else if (name === 'update_contact') {
+                    toolResult = { success: true, message: "[TEST MODE] Contact data collected." };
                 }
+
                 openAiMessages.push({
                     role: 'tool',
                     tool_call_id: toolCall.id,
-                    content: JSON.stringify(toolResult)
+                    content: JSON.stringify(toolResult) // Keep consistency
                 });
             }
             completion = await openai.chat.completions.create({
                 messages: openAiMessages,
-                model: agent.model, // Use configured model
+                model: agent.model,
                 temperature: agent.temperature,
                 tools: openAiTools as any,
             });
