@@ -36,7 +36,7 @@ export async function getAgentMedia(agentId: string) {
     // Verificar permisos
     const isOwner = agent.workspace.ownerId === session.user.id;
     const isMember = agent.workspace.members.length > 0;
-    
+
     if (!isOwner && !isMember) {
         throw new Error('Unauthorized');
     }
@@ -88,7 +88,7 @@ export async function uploadAgentMedia(
     // Verificar permisos
     const isOwner = agent.workspace.ownerId === session.user.id;
     const isMember = agent.workspace.members.length > 0;
-    
+
     if (!isOwner && !isMember) {
         throw new Error('Unauthorized');
     }
@@ -99,8 +99,8 @@ export async function uploadAgentMedia(
     }
 
     // Validar tamaño (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-        throw new Error('El archivo debe ser menor a 10MB');
+    if (file.size > 5 * 1024 * 1024) {
+        throw new Error('El archivo debe ser menor a 5MB');
     }
 
     // Subir a R2
@@ -108,7 +108,7 @@ export async function uploadAgentMedia(
     const buffer = Buffer.from(arrayBuffer);
     const timestamp = Date.now();
     const fileName = `${timestamp}-${file.name}`;
-    
+
     const url = await uploadFileToR2(buffer, fileName, file.type);
 
     // Guardar en base de datos
@@ -163,7 +163,7 @@ export async function deleteAgentMedia(mediaId: string) {
     // Verificar permisos
     const isOwner = media.agent.workspace.ownerId === session.user.id;
     const isMember = media.agent.workspace.members.length > 0;
-    
+
     if (!isOwner && !isMember) {
         throw new Error('Unauthorized');
     }
@@ -207,7 +207,7 @@ export async function searchAgentMedia(agentId: string, query: string) {
     // Verificar permisos
     const isOwner = agent.workspace.ownerId === session.user.id;
     const isMember = agent.workspace.members.length > 0;
-    
+
     if (!isOwner && !isMember) {
         throw new Error('Unauthorized');
     }

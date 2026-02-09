@@ -118,8 +118,8 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         }
 
         // Validate file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            alert('El archivo debe ser menor a 10MB');
+        if (file.size > 5 * 1024 * 1024) {
+            alert('El archivo debe ser menor a 5MB');
             return;
         }
 
