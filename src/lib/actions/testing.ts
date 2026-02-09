@@ -283,15 +283,15 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                 }))
             }];
 
-            // Try multiple model name variations
+            // Try multiple variations of the agent's configured model
+            const baseModel = agent.model; // e.g., "gemini-1.5-flash"
             const modelVariations = [
-                'gemini-1.5-flash-001', // Production uses this
-                'gemini-1.5-flash-latest',
-                'gemini-1.5-flash',
-                'gemini-1.5-pro-001',
-                'gemini-1.5-pro-latest',
-                'gemini-1.5-pro'
+                `${baseModel}-001`,      // Try with -001 suffix first (production uses this)
+                `${baseModel}-latest`,   // Try with -latest suffix
+                baseModel,               // Try original name
             ];
+
+            console.log(`[testAgent] Agent model: ${baseModel}, will try: ${modelVariations.join(', ')}`);
 
             let result: any = null;
             let lastError: any = null;
