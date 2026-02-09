@@ -399,7 +399,15 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
         }
     } catch (error) {
         console.error("[testAgent] Critical Error:", error);
-        throw error; // Let the UI handle it or return a safe error message
+
+        // CRITICAL: Never throw in Server Actions - always return serializable objects
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido al procesar la solicitud';
+
+        return {
+            agentMsg: {
+                content: `❌ Error del servidor: ${errorMessage}`
+            }
+        };
     }
 
 }
