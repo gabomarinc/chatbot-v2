@@ -220,8 +220,11 @@ export async function uploadAgentAvatar(agentId: string, formData: FormData) {
             data: { avatarUrl }
         });
 
+
         revalidatePath(`/agents/${agent.id}`);
         revalidatePath(`/agents/${agent.id}/settings`);
+
+        return { success: true, url: avatarUrl };
     } catch (error: any) {
         console.error("Manual avatar upload failed:", error);
         return { success: false, error: error.message };
