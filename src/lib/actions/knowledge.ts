@@ -311,6 +311,14 @@ export async function addKnowledgeSource(agentId: string, data: {
             })
         }
 
+        // Recalculate training score after adding knowledge source
+        try {
+            const { calculateAgentScore } = await import('@/lib/scoring/agent-scoring')
+            await calculateAgentScore(agentId)
+        } catch (error) {
+            console.error('Failed to recalculate agent score:', error)
+        }
+
         revalidatePath(`/agents/${agentId}/training`)
         return source
 
@@ -343,6 +351,14 @@ export async function deleteKnowledgeSource(agentId: string, sourceId: string) {
     await prisma.knowledgeSource.delete({
         where: { id: sourceId }
     })
+
+    // Recalculate training score after deleting knowledge source
+    try {
+        const { calculateAgentScore } = await import('@/lib/scoring/agent-scoring')
+        await calculateAgentScore(agentId)
+    } catch (error) {
+        console.error('Failed to recalculate agent score:', error)
+    }
 
     revalidatePath(`/agents/${agentId}/training`)
 }

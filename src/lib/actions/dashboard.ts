@@ -510,6 +510,15 @@ export async function updateAgent(agentId: string, data: any) {
         data
     })
 
+    // Recalculate training score after update
+    try {
+        const { calculateAgentScore } = await import('@/lib/scoring/agent-scoring')
+        await calculateAgentScore(agentId)
+    } catch (error) {
+        console.error('Failed to recalculate agent score:', error)
+        // Don't fail the update if scoring fails
+    }
+
     revalidatePath(`/agents/${agentId}`)
     revalidatePath(`/agents/${agentId}/settings`)
     revalidatePath(`/agents/${agentId}/profile`)
