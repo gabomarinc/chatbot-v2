@@ -267,6 +267,8 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
         if (agent.model.includes('gemini')) {
             if (!googleKey) throw new Error("Google API Key not configured")
             const genAI = new GoogleGenerativeAI(googleKey)
+
+            // Build tools array
             const geminiTools = [{
                 functionDeclarations: activeTools.map(t => ({
                     name: t.name,
@@ -275,50 +277,56 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                 }))
             }];
 
-            // Try multiple model name variations (production uses -001, but API might need different naming)
+            // Try multiple model name variations
             const modelVariations = [
-                agent.model, // Try original name first
-                `${agent.model}-001`, // Try with -001 suffix
-                `${agent.model}-latest`, // Try with -latest suffix
-                agent.model.replace('gemini-', 'models/gemini-') // Try with models/ prefix
+                'gemini-1.5-flash-001', // Production uses this
+                'gemini-1.5-flash-latest',
+                'gemini-1.5-flash',
+                'gemini-1.5-pro-001',
+                'gemini-1.5-pro-latest',
+                'gemini-1.5-pro'
             ];
 
+            let result: any = null;
             let lastError: any = null;
-            let model: any = null;
-            let geminiModelName = agent.model;
+            let successfulModel = '';
 
-            // Try each model variation until one works
+            // Try each model variation
             for (const modelName of modelVariations) {
                 try {
                     console.log(`[testAgent] Trying Gemini model: ${modelName}`);
-                    model = genAI.getGenerativeModel({
+
+                    const model = genAI.getGenerativeModel({
                         model: modelName,
                         systemInstruction: systemPrompt,
                         generationConfig: { temperature: agent.temperature },
                         tools: geminiTools as any
                     });
-                    geminiModelName = modelName;
-                    console.log(`[testAgent] Successfully initialized model: ${modelName}`);
-                    break; // Success, exit loop
+
+                    const geminiHistory = history.map(h => ({
+                        role: h.role === 'USER' ? 'user' : 'model',
+                        parts: [{ text: h.content }]
+                    }));
+
+                    const chat = model.startChat({ history: geminiHistory });
+
+                    // This is where the error actually happens
+                    result = await chat.sendMessage(content);
+
+                    successfulModel = modelName;
+                    console.log(`[testAgent] ✅ Successfully used model: ${modelName}`);
+                    break; // Success!
+
                 } catch (error: any) {
-                    console.warn(`[testAgent] Failed to initialize ${modelName}:`, error.message);
+                    console.warn(`[testAgent] ❌ Failed with ${modelName}:`, error.message);
                     lastError = error;
-                    model = null;
+                    result = null;
                 }
             }
 
-            if (!model) {
-                // All variations failed
-                throw new Error(`No se pudo inicializar el modelo Gemini. Último error: ${lastError?.message || 'Desconocido'}`);
+            if (!result) {
+                throw new Error(`No se pudo conectar con Gemini. Último error: ${lastError?.message || 'Desconocido'}`);
             }
-
-            const geminiHistory = history.map(h => ({
-                role: h.role === 'USER' ? 'user' : 'model',
-                parts: [{ text: h.content }]
-            }))
-
-            const chat = model.startChat({ history: geminiHistory })
-            let result = await chat.sendMessage(content)
 
             // Handle tool calls for Gemini (Simplified for Test Mode: We just acknowledge/mock logic)
             // In real chat we execute DB updates. Here in test mode we might not have a real contact/conversation.
