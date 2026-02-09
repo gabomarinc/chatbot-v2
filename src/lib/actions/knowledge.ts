@@ -233,28 +233,27 @@ export async function addKnowledgeSource(agentId: string, data: {
                     // If we have a buffer (PDF), parse it
                     // If we have a buffer (PDF), parse it
                     if (buffer) {
-                        console.log('[KNOWLEDGE] Buffer ready. Skipping pdf2json for now (DEBUG MODE)...');
-                        // try {
-                        //     const PDFParser = (await import('pdf2json')).default;
-                        //     const pdfParser = new PDFParser(null, true); // true = Raw Text
-                        //
-                        //     text = await new Promise((resolve, reject) => {
-                        //         pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
-                        //         pdfParser.on("pdfParser_dataReady", () => {
-                        //             const rawText = pdfParser.getRawTextContent();
-                        //             resolve(rawText);
-                        //         });
-                        //         pdfParser.parseBuffer(buffer!);
-                        //     });
-                        //
-                        //     console.log('[KNOWLEDGE] PDF parsed successfully. Text length:', text.length);
-                        //
-                        // } catch (pdfError) {
-                        //     console.error('[KNOWLEDGE] PDF Parse Failed:', pdfError);
-                        //     const msg = pdfError instanceof Error ? pdfError.message : String(pdfError);
-                        //     throw new Error(`PDF Parse Error: ${msg}`);
-                        // }
-                        text = "PDF Uploaded (Text extraction disabled for debugging)";
+                        console.log('[KNOWLEDGE] Buffer ready. Importing pdf2json...');
+                        try {
+                            const PDFParser = (await import('pdf2json')).default;
+                            const pdfParser = new PDFParser(null, true); // true = Raw Text
+
+                            text = await new Promise((resolve, reject) => {
+                                pdfParser.on("pdfParser_dataError", (errData: any) => reject(new Error(errData.parserError)));
+                                pdfParser.on("pdfParser_dataReady", () => {
+                                    const rawText = pdfParser.getRawTextContent();
+                                    resolve(rawText);
+                                });
+                                pdfParser.parseBuffer(buffer!);
+                            });
+
+                            console.log('[KNOWLEDGE] PDF parsed successfully. Text length:', text.length);
+
+                        } catch (pdfError) {
+                            console.error('[KNOWLEDGE] PDF Parse Failed:', pdfError);
+                            const msg = pdfError instanceof Error ? pdfError.message : String(pdfError);
+                            throw new Error(`PDF Parse Error: ${msg}`);
+                        }
                     }
 
                     // Clean and chunk
