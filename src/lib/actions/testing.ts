@@ -275,13 +275,14 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                 }))
             }];
 
-            // Map to latest stable versions (Google's recommended approach)
+            // Map model names to correct API model identifiers (same as widget.ts)
             let geminiModelName = agent.model;
             if (agent.model === 'gemini-1.5-flash') {
-                geminiModelName = 'gemini-1.5-flash-latest';
+                geminiModelName = 'gemini-1.5-flash-001';
             } else if (agent.model === 'gemini-1.5-pro') {
-                geminiModelName = 'gemini-1.5-pro-latest';
+                geminiModelName = 'gemini-1.5-pro-001';
             }
+            console.log('[testAgent] Using Gemini model:', geminiModelName);
 
             const model = genAI.getGenerativeModel({
                 model: geminiModelName,
