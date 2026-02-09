@@ -275,12 +275,8 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                 }))
             }];
 
-            let geminiModelName = agent.model;
-            if (agent.model === 'gemini-1.5-flash') {
-                geminiModelName = 'gemini-1.5-flash-001';
-            } else if (agent.model === 'gemini-1.5-pro') {
-                geminiModelName = 'gemini-1.5-pro-001';
-            }
+            // Use the model name as-is from the agent configuration
+            const geminiModelName = agent.model;
 
             const model = genAI.getGenerativeModel({
                 model: geminiModelName,
