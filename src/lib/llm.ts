@@ -135,6 +135,27 @@ export async function generateAgentReply(
           required: ['updates']
         }
       }
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'escalate_to_human',
+        description: 'Escalate the conversation to a human agent. USE ONLY AFTER COLLECTING USER CONTACT INFO (Name + Email/Phone) if possible.',
+        parameters: {
+          type: 'object',
+          properties: {
+            summary: {
+              type: 'string',
+              description: 'Brief summary of the user\'s issue and why they need a human.'
+            },
+            departmentId: {
+              type: 'string',
+              description: 'The ID of the department to transfer to, based on user intent. Optional.'
+            }
+          },
+          required: ['summary']
+        }
+      }
     }
   ];
 
@@ -202,6 +223,97 @@ export async function generateAgentReply(
               role: 'tool',
               tool_call_id: toolCall.id,
               content: JSON.stringify({ success: false, error: "Failed to update contact" })
+            });
+          }
+        }
+
+        // Handle escalate_to_human
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((toolCall as any).function.name === 'escalate_to_human') {
+          try {
+            const args = JSON.parse((toolCall as any).function.arguments);
+            const summary = args.summary;
+            console.log(`[LLM] Tool 'escalate_to_human' called. Summary:`, summary);
+
+            if ((conversation as any).contactId) {
+              // 1. Update status to PENDING
+              await prisma.conversation.update({
+                where: { id: conversationId },
+                data: { status: 'PENDING' }
+              });
+
+              // 2. Send Email Notification
+              // Get workspace owner email
+              // We need agent -> workspace -> owner
+              const agentWithWorkspace = await prisma.agent.findUnique({
+                where: { id: agentId },
+                include: {
+                  workspace: {
+                    include: { owner: true }
+                  }
+                }
+              });
+
+              if (agentWithWorkspace) {
+                const { sendHandoffEmail } = await import('@/lib/email');
+                const appUrl = process.env.NEXTAUTH_URL || 'https://app.konsul.com';
+                const link = `${appUrl}/inbox?conversationId=${conversationId}`;
+
+                // Determine recipient
+                let recipientEmail = agentWithWorkspace.workspace.owner.email;
+                let departmentName = 'General';
+
+                // Check for smart routing
+                if (args.departmentId && agent.handoffTargets && Array.isArray(agent.handoffTargets)) {
+                  const target = agent.handoffTargets.find((t: any) => t.id === args.departmentId);
+                  if (target && target.email) {
+                    recipientEmail = target.email;
+                    departmentName = target.name;
+                    console.log(`[LLM] Smart Handoff: Routing to ${departmentName} (${recipientEmail})`);
+                  }
+                }
+                // Fallback to general handoffEmail if set (legacy/simple support)
+                else if ((agent as any).handoffEmail) {
+                  recipientEmail = (agent as any).handoffEmail;
+                }
+
+                if (recipientEmail) {
+                  await sendHandoffEmail(
+                    recipientEmail,
+                    agent.name,
+                    agentWithWorkspace.workspace.name,
+                    link,
+                    {
+                      name: (conversation as any).contact?.name || (conversation as any).contactName || 'Visitante',
+                      email: (conversation as any).contact?.email || (conversation as any).contactEmail || undefined,
+                      phone: (conversation as any).contact?.phone || undefined
+                    },
+                    `[${departmentName}] ${summary}`
+                  );
+                  console.log(`[LLM] Handoff email sent to ${recipientEmail}`);
+                }
+              }
+
+              openaiMessages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: JSON.stringify({ success: true, message: "Transfer initiated. Bot paused." })
+              });
+
+            } else {
+              openaiMessages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                content: JSON.stringify({ success: false, error: "System error: No contact linked." })
+              });
+            }
+
+          } catch (error) {
+            console.error("Tool execution error", error);
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: false, error: "Failed to escalate" })
             });
           }
         }
@@ -362,6 +474,29 @@ INSTRUCCIONES CRÍTICAS PARA DATOS DE CONTACTO:
 3. NO esperes al final de la conversación. Guárdalo apenas lo tengas.
 4. Si ya tienes el dato (ej. el sistema ya sabe el nombre), NO lo vuelvas a preguntar ni a guardar a menos que el usuario lo corrija.
 `;
+
+  // HUMAN HANDOFF PROTOCOL (CRITICAL)
+  if (agent.transferToHuman) {
+    prompt += `
+HUMAN HANDOFF PROTOCOL (CRITICAL):
+1. BEFORE calling 'escalate_to_human', you MUST verify you have the user's Name AND (Email OR Phone).
+2. If these details are missing, POLITELY ASK FOR THEM: "Para transferirte con un especialista, necesito tu nombre y un medio de contacto (email o teléfono). ¿Me los podrías facilitar?"
+3. Once you have the data (or if the user explicitly refuses but insists on transfer), THEN call 'escalate_to_human'.
+4. Provide a clear summary of the user's request in the tool call.
+`;
+
+    // Smart Routing Injection
+    if (agent.handoffTargets && Array.isArray(agent.handoffTargets) && agent.handoffTargets.length > 0) {
+      prompt += `
+AVAILABLE HANDOFF DEPARTMENTS:
+Select the 'departmentId' parameter for 'escalate_to_human' based on the user's need:
+`;
+      agent.handoffTargets.forEach((target: any) => {
+        prompt += `- ID: "${target.id}" | Name: "${target.name}" | Context: ${target.description}\n`;
+      });
+      prompt += `If no specific department matches, omit the 'departmentId' parameter.\n`;
+    }
+  }
 
   return prompt.trim();
 }

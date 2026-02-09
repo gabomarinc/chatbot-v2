@@ -201,10 +201,10 @@ export async function sendWidgetMessage(data: {
             console.log(`[INTENT RESULT]`, intentResult);
         }
 
-        // 4.6. Check if conversation is handled by human
-        // If assignedTo is not null, a human is handling it, so bot should NOT auto-respond
-        if (conversation.assignedTo !== null) {
-            console.log(`[HUMAN HANDLING] Conversation ${conversation.id} is handled by human ${conversation.assignedTo}, skipping bot response`);
+        // 4.6. Check if conversation is handled by human OR pending handoff
+        // If assignedTo is not null OR status is PENDING, a human is handling it (or will), so bot should NOT auto-respond
+        if (conversation.assignedTo !== null || conversation.status === 'PENDING') {
+            console.log(`[HUMAN HANDLING] Conversation ${conversation.id} is handled by human (${conversation.assignedTo}) or pending (${conversation.status}), skipping bot response`);
 
             // Return without generating bot response
             return {

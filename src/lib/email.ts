@@ -26,11 +26,11 @@ export async function sendTeamInvitationEmail(
 ) {
     try {
         const resend = getResendClient();
-        
-        const roleLabel = role === 'OWNER' ? 'Propietario' : 
-                         role === 'MANAGER' ? 'Administrador' : 'Agente';
 
-        const subject = isNewUser 
+        const roleLabel = role === 'OWNER' ? 'Propietario' :
+            role === 'MANAGER' ? 'Administrador' : 'Agente';
+
+        const subject = isNewUser
             ? `Has sido invitado a ${workspaceName}`
             : `Te han agregado a ${workspaceName}`;
 
@@ -118,6 +118,111 @@ ${isNewUser ? `Para comenzar, necesitas crear una contraseña. Visita: ${APP_URL
     } catch (error) {
         console.error('Error sending email:', error);
         throw error;
+    }
+}
+
+export async function sendHandoffEmail(
+    adminEmail: string,
+    agentName: string,
+    workspaceName: string,
+    conversationLink: string,
+    visitorDetails: {
+        name?: string;
+        email?: string;
+        phone?: string;
+    },
+    conversationSummary: string
+) {
+    try {
+        const resend = getResendClient();
+
+        const subject = `[${agentName}] Solicitud de Agente Humano`;
+
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: bold;">Solicitud de Intervención</h1>
+                    <p style="color: rgba(255,255,255,0.9); margin-top: 5px; font-size: 14px;">${workspaceName} • ${agentName}</p>
+                </div>
+                
+                <div style="background: #ffffff; padding: 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+                    <p style="font-size: 16px; margin-bottom: 25px;">
+                        Hola,
+                    </p>
+                    
+                    <p style="font-size: 16px; margin-bottom: 25px;">
+                        El agente <strong>${agentName}</strong> ha escalado una conversación porque el usuario ha solicitado hablar con un humano.
+                    </p>
+
+                    <div style="background-color: #f9fafb; border-left: 4px solid #21AC96; padding: 20px; border-radius: 4px; margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 15px 0; color: #111827; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Detalles del Visitante</h3>
+                        <ul style="margin: 0; padding: 0; list-style: none;">
+                            <li style="margin-bottom: 8px;"><strong>Nombre:</strong> ${visitorDetails.name || 'No especificado'}</li>
+                            <li style="margin-bottom: 8px;"><strong>Email:</strong> ${visitorDetails.email || 'No especificado'}</li>
+                            <li style="margin-bottom: 8px;"><strong>Teléfono:</strong> ${visitorDetails.phone || 'No especificado'}</li>
+                        </ul>
+                        
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                            <h3 style="margin: 0 0 10px 0; color: #111827; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Resumen / Contexto</h3>
+                            <p style="margin: 0; color: #4b5563; font-style: italic;">"${conversationSummary}"</p>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 35px 0;">
+                        <a href="${conversationLink}" 
+                           style="display: inline-block; background: #21AC96; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(33, 172, 150, 0.3);">
+                            Ir a la Conversación
+                        </a>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #6b7280; text-align: center;">
+                        El bot ha sido pausado en esta conversación hasta que intervengas.
+                    </p>
+                </div>
+            </body>
+            </html>
+        `;
+
+        const textContent = `
+Solicitud de Intervención - ${agentName}
+
+El agente ha escalado una conversación.
+
+Detalles del Visitante:
+- Nombre: ${visitorDetails.name || 'No especificado'}
+- Email: ${visitorDetails.email || 'No especificado'}
+- Teléfono: ${visitorDetails.phone || 'No especificado'}
+
+Contexto:
+"${conversationSummary}"
+
+Ir a la conversación: ${conversationLink}
+        `;
+
+        const { data, error } = await resend.emails.send({
+            from: FROM_EMAIL,
+            to: adminEmail,
+            subject,
+            html: htmlContent,
+            text: textContent,
+        });
+
+        if (error) {
+            console.error('Resend error:', error);
+            throw error;
+        }
+
+        return { success: true, messageId: data?.id };
+    } catch (error) {
+        console.error('Error sending handoff email:', error);
+        // Don't throw, just return failure so chat doesn't crash
+        return { success: false, error };
     }
 }
 

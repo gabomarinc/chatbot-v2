@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { updateAgent } from '@/lib/actions/dashboard';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle2, Settings, Sliders, Zap, MessageSquare, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Loader2, CheckCircle2, Settings, Sliders, Zap, MessageSquare, AlertTriangle, ShieldCheck, Plus, Trash2, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AgentSettingsFormProps {
@@ -21,14 +21,54 @@ interface AgentSettingsFormProps {
         smartRetrieval: boolean;
         transferToHuman: boolean;
         responseDelay?: number;
+        handoffTargets?: any; // JSON
     };
+}
+
+interface HandoffTarget {
+    id: string;
+    name: string;
+    email: string;
+    description: string;
 }
 
 export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
-    const [formData, setFormData] = useState({ ...agent });
+    const [formData, setFormData] = useState({
+        ...agent,
+        handoffTargets: agent.handoffTargets || [] as HandoffTarget[]
+    });
+
+    const addHandoffTarget = () => {
+        const newTarget: HandoffTarget = {
+            id: crypto.randomUUID(),
+            name: '',
+            email: '',
+            description: ''
+        };
+        setFormData(prev => ({
+            ...prev,
+            handoffTargets: [...(prev.handoffTargets || []), newTarget]
+        }));
+    };
+
+    const removeHandoffTarget = (id: string) => {
+        setFormData(prev => ({
+            ...prev,
+            handoffTargets: (prev.handoffTargets || []).filter((t: HandoffTarget) => t.id !== id)
+        }));
+    };
+
+    const updateHandoffTarget = (id: string, field: keyof HandoffTarget, value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            handoffTargets: (prev.handoffTargets || []).map((t: HandoffTarget) =>
+                t.id === id ? { ...t, [field]: value } : t
+            )
+        }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -218,6 +258,77 @@ export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
                             </div>
                         </div>
                     ))}
+
+                    {/* Handoff Targets Section */}
+                    {formData.transferToHuman && (
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-[#F59E0B]/10 rounded-xl flex items-center justify-center text-[#F59E0B]">
+                                    <Mail className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-gray-900 font-black text-sm uppercase tracking-widest">Ruteo Inteligente</h3>
+                                    <p className="text-xs text-gray-400 font-medium">Define a quién notificar según la intención del usuario</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {(formData.handoffTargets || []).map((target: HandoffTarget) => (
+                                    <div key={target.id} className="bg-gray-50 p-4 rounded-2xl space-y-3 relative group border border-gray-100">
+                                        <button
+                                            type="button"
+                                            onClick={() => removeHandoffTarget(target.id)}
+                                            className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Nombre del Departamento</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ej: Ventas, Soporte..."
+                                                    value={target.name}
+                                                    onChange={(e) => updateHandoffTarget(target.id, 'name', e.target.value)}
+                                                    className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Email de Destino</label>
+                                                <input
+                                                    type="email"
+                                                    placeholder="equipo@empresa.com"
+                                                    value={target.email}
+                                                    onChange={(e) => updateHandoffTarget(target.id, 'email', e.target.value)}
+                                                    className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Descripción para la IA</label>
+                                            <input
+                                                type="text"
+                                                placeholder="¿Cuándo debe la IA transferir a este departamento?"
+                                                value={target.description}
+                                                onChange={(e) => updateHandoffTarget(target.id, 'description', e.target.value)}
+                                                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    onClick={addHandoffTarget}
+                                    className="w-full py-3 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 font-bold text-sm hover:border-[#21AC96] hover:text-[#21AC96] hover:bg-[#21AC96]/5 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span>Agregar Destino</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Final Actions */}
                     <div className="flex items-center justify-end gap-4 pt-4">
