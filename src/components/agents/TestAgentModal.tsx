@@ -78,7 +78,17 @@ export function TestAgentModal({ isOpen, onClose, agentId, agentName }: TestAgen
 
             setMessages(prev => [...prev, agentMsg]);
         } catch (error) {
-            console.error(error);
+            console.error('[TestAgentModal] Error:', error);
+
+            // Display error message in chat instead of just a toast
+            const errorMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'AGENT',
+                content: `❌ Error: ${error instanceof Error ? error.message : 'Error desconocido al procesar la solicitud'}`,
+                createdAt: new Date()
+            };
+            setMessages(prev => [...prev, errorMsg]);
+
             toast.error('Error al enviar mensaje de prueba');
         } finally {
             setIsLoading(false);
