@@ -204,8 +204,7 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
                     properties: {
                         updates: {
                             type: 'object',
-                            description: 'Key-value pairs of data to update. Keys can be standard fields ("name", "email", "phone") or defined custom fields.',
-                            additionalProperties: true
+                            description: 'Key-value pairs of data to update. Keys can be standard fields ("name", "email", "phone") or defined custom fields.'
                         }
                     },
                     required: ['updates']
