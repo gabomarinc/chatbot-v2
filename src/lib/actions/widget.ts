@@ -36,13 +36,6 @@ export async function sendWidgetMessage(data: {
             if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value;
         }
 
-        // DEBUG: Log API key info
-        if (googleKey) {
-            const keyPreview = `${googleKey.substring(0, 8)}...${googleKey.substring(googleKey.length - 4)}`;
-            console.log(`[WIDGET] Google API Key preview: ${keyPreview}`);
-            console.log(`[WIDGET] Google API Key length: ${googleKey.length}`);
-        }
-
         // 1. Validate Channel
         const channel = await prisma.channel.findUnique({
             where: { id: data.channelId },

@@ -52,12 +52,6 @@ export async function testAgent(
 
         console.log(`[testAgent] Keys resolved - OpenAI: ${!!openaiKey}, Google: ${!!googleKey}`);
 
-        if (googleKey) {
-            const keyPreview = `${googleKey.substring(0, 8)}...${googleKey.substring(googleKey.length - 4)}`;
-            console.log(`[testAgent] Google API Key preview: ${keyPreview}`);
-            console.log(`[testAgent] Google API Key length: ${googleKey.length}`);
-        }
-
         // CRITICAL: Check if we have the required API key for this agent's model
         const needsOpenAI = !agent.model.includes('gemini');
         const needsGoogle = agent.model.includes('gemini');
