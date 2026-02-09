@@ -333,40 +333,46 @@ HUMAN HANDOFF PROTOCOL (CRITICAL):
             }
 
             if (!result) {
-                throw new Error(`No se pudo conectar con Gemini. Último error: ${lastError?.message || 'Desconocido'}`);
-            }
+                // All Gemini variations failed - fallback to OpenAI (same as production widget)
+                console.warn(`[testAgent] All Gemini models failed. Falling back to GPT-4o`);
+                console.log(`[testAgent] Last Gemini error: ${lastError?.message}`);
 
-            // Handle tool calls for Gemini (Simplified for Test Mode: We just acknowledge/mock logic)
-            // In real chat we execute DB updates. Here in test mode we might not have a real contact/conversation.
-            // We will just return a success message from the tool to let the agent continue.
-            let call = result.response.functionCalls()?.[0];
-            while (call) {
-                const { name, args } = call;
-                let toolResult = { success: true, message: "Action simulated in Test Mode." };
+                // Change model to GPT-4o for fallback
+                agent.model = 'gpt-4o';
+                // Continue to OpenAI logic below
+            } else {
+                // Gemini succeeded - handle tool calls for Gemini
+                let call = result.response.functionCalls()?.[0];
+                while (call) {
+                    const { name, args } = call;
+                    let toolResult = { success: true, message: "Action simulated in Test Mode." };
 
-                if (name === "revisar_disponibilidad") {
-                    const slots = await listAvailableSlots(calendarIntegration.configJson, (args as any).fecha);
-                    toolResult = { success: true, message: JSON.stringify(slots) };
-                } else if (name === "agendar_cita") {
-                    const event = await createCalendarEvent(calendarIntegration.configJson, args as any);
-                    toolResult = { success: true, message: "Cita agendada: " + JSON.stringify(event) };
-                } else if (name === 'escalate_to_human') {
-                    toolResult = { success: true, message: "[TEST MODE] Handoff triggered. Email would be sent to appropriate department." };
-                } else if (name === 'update_contact') {
-                    toolResult = { success: true, message: "[TEST MODE] Contact data collected." };
+                    if (name === "revisar_disponibilidad") {
+                        const slots = await listAvailableSlots(calendarIntegration.configJson, (args as any).fecha);
+                        toolResult = { success: true, message: JSON.stringify(slots) };
+                    } else if (name === "agendar_cita") {
+                        const event = await createCalendarEvent(calendarIntegration.configJson, args as any);
+                        toolResult = { success: true, message: "Cita agendada: " + JSON.stringify(event) };
+                    } else if (name === 'escalate_to_human') {
+                        toolResult = { success: true, message: "[TEST MODE] Handoff triggered. Email would be sent to appropriate department." };
+                    } else if (name === 'update_contact') {
+                        toolResult = { success: true, message: "[TEST MODE] Contact data collected." };
+                    }
+
+                    result = await chat.sendMessage([{
+                        functionResponse: {
+                            name,
+                            response: { result: toolResult }
+                        }
+                    }]);
+                    call = result.response.functionCalls()?.[0];
                 }
 
-                result = await chat.sendMessage([{
-                    functionResponse: {
-                        name,
-                        response: { result: toolResult }
-                    }
-                }]);
-                call = result.response.functionCalls()?.[0];
+                replyContent = result.response.text()
             }
+        }
 
-            replyContent = result.response.text()
-        } else {
+        if (!agent.model.includes('gemini')) {
             if (!openaiKey) throw new Error("OpenAI API Key not configured")
             const openai = new OpenAI({ apiKey: openaiKey })
 
