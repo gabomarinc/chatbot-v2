@@ -39,14 +39,38 @@ export async function testAgent(
 
         if (!openaiKey || !googleKey) {
             console.log("[testAgent] Checking global config for keys...");
-            const configs = await (prisma as any).globalConfig.findMany({
-                where: { key: { in: ['OPENAI_API_KEY', 'GOOGLE_API_KEY'] } }
-            })
-            if (!openaiKey) openaiKey = configs.find((c: any) => c.key === 'OPENAI_API_KEY')?.value
-            if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value
+            try {
+                const configs = await (prisma as any).globalConfig.findMany({
+                    where: { key: { in: ['OPENAI_API_KEY', 'GOOGLE_API_KEY'] } }
+                })
+                if (!openaiKey) openaiKey = configs.find((c: any) => c.key === 'OPENAI_API_KEY')?.value
+                if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value
+            } catch (e) {
+                console.warn("[testAgent] Could not fetch global config:", e);
+            }
         }
 
         console.log(`[testAgent] Keys resolved - OpenAI: ${!!openaiKey}, Google: ${!!googleKey}`);
+
+        // CRITICAL: Check if we have the required API key for this agent's model
+        const needsOpenAI = !agent.model.includes('gemini');
+        const needsGoogle = agent.model.includes('gemini');
+
+        if (needsOpenAI && !openaiKey) {
+            return {
+                agentMsg: {
+                    content: "⚠️ Error de configuración: No se encontró la clave de OpenAI. Por favor, configura OPENAI_API_KEY en las variables de entorno de Vercel o en la configuración global."
+                }
+            };
+        }
+
+        if (needsGoogle && !googleKey) {
+            return {
+                agentMsg: {
+                    content: "⚠️ Error de configuración: No se encontró la clave de Google AI. Por favor, configura GOOGLE_API_KEY en las variables de entorno de Vercel o en la configuración global."
+                }
+            };
+        }
 
         // RAG Logic
         let context = ""
