@@ -377,40 +377,59 @@ export const getAgent = cache(async (agentId: string) => {
 
 // Full agent data (Use only when needed, e.g. for training/integrations)
 export const getAgentFull = cache(async (agentId: string) => {
-    const workspace = await getUserWorkspace()
-    if (!workspace) return null
+    try {
+        const workspace = await getUserWorkspace()
+        if (!workspace) {
+            console.log('[DASHBOARD] getAgentFull: No workspace found');
+            return null
+        }
 
-    return prisma.agent.findFirst({
-        where: {
-            id: agentId,
-            workspaceId: workspace.id
-        },
-        include: {
-            knowledgeBases: {
-                include: {
-                    sources: {
-                        select: {
-                            id: true,
-                            type: true,
-                            url: true,
-                            fileUrl: true,
-                            status: true,
-                            createdAt: true,
-                            // errorMessage: true // Commented out to verify if this column is missing in Prod DB
+        const agent = await prisma.agent.findFirst({
+            where: {
+                id: agentId,
+                workspaceId: workspace.id
+            },
+            include: {
+                knowledgeBases: {
+                    include: {
+                        sources: {
+                            select: {
+                                id: true,
+                                type: true,
+                                url: true,
+                                fileUrl: true,
+                                status: true,
+                                createdAt: true,
+                                // errorMessage: true // Commented out to verify if this column is missing in Prod DB
+                            }
                         }
                     }
-                }
-            },
-            channels: true,
-            integrations: true,
-            _count: {
-                select: {
-                    channels: true,
-                    conversations: true
+                },
+                channels: true,
+                integrations: true,
+                _count: {
+                    select: {
+                        channels: true,
+                        conversations: true
+                    }
                 }
             }
+        })
+
+        if (!agent) {
+            console.log('[DASHBOARD] getAgentFull: Agent not found', agentId);
+        } else {
+            console.log('[DASHBOARD] getAgentFull: Agent found, KB count:', agent.knowledgeBases.length);
         }
-    })
+
+        return agent;
+    } catch (error) {
+        console.error('[DASHBOARD] getAgentFull CRITICAL ERROR:', error);
+        // Return null or throw? If we throw, page crashes. If we return null, page redirects.
+        // Let's return null to avoid 500 loop if possible, or throw to see error in dev.
+        // Given user is in production/dev mix, seeing the error log is key.
+        return null;
+    }
 })
 
 // Restore missing functions
