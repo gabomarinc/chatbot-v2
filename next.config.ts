@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['pdf2json'],
   experimental: {
     serverActions: {
-      bodySizeLimit: '10mb',
+      bodySizeLimit: '5mb',
     },
   },
 };

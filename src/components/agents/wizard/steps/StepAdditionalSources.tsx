@@ -33,8 +33,8 @@ export function StepAdditionalSources({ additionalSources, onChange }: StepAddit
                 toast.error('Solo archivos PDF');
                 return;
             }
-            if (file.size > 10 * 1024 * 1024) {
-                toast.error('El archivo no debe superar 10MB');
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('El archivo no debe superar 5MB');
                 return;
             }
             setPdfFile(file);
@@ -128,7 +128,7 @@ export function StepAdditionalSources({ additionalSources, onChange }: StepAddit
                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">OPCIONAL</span>
                 </div>
                 <p className="text-sm text-gray-500">
-                    Agrega un PDF con información adicional sobre tu negocio (máx. 10MB)
+                    Agrega un PDF con información adicional sobre tu negocio (máx. 5MB)
                 </p>
 
                 {pdfFile ? (

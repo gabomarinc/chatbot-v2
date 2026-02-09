@@ -41,8 +41,8 @@ export function AddSourceModal({ isOpen, isLoading = false, onClose, onAdd }: Ad
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 10 * 1024 * 1024) {
-            alert("El archivo es demasiado grande (Máx 10MB)");
+        if (file.size > 5 * 1024 * 1024) {
+            alert("El archivo es demasiado grande (Máx 5MB)");
             return;
         }
 
@@ -239,7 +239,7 @@ export function AddSourceModal({ isOpen, isLoading = false, onClose, onAdd }: Ad
                                     <>
                                         <File className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-sm text-gray-600 font-medium mb-1">Arrastra un archivo aquí o haz clic para seleccionar</p>
-                                        <p className="text-xs text-gray-400">PDF, TXT (Máx. 10MB)</p>
+                                        <p className="text-xs text-gray-400">PDF, TXT (Máx. 5MB)</p>
                                     </>
                                 )}
                             </div>

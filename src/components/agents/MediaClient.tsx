@@ -159,7 +159,7 @@ export function MediaClient({ agentId, media: initialMedia }: MediaClientProps) 
                                         {item.description}
                                     </p>
                                 )}
-                                
+
                                 {/* Tags */}
                                 {item.tags.length > 0 && (
                                     <div className="flex flex-wrap gap-1">
@@ -240,8 +240,8 @@ function MediaUploadModal({
             return
         }
 
-        if (selectedFile.size > 10 * 1024 * 1024) {
-            toast.error('La imagen debe ser menor a 10MB')
+        if (selectedFile.size > 5 * 1024 * 1024) {
+            toast.error('La imagen debe ser menor a 5MB')
             return
         }
 
@@ -337,7 +337,7 @@ function MediaUploadModal({
                                     <p className="mb-2 text-sm text-gray-500">
                                         <span className="font-semibold">Haz clic para subir</span> o arrastra y suelta
                                     </p>
-                                    <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                                    <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 5MB</p>
                                 </div>
                                 <input
                                     type="file"
