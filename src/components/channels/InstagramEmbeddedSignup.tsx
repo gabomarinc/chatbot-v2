@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Instagram, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { getInstagramAccounts, connectInstagramAccount } from '@/lib/actions/instagram-auth';
+import { getMetaAppId } from '@/lib/actions/meta-config';
 
 interface InstagramEmbeddedSignupProps {
     appId: string;
@@ -11,10 +12,28 @@ interface InstagramEmbeddedSignupProps {
     onSuccess?: () => void;
 }
 
-export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: InstagramEmbeddedSignupProps) {
+export function InstagramEmbeddedSignup({ appId: initialAppId, agentId, onSuccess }: InstagramEmbeddedSignupProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [accounts, setAccounts] = useState<any[]>([]);
     const [showAccountSelection, setShowAccountSelection] = useState(false);
+    const [appId, setAppId] = useState(initialAppId);
+    const [isLoadingAppId, setIsLoadingAppId] = useState(!initialAppId);
+
+    // Fetch App ID from database if not provided via environment variable
+    useEffect(() => {
+        if (!initialAppId) {
+            getMetaAppId()
+                .then(id => {
+                    setAppId(id);
+                    setIsLoadingAppId(false);
+                })
+                .catch(error => {
+                    console.error('Failed to get Meta App ID:', error);
+                    toast.error('Error: No se pudo obtener el App ID de Meta');
+                    setIsLoadingAppId(false);
+                });
+        }
+    }, [initialAppId]);
 
     // Check for Instagram token in URL params (from OAuth callback)
     useEffect(() => {
@@ -202,15 +221,22 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
 
                 <button
                     onClick={launchLogin}
-                    disabled={isProcessing}
-                    className="w-full py-4 bg-white text-pink-900 rounded-2xl text-sm font-black shadow-lg shadow-black/20 hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 group-hover:ring-4 ring-white/20"
-                >
-                    {isProcessing ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                    disabled={isProcessing || isLoadingAppId || !appId}
+                    className="group/btn relative w-full bg-white hover:bg-pink-50 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 font-black text-lg py-5 px-8 rounded-[1.5rem] shadow-2xl shadow-pink-500/30 hover:shadow-pink-500/50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border-2 border-white/50">
+                    {isLoadingAppId ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-purple-600" />
+                            Cargando configuración...
+                        </>
+                    ) : isProcessing ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-purple-600" />
+                            Conectando...
+                        </>
                     ) : (
                         <>
-                            <ShieldCheck className="w-5 h-5" />
-                            <span>CONECTAR INSTAGRAM</span>
+                            <Instagram className="w-5 h-5 inline mr-2 text-purple-600 group-hover/btn:text-pink-600 transition-colors" />
+                            Conectar Instagram
                         </>
                     )}
                 </button>
