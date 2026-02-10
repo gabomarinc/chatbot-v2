@@ -1,6 +1,7 @@
 /**
  * Instagram Messaging API Helper Functions
  * Mirrors WhatsApp implementation for consistency
+ * Updated to use Instagram Graph API (graph.instagram.com)
  */
 
 // Helper to split text into chunks
@@ -33,7 +34,9 @@ export async function sendInstagramMessage(
     recipientId: string,
     text: string
 ) {
-    const url = `https://graph.facebook.com/v19.0/me/messages`;
+    // For Instagram Graph API with Instagram Login, we use /me/messages 
+    // or /{ig-user-id}/messages. Since the token is user-scoped, /me/messages works.
+    const url = `https://graph.instagram.com/v21.0/me/messages`;
 
     // 1. Split message if it's too long
     const chunks = splitMessage(text);
@@ -77,7 +80,7 @@ export async function sendInstagramImage(
     recipientId: string,
     imageUrl: string
 ) {
-    const url = `https://graph.facebook.com/v19.0/me/messages`;
+    const url = `https://graph.instagram.com/v21.0/me/messages`;
 
     const response = await fetch(url, {
         method: 'POST',
@@ -87,7 +90,7 @@ export async function sendInstagramImage(
         },
         body: JSON.stringify({
             recipient: {
-                id: recipientId,
+                id: recipientId, // IGSID
             },
             message: {
                 attachment: {
@@ -119,8 +122,8 @@ export async function downloadInstagramMedia(
     accessToken: string
 ): Promise<Buffer | null> {
     try {
-        // Step 1: Get media URL
-        const mediaInfoUrl = `https://graph.facebook.com/v19.0/${mediaId}`;
+        // Step 1: Get media URL via Graph API
+        const mediaInfoUrl = `https://graph.instagram.com/v21.0/${mediaId}?fields=id,media_type,media_url`;
         const infoResponse = await fetch(mediaInfoUrl, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
@@ -131,7 +134,12 @@ export async function downloadInstagramMedia(
         }
 
         const mediaInfo = await infoResponse.json();
-        const mediaUrl = mediaInfo.url;
+        const mediaUrl = mediaInfo.media_url;
+
+        if (!mediaUrl) {
+            console.error('No media_url found for media ID:', mediaId);
+            return null;
+        }
 
         // Step 2: Download the actual file
         const fileResponse = await fetch(mediaUrl, {
