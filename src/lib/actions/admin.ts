@@ -8,6 +8,7 @@ export async function saveGlobalSettings(data: {
     openaiKey: string;
     googleKey: string;
     metaAppId?: string;
+    instagramAppId?: string;
 }) {
     const session = await auth();
 
@@ -31,6 +32,11 @@ export async function saveGlobalSettings(data: {
                 where: { key: 'META_APP_ID' },
                 update: { value: data.metaAppId || '' },
                 create: { key: 'META_APP_ID', value: data.metaAppId || '' }
+            }),
+            prisma.globalConfig.upsert({
+                where: { key: 'INSTAGRAM_APP_ID' },
+                update: { value: data.instagramAppId || '' },
+                create: { key: 'INSTAGRAM_APP_ID', value: data.instagramAppId || '' }
             })
         ]);
 
@@ -49,16 +55,18 @@ export async function getGlobalSettings() {
         return null;
     }
 
+
     const configs = await prisma.globalConfig.findMany({
         where: {
-            key: { in: ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'META_APP_ID'] }
+            key: { in: ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'META_APP_ID', 'INSTAGRAM_APP_ID'] }
         }
     });
 
     const settings = {
         openaiKey: configs.find(c => c.key === 'OPENAI_API_KEY')?.value || '',
         googleKey: configs.find(c => c.key === 'GOOGLE_API_KEY')?.value || '',
-        metaAppId: configs.find(c => c.key === 'META_APP_ID')?.value || ''
+        metaAppId: configs.find(c => c.key === 'META_APP_ID')?.value || '',
+        instagramAppId: configs.find(c => c.key === 'INSTAGRAM_APP_ID')?.value || ''
     };
 
     return settings;

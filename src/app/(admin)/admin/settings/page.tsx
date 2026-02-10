@@ -15,6 +15,7 @@ export default function AdminSettingsPage() {
     const [openaiKey, setOpenaiKey] = useState('');
     const [googleKey, setGoogleKey] = useState('');
     const [metaAppId, setMetaAppId] = useState('');
+    const [instagramAppId, setInstagramAppId] = useState('');
 
     useEffect(() => {
         loadSettings();
@@ -27,6 +28,7 @@ export default function AdminSettingsPage() {
                 setOpenaiKey(settings.openaiKey);
                 setGoogleKey(settings.googleKey);
                 setMetaAppId(settings.metaAppId);
+                setInstagramAppId(settings.instagramAppId || '');
             }
         } catch (error) {
             console.error(error);
@@ -40,7 +42,7 @@ export default function AdminSettingsPage() {
         e.preventDefault();
         setIsSaving(true);
         try {
-            const result = await saveGlobalSettings({ openaiKey, googleKey, metaAppId });
+            const result = await saveGlobalSettings({ openaiKey, googleKey, metaAppId, instagramAppId });
             if (result.success) {
                 toast.success('Configuraciones guardadas correctamente');
             } else {
@@ -133,6 +135,23 @@ export default function AdminSettingsPage() {
                                         />
                                     </div>
                                     <p className="text-xs text-slate-400">Encuentra este ID en el panel principal de tu App en Meta for Developers.</p>
+                                </div>
+
+                                <div className="space-y-2 mt-4">
+                                    <Label className="text-xs text-slate-500 font-bold uppercase tracking-wider ml-1">Instagram App ID</Label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <ShieldAlert className="h-4 w-4 text-gray-300" />
+                                        </div>
+                                        <Input
+                                            type="text"
+                                            value={instagramAppId}
+                                            onChange={(e) => setInstagramAppId(e.target.value)}
+                                            className="pl-9 font-mono text-sm"
+                                            placeholder="Ej: 25648355308093184..."
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-400">ID específico para Instagram Login (diferente al de Facebook/WhatsApp).</p>
                                 </div>
                             </div>
 
