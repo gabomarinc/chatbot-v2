@@ -138,17 +138,23 @@ export async function connectInstagramAccount(data: {
         console.log('IG Profile Data fetched:', JSON.stringify(profileData));
 
         // 2.5 Subscribe Page to App (Enable Webhooks)
-        // Note: For "Instagram Login" flow, webhook subscription via API might not be supported 
-        // or might require different permissions. We attempt it but won't block on failure.
-        // We try calling the node's subscribed_apps edge.
+        // Note: For "Instagram Login" flow, we use the IG User Token to subscribe.
+        // We try calling the node's subscribed_apps edge on graph.instagram.com
         try {
-            // Try enabling webhooks using the IG User ID (which acts as the Page ID in this context?)
-            // Or skip if we know it won't work. Let's try to be safe.
-            // If pageId equals accountId, we are using the fallback, so we probably can't subscribe via the standard FB Graph endpoint.
-            console.log('Skipping API-based webhook subscription for Instagram Login flow (Manual configuration in App Dashboard may be required).');
-            // TODO: specific implementations might exist for graph.instagram.com webhooks
-        } catch (e) {
-            console.log('Webhook subscription skipped/failed');
+            const subscribeUrl = `https://graph.instagram.com/me/subscribed_apps?subscribed_fields=messages,messaging_postbacks&access_token=${data.pageAccessToken}`;
+            console.log('Subscribing to webhooks via:', subscribeUrl.replace(data.pageAccessToken, '***'));
+
+            const subscribeRes = await fetch(subscribeUrl, { method: 'POST' });
+            const subscribeData = await subscribeRes.json();
+
+            if (!subscribeRes.ok) {
+                console.error('Webhook Subscription Failed:', JSON.stringify(subscribeData));
+                // We don't throw, but we LOG explicitly so we know.
+            } else {
+                console.log('Webhook Subscribed Successfully:', JSON.stringify(subscribeData));
+            }
+        } catch (e: any) {
+            console.log('Webhook subscription exception:', e.message);
         }
 
         // 3. Save/Update Channel
