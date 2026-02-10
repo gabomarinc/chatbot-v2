@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Instagram, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { getInstagramAccounts, connectInstagramAccount } from '@/lib/actions/instagram-auth';
-import { getMetaAppId } from '@/lib/actions/meta-config';
+import { getInstagramAppId } from '@/lib/actions/meta-config';
 
 interface InstagramEmbeddedSignupProps {
     appId: string;
@@ -19,17 +19,17 @@ export function InstagramEmbeddedSignup({ appId: initialAppId, agentId, onSucces
     const [appId, setAppId] = useState(initialAppId);
     const [isLoadingAppId, setIsLoadingAppId] = useState(!initialAppId);
 
-    // Fetch App ID from database if not provided via environment variable
+    // Fetch Instagram App ID if not provided
     useEffect(() => {
         if (!initialAppId) {
-            getMetaAppId()
+            getInstagramAppId()
                 .then(id => {
                     setAppId(id);
                     setIsLoadingAppId(false);
                 })
                 .catch(error => {
-                    console.error('Failed to get Meta App ID:', error);
-                    toast.error('Error: No se pudo obtener el App ID de Meta');
+                    console.error('Failed to get Instagram App ID:', error);
+                    toast.error('Error: No se pudo obtener el App ID de Instagram');
                     setIsLoadingAppId(false);
                 });
         }
