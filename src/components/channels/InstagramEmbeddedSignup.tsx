@@ -34,16 +34,17 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
         const redirectUri = `${window.location.origin}/api/oauth/instagram/callback`;
         const state = JSON.stringify({ agentId });
 
-        // Use Instagram OAuth authorize endpoint with Business scopes
+        // Use Facebook Login with Instagram Business scopes
+        // This works with the "Facebook Login" product already configured in Meta
         const params = new URLSearchParams({
             client_id: appId,
             redirect_uri: redirectUri,
             response_type: 'code',
-            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages',
+            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages,business_management',
             state: state
         });
 
-        return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
+        return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`;
     };
 
     const launchLogin = () => {
