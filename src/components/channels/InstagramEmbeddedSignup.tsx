@@ -53,17 +53,26 @@ export function InstagramEmbeddedSignup({ appId: initialAppId, agentId, onSucces
         const redirectUri = `${window.location.origin}/api/oauth/instagram/callback`;
         const state = JSON.stringify({ agentId });
 
-        // Use Facebook OAuth with Instagram Business scopes
-        // Only using approved permissions (basic was rejected)
-        const params = new URLSearchParams({
+        // GPTMaker's exact flow: instagram.com/consent with params_json
+        // This is the Instagram Business OAuth endpoint
+        const paramsJson = {
             client_id: appId,
             redirect_uri: redirectUri,
             response_type: 'code',
-            scope: 'instagram_business_manage_comments,instagram_business_manage_messages,pages_show_list,pages_read_engagement',
+            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages',
             state: state
-        });
+        };
 
-        return `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`;
+        // Encode params_json as URL-safe JSON
+        const paramsJsonEncoded = encodeURIComponent(JSON.stringify(paramsJson));
+
+        const oauthUrl = `https://www.instagram.com/consent/?flow=ig_biz_login_oauth&params_json=${paramsJsonEncoded}`;
+
+        console.log('Instagram OAuth URL:', oauthUrl);
+        console.log('App ID:', appId);
+        console.log('Params JSON:', paramsJson);
+
+        return oauthUrl;
     };
 
     const launchLogin = () => {
