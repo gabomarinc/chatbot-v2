@@ -11,80 +11,78 @@ interface InstagramEmbeddedSignupProps {
     onSuccess?: () => void;
 }
 
-declare global {
-    interface Window {
-        fbAsyncInit: () => void;
-        FB: any;
-    }
-}
-
 export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: InstagramEmbeddedSignupProps) {
-    const [isLoaded, setIsLoaded] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [accounts, setAccounts] = useState<any[]>([]);
     const [showAccountSelection, setShowAccountSelection] = useState(false);
 
+    // Check for Instagram token in URL params (from OAuth callback)
     useEffect(() => {
-        // Verificar HTTPS
-        if (typeof window !== 'undefined' && window.location.protocol !== 'https:') {
-            console.warn('Facebook SDK requiere HTTPS.');
-        }
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('instagram_token');
+        const authSuccess = params.get('instagram_auth');
 
-        const loadSDK = () => {
-            if (document.getElementById('facebook-jssdk')) {
-                // Si ya existe, esperar a que FB esté listo
-                const checkFB = setInterval(() => {
-                    if (window.FB) {
-                        setIsLoaded(true);
-                        clearInterval(checkFB);
-                    }
-                }, 100);
-                setTimeout(() => clearInterval(checkFB), 5000);
+        if (token && authSuccess === 'success') {
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+            // Handle authentication with the token
+            handleAuth(token);
+        }
+    }, []);
+
+    const buildInstagramOAuthUrl = () => {
+        const redirectUri = `${window.location.origin}/api/oauth/instagram/callback`;
+
+        const params = {
+            client_id: appId,
+            redirect_uri: redirectUri,
+            response_type: 'code',
+            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages',
+            state: JSON.stringify({ agentId })
+        };
+
+        // Instagram requires params_json format
+        const paramsJson = encodeURIComponent(JSON.stringify(params));
+        return `https://www.instagram.com/consent/?flow=ig_biz_login_oauth&params_json=${paramsJson}`;
+    };
+
+    const launchLogin = () => {
+        setIsProcessing(true);
+
+        try {
+            const oauthUrl = buildInstagramOAuthUrl();
+
+            // Open in popup window
+            const width = 600;
+            const height = 700;
+            const left = window.screen.width / 2 - width / 2;
+            const top = window.screen.height / 2 - height / 2;
+
+            const popup = window.open(
+                oauthUrl,
+                'instagram_oauth',
+                `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
+            );
+
+            if (!popup) {
+                toast.error('Por favor, permite ventanas emergentes para continuar.');
+                setIsProcessing(false);
                 return;
             }
 
-            window.fbAsyncInit = function () {
-                window.FB.init({
-                    appId: appId,
-                    cookie: true,
-                    xfbml: true,
-                    version: 'v19.0'
-                });
-                setIsLoaded(true);
-            };
-
-            const script = document.createElement('script');
-            script.id = 'facebook-jssdk';
-            script.src = "https://connect.facebook.net/en_US/sdk.js";
-            script.async = true;
-            script.defer = true;
-            document.body.appendChild(script);
-        };
-
-        loadSDK();
-    }, [appId]);
-
-    const launchLogin = () => {
-        if (!window.FB) return;
-
-        setIsProcessing(true);
-
-        window.FB.login((response: any) => {
-            if (response.authResponse) {
-                const accessToken = response.authResponse.accessToken;
-                handleAuth(accessToken);
-            } else {
-                setIsProcessing(false);
-                if (response.error) {
-                    toast.error(`Error: ${response.error.message}`);
-                } else {
-                    toast.error('Inicio de sesión cancelado.');
+            // Check if popup was closed
+            const checkClosed = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(checkClosed);
+                    setIsProcessing(false);
                 }
-            }
-        }, {
-            scope: 'instagram_basic,instagram_manage_messages,public_profile,business_management,pages_show_list,pages_read_engagement',
-            return_scopes: true
-        });
+            }, 1000);
+
+        } catch (error: any) {
+            console.error('Error launching Instagram OAuth:', error);
+            toast.error('Error al iniciar autenticación');
+            setIsProcessing(false);
+        }
     };
 
     const handleAuth = async (accessToken: string) => {
@@ -202,7 +200,7 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
 
                 <button
                     onClick={launchLogin}
-                    disabled={!isLoaded || isProcessing}
+                    disabled={isProcessing}
                     className="w-full py-4 bg-white text-pink-900 rounded-2xl text-sm font-black shadow-lg shadow-black/20 hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 group-hover:ring-4 ring-white/20"
                 >
                     {isProcessing ? (
@@ -214,12 +212,6 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
                         </>
                     )}
                 </button>
-
-                {!isLoaded && (
-                    <p className="text-[10px] text-pink-200/60 font-bold uppercase tracking-widest animate-pulse">
-                        Sincronizando con Meta...
-                    </p>
-                )}
 
                 <div className="pt-4 flex flex-col gap-2">
                     <div className="flex items-center justify-center gap-2 text-pink-200/60 text-[10px] font-bold uppercase tracking-widest">
