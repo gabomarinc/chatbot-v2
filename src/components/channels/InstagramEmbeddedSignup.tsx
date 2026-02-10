@@ -38,7 +38,7 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
             client_id: appId,
             redirect_uri: redirectUri,
             response_type: 'code',
-            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages',
+            scope: 'instagram_business_manage_comments,instagram_business_manage_messages',
             state: JSON.stringify({ agentId })
         };
 
