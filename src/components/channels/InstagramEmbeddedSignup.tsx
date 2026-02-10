@@ -53,13 +53,13 @@ export function InstagramEmbeddedSignup({ appId: initialAppId, agentId, onSucces
         const redirectUri = `${window.location.origin}/api/oauth/instagram/callback`;
         const state = JSON.stringify({ agentId });
 
-        // Use Facebook OAuth with Instagram scopes
-        // Using standard Instagram scopes that are publicly available
+        // Use Facebook OAuth with Instagram Business scopes
+        // Required for Instagram Business accounts
         const params = new URLSearchParams({
             client_id: appId,
             redirect_uri: redirectUri,
             response_type: 'code',
-            scope: 'instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_read_engagement',
+            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages,pages_show_list,pages_read_engagement',
             state: state
         });
 
