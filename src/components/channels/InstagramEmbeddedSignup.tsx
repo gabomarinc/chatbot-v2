@@ -32,18 +32,18 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
 
     const buildInstagramOAuthUrl = () => {
         const redirectUri = `${window.location.origin}/api/oauth/instagram/callback`;
+        const state = JSON.stringify({ agentId });
 
-        const params = {
+        // Use Instagram OAuth authorize endpoint with Business scopes
+        const params = new URLSearchParams({
             client_id: appId,
             redirect_uri: redirectUri,
             response_type: 'code',
             scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages',
-            state: JSON.stringify({ agentId })
-        };
+            state: state
+        });
 
-        // Instagram requires params_json format
-        const paramsJson = encodeURIComponent(JSON.stringify(params));
-        return `https://www.instagram.com/consent/?flow=ig_biz_login_oauth&params_json=${paramsJson}`;
+        return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
     };
 
     const launchLogin = () => {
