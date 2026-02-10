@@ -248,20 +248,20 @@ export function InstagramEmbeddedSignup({ appId: initialAppId, agentId, onSucces
                 <button
                     onClick={launchLogin}
                     disabled={isProcessing || isLoadingAppId || !appId}
-                    className="group/btn relative w-full bg-white hover:bg-pink-50 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 font-black text-lg py-5 px-8 rounded-[1.5rem] shadow-2xl shadow-pink-500/30 hover:shadow-pink-500/50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border-2 border-white/50">
+                    className="group/btn relative w-full bg-white hover:bg-gray-50 text-pink-600 hover:text-pink-700 font-black text-lg py-5 px-8 rounded-[1.5rem] shadow-2xl shadow-pink-500/30 hover:shadow-pink-500/50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border-4 border-white">
                     {isLoadingAppId ? (
                         <>
-                            <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-purple-600" />
+                            <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-pink-600" />
                             Cargando configuración...
                         </>
                     ) : isProcessing ? (
                         <>
-                            <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-purple-600" />
+                            <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-pink-600" />
                             Conectando...
                         </>
                     ) : (
                         <>
-                            <Instagram className="w-5 h-5 inline mr-2 text-purple-600 group-hover/btn:text-pink-600 transition-colors" />
+                            <Instagram className="w-6 h-6 inline mr-2" />
                             Conectar Instagram
                         </>
                     )}

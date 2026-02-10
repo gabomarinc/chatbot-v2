@@ -50,7 +50,7 @@ export async function getInstagramAccounts(shortLivedToken: string) {
         // 2. Fetch Instagram User Profile
         // We need to confirm this is a Business/Professional account
         // Endpoint: https://graph.instagram.com/me
-        const fields = 'id,username,account_type,media_count';
+        const fields = 'id,username,account_type,media_count,followers_count,profile_picture_url';
         const profileUrl = `https://graph.instagram.com/me?fields=${fields}&access_token=${longLivedToken}`;
 
         debugLog.push(`Fetching profile via: ${profileUrl.replace(longLivedToken, '***')}`);
@@ -125,7 +125,7 @@ export async function connectInstagramAccount(data: {
         // 2. Verify Token & Fetch Profile Data for Meta Review Display
         // Using Instagram Graph API
         const verifyRes = await fetch(
-            `https://graph.instagram.com/me?fields=id,username,media_count,account_type&access_token=${data.pageAccessToken}`
+            `https://graph.instagram.com/me?fields=id,username,media_count,account_type,followers_count,profile_picture_url&access_token=${data.pageAccessToken}`
         );
 
         if (!verifyRes.ok) {
@@ -169,9 +169,9 @@ export async function connectInstagramAccount(data: {
             verifyToken: Math.random().toString(36).substring(7),
             // Store profile metadata
             username: profileData.username,
-            profilePictureUrl: '', // Basic Display API doesn't return profile_picture_url directly in 'me' sometimes?
-            followersCount: 0, // Not available in basic /me
-            biography: ''
+            profilePictureUrl: profileData.profile_picture_url || '',
+            followersCount: profileData.followers_count || 0,
+            biography: '' // biography not always available on 'me'
         };
 
         if (existingChannel) {
