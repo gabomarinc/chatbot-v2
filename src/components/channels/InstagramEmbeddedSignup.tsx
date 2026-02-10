@@ -32,19 +32,18 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
 
     const buildInstagramOAuthUrl = () => {
         const redirectUri = `${window.location.origin}/api/oauth/instagram/callback`;
-        const state = JSON.stringify({ agentId });
 
-        // Use Facebook Login with Instagram Business scopes
-        // This works with the "Facebook Login" product already configured in Meta
-        const params = new URLSearchParams({
+        // Use Instagram consent flow with params_json (same as GPTMaker)
+        const params = {
             client_id: appId,
             redirect_uri: redirectUri,
             response_type: 'code',
-            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages,business_management',
-            state: state
-        });
+            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages',
+            state: JSON.stringify({ agentId })
+        };
 
-        return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`;
+        const paramsJson = encodeURIComponent(JSON.stringify(params));
+        return `https://www.instagram.com/consent/?flow=ig_biz_login_oauth&params_json=${paramsJson}`;
     };
 
     const launchLogin = () => {
