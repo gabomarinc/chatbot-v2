@@ -45,10 +45,11 @@ export default async function InstagramSetupPage({
     // IF no channelId is passed, we assume NEW CHANNEL creation (so we don't load any existing one)
     // This allows connecting a second specific account without pre-filling the form
 
-    const metaAppIdConfig = await prisma.globalConfig.findUnique({
-        where: { key: 'META_APP_ID' }
+    // Fetch Instagram App ID (specific for Instagram Login flow)
+    const instagramAppIdConfig = await prisma.globalConfig.findUnique({
+        where: { key: 'INSTAGRAM_APP_ID' }
     });
-    const metaAppId = metaAppIdConfig?.value;
+    const instagramAppId = instagramAppIdConfig?.value;
 
     return (
         <div className="container max-w-7xl mx-auto py-10 px-6">
@@ -83,7 +84,7 @@ export default async function InstagramSetupPage({
                 agents={agents}
                 defaultAgentId={agentId}
                 existingChannel={existingChannel}
-                metaAppId={metaAppId}
+                metaAppId={instagramAppId}
             />
         </div>
     );
