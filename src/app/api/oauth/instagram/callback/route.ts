@@ -38,45 +38,57 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Get Meta App credentials
-        const appSecret = process.env.META_APP_SECRET;
-        const config = await prisma.globalConfig.findUnique({ where: { key: 'META_APP_ID' } });
+        // Get Instagram App credentials (specifically for Instagram Login)
+        // These must match the App ID used in the frontend (25648355308093184)
+        const config = await prisma.globalConfig.findUnique({ where: { key: 'INSTAGRAM_APP_ID' } });
         const appId = config?.value;
+        const appSecret = process.env.INSTAGRAM_APP_SECRET;
+
+        console.log('Instagram Callback Debug:', { appId, hasSecret: !!appSecret });
 
         if (!appSecret || !appId) {
-            throw new Error('Server configuration missing (Meta App ID or Secret)');
+            console.error('Missing configuration: INSTAGRAM_APP_ID or INSTAGRAM_APP_SECRET');
+            throw new Error('Server configuration missing (Instagram App ID or Secret)');
         }
 
         // Exchange authorization code for access token
+        // For "Instagram Connect" / "Instagram Login" product, the endpoint is api.instagram.com for the initial exchange
         const redirectUri = `${req.nextUrl.origin}/api/oauth/instagram/callback`;
-        const tokenUrl = `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        const tokenUrl = `https://api.instagram.com/oauth/access_token`;
 
-        const tokenRes = await fetch(tokenUrl);
+        const formData = new URLSearchParams();
+        formData.append('client_id', appId);
+        formData.append('client_secret', appSecret);
+        formData.append('grant_type', 'authorization_code');
+        formData.append('redirect_uri', redirectUri);
+        formData.append('code', code);
+
+        console.log('Exchanging code for token at:', tokenUrl);
+
+        const tokenRes = await fetch(tokenUrl, {
+            method: 'POST',
+            body: formData
+        });
+
         const tokenData = await tokenRes.json();
 
         if (!tokenRes.ok) {
             console.error('Token exchange failed:', tokenData);
-            throw new Error(tokenData.error?.message || 'Failed to exchange code for token');
+            throw new Error(tokenData.error_message || tokenData.error?.message || 'Failed to exchange code for token');
         }
 
-        const shortLivedToken = tokenData.access_token;
+        console.log('Token exchange success:', { userId: tokenData.user_id, hasToken: !!tokenData.access_token });
 
-        // Exchange for long-lived token
-        const longLivedTokenUrl = `https://graph.facebook.com/${META_API_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`;
+        // Note: The token returned here is usually a short-lived Instagram User Token.
+        // For Business, we might need to query the Graph API to get the Page/Business accounts.
+        // But first, let's pass this token back to the client to handle the "Get Accounts" step.
 
-        const longLivedRes = await fetch(longLivedTokenUrl);
-        const longLivedData = await longLivedRes.json();
+        const accessToken = tokenData.access_token;
+        const userId = tokenData.user_id; // Instagram User ID
 
-        if (!longLivedRes.ok) {
-            console.error('Long-lived token exchange failed:', longLivedData);
-            throw new Error(longLivedData.error?.message || 'Failed to get long-lived token');
-        }
-
-        const accessToken = longLivedData.access_token;
-
-        // Store the access token temporarily in the session or pass it via URL
-        // For simplicity, we'll redirect to a page that will handle account selection
-        const successUrl = `/agents/${agentId}/channels?instagram_token=${encodeURIComponent(accessToken)}&instagram_auth=success`;
+        // Redirect to success page with token
+        // We pass the token to the frontend so it can use it to list pages/accounts via client-side or another API call
+        const successUrl = `/agents/${agentId}/channels?instagram_token=${encodeURIComponent(accessToken)}&instagram_user_id=${userId}&instagram_auth=success`;
 
         return NextResponse.redirect(new URL(successUrl, req.url));
 
