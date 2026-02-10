@@ -54,12 +54,12 @@ export function InstagramEmbeddedSignup({ appId: initialAppId, agentId, onSucces
         const state = JSON.stringify({ agentId });
 
         // Use Facebook OAuth with Instagram Business scopes
-        // Required for Instagram Business accounts
+        // Only using approved permissions (basic was rejected)
         const params = new URLSearchParams({
             client_id: appId,
             redirect_uri: redirectUri,
             response_type: 'code',
-            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages,pages_show_list,pages_read_engagement',
+            scope: 'instagram_business_manage_comments,instagram_business_manage_messages,pages_show_list,pages_read_engagement',
             state: state
         });
 
