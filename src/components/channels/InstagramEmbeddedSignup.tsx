@@ -51,6 +51,8 @@ export function InstagramEmbeddedSignup({ appId, agentId, onSuccess }: Instagram
 
         try {
             const oauthUrl = buildInstagramOAuthUrl();
+            console.log('Instagram OAuth URL:', oauthUrl);
+            console.log('App ID:', appId);
 
             // Open in popup window
             const width = 600;
