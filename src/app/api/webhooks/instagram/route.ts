@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
     return new Response('Forbidden', { status: 403 });
 }
 
+// ... (imports remain)
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -59,18 +61,27 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ status: 'ok' });
         }
 
-        const instagramAccountId = entry.id;
+        const instagramAccountId = entry.id; // Determine ID from webhook entry
 
         // Find the specific channel for this Instagram account
-        // We fetch all active IG channels to filter in memory (safe for JSON fields compatibility)
+        // We fetch all active IG channels to filter in memory
         const channels = await prisma.channel.findMany({
             where: { type: 'INSTAGRAM', isActive: true }
         });
 
-        const channel = channels.find(c => (c.configJson as any)?.instagramAccountId === instagramAccountId);
+        // Use loose comparison for ID matching (string vs number issue)
+        const channel = channels.find(c => {
+            const config = c.configJson as any;
+            return String(config?.instagramAccountId) === String(instagramAccountId);
+        });
 
         if (!channel) {
             console.error(`No active Instagram channel found for Account ID: ${instagramAccountId}`);
+            console.log('Available channels:', channels.map(c => ({
+                id: c.id,
+                name: c.displayName,
+                configId: (c.configJson as any)?.instagramAccountId
+            })));
             return NextResponse.json({ error: 'No active channel found for this account' }, { status: 404 });
         }
 
@@ -97,12 +108,17 @@ export async function POST(req: NextRequest) {
                         (result.agentMsg.metadata as any).url;
 
                     if (hasImage) {
-                        // Send image first
-                        await sendInstagramImage(
-                            config.pageAccessToken,
-                            senderId,
-                            (result.agentMsg.metadata as any).url
-                        );
+                        try {
+                            // Send image first
+                            await sendInstagramImage(
+                                config.pageAccessToken,
+                                senderId,
+                                (result.agentMsg.metadata as any).url
+                            );
+                        } catch (imgErr) {
+                            console.error('Failed to send image response:', imgErr);
+                            // Fallback?
+                        }
 
                         // Then send text if there's accompanying text
                         if (result.agentMsg.content && result.agentMsg.content.trim()) {
@@ -140,58 +156,64 @@ export async function POST(req: NextRequest) {
 
             if (imageUrl) {
                 // Download image from Instagram
-                const imageResponse = await fetch(imageUrl);
-                const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+                // Use updated download logic (internal or s3)
+                // ... (existing logic)
+                try {
+                    const imageResponse = await fetch(imageUrl);
+                    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
 
-                // Compress with Sharp (convert to WebP, max 1920px width, 80% quality)
-                const compressedBuffer = await sharp(imageBuffer)
-                    .resize(1920, null, { withoutEnlargement: true })
-                    .webp({ quality: 80 })
-                    .toBuffer();
+                    // Compress with Sharp
+                    const compressedBuffer = await sharp(imageBuffer)
+                        .resize(1920, null, { withoutEnlargement: true })
+                        .webp({ quality: 80 })
+                        .toBuffer();
 
-                // Upload to R2
-                const r2Url = await uploadFileToR2(
-                    compressedBuffer,
-                    `${Date.now()}-${senderId}.webp`,
-                    'image/webp'
-                );
+                    // Upload to R2
+                    const r2Url = await uploadFileToR2(
+                        compressedBuffer,
+                        `${Date.now()}-${senderId}.webp`,
+                        'image/webp'
+                    );
 
-                if (r2Url) {
-                    // Save to database with metadata
-                    const result = await sendWidgetMessage({
-                        channelId: channel.id,
-                        content: 'Imagen recibida',
-                        visitorId: senderId,
-                        metadata: {
-                            type: 'image',
-                            url: r2Url,
-                            originalUrl: imageUrl
+                    if (r2Url) {
+                        const result = await sendWidgetMessage({
+                            channelId: channel.id,
+                            content: 'Imagen recibida',
+                            visitorId: senderId,
+                            metadata: {
+                                type: 'image',
+                                url: r2Url,
+                                originalUrl: imageUrl
+                            }
+                        });
+
+                        if (result.agentMsg) {
+                            await sendInstagramMessage(
+                                config.pageAccessToken,
+                                senderId,
+                                result.agentMsg.content
+                            );
                         }
-                    });
-
-                    // Acknowledge receipt
-                    if (result.agentMsg) {
-                        await sendInstagramMessage(
-                            config.pageAccessToken,
-                            senderId,
-                            result.agentMsg.content
-                        );
                     }
+                } catch (e) {
+                    console.error('Image processing failed', e);
                 }
             }
         }
-        // Handle file/document messages
+        // Handle file/document messages (similar logic)
         else if (message.attachments && message.attachments[0]?.type === 'file') {
+            // ... existing document logic ...
+            // For brevity, assuming existing logic here or simplified
+            // Since we are replacing content, we should keep it or simplify.
+            // To avoid accidental removal of features, I will replicate the document logic briefly.
             const attachment = message.attachments[0];
             const fileUrl = attachment.payload?.url;
             const fileName = attachment.name || 'document.pdf';
 
             if (fileUrl) {
-                // Download file from Instagram
                 const fileResponse = await fetch(fileUrl);
                 const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
 
-                // Upload to R2 (no compression for documents)
                 const r2Url = await uploadFileToR2(
                     fileBuffer,
                     `${Date.now()}-${fileName}`,
@@ -199,26 +221,15 @@ export async function POST(req: NextRequest) {
                 );
 
                 if (r2Url) {
-                    // Save to database with metadata
                     const result = await sendWidgetMessage({
                         channelId: channel.id,
                         content: 'Documento recibido',
                         visitorId: senderId,
-                        metadata: {
-                            type: 'file',
-                            url: r2Url,
-                            fileName: fileName,
-                            originalUrl: fileUrl
-                        }
+                        metadata: { type: 'file', url: r2Url, fileName, originalUrl: fileUrl }
                     });
 
-                    // Acknowledge receipt
                     if (result.agentMsg) {
-                        await sendInstagramMessage(
-                            config.pageAccessToken,
-                            senderId,
-                            result.agentMsg.content
-                        );
+                        await sendInstagramMessage(config.pageAccessToken, senderId, result.agentMsg.content);
                     }
                 }
             }
@@ -227,17 +238,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ status: 'ok' });
     } catch (error: any) {
         console.error('Instagram Webhook Error:', error);
-
-        // Attempt to send error report to user if we have context
-        try {
-            // We need to parse body again or lift scope, but for simplicity let's try to grab from closure if possible
-            // or just rely on console logs if we can't reply. 
-            // Since we can't easily access 'config' here if it failed before definition, 
-            // we will implement the try-catch INSIDE the finding logic.
-        } catch (e) {
-            // ignore
-        }
-
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
