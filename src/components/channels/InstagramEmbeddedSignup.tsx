@@ -37,16 +37,33 @@ export function InstagramEmbeddedSignup({ appId: initialAppId, agentId, onSucces
 
     // Check for Instagram token in URL params (from OAuth callback)
     useEffect(() => {
+        // 1. Check current URL params (if redirected here directly)
         const params = new URLSearchParams(window.location.search);
         const token = params.get('instagram_token');
         const authSuccess = params.get('instagram_auth');
 
         if (token && authSuccess === 'success') {
-            // Clean URL
             window.history.replaceState({}, '', window.location.pathname);
-            // Handle authentication with the token
             handleAuth(token);
         }
+
+        // 2. Listen for postMessage from popup
+        const messageHandler = (event: MessageEvent) => {
+            // Verify origin if possible, but for now we check the data structure
+            if (event.data && event.data.type === 'instagram_oauth_success' && event.data.token) {
+                console.log('Received Instagram token via postMessage');
+                handleAuth(event.data.token);
+            }
+
+            if (event.data && event.data.type === 'instagram_oauth_error') {
+                console.error('Received Instagram error via postMessage:', event.data.error);
+                toast.error(`Error de conexión: ${event.data.error}`);
+                setIsProcessing(false);
+            }
+        };
+
+        window.addEventListener('message', messageHandler);
+        return () => window.removeEventListener('message', messageHandler);
     }, []);
 
     const buildInstagramOAuthUrl = () => {

@@ -86,16 +86,66 @@ export async function GET(req: NextRequest) {
         const accessToken = tokenData.access_token;
         const userId = tokenData.user_id; // Instagram User ID
 
-        // Redirect to success page with token
-        // We pass the token to the frontend so it can use it to list pages/accounts via client-side or another API call
-        const successUrl = `/agents/${agentId}/channels?instagram_token=${encodeURIComponent(accessToken)}&instagram_user_id=${userId}&instagram_auth=success`;
+        // Return HTML that communicates with the window.opener
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Autenticación Exitosa</title>
+        </head>
+        <body>
+            <script>
+                // Send token to parent window
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'instagram_oauth_success',
+                        token: '${accessToken}',
+                        userId: '${userId}'
+                    }, '*'); // In production, we should restrict targetOrigin
+                    
+                    // Close this popup
+                    window.close();
+                } else {
+                    // Fallback if not opened as popup (redirect to channels)
+                    window.location.href = '/agents/${agentId}/channels?instagram_token=${encodeURIComponent(accessToken)}&instagram_auth=success';
+                }
+            </script>
+            <p>Autenticación completada. Cerrando ventana...</p>
+        </body>
+        </html>
+        `;
 
-        return NextResponse.redirect(new URL(successUrl, req.url));
+        return new NextResponse(html, {
+            headers: { 'Content-Type': 'text/html' }
+        });
 
     } catch (error: any) {
         console.error('Instagram OAuth Callback Error:', error);
-        return NextResponse.redirect(
-            new URL(`/agents/${agentId}/channels?error=instagram_oauth_failed&message=${encodeURIComponent(error.message)}`, req.url)
-        );
+
+        // Return HTML with error message
+        const errorHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Error de Autenticación</title></head>
+        <body>
+            <script>
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'instagram_oauth_error',
+                        error: '${error.message || 'Unknown error'}'
+                    }, '*');
+                    window.close();
+                } else {
+                    window.location.href = '/agents/${agentId}/channels?error=instagram_oauth_failed&message=${encodeURIComponent(error.message)}';
+                }
+            </script>
+            <p>Error de autenticación: ${error.message}</p>
+        </body>
+        </html>
+        `;
+
+        return new NextResponse(errorHtml, {
+            headers: { 'Content-Type': 'text/html' }
+        });
     }
 }
