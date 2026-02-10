@@ -53,20 +53,23 @@ export function InstagramEmbeddedSignup({ appId: initialAppId, agentId, onSucces
         const redirectUri = `${window.location.origin}/api/oauth/instagram/callback`;
         const state = JSON.stringify({ agentId });
 
-        // Use Facebook OAuth - instagram.com/consent is NOT publicly available (returns 404)
-        // This is the only official way to access Instagram Business API
+        // Use Instagram's specific OAuth endpoint for Business Login
+        // URL provided by Meta Dashboard: instagram.com/oauth/authorize
+        // Required scopes for Business: instagram_business_basic, instagram_business_manage_messages, instagram_business_manage_comments, instagram_business_content_publish, instagram_business_manage_insights
         const params = new URLSearchParams({
             client_id: appId,
             redirect_uri: redirectUri,
             response_type: 'code',
-            scope: 'instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages,pages_show_list,pages_read_engagement',
-            state: state
+            scope: 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish,instagram_business_manage_insights',
+            state: state,
+            force_reauth: 'true' // Recommended to ensure clean login
         });
 
-        const oauthUrl = `https://www.facebook.com/v21.0/dialog/oauth?${params.toString()}`;
+        const oauthUrl = `https://www.instagram.com/oauth/authorize?${params.toString()}`;
 
         console.log('Instagram OAuth URL:', oauthUrl);
         console.log('App ID:', appId);
+        console.log('Redirect URI:', redirectUri);
 
         return oauthUrl;
     };
