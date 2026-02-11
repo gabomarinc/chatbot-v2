@@ -299,10 +299,10 @@ export async function sendWidgetMessage(data: {
                 timeStyle: 'long'
             }).format(new Date());
 
-            const calendarIntegration = agent.integrations.find(i => i.provider === 'GOOGLE_CALENDAR');
+            const calendarIntegration = agent.integrations.find((i: any) => i.provider === 'GOOGLE_CALENDAR');
             const hasCalendar = !!calendarIntegration;
 
-            const zohoIntegration = agent.integrations.find(i => i.provider === 'ZOHO');
+            const zohoIntegration = agent.integrations.find((i: any) => i.provider === 'ZOHO');
             const hasZoho = !!zohoIntegration;
 
             // Get agent media for image search tool
@@ -632,9 +632,13 @@ When calling 'update_contact':
                                     toolResult = { success: false, error: "No contact ID linked" };
                                 }
                             } else if (name === "revisar_disponibilidad") {
-                                toolResult = await listAvailableSlots(calendarIntegration.configJson, (args as any).fecha);
+                                toolResult = calendarIntegration
+                                    ? await listAvailableSlots(calendarIntegration.configJson, (args as any).fecha)
+                                    : { success: false, error: 'Calendar integration missing' };
                             } else if (name === "agendar_cita") {
-                                toolResult = await createCalendarEvent(calendarIntegration.configJson, args as any);
+                                toolResult = calendarIntegration
+                                    ? await createCalendarEvent(calendarIntegration.configJson, args as any)
+                                    : { success: false, error: 'Calendar integration missing' };
                             } else if (name === "buscar_imagen") {
                                 // Search for images matching the query
                                 const query = (args as any).query;
@@ -938,9 +942,13 @@ When calling 'update_contact':
                                 toolResult = { success: false, error: "No contact ID linked" };
                             }
                         } else if (name === "revisar_disponibilidad") {
-                            toolResult = await listAvailableSlots(calendarIntegration.configJson, args.fecha);
+                            toolResult = calendarIntegration
+                                ? await listAvailableSlots(calendarIntegration.configJson, args.fecha)
+                                : { success: false, error: 'Calendar integration missing' };
                         } else if (name === "agendar_cita") {
-                            toolResult = await createCalendarEvent(calendarIntegration.configJson, args);
+                            toolResult = calendarIntegration
+                                ? await createCalendarEvent(calendarIntegration.configJson, args)
+                                : { success: false, error: 'Calendar integration missing' };
                         } else if (name === "buscar_imagen") {
                             // Search for images matching the query
                             const query = args.query;
