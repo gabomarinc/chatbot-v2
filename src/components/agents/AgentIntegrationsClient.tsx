@@ -2,8 +2,17 @@
 
 import { useState } from 'react';
 import { initiateGoogleAuth, deleteIntegration } from '@/lib/actions/integrations';
-import { Loader2, CheckCircle2, Trash2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface AgentIntegrationsClientProps {
     agentId: string;
@@ -12,6 +21,7 @@ interface AgentIntegrationsClientProps {
 
 export function AgentIntegrationsClient({ agentId, existingIntegrations }: AgentIntegrationsClientProps) {
     const [isLoading, setIsLoading] = useState<string | null>(null);
+    const [integrationToDelete, setIntegrationToDelete] = useState<string | null>(null);
 
     const integrations = [
         {
@@ -60,20 +70,24 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
         }
     };
 
-    const handleDisconnect = async (activeIntegrationId: string) => {
-        if (!confirm('¿Estás seguro de que deseas desconectar esta integración?')) return;
+    const handleDisconnectClick = (activeIntegrationId: string) => {
+        setIntegrationToDelete(activeIntegrationId);
+    };
 
-        setIsLoading(activeIntegrationId); // Use integration ID as loading indicator
+    const confirmDisconnect = async () => {
+        if (!integrationToDelete) return;
+
+        setIsLoading(integrationToDelete);
         try {
-            await deleteIntegration(activeIntegrationId);
+            await deleteIntegration(integrationToDelete);
             toast.success('Integración desconectada correctamente.');
-            // Ideally force refresh or update local state, but server action revalidates path
             window.location.reload();
         } catch (error) {
             console.error('Disconnect error:', error);
             toast.error('Error al desconectar.');
         } finally {
             setIsLoading(null);
+            setIntegrationToDelete(null);
         }
     };
 
@@ -143,7 +157,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
 
                             {active && (
                                 <button
-                                    onClick={() => handleDisconnect(activeIntegration.id)}
+                                    onClick={() => handleDisconnectClick(activeIntegration.id)}
                                     disabled={!!isLoading}
                                     className="px-4 py-4 rounded-2xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-all cursor-pointer flex items-center justify-center"
                                     title="Desconectar"
@@ -159,6 +173,40 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                     </div>
                 );
             })}
+
+            <Dialog open={!!integrationToDelete} onOpenChange={(open) => !open && setIntegrationToDelete(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
+                            <AlertTriangle className="h-6 w-6 text-red-600" />
+                        </div>
+                        <DialogTitle className="text-center text-xl font-bold text-gray-900">
+                            ¿Desconectar integración?
+                        </DialogTitle>
+                        <DialogDescription className="text-center pt-2">
+                            Al desconectar, el agente perderá acceso inmediato a esta herramienta.
+                            Deberás volver a autorizar si quieres usarla de nuevo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-center gap-2 mt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIntegrationToDelete(null)}
+                            className="rounded-xl px-6"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={confirmDisconnect}
+                            className="rounded-xl px-6 bg-red-600 hover:bg-red-700"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            Sí, desconectar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
