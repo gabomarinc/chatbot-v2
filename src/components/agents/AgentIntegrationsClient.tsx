@@ -15,18 +15,18 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
 
     const integrations = [
         {
-            id: 'GOOGLE_CALENDAR',
-            name: 'Google Calendar',
-            description: 'Sincroniza y gestiona eventos automáticamente',
-            icon: '📅',
-            color: 'purple',
-        },
-        {
             id: 'ZOHO',
             name: 'Zoho CRM',
             description: 'Crea leads y contactos automáticamente desde el chat',
             icon: '🟠',
             color: 'orange',
+        },
+        {
+            id: 'GOOGLE_CALENDAR',
+            name: 'Google Calendar',
+            description: 'Sincroniza y gestiona eventos automáticamente',
+            icon: '📅',
+            color: 'purple',
         },
         {
             id: 'CRM_SYNC',
