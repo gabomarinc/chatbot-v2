@@ -43,7 +43,7 @@ export async function sendWidgetMessage(data: {
                 agent: {
                     include: {
                         workspace: { include: { creditBalance: true } },
-                        integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO'] }, enabled: true } },
+                        integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO'] }, enabled: true } },
                         intents: { where: { enabled: true } },
                         customFieldDefinitions: true
                     }
@@ -337,7 +337,7 @@ CONFIGURACIÓN DINÁMICA DEL CHAT:
 - Restricción de Temas: ${agent.restrictTopics ? 'ESTRICTA. Solo responde sobre temas del negocio. Si preguntan algo ajeno, declina amablemente.' : 'Flexible. Puedes charlar de forma general pero siempre volviendo al negocio.'}
 - Transferencia Humana: ${agent.transferToHuman ? 'Disponible. Si el usuario pide hablar con una persona, indícale que puedes transferirlo.' : 'No disponible por ahora.'}
 ${hasCalendar ? '- Calendario: TIENES ACCESO a Google Calendar para revisar disponibilidad y agendar citas.' : '- Calendario: No disponible.'}
-${hasZoho ? '- CRM: TIENES ACCESO a Zoho CRM. Es OBLIGATORIO usar "create_zoho_lead" tan pronto el usuario brinde SU NOMBRE O EMAIL. No esperes a tener ambos; si solo tienes el nombre, ¡guárdalo ya! Luego, si da el email, vuelve a usar la herramienta para actualizarlo. Además, guarda como NOTA (`add_zoho_note`) cualquier información importante del negocio.' : '- CRM: No disponible.'}
+${hasZoho || hasOdoo ? `- CRM: TIENES ACCESO a ${hasZoho ? 'Zoho CRM' : ''}${hasZoho && hasOdoo ? ' y ' : ''}${hasOdoo ? 'Odoo CRM' : ''}. Es OBLIGATORIO usar las herramientas de creación de leads tan pronto el usuario brinde SU NOMBRE O EMAIL. No esperes a tener ambos; si solo tienes el nombre, ¡guárdalo ya! Luego, si da el email, vuelve a usar la herramienta para actualizarlo. Además, guarda como NOTA cualquier información importante del negocio.` : '- CRM: No disponible.'}
 ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG):
@@ -351,12 +351,16 @@ INSTRUCCIONES DE EJECUCIÓN:
 5. Mantén el Estilo de Comunicación (${styleDescription}) en cada palabra.
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
 
-INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
-- Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave sobre su proyecto, presupuesto, urgencia o dolores (pain points). No esperes al final; documenta mientras hablas.
-- Seguimiento: USA 'create_zoho_task' si el usuario pide ser contactado más tarde, solicita una cotización formal que tú no puedes dar, o si detectas una oportunidad clara de venta que requiere intervención humana.
-- Citas: USA 'schedule_zoho_event' si el usuario acepta explícitamente una reunión o demo.
-- IMPORTANTE: Antes de usar notas, tareas o eventos, DEBES haber creado el Lead con 'create_zoho_lead' (aunque solo tengas el nombre). Si ya lo creaste antes, no hay problema, el sistema detectará que ya existe y evitará duplicados.
-- Odoo CRM: Si Odoo está activo, usa 'create_odoo_lead' para prospectos y 'add_odoo_note' para detalles importantes de la charla. Funciona igual que Zoho: guarda el nombre en cuanto lo tengas y actualízalo con el email después.
+${hasZoho ? `INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
+- Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave sobre su proyecto, presupuesto, urgencia o dolores (pain points).
+- Seguimiento: USA 'create_zoho_task' si el usuario pide ser contactado más tarde.
+- Citas: USA 'schedule_zoho_event' si el usuario acepta una reunión.
+- IMPORTANTE: Crea el Lead con 'create_zoho_lead' antes de añadir notas o tareas.` : ''}
+
+${hasOdoo ? `INSTRUCCIONES ESPECÍFICAS DE ODOO CRM:
+- Leads: USA 'create_odoo_lead' para crear o actualizar prospectos. Tan pronto el usuario diga su nombre, ¡guárdalo!
+- Notas: USA 'add_odoo_note' para documentar detalles importantes, presupuesto, requerimientos técnicos, etc.
+- IMPORTANTE: Antes de añadir una nota, DEBES haber creado el Lead con 'create_odoo_lead'.` : ''}
 `;
 
             // Custom Fields Collection
