@@ -100,8 +100,8 @@ export async function createZohoLead(agentId: string, leadData: {
     const body = {
         data: [
             {
-                First_Name: leadData.FirstName || 'Desconocido',
-                Last_Name: leadData.LastName || leadData.FirstName || 'Desconocido',
+                First_Name: leadData.FirstName || 'Lead',
+                Last_Name: leadData.LastName || 'Konsul',
                 Email: leadData.Email,
                 Phone: leadData.Phone,
                 Description: leadData.Description,
