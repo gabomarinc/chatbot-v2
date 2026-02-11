@@ -1,7 +1,4 @@
-
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 interface OdooConfig {
     url: string;
@@ -11,16 +8,11 @@ interface OdooConfig {
 }
 
 async function odooCall(config: OdooConfig, service: string, method: string, args: any[]) {
-    // Note: Odoo standard external API usually uses XML-RPC. 
-    // However, some versions/hosting support JSON-RPC on /jsonrpc.
-    // Given the environment, we'll implement a clean JSON-RPC caller if possible, 
-    // or use a simple fetch-based XML-RPC structure.
+    // Basic sanitization: remove trailing slash and whitespace
+    const baseUrl = config.url.trim().replace(/\/$/, '');
+    const endpoint = `${baseUrl}/jsonrpc`;
 
-    // For now, let's stick to the Odoo XML-RPC standard via fetch (manual XML construction)
-    // or a JSON-RPC bridge if the user's Odoo supports it.
-    // Most modern Odoo (v14+) supports JSON-RPC.
-
-    const endpoint = `${config.url}/jsonrpc`;
+    console.log(`[ODOO] Calling ${service}.${method} at ${endpoint}`);
 
     // 1. Authenticate (Get UID)
     const authBody = {
@@ -29,56 +21,70 @@ async function odooCall(config: OdooConfig, service: string, method: string, arg
         params: {
             service: "common",
             method: "authenticate",
-            args: [config.db, config.username, config.apiKey, {}]
+            args: [config.db.trim(), config.username.trim(), config.apiKey.trim(), {}]
         },
         id: Date.now()
     };
 
-    const authRes = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(authBody)
-    });
+    try {
+        const authRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(authBody)
+        });
 
-    const authJson = await authRes.json();
-    if (authJson.error) {
-        throw new Error(`Odoo Auth Error: ${authJson.error.data?.message || authJson.error.message}`);
+        if (!authRes.ok) {
+            throw new Error(`HTTP Error ${authRes.status}: ${authRes.statusText}`);
+        }
+
+        const authJson = await authRes.json();
+        console.log(`[ODOO] Auth response status: ${authRes.status}`);
+
+        if (authJson.error) {
+            throw new Error(`Odoo Auth Error: ${authJson.error.data?.message || authJson.error.message}`);
+        }
+
+        const uid = authJson.result;
+        // Odoo returns false for failed authentication
+        if (uid === false || uid === null || uid === undefined) {
+            throw new Error("Odoo Authentication failed - Invalid credentials (check DB name, username, and API Key).");
+        }
+
+        // 2. Execute Method
+        const execBody = {
+            jsonrpc: "2.0",
+            method: "call",
+            params: {
+                service: "object",
+                method: "execute_kw",
+                args: [
+                    config.db.trim(),
+                    uid,
+                    config.apiKey.trim(),
+                    service,
+                    method,
+                    args
+                ]
+            },
+            id: Date.now() + 1
+        };
+
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(execBody)
+        });
+
+        const json = await res.json();
+        if (json.error) {
+            throw new Error(`Odoo API Error: ${json.error.data?.message || json.error.message}`);
+        }
+
+        return json.result;
+    } catch (e: any) {
+        console.error(`[ODOO] Error in odooCall:`, e.message);
+        throw e;
     }
-
-    const uid = authJson.result;
-    if (!uid) throw new Error("Odoo Authentication failed - Invalid credentials.");
-
-    // 2. Execute Method
-    const execBody = {
-        jsonrpc: "2.0",
-        method: "call",
-        params: {
-            service: "object",
-            method: "execute_kw",
-            args: [
-                config.db,
-                uid,
-                config.apiKey,
-                service,
-                method,
-                args
-            ]
-        },
-        id: Date.now() + 1
-    };
-
-    const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(execBody)
-    });
-
-    const json = await res.json();
-    if (json.error) {
-        throw new Error(`Odoo API Error: ${json.error.data?.message || json.error.message}`);
-    }
-
-    return json.result;
 }
 
 export async function createOdooLead(agentId: string, leadData: {
@@ -98,6 +104,7 @@ export async function createOdooLead(agentId: string, leadData: {
     const config = integration.configJson as any as OdooConfig;
 
     if (odooLeadId) {
+        console.log(`[ODOO] Updating lead ${odooLeadId}`);
         // Update existing Lead
         const updateData: any = {};
         if (leadData.name) updateData.name = leadData.name;
@@ -108,13 +115,14 @@ export async function createOdooLead(agentId: string, leadData: {
         await odooCall(config, 'crm.lead', 'write', [[parseInt(odooLeadId)], updateData]);
         return { success: true, id: odooLeadId };
     } else {
+        console.log(`[ODOO] Creating new lead for ${leadData.name}`);
         // Create new Lead
         const createData = {
             name: leadData.name || 'Lead desde Chatbot',
             email_from: leadData.email,
             phone: leadData.phone,
             description: leadData.description,
-            type: 'lead'
+            type: 'opportunity' // Using opportunity to ensure it shows in the pipeline (Flujo)
         };
 
         const newId = await odooCall(config, 'crm.lead', 'create', [createData]);
@@ -133,13 +141,15 @@ export async function addOdooNote(agentId: string, leadId: string, noteContent: 
 
     const config = integration.configJson as any as OdooConfig;
 
+    console.log(`[ODOO] Adding note to lead ${leadId}`);
+
     // In Odoo, notes are typically added to 'mail.message' linked to the record
     const noteData = {
         body: noteContent,
         model: 'crm.lead',
         res_id: parseInt(leadId),
         message_type: 'comment',
-        subtype_id: 1 // Discusión / Nota interna
+        subtype_id: 1 // Internal Note
     };
 
     const res = await odooCall(config, 'mail.message', 'create', [noteData]);

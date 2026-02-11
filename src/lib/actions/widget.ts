@@ -827,12 +827,13 @@ When calling 'update_contact':
                                     toolResult = { success: false, error: e.message };
                                 }
                             } else if (name === "create_odoo_lead") {
-                                console.log('[GEMINI] Tool create_odoo_lead called');
+                                console.log('[GEMINI] Tool create_odoo_lead called with args:', JSON.stringify(args));
                                 try {
                                     const { createOdooLead } = await import('@/lib/odoo');
                                     const meta = (conversation.metadata as any) || {};
                                     const currentLeadId = meta.odooLeadId;
                                     const res = await createOdooLead(channel.agentId, args as any, currentLeadId);
+                                    console.log('[GEMINI] createOdooLead result:', JSON.stringify(res));
                                     if (res.id && res.id !== currentLeadId) {
                                         await prisma.conversation.update({
                                             where: { id: conversation.id },
@@ -842,7 +843,7 @@ When calling 'update_contact':
                                     }
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
-                                    console.error('[GEMINI] createOdooLead error:', e);
+                                    console.error('[GEMINI] createOdooLead error:', e.message);
                                     toolResult = { success: false, error: e.message };
                                 }
                             } else if (name === "add_odoo_note") {
@@ -1231,12 +1232,13 @@ When calling 'update_contact':
                                 toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "create_odoo_lead") {
-                            console.log('[OPENAI] Tool create_odoo_lead called');
+                            console.log('[OPENAI] Tool create_odoo_lead called with args:', JSON.stringify(args));
                             try {
                                 const { createOdooLead } = await import('@/lib/odoo');
                                 const meta = (conversation.metadata as any) || {};
                                 const currentLeadId = meta.odooLeadId;
                                 const res = await createOdooLead(channel.agentId, args as any, currentLeadId);
+                                console.log('[OPENAI] createOdooLead result:', JSON.stringify(res));
                                 if (res.id && res.id !== currentLeadId) {
                                     await prisma.conversation.update({
                                         where: { id: conversation.id },
@@ -1246,7 +1248,7 @@ When calling 'update_contact':
                                 }
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
-                                console.error('[OPENAI] createOdooLead error:', e);
+                                console.error('[OPENAI] createOdooLead error:', e.message);
                                 toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "add_odoo_note") {
