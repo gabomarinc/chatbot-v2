@@ -305,6 +305,9 @@ export async function sendWidgetMessage(data: {
             const zohoIntegration = agent.integrations.find((i: any) => i.provider === 'ZOHO');
             const hasZoho = !!zohoIntegration;
 
+            const odooIntegration = agent.integrations.find((i: any) => i.provider === 'ODOO');
+            const hasOdoo = !!odooIntegration;
+
             // Get agent media for image search tool
             const agentMedia = await prisma.agentMedia.findMany({
                 where: { agentId: channel.agentId }
@@ -353,6 +356,7 @@ INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
 - Seguimiento: USA 'create_zoho_task' si el usuario pide ser contactado más tarde, solicita una cotización formal que tú no puedes dar, o si detectas una oportunidad clara de venta que requiere intervención humana.
 - Citas: USA 'schedule_zoho_event' si el usuario acepta explícitamente una reunión o demo.
 - IMPORTANTE: Antes de usar notas, tareas o eventos, DEBES haber creado el Lead con 'create_zoho_lead' (aunque solo tengas el nombre). Si ya lo creaste antes, no hay problema, el sistema detectará que ya existe y evitará duplicados.
+- Odoo CRM: Si Odoo está activo, usa 'create_odoo_lead' para prospectos y 'add_odoo_note' para detalles importantes de la charla. Funciona igual que Zoho: guarda el nombre en cuanto lo tengas y actualízalo con el email después.
 `;
 
             // Custom Fields Collection
@@ -514,6 +518,36 @@ When calling 'update_contact':
                                 location: { type: "string", description: "Ubicación (puede ser URL de Zoom/Meet)" }
                             },
                             required: ["title", "startDateTime", "endDateTime"]
+                        }
+                    }
+                );
+            }
+
+            if (hasOdoo) {
+                tools.push(
+                    {
+                        name: "create_odoo_lead",
+                        description: "Crea o actualiza un Lead/Oportunidad en Odoo CRM.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                name: { type: "string", description: "Nombre del lead" },
+                                email: { type: "string", description: "Email" },
+                                phone: { type: "string", description: "Teléfono" },
+                                description: { type: "string", description: "Descripción o notas" }
+                            },
+                            required: []
+                        }
+                    },
+                    {
+                        name: "add_odoo_note",
+                        description: "Añade una nota interna al muro (chatter) del lead en Odoo.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                noteContent: { type: "string", description: "Contenido de la nota" }
+                            },
+                            required: ["noteContent"]
                         }
                     }
                 );
@@ -786,6 +820,38 @@ When calling 'update_contact':
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] scheduleZohoEvent error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "create_odoo_lead") {
+                                console.log('[GEMINI] Tool create_odoo_lead called');
+                                try {
+                                    const { createOdooLead } = await import('@/lib/odoo');
+                                    const meta = (conversation.metadata as any) || {};
+                                    const currentLeadId = meta.odooLeadId;
+                                    const res = await createOdooLead(channel.agentId, args as any, currentLeadId);
+                                    if (res.id && res.id !== currentLeadId) {
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: { metadata: { ...meta, odooLeadId: res.id } }
+                                        });
+                                        conversation.metadata = { ...meta, odooLeadId: res.id };
+                                    }
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] createOdooLead error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "add_odoo_note") {
+                                console.log('[GEMINI] Tool add_odoo_note called');
+                                try {
+                                    const meta = (conversation.metadata as any) || {};
+                                    const leadId = meta.odooLeadId;
+                                    if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+                                    const { addOdooNote } = await import('@/lib/odoo');
+                                    const res = await addOdooNote(channel.agentId, leadId, (args as any).noteContent);
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] addOdooNote error:', e);
                                     toolResult = { success: false, error: e.message };
                                 }
                             }
@@ -1158,6 +1224,38 @@ When calling 'update_contact':
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] scheduleZohoEvent error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "create_odoo_lead") {
+                            console.log('[OPENAI] Tool create_odoo_lead called');
+                            try {
+                                const { createOdooLead } = await import('@/lib/odoo');
+                                const meta = (conversation.metadata as any) || {};
+                                const currentLeadId = meta.odooLeadId;
+                                const res = await createOdooLead(channel.agentId, args as any, currentLeadId);
+                                if (res.id && res.id !== currentLeadId) {
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { metadata: { ...meta, odooLeadId: res.id } }
+                                    });
+                                    conversation.metadata = { ...meta, odooLeadId: res.id };
+                                }
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] createOdooLead error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "add_odoo_note") {
+                            console.log('[OPENAI] Tool add_odoo_note called');
+                            try {
+                                const meta = (conversation.metadata as any) || {};
+                                const leadId = meta.odooLeadId;
+                                if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+                                const { addOdooNote } = await import('@/lib/odoo');
+                                const res = await addOdooNote(channel.agentId, leadId, (args as any).noteContent);
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] addOdooNote error:', e);
                                 toolResult = { success: false, error: e.message };
                             }
                         }

@@ -425,6 +425,7 @@ enum IntegrationProvider {
   PLUGCHAT
   EVENDI
   ZOHO
+  ODOO
 }
 
 enum PlanType {
