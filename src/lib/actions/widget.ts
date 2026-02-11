@@ -334,7 +334,7 @@ CONFIGURACIÓN DINÁMICA DEL CHAT:
 - Restricción de Temas: ${agent.restrictTopics ? 'ESTRICTA. Solo responde sobre temas del negocio. Si preguntan algo ajeno, declina amablemente.' : 'Flexible. Puedes charlar de forma general pero siempre volviendo al negocio.'}
 - Transferencia Humana: ${agent.transferToHuman ? 'Disponible. Si el usuario pide hablar con una persona, indícale que puedes transferirlo.' : 'No disponible por ahora.'}
 ${hasCalendar ? '- Calendario: TIENES ACCESO a Google Calendar para revisar disponibilidad y agendar citas.' : '- Calendario: No disponible.'}
-${hasZoho ? '- CRM: TIENES ACCESO a Zoho CRM. Puedes crear un Lead nuevo si el usuario muestra interés y proporciona sus datos básicos (Nombre, Email, etc.).' : '- CRM: No disponible.'}
+${hasZoho ? '- CRM: TIENES ACCESO a Zoho CRM. SIEMPRE crea un Lead nuevo si el usuario muestra interés y proporciona Nombre y Email. IMPORTANTE: Si la herramienta falla, DEBES DECIRLO. Si funciona, CONFIRMA con el ID del Lead creado.' : '- CRM: No disponible.'}
 ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG):
