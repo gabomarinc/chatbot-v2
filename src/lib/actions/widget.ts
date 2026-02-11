@@ -334,7 +334,7 @@ CONFIGURACIÓN DINÁMICA DEL CHAT:
 - Restricción de Temas: ${agent.restrictTopics ? 'ESTRICTA. Solo responde sobre temas del negocio. Si preguntan algo ajeno, declina amablemente.' : 'Flexible. Puedes charlar de forma general pero siempre volviendo al negocio.'}
 - Transferencia Humana: ${agent.transferToHuman ? 'Disponible. Si el usuario pide hablar con una persona, indícale que puedes transferirlo.' : 'No disponible por ahora.'}
 ${hasCalendar ? '- Calendario: TIENES ACCESO a Google Calendar para revisar disponibilidad y agendar citas.' : '- Calendario: No disponible.'}
-${hasZoho ? '- CRM: TIENES ACCESO a Zoho CRM. Es OBLIGATORIO usar "create_zoho_lead" tan pronto el usuario brinde su Email. NO LO CONFUNDAS con "update_contact" (que es interno). Debes llamar a AMBOS si tienes datos para el CRM y para el sistema interno. Si el lead se crea o actualiza en Zoho, CONFIRMA siempre mencionando el ID del Lead.' : '- CRM: No disponible.'}
+${hasZoho ? '- CRM: TIENES ACCESO a Zoho CRM. Es OBLIGATORIO usar "create_zoho_lead" tan pronto el usuario brinde SU NOMBRE O EMAIL. No esperes a tener ambos; si solo tienes el nombre, ¡guárdalo ya! Luego, si da el email, vuelve a usar la herramienta para actualizarlo. Además, guarda como NOTA (`add_zoho_note`) cualquier información importante del negocio.' : '- CRM: No disponible.'}
 ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG):
@@ -352,6 +352,7 @@ INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
 - Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave sobre su proyecto, presupuesto, urgencia o dolores (pain points). No esperes al final; documenta mientras hablas.
 - Seguimiento: USA 'create_zoho_task' si el usuario pide ser contactado más tarde, solicita una cotización formal que tú no puedes dar, o si detectas una oportunidad clara de venta que requiere intervención humana.
 - Citas: USA 'schedule_zoho_event' si el usuario acepta explícitamente una reunión o demo.
+- IMPORTANTE: Antes de usar notas, tareas o eventos, DEBES haber creado el Lead con 'create_zoho_lead' (aunque solo tengas el nombre). Si ya lo creaste antes, no hay problema, el sistema detectará que ya existe y evitará duplicados.
 `;
 
             // Custom Fields Collection
@@ -472,7 +473,7 @@ When calling 'update_contact':
                                 Phone: { type: "string", description: "Teléfono (opcional)" },
                                 Description: { type: "string", description: "Notas o descripción adicional sobre el lead (opcional)" }
                             },
-                            required: ["Email"]
+                            required: []
                         }
                     },
                     {

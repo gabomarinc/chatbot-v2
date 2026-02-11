@@ -73,9 +73,9 @@ export async function getZohoAccessToken(agentId: string) {
 }
 
 export async function createZohoLead(agentId: string, leadData: {
-    FirstName: string;
-    LastName: string;
-    Email: string;
+    FirstName?: string;
+    LastName?: string;
+    Email?: string;
     Phone?: string;
     Description?: string;
 }, zohoLeadId?: string) {
