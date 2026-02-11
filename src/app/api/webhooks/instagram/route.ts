@@ -60,22 +60,39 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ status: 'ok' });
         }
 
+        // --- FETCH CHANNELS FIRST (Needed for self-message check) ---
+        const channels = await prisma.channel.findMany({
+            where: { type: 'INSTAGRAM', isActive: true }
+        });
+
+        const senderId = messaging.sender?.id;
+
         // --- SELF-MESSAGE / ECHO PROTECTION ---
-        // 1. Check for 'is_echo' flag (standard way to identify bot messages)
+        // 1. Check for 'is_echo' flag
         if (messaging.message?.is_echo) {
             console.log('Ignoring ECHO message (from bot)');
             return NextResponse.json({ status: 'ok' });
         }
 
-        // 2. Check Sender ID vs Entry ID (Business ID)
-        // If the sender logic matches the business logic, it's a self-message.
-        if (messaging.sender?.id === instagramAccountId) {
-            console.log(`Ignoring Self-Message: Sender ${messaging.sender.id} matches Account ${instagramAccountId}`);
-            return NextResponse.json({ status: 'ok' });
+        // 2. Advanced Self-Message Check
+        // Check if the sender ID belongs to ANY of our active channels (User ID, Page ID, or Alternate ID)
+        if (senderId) {
+            const isSelf = channels.some(c => {
+                const conf = c.configJson as any;
+                return (
+                    String(conf.instagramAccountId) === String(senderId) ||
+                    String(conf.pageId) === String(senderId) ||
+                    String(conf.alternateId) === String(senderId)
+                );
+            });
+
+            if (isSelf) {
+                console.log(`Ignoring Self-Message: Sender ${senderId} is one of our active channels.`);
+                return NextResponse.json({ status: 'ok' });
+            }
         }
         // --------------------------------------
 
-        const senderId = messaging.sender?.id;
         let message = messaging.message;
 
         if (!senderId || (!message && !messaging.postback)) {
@@ -87,10 +104,7 @@ export async function POST(req: NextRequest) {
         // We just need to ensure we don't re-declare it later.
 
         // Find the specific channel for this Instagram account
-        // We fetch all active IG channels to filter in memory
-        const channels = await prisma.channel.findMany({
-            where: { type: 'INSTAGRAM', isActive: true }
-        });
+        // Reuse the channels array we already fetched
 
         // 1. Try Specific ID Matches
         let channel = channels.find(c => {
