@@ -78,11 +78,10 @@ export async function createZohoLead(agentId: string, leadData: {
     Email: string;
     Phone?: string;
     Description?: string;
-}) {
+}, zohoLeadId?: string) {
     const accessToken = await getZohoAccessToken(agentId);
 
     // Zoho Leads API: https://www.zoho.com/crm/developer/docs/api/v2/insert-records.html
-    const url = 'https://www.zohoapis.com/crm/v2/Leads'; // Note: Domain might vary (.eu/.in) based on api_domain stored in config
     // Actually we should use api_domain from config if possible
 
     // Fetch api_domain from DB to be safe
@@ -96,22 +95,65 @@ export async function createZohoLead(agentId: string, leadData: {
     }
 
     const endpoint = `${apiDomain}/crm/v2/Leads`;
+    let leadIdToUpdate = zohoLeadId;
 
-    const body = {
-        data: [
-            {
-                First_Name: leadData.FirstName || 'Lead',
-                Last_Name: leadData.LastName || 'Konsul',
-                Email: leadData.Email,
-                Phone: leadData.Phone,
-                Description: leadData.Description,
-                Lead_Source: 'Konsul Bot'
+    // 1. Search Logic if ID is missing
+    if (!leadIdToUpdate && leadData.Email) {
+        try {
+            const searchRes = await fetch(`${endpoint}/search?email=${encodeURIComponent(leadData.Email)}`, {
+                headers: { 'Authorization': `Zoho-oauthtoken ${accessToken}` }
+            });
+            const searchJson = await searchRes.json();
+            if (searchJson.data && searchJson.data.length > 0) {
+                leadIdToUpdate = searchJson.data[0].id;
+                console.log(`[ZOHO] Lead found by Email: ${leadIdToUpdate}`);
             }
-        ]
+        } catch (e) {
+            console.error('[ZOHO] Search by Email failed', e);
+        }
+    }
+
+    if (!leadIdToUpdate && leadData.Phone) {
+        try {
+            const searchRes = await fetch(`${endpoint}/search?phone=${encodeURIComponent(leadData.Phone)}`, {
+                headers: { 'Authorization': `Zoho-oauthtoken ${accessToken}` }
+            });
+            const searchJson = await searchRes.json();
+            if (searchJson.data && searchJson.data.length > 0) {
+                leadIdToUpdate = searchJson.data[0].id;
+                console.log(`[ZOHO] Lead found by Phone: ${leadIdToUpdate}`);
+            }
+        } catch (e) {
+            console.error('[ZOHO] Search by Phone failed', e);
+        }
+    }
+
+    // 2. Prepare Payload
+    const data: any = {
+        Email: leadData.Email,
+        Phone: leadData.Phone,
+        Description: leadData.Description,
+        Lead_Source: 'Konsul Bot'
     };
 
-    const res = await fetch(endpoint, {
-        method: 'POST',
+    // Only set names if provided or creating new
+    if (leadData.FirstName) data.First_Name = leadData.FirstName;
+    if (leadData.LastName) data.Last_Name = leadData.LastName;
+
+    // For CREATE, enforce defaults
+    if (!leadIdToUpdate) {
+        if (!data.First_Name) data.First_Name = 'Lead';
+        if (!data.Last_Name) data.Last_Name = 'Konsul';
+    }
+
+    const body = { data: [data] };
+    const method = leadIdToUpdate ? 'PUT' : 'POST';
+    const finalUrl = leadIdToUpdate ? `${endpoint}/${leadIdToUpdate}` : endpoint;
+
+    console.log(`[ZOHO] ${method} Lead ${leadIdToUpdate || ''}`);
+
+    const res = await fetch(finalUrl, {
+        method: method,
         headers: {
             'Authorization': `Zoho-oauthtoken ${accessToken}`,
             'Content-Type': 'application/json'

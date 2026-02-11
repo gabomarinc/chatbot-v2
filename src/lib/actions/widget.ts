@@ -672,7 +672,27 @@ When calling 'update_contact':
                                 console.log('[GEMINI] Tool create_zoho_lead called with:', args);
                                 try {
                                     const { createZohoLead } = await import('@/lib/zoho');
-                                    const res = await createZohoLead(channel.agentId, args as any);
+
+                                    // Retrieve stored Lead ID from metadata
+                                    const meta = (conversation.metadata as any) || {};
+                                    const currentLeadId = meta.zohoLeadId;
+
+                                    const res = await createZohoLead(channel.agentId, args as any, currentLeadId);
+
+                                    // Save new Lead ID if created/found
+                                    if (res.data && res.data[0]?.details?.id) {
+                                        const newLeadId = res.data[0].details.id;
+                                        if (newLeadId && newLeadId !== currentLeadId) {
+                                            console.log('[GEMINI] Saving new Zoho Lead ID to metadata:', newLeadId);
+                                            await prisma.conversation.update({
+                                                where: { id: conversation.id },
+                                                data: { metadata: { ...meta, zohoLeadId: newLeadId } }
+                                            });
+                                            // Update local conversation object for subsequent calls
+                                            conversation.metadata = { ...meta, zohoLeadId: newLeadId };
+                                        }
+                                    }
+
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] createZohoLead error:', e);
@@ -982,7 +1002,27 @@ When calling 'update_contact':
                             console.log('[OPENAI] Tool create_zoho_lead called with:', args);
                             try {
                                 const { createZohoLead } = await import('@/lib/zoho');
-                                const res = await createZohoLead(channel.agentId, args);
+
+                                // Retrieve stored Lead ID from metadata
+                                const meta = (conversation.metadata as any) || {};
+                                const currentLeadId = meta.zohoLeadId;
+
+                                const res = await createZohoLead(channel.agentId, args, currentLeadId);
+
+                                // Save new Lead ID if created/found
+                                if (res.data && res.data[0]?.details?.id) {
+                                    const newLeadId = res.data[0].details.id;
+                                    if (newLeadId && newLeadId !== currentLeadId) {
+                                        console.log('[OPENAI] Saving new Zoho Lead ID to metadata:', newLeadId);
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: { metadata: { ...meta, zohoLeadId: newLeadId } }
+                                        });
+                                        // Update local conversation object
+                                        conversation.metadata = { ...meta, zohoLeadId: newLeadId };
+                                    }
+                                }
+
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] createZohoLead error:', e);
