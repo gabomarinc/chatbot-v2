@@ -334,7 +334,7 @@ CONFIGURACIÓN DINÁMICA DEL CHAT:
 - Restricción de Temas: ${agent.restrictTopics ? 'ESTRICTA. Solo responde sobre temas del negocio. Si preguntan algo ajeno, declina amablemente.' : 'Flexible. Puedes charlar de forma general pero siempre volviendo al negocio.'}
 - Transferencia Humana: ${agent.transferToHuman ? 'Disponible. Si el usuario pide hablar con una persona, indícale que puedes transferirlo.' : 'No disponible por ahora.'}
 ${hasCalendar ? '- Calendario: TIENES ACCESO a Google Calendar para revisar disponibilidad y agendar citas.' : '- Calendario: No disponible.'}
-${hasZoho ? '- CRM: TIENES ACCESO a Zoho CRM. SIEMPRE crea un Lead nuevo si el usuario muestra interés y proporciona Nombre y Email. IMPORTANTE: Si la herramienta falla, DEBES DECIRLO. Si funciona, CONFIRMA con el ID del Lead creado.' : '- CRM: No disponible.'}
+${hasZoho ? '- CRM: TIENES ACCESO a Zoho CRM. Es OBLIGATORIO usar "create_zoho_lead" tan pronto el usuario brinde su Email. NO LO CONFUNDAS con "update_contact" (que es interno). Debes llamar a AMBOS si tienes datos para el CRM y para el sistema interno. Si el lead se crea o actualiza en Zoho, CONFIRMA siempre mencionando el ID del Lead.' : '- CRM: No disponible.'}
 ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG):
@@ -472,7 +472,7 @@ When calling 'update_contact':
                                 Phone: { type: "string", description: "Teléfono (opcional)" },
                                 Description: { type: "string", description: "Notas o descripción adicional sobre el lead (opcional)" }
                             },
-                            required: ["FirstName", "LastName", "Email"]
+                            required: ["Email"]
                         }
                     },
                     {
