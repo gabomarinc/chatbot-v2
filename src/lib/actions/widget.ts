@@ -43,7 +43,7 @@ export async function sendWidgetMessage(data: {
                 agent: {
                     include: {
                         workspace: { include: { creditBalance: true } },
-                        integrations: { where: { provider: 'GOOGLE_CALENDAR', enabled: true } },
+                        integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO'] }, enabled: true } },
                         intents: { where: { enabled: true } },
                         customFieldDefinitions: true
                     }
@@ -299,8 +299,11 @@ export async function sendWidgetMessage(data: {
                 timeStyle: 'long'
             }).format(new Date());
 
-            const calendarIntegration = agent.integrations[0];
+            const calendarIntegration = agent.integrations.find(i => i.provider === 'GOOGLE_CALENDAR');
             const hasCalendar = !!calendarIntegration;
+
+            const zohoIntegration = agent.integrations.find(i => i.provider === 'ZOHO');
+            const hasZoho = !!zohoIntegration;
 
             // Get agent media for image search tool
             const agentMedia = await prisma.agentMedia.findMany({
@@ -331,6 +334,7 @@ CONFIGURACIÓN DINÁMICA DEL CHAT:
 - Restricción de Temas: ${agent.restrictTopics ? 'ESTRICTA. Solo responde sobre temas del negocio. Si preguntan algo ajeno, declina amablemente.' : 'Flexible. Puedes charlar de forma general pero siempre volviendo al negocio.'}
 - Transferencia Humana: ${agent.transferToHuman ? 'Disponible. Si el usuario pide hablar con una persona, indícale que puedes transferirlo.' : 'No disponible por ahora.'}
 ${hasCalendar ? '- Calendario: TIENES ACCESO a Google Calendar para revisar disponibilidad y agendar citas.' : '- Calendario: No disponible.'}
+${hasZoho ? '- CRM: TIENES ACCESO a Zoho CRM. Puedes crear un Lead nuevo si el usuario muestra interés y proporciona sus datos básicos (Nombre, Email, etc.).' : '- CRM: No disponible.'}
 ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG):
@@ -447,6 +451,24 @@ When calling 'update_contact':
                         }
                     }
                 );
+            }
+
+            if (hasZoho) {
+                tools.push({
+                    name: "create_zoho_lead",
+                    description: "Crea un nuevo Lead en Zoho CRM con los datos proporcionados.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            FirstName: { type: "string", description: "Primer nombre del lead" },
+                            LastName: { type: "string", description: "Apellido del lead" },
+                            Email: { type: "string", description: "Correo electrónico" },
+                            Phone: { type: "string", description: "Teléfono (opcional)" },
+                            Description: { type: "string", description: "Notas o descripción adicional sobre el lead (opcional)" }
+                        },
+                        required: ["FirstName", "LastName", "Email"]
+                    }
+                });
             }
 
             // Try Gemini first if model is Gemini, with fallback to OpenAI
@@ -641,6 +663,16 @@ When calling 'update_contact':
                                     } else {
                                         toolResult = { found: false, message: "No se encontraron imágenes disponibles." };
                                     }
+                                }
+                            } else if (name === "create_zoho_lead") {
+                                console.log('[GEMINI] Tool create_zoho_lead called with:', args);
+                                try {
+                                    const { createZohoLead } = await import('@/lib/zoho');
+                                    const res = await createZohoLead(channel.agentId, args as any);
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] createZohoLead error:', e);
+                                    toolResult = { success: false, error: e.message };
                                 }
                             }
 
@@ -937,6 +969,16 @@ When calling 'update_contact':
                                 } else {
                                     toolResult = { found: false, message: "No se encontraron imágenes disponibles." };
                                 }
+                            }
+                        } else if (name === "create_zoho_lead") {
+                            console.log('[OPENAI] Tool create_zoho_lead called with:', args);
+                            try {
+                                const { createZohoLead } = await import('@/lib/zoho');
+                                const res = await createZohoLead(channel.agentId, args);
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] createZohoLead error:', e);
+                                toolResult = { success: false, error: e.message };
                             }
                         }
                         openAiMessages.push({

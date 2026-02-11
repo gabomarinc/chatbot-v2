@@ -424,6 +424,7 @@ enum IntegrationProvider {
   GOOGLE_CALENDAR
   PLUGCHAT
   EVENDI
+  ZOHO
 }
 
 enum PlanType {

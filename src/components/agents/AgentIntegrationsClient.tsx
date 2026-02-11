@@ -22,6 +22,13 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             color: 'purple',
         },
         {
+            id: 'ZOHO',
+            name: 'Zoho CRM',
+            description: 'Crea leads y contactos automáticamente desde el chat',
+            icon: '🟠',
+            color: 'orange',
+        },
+        {
             id: 'CRM_SYNC',
             name: 'CRM Sync',
             description: 'Sincroniza tus prospectos con HubSpot, Pipedrive o Salesforce',
@@ -41,6 +48,9 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             if (provider === 'GOOGLE_CALENDAR') {
                 const { url } = await initiateGoogleAuth(agentId);
                 window.location.href = url;
+            }
+            if (provider === 'ZOHO') {
+                window.location.href = `/api/oauth/zoho?agentId=${agentId}`;
             }
         } catch (error) {
             console.error('Activation error:', error);
