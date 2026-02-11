@@ -65,10 +65,10 @@ export async function POST(req: NextRequest) {
         }
 
         const senderId = messaging.sender?.id;
-        const message = messaging.message;
+        let message = messaging.message;
 
-        if (!senderId || !message) {
-            console.log('No sender or message found');
+        if (!senderId || (!message && !messaging.postback)) {
+            console.log('No sender or message/postback found');
             return NextResponse.json({ status: 'ok' });
         }
 
@@ -80,11 +80,18 @@ export async function POST(req: NextRequest) {
             where: { type: 'INSTAGRAM', isActive: true }
         });
 
-        // Use loose comparison for ID matching (string vs number issue)
-        const channel = channels.find(c => {
+        // 1. Try Strict Match
+        let channel = channels.find(c => {
             const config = c.configJson as any;
             return String(config?.instagramAccountId) === String(instagramAccountId);
         });
+
+        // 2. Fallback: If not found and only 1 active channel exists, use it.
+        // (Solves potential ID mismatch between Page ID / User ID / App Scoped ID)
+        if (!channel && channels.length === 1) {
+            console.warn(`[Fallback] Exact ID match failed for ${instagramAccountId}. Using the only active channel: ${channels[0].displayName}`);
+            channel = channels[0];
+        }
 
         if (!channel) {
             console.error(`No active Instagram channel found for Account ID: ${instagramAccountId}`);
@@ -98,9 +105,18 @@ export async function POST(req: NextRequest) {
 
         const config = channel.configJson as any;
 
-        // Handle text messages
-        if (message.text) {
+        // Handle Postbacks (e.g. "Get Started")
+        // Structure: messaging[0].postback.payload
+        if (messaging.postback) {
+            const payload = messaging.postback.payload;
+            // Treat postback payload as user message text
+            message = { text: payload, id: messaging.postback.mid || 'postback' };
+        }
+
+        // Handle text messages (or converted postbacks)
+        if (message && message.text) {
             const text = message.text;
+            // ... (rest of processing)
 
             try {
                 // Process with AI (Reusing widget logic)
