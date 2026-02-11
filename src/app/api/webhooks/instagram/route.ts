@@ -44,12 +44,23 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         console.log('Instagram webhook received:', JSON.stringify(body, null, 2));
 
-        // Instagram webhook structure: entry[].messaging[]
+        // Instagram webhook structure: entry[].messaging[] OR entry[].standby[]
         const entry = body.entry?.[0];
-        const messaging = entry?.messaging?.[0];
+
+        let messaging = entry?.messaging?.[0];
+        let isStandby = false;
 
         if (!messaging) {
-            console.log('No messaging event found');
+            // Check for standby messages (when inbox is primary receiver)
+            messaging = entry?.standby?.[0];
+            if (messaging) {
+                isStandby = true;
+                console.log('Received STANDBY event (Inbox has control)');
+            }
+        }
+
+        if (!messaging) {
+            console.log('No messaging or standby event found');
             return NextResponse.json({ status: 'ok' });
         }
 
