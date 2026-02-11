@@ -88,15 +88,20 @@ export async function createZohoLead(agentId: string, leadData: {
     // Fetch api_domain from DB to be safe
     const integration = await prisma.agentIntegration.findFirst({ where: { agentId, provider: 'ZOHO' } });
     const config = integration?.configJson as any;
-    const apiDomain = config?.api_domain || 'www.zohoapis.com'; // Fallback
+
+    // Ensure apiDomain has protocol
+    let apiDomain = config?.api_domain || 'https://www.zohoapis.com';
+    if (!apiDomain.startsWith('http')) {
+        apiDomain = `https://${apiDomain}`;
+    }
 
     const endpoint = `${apiDomain}/crm/v2/Leads`;
 
     const body = {
         data: [
             {
-                First_Name: leadData.FirstName,
-                Last_Name: leadData.LastName,
+                First_Name: leadData.FirstName || 'Desconocido',
+                Last_Name: leadData.LastName || leadData.FirstName || 'Desconocido',
                 Email: leadData.Email,
                 Phone: leadData.Phone,
                 Description: leadData.Description,
@@ -115,5 +120,15 @@ export async function createZohoLead(agentId: string, leadData: {
     });
 
     const json = await res.json();
+
+    // Check for Zoho API Errors
+    if (json.data && json.data[0].status === 'error') {
+        throw new Error(`Zoho Error: ${json.data[0].message} (${json.data[0].code})`);
+    }
+
+    if (json.code === 'INVALID_TOKEN') {
+        throw new Error('Zoho Token Invalid. Please reconnect integration.');
+    }
+
     return json;
 }
