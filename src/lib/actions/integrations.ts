@@ -24,3 +24,11 @@ export async function toggleIntegration(integrationId: string, enabled: boolean)
     revalidatePath(`/agents/${integration.agentId}/settings`);
     return integration;
 }
+
+export async function deleteIntegration(integrationId: string) {
+    const integration = await prisma.agentIntegration.delete({
+        where: { id: integrationId }
+    });
+    revalidatePath(`/agents/${integration.agentId}/settings`);
+    return integration;
+}

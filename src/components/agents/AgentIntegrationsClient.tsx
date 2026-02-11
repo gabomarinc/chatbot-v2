@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { initiateGoogleAuth } from '@/lib/actions/integrations';
-import { Loader2, CheckCircle2, ShieldOff } from 'lucide-react';
+import { initiateGoogleAuth, deleteIntegration } from '@/lib/actions/integrations';
+import { Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AgentIntegrationsClientProps {
@@ -60,6 +60,23 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
         }
     };
 
+    const handleDisconnect = async (activeIntegrationId: string) => {
+        if (!confirm('¿Estás seguro de que deseas desconectar esta integración?')) return;
+
+        setIsLoading(activeIntegrationId); // Use integration ID as loading indicator
+        try {
+            await deleteIntegration(activeIntegrationId);
+            toast.success('Integración desconectada correctamente.');
+            // Ideally force refresh or update local state, but server action revalidates path
+            window.location.reload();
+        } catch (error) {
+            console.error('Disconnect error:', error);
+            toast.error('Error al desconectar.');
+        } finally {
+            setIsLoading(null);
+        }
+    };
+
     const isEnabled = (provider: string) => {
         return existingIntegrations.find(i => i.provider === provider && i.enabled);
     };
@@ -67,7 +84,9 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {integrations.map((integration) => {
-                const active = isEnabled(integration.id);
+                const activeIntegration = isEnabled(integration.id);
+                const active = !!activeIntegration;
+
                 return (
                     <div
                         key={integration.id}
@@ -98,28 +117,45 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             {integration.description}
                         </p>
 
-                        <button
-                            onClick={() => handleActivate(integration.id, integration.isComingSoon)}
-                            disabled={!!isLoading || integration.isComingSoon}
-                            className={`w-full px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2
-                                ${integration.isComingSoon
-                                    ? 'bg-gray-50 text-gray-400 border border-gray-100 cursor-not-allowed'
-                                    : active
-                                        ? 'bg-green-50 text-green-600 border border-green-100 hover:bg-green-100'
-                                        : 'bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100'
-                                }
-                            `}
-                        >
-                            {isLoading === integration.id ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : integration.isComingSoon ? (
-                                'Bloqueado'
-                            ) : active ? (
-                                'Configurar'
-                            ) : (
-                                'Activar integración'
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleActivate(integration.id, integration.isComingSoon)}
+                                disabled={!!isLoading || integration.isComingSoon}
+                                className={`flex-1 px-4 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2
+                                    ${integration.isComingSoon
+                                        ? 'bg-gray-50 text-gray-400 border border-gray-100 cursor-not-allowed'
+                                        : active
+                                            ? 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100'
+                                            : 'bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100'
+                                    }
+                                `}
+                            >
+                                {isLoading === integration.id ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : integration.isComingSoon ? (
+                                    'Bloqueado'
+                                ) : active ? (
+                                    'Reconectar'
+                                ) : (
+                                    'Activar'
+                                )}
+                            </button>
+
+                            {active && (
+                                <button
+                                    onClick={() => handleDisconnect(activeIntegration.id)}
+                                    disabled={!!isLoading}
+                                    className="px-4 py-4 rounded-2xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-all cursor-pointer flex items-center justify-center"
+                                    title="Desconectar"
+                                >
+                                    {isLoading === activeIntegration.id ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="w-5 h-5" />
+                                    )}
+                                </button>
                             )}
-                        </button>
+                        </div>
                     </div>
                 );
             })}
