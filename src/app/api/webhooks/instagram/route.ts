@@ -47,22 +47,33 @@ export async function POST(req: NextRequest) {
         // Instagram webhook structure: entry[].messaging[] OR entry[].standby[]
         const entry = body.entry?.[0];
 
-        let messaging = entry?.messaging?.[0];
-        let isStandby = false;
-
-        if (!messaging) {
-            // Check for standby messages (when inbox is primary receiver)
-            messaging = entry?.standby?.[0];
-            if (messaging) {
-                isStandby = true;
-                console.log('Received STANDBY event (Inbox has control)');
-            }
+        if (!entry) {
+            console.log('No entry found in webhook body');
+            return NextResponse.json({ status: 'ok' });
         }
+
+        const messaging = entry?.messaging?.[0] || entry?.standby?.[0]; // Support both messaging and standby
+        const instagramAccountId = entry.id; // The Business Account ID
 
         if (!messaging) {
             console.log('No messaging or standby event found');
             return NextResponse.json({ status: 'ok' });
         }
+
+        // --- SELF-MESSAGE / ECHO PROTECTION ---
+        // 1. Check for 'is_echo' flag (standard way to identify bot messages)
+        if (messaging.message?.is_echo) {
+            console.log('Ignoring ECHO message (from bot)');
+            return NextResponse.json({ status: 'ok' });
+        }
+
+        // 2. Check Sender ID vs Entry ID (Business ID)
+        // If the sender logic matches the business logic, it's a self-message.
+        if (messaging.sender?.id === instagramAccountId) {
+            console.log(`Ignoring Self-Message: Sender ${messaging.sender.id} matches Account ${instagramAccountId}`);
+            return NextResponse.json({ status: 'ok' });
+        }
+        // --------------------------------------
 
         const senderId = messaging.sender?.id;
         let message = messaging.message;
@@ -72,7 +83,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ status: 'ok' });
         }
 
-        const instagramAccountId = entry.id; // Determine ID from webhook entry
+        // Variable instagramAccountId is already defined above.
+        // We just need to ensure we don't re-declare it later.
 
         // Find the specific channel for this Instagram account
         // We fetch all active IG channels to filter in memory
