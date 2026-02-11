@@ -39,11 +39,19 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             color: 'orange',
         },
         {
+            id: 'ODOO',
+            name: 'Odoo CRM',
+            description: 'Conecta tu instancia de Odoo para sincronizar leads y notas',
+            icon: '🟣',
+            color: 'purple',
+        },
+        {
             id: 'GOOGLE_CALENDAR',
             name: 'Google Calendar',
             description: 'Sincroniza y gestiona eventos automáticamente',
             icon: '📅',
             color: 'purple',
+            isComingSoon: true,
         },
         {
             id: 'CRM_SYNC',
@@ -52,13 +60,6 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             icon: '🔄',
             color: 'blue',
             isComingSoon: true,
-        },
-        {
-            id: 'ODOO',
-            name: 'Odoo CRM',
-            description: 'Conecta tu instancia de Odoo para sincronizar leads y notas',
-            icon: '🟣',
-            color: 'purple',
         },
     ];
 
