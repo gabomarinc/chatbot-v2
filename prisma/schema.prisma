@@ -199,6 +199,8 @@ model AgentIntegration {
   configJson Json
   enabled    Boolean             @default(false)
   agent      Agent               @relation(fields: [agentId], references: [id])
+
+  @@unique([agentId, provider])
 }
 
 model AgentMCPServer {

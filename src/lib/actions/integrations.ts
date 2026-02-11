@@ -32,3 +32,27 @@ export async function deleteIntegration(integrationId: string) {
     revalidatePath(`/agents/${integration.agentId}/settings`);
     return integration;
 }
+
+export async function saveOdooIntegration(agentId: string, config: { url: string; db: string; username: string; apiKey: string }) {
+    const integration = await prisma.agentIntegration.upsert({
+        where: {
+            agentId_provider: {
+                agentId,
+                provider: 'ODOO'
+            }
+        },
+        update: {
+            configJson: config as any,
+            enabled: true
+        },
+        create: {
+            agentId,
+            provider: 'ODOO',
+            configJson: config as any,
+            enabled: true
+        }
+    });
+
+    revalidatePath(`/agents/${agentId}/settings`);
+    return integration;
+}
