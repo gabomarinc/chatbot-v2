@@ -137,6 +137,20 @@ export async function connectInstagramAccount(data: {
         const profileData = await verifyRes.json();
         console.log('IG Profile Data fetched:', JSON.stringify(profileData));
 
+        // 2.2 Prepare Initial Config JSON
+        const configJson = {
+            pageAccessToken: data.pageAccessToken,
+            instagramAccountId: data.accountId,
+            pageId: data.pageId,
+            verifyToken: Math.random().toString(36).substring(7),
+            // Store profile metadata
+            username: profileData.username,
+            profilePictureUrl: profileData.profile_picture_url || '',
+            followersCount: profileData.followers_count || 0,
+            biography: '', // biography not always available on 'me'
+            alternateId: null as string | null // Will be populated after subscription check
+        };
+
         // 2.5 Subscribe Page to App (Enable Webhooks)
         // Note: For "Instagram Login" flow, we use the IG User Token to subscribe.
         // We try calling the node's subscribed_apps edge on graph.instagram.com
@@ -153,6 +167,23 @@ export async function connectInstagramAccount(data: {
             } else {
                 console.log('Webhook Subscribed Successfully:', JSON.stringify(subscribeData));
             }
+
+            // 2.6 Fetch the Webhook Entry ID (often different from User ID)
+            // This is crucial for matching incoming webhooks
+            try {
+                const checkSubUrl = `https://graph.instagram.com/me/subscribed_apps?access_token=${data.pageAccessToken}`;
+                const checkRes = await fetch(checkSubUrl);
+                const checkData = await checkRes.json();
+
+                if (checkData.data && checkData.data.length > 0 && checkData.data[0].id) {
+                    // This ID (e.g. 178...) is what the webhook sends as entry.id
+                    configJson.alternateId = checkData.data[0].id;
+                    console.log('Stored Alternate ID for Webhook Matching:', checkData.data[0].id);
+                }
+            } catch (ignore) {
+                console.log('Could not fetch alternate ID, skipping.');
+            }
+
         } catch (e: any) {
             console.log('Webhook subscription exception:', e.message);
         }
@@ -167,18 +198,6 @@ export async function connectInstagramAccount(data: {
         });
 
         const existingChannel = allChannels.find(c => (c.configJson as any)?.instagramAccountId === data.accountId);
-
-        const configJson = {
-            pageAccessToken: data.pageAccessToken,
-            instagramAccountId: data.accountId,
-            pageId: data.pageId,
-            verifyToken: Math.random().toString(36).substring(7),
-            // Store profile metadata
-            username: profileData.username,
-            profilePictureUrl: profileData.profile_picture_url || '',
-            followersCount: profileData.followers_count || 0,
-            biography: '' // biography not always available on 'me'
-        };
 
         if (existingChannel) {
             await prisma.channel.update({

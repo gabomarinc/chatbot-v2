@@ -80,10 +80,15 @@ export async function POST(req: NextRequest) {
             where: { type: 'INSTAGRAM', isActive: true }
         });
 
-        // 1. Try Strict Match
+        // 1. Try Specific ID Matches
         let channel = channels.find(c => {
             const config = c.configJson as any;
-            return String(config?.instagramAccountId) === String(instagramAccountId);
+            const targetId = String(instagramAccountId);
+            return (
+                String(config?.instagramAccountId) === targetId ||
+                String(config?.pageId) === targetId ||
+                String(config?.alternateId) === targetId
+            );
         });
 
         // 2. Fallback: If not found and only 1 active channel exists, use it.
