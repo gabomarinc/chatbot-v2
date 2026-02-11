@@ -347,6 +347,11 @@ INSTRUCCIONES DE EJECUCIÓN:
 4. Si la consulta se responde con el "Conocimiento Adicional", intégralo de forma natural.
 5. Mantén el Estilo de Comunicación (${styleDescription}) en cada palabra.
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
+
+INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
+- Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave sobre su proyecto, presupuesto, urgencia o dolores (pain points). No esperes al final; documenta mientras hablas.
+- Seguimiento: USA 'create_zoho_task' si el usuario pide ser contactado más tarde, solicita una cotización formal que tú no puedes dar, o si detectas una oportunidad clara de venta que requiere intervención humana.
+- Citas: USA 'schedule_zoho_event' si el usuario acepta explícitamente una reunión o demo.
 `;
 
             // Custom Fields Collection
@@ -454,21 +459,63 @@ When calling 'update_contact':
             }
 
             if (hasZoho) {
-                tools.push({
-                    name: "create_zoho_lead",
-                    description: "Crea un nuevo Lead en Zoho CRM con los datos proporcionados.",
-                    parameters: {
-                        type: "object",
-                        properties: {
-                            FirstName: { type: "string", description: "Primer nombre del lead" },
-                            LastName: { type: "string", description: "Apellido del lead" },
-                            Email: { type: "string", description: "Correo electrónico" },
-                            Phone: { type: "string", description: "Teléfono (opcional)" },
-                            Description: { type: "string", description: "Notas o descripción adicional sobre el lead (opcional)" }
-                        },
-                        required: ["FirstName", "LastName", "Email"]
+                tools.push(
+                    {
+                        name: "create_zoho_lead",
+                        description: "Crea un nuevo Lead en Zoho CRM con los datos proporcionados.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                FirstName: { type: "string", description: "Primer nombre del lead" },
+                                LastName: { type: "string", description: "Apellido del lead" },
+                                Email: { type: "string", description: "Correo electrónico" },
+                                Phone: { type: "string", description: "Teléfono (opcional)" },
+                                Description: { type: "string", description: "Notas o descripción adicional sobre el lead (opcional)" }
+                            },
+                            required: ["FirstName", "LastName", "Email"]
+                        }
+                    },
+                    {
+                        name: "add_zoho_note",
+                        description: "Agrega una nota importante a un Lead existente en Zoho CRM. Úsala para documentar preguntas clave, objeciones, intereses específicos o cualquier información relevante de la conversación.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                noteContent: { type: "string", description: "Contenido de la nota. Incluye fecha/hora y contexto relevante." }
+                            },
+                            required: ["noteContent"]
+                        }
+                    },
+                    {
+                        name: "create_zoho_task",
+                        description: "Crea una tarea/recordatorio en Zoho CRM para que un humano haga seguimiento. Úsala cuando el cliente necesite una llamada, cotización, o cualquier acción manual.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                subject: { type: "string", description: "Título de la tarea (ej: 'Llamar a Roberto para cotización')" },
+                                dueDate: { type: "string", description: "Fecha de vencimiento en formato YYYY-MM-DD" },
+                                priority: { type: "string", enum: ["High", "Normal", "Low"], description: "Prioridad de la tarea" },
+                                description: { type: "string", description: "Detalles adicionales sobre la tarea" }
+                            },
+                            required: ["subject", "dueDate"]
+                        }
+                    },
+                    {
+                        name: "schedule_zoho_event",
+                        description: "Agenda un evento/reunión en Zoho CRM cuando el cliente acepta una cita. Sincroniza con el calendario del equipo de ventas.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                title: { type: "string", description: "Título del evento (ej: 'Reunión con Roberto - Demo producto')" },
+                                startDateTime: { type: "string", description: "Fecha y hora de inicio en formato ISO 8601 (ej: '2026-02-15T10:00:00')" },
+                                endDateTime: { type: "string", description: "Fecha y hora de fin en formato ISO 8601" },
+                                description: { type: "string", description: "Detalles de la reunión" },
+                                location: { type: "string", description: "Ubicación (puede ser URL de Zoom/Meet)" }
+                            },
+                            required: ["title", "startDateTime", "endDateTime"]
+                        }
                     }
-                });
+                );
             }
 
             // Try Gemini first if model is Gemini, with fallback to OpenAI
@@ -696,6 +743,48 @@ When calling 'update_contact':
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] createZohoLead error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "add_zoho_note") {
+                                console.log('[GEMINI] Tool add_zoho_note called');
+                                try {
+                                    const meta = (conversation.metadata as any) || {};
+                                    const leadId = meta.zohoLeadId;
+                                    if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+
+                                    const { addZohoNote } = await import('@/lib/zoho');
+                                    const res = await addZohoNote(channel.agentId, leadId, (args as any).noteContent);
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] addZohoNote error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "create_zoho_task") {
+                                console.log('[GEMINI] Tool create_zoho_task called');
+                                try {
+                                    const meta = (conversation.metadata as any) || {};
+                                    const leadId = meta.zohoLeadId;
+                                    if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+
+                                    const { createZohoTask } = await import('@/lib/zoho');
+                                    const res = await createZohoTask(channel.agentId, leadId, args as any);
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] createZohoTask error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "schedule_zoho_event") {
+                                console.log('[GEMINI] Tool schedule_zoho_event called');
+                                try {
+                                    const meta = (conversation.metadata as any) || {};
+                                    const leadId = meta.zohoLeadId;
+                                    if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+
+                                    const { scheduleZohoEvent } = await import('@/lib/zoho');
+                                    const res = await scheduleZohoEvent(channel.agentId, leadId, args as any);
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] scheduleZohoEvent error:', e);
                                     toolResult = { success: false, error: e.message };
                                 }
                             }
@@ -1026,6 +1115,48 @@ When calling 'update_contact':
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] createZohoLead error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "add_zoho_note") {
+                            console.log('[OPENAI] Tool add_zoho_note called');
+                            try {
+                                const meta = (conversation.metadata as any) || {};
+                                const leadId = meta.zohoLeadId;
+                                if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+
+                                const { addZohoNote } = await import('@/lib/zoho');
+                                const res = await addZohoNote(channel.agentId, leadId, (args as any).noteContent);
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] addZohoNote error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "create_zoho_task") {
+                            console.log('[OPENAI] Tool create_zoho_task called');
+                            try {
+                                const meta = (conversation.metadata as any) || {};
+                                const leadId = meta.zohoLeadId;
+                                if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+
+                                const { createZohoTask } = await import('@/lib/zoho');
+                                const res = await createZohoTask(channel.agentId, leadId, args as any);
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] createZohoTask error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "schedule_zoho_event") {
+                            console.log('[OPENAI] Tool schedule_zoho_event called');
+                            try {
+                                const meta = (conversation.metadata as any) || {};
+                                const leadId = meta.zohoLeadId;
+                                if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+
+                                const { scheduleZohoEvent } = await import('@/lib/zoho');
+                                const res = await scheduleZohoEvent(channel.agentId, leadId, args as any);
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] scheduleZohoEvent error:', e);
                                 toolResult = { success: false, error: e.message };
                             }
                         }

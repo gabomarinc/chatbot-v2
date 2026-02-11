@@ -81,9 +81,6 @@ export async function createZohoLead(agentId: string, leadData: {
 }, zohoLeadId?: string) {
     const accessToken = await getZohoAccessToken(agentId);
 
-    // Zoho Leads API: https://www.zoho.com/crm/developer/docs/api/v2/insert-records.html
-    // Actually we should use api_domain from config if possible
-
     // Fetch api_domain from DB to be safe
     const integration = await prisma.agentIntegration.findFirst({ where: { agentId, provider: 'ZOHO' } });
     const config = integration?.configJson as any;
@@ -170,6 +167,148 @@ export async function createZohoLead(agentId: string, leadData: {
 
     if (json.code === 'INVALID_TOKEN') {
         throw new Error('Zoho Token Invalid. Please reconnect integration.');
+    }
+
+    return json;
+}
+
+// Add Note to Lead
+export async function addZohoNote(agentId: string, leadId: string, noteContent: string) {
+    const accessToken = await getZohoAccessToken(agentId);
+    const integration = await prisma.agentIntegration.findFirst({ where: { agentId, provider: 'ZOHO' } });
+    const config = integration?.configJson as any;
+
+    let apiDomain = config?.api_domain || 'https://www.zohoapis.com';
+    if (!apiDomain.startsWith('http')) {
+        apiDomain = `https://${apiDomain}`;
+    }
+
+    const endpoint = `${apiDomain}/crm/v2/Leads/${leadId}/Notes`;
+
+    const body = {
+        data: [{
+            Note_Title: 'Conversación con Bot',
+            Note_Content: noteContent,
+            se_module: 'Leads'
+        }]
+    };
+
+    console.log(`[ZOHO] Adding note to Lead ${leadId}`);
+
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Zoho-oauthtoken ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
+
+    const json = await res.json();
+
+    if (json.data && json.data[0]?.status === 'error') {
+        throw new Error(`Zoho Note Error: ${json.data[0].message}`);
+    }
+
+    return json;
+}
+
+// Create Task for Lead
+export async function createZohoTask(agentId: string, leadId: string, taskData: {
+    subject: string;
+    dueDate: string; // YYYY-MM-DD
+    priority?: 'High' | 'Normal' | 'Low';
+    description?: string;
+}) {
+    const accessToken = await getZohoAccessToken(agentId);
+    const integration = await prisma.agentIntegration.findFirst({ where: { agentId, provider: 'ZOHO' } });
+    const config = integration?.configJson as any;
+
+    let apiDomain = config?.api_domain || 'https://www.zohoapis.com';
+    if (!apiDomain.startsWith('http')) {
+        apiDomain = `https://${apiDomain}`;
+    }
+
+    const endpoint = `${apiDomain}/crm/v2/Tasks`;
+
+    const body = {
+        data: [{
+            Subject: taskData.subject,
+            Due_Date: taskData.dueDate,
+            Priority: taskData.priority || 'Normal',
+            Status: 'Not Started',
+            Description: taskData.description,
+            $se_module: 'Leads',
+            What_Id: leadId
+        }]
+    };
+
+    console.log(`[ZOHO] Creating task for Lead ${leadId}`);
+
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Zoho-oauthtoken ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
+
+    const json = await res.json();
+
+    if (json.data && json.data[0]?.status === 'error') {
+        throw new Error(`Zoho Task Error: ${json.data[0].message}`);
+    }
+
+    return json;
+}
+
+// Schedule Event for Lead
+export async function scheduleZohoEvent(agentId: string, leadId: string, eventData: {
+    title: string;
+    startDateTime: string; // ISO 8601 format
+    endDateTime: string;
+    description?: string;
+    location?: string;
+}) {
+    const accessToken = await getZohoAccessToken(agentId);
+    const integration = await prisma.agentIntegration.findFirst({ where: { agentId, provider: 'ZOHO' } });
+    const config = integration?.configJson as any;
+
+    let apiDomain = config?.api_domain || 'https://www.zohoapis.com';
+    if (!apiDomain.startsWith('http')) {
+        apiDomain = `https://${apiDomain}`;
+    }
+
+    const endpoint = `${apiDomain}/crm/v2/Events`;
+
+    const body = {
+        data: [{
+            Event_Title: eventData.title,
+            Start_DateTime: eventData.startDateTime,
+            End_DateTime: eventData.endDateTime,
+            Description: eventData.description,
+            Venue: eventData.location,
+            $se_module: 'Leads',
+            What_Id: leadId
+        }]
+    };
+
+    console.log(`[ZOHO] Scheduling event for Lead ${leadId}`);
+
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Zoho-oauthtoken ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
+
+    const json = await res.json();
+
+    if (json.data && json.data[0]?.status === 'error') {
+        throw new Error(`Zoho Event Error: ${json.data[0].message}`);
     }
 
     return json;
