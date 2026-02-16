@@ -72,7 +72,6 @@ export async function createHubSpotContact(agentId: string, contactData: {
         lastname: lastname || ' (Chatbot)',
         email: contactData.email,
         phone: contactData.phone,
-        description: contactData.description,
     };
 
     if (hubspotContactId) {
