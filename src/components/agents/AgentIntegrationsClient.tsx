@@ -305,18 +305,18 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                     </DialogHeader>
 
                     <div className="space-y-4 py-8">
-                        <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100/50">
-                            <ul className="text-xs font-bold text-blue-700 space-y-2">
-                                <li className="flex items-center gap-2">
-                                    <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                        <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100/50 flex flex-col items-center">
+                            <ul className="text-xs font-bold text-blue-700 space-y-3">
+                                <li className="flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full shrink-0" />
                                     Conectar con el núcleo de Altaplaza
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                                <li className="flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full shrink-0" />
                                     Registrar facturas automáticamente
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                                <li className="flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full shrink-0" />
                                     Consultar historial de facturas
                                 </li>
                             </ul>
@@ -340,7 +340,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         </div>
                     </div>
 
-                    <DialogFooter className="sm:justify-center gap-3">
+                    <DialogFooter className="flex flex-row justify-center items-center gap-3">
                         <Button
                             variant="outline"
                             onClick={() => setIsAltaplazaModalOpen(false)}
@@ -443,7 +443,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         </div>
                     </div>
 
-                    <DialogFooter className="sm:justify-center gap-3">
+                    <DialogFooter className="flex flex-row justify-center items-center gap-3">
                         <Button
                             variant="outline"
                             onClick={() => setIsOdooModalOpen(false)}
@@ -480,7 +480,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             Deberás volver a configurar si quieres usarla de nuevo.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="sm:justify-center gap-3 mt-4">
+                    <DialogFooter className="flex flex-row justify-center items-center gap-3 mt-4">
                         <Button
                             variant="outline"
                             onClick={() => setIntegrationToDelete(null)}
