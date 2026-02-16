@@ -136,6 +136,15 @@ export async function createOdooLead(agentId: string, leadData: {
 
             if (!newId) throw new Error("Odoo no devolvió un ID para el nuevo lead.");
 
+            // Also add as a message/note for visibility in chatter if description exists
+            if (leadData.description) {
+                try {
+                    await addOdooNote(agentId, newId.toString(), leadData.description);
+                } catch (e) {
+                    console.error('[ODOO] Auto-note error:', e);
+                }
+            }
+
             return { success: true, id: newId.toString() };
         }
     } catch (err: any) {

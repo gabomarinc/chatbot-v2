@@ -1,5 +1,5 @@
-
 import { prisma } from '@/lib/prisma';
+import { IntegrationProvider } from '@prisma/client';
 
 interface HubSpotConfig {
     access_token: string;
@@ -12,7 +12,7 @@ const HUBSPOT_CLIENT_SECRET = process.env.HUBSPOT_CLIENT_SECRET;
 
 async function getHubSpotToken(agentId: string) {
     const integration = await prisma.agentIntegration.findFirst({
-        where: { agentId, provider: 'HUBSPOT' }
+        where: { agentId, provider: IntegrationProvider.HUBSPOT }
     });
 
     if (!integration || !integration.configJson) {
@@ -64,6 +64,43 @@ export async function createHubSpotContact(agentId: string, contactData: {
 }, hubspotContactId?: string) {
     const accessToken = await getHubSpotToken(agentId);
 
+    let contactIdToUse = hubspotContactId;
+
+    // 1. If no ID provided, try to search by Email or Phone to avoid conflicts
+    if (!contactIdToUse && (contactData.email || contactData.phone)) {
+        try {
+            const searchUrl = 'https://api.hubapi.com/crm/v3/objects/contacts/search';
+            const filterGroups = [];
+
+            if (contactData.email) {
+                filterGroups.push({
+                    filters: [{ propertyName: 'email', operator: 'EQ', value: contactData.email }]
+                });
+            }
+            if (contactData.phone) {
+                filterGroups.push({
+                    filters: [{ propertyName: 'phone', operator: 'EQ', value: contactData.phone }]
+                });
+            }
+
+            const searchRes = await fetch(searchUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filterGroups })
+            });
+            const searchData = await searchRes.json();
+            if (searchData.results && searchData.results.length > 0) {
+                contactIdToUse = searchData.results[0].id;
+                console.log(`[HUBSPOT] Contact found by search: ${contactIdToUse}`);
+            }
+        } catch (e) {
+            console.error('[HUBSPOT] Search error:', e);
+        }
+    }
+
     const [firstname, ...lastnameParts] = contactData.name.split(' ');
     const lastname = lastnameParts.join(' ');
 
@@ -74,9 +111,11 @@ export async function createHubSpotContact(agentId: string, contactData: {
         phone: contactData.phone,
     };
 
-    if (hubspotContactId) {
+    let resultId = contactIdToUse;
+
+    if (contactIdToUse) {
         // Update
-        const res = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${hubspotContactId}`, {
+        const res = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactIdToUse}`, {
             method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -89,8 +128,6 @@ export async function createHubSpotContact(agentId: string, contactData: {
         if (data.status === 'error') {
             throw new Error(`HubSpot Contact Update Error: ${data.message}`);
         }
-
-        return { success: true, id: hubspotContactId };
     } else {
         // Create
         const res = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
@@ -104,22 +141,40 @@ export async function createHubSpotContact(agentId: string, contactData: {
 
         const data = await res.json();
         if (data.status === 'error') {
-            // Check if contact already exists by email
-            if (data.category === 'CONFLICT' && contactData.email) {
-                // We should ideally search and update, but for now we throw
-                throw new Error(`HubSpot: Contacto con email ${contactData.email} ya existe.`);
+            // Fallback for unexpected conflict if search failed
+            if (data.category === 'CONFLICT' && data.message.includes('id:')) {
+                const match = data.message.match(/id:\s*(\d+)/);
+                if (match) {
+                    resultId = match[1];
+                } else {
+                    throw new Error(`HubSpot Conflict: ${data.message}`);
+                }
+            } else {
+                throw new Error(`HubSpot Contact Create Error: ${data.message}`);
             }
-            throw new Error(`HubSpot Contact Create Error: ${data.message}`);
+        } else {
+            resultId = data.id;
         }
-
-        return { success: true, id: data.id };
     }
+
+    // 2. If description provided, add it as a Note automatically
+    if (resultId && contactData.description) {
+        try {
+            await addHubSpotNote(agentId, resultId, contactData.description);
+        } catch (noteErr) {
+            console.error('[HUBSPOT] Auto-note error:', noteErr);
+            // Don't fail the whole contact creation if only the note fails
+        }
+    }
+
+    return { success: true, id: resultId };
 }
 
 export async function addHubSpotNote(agentId: string, contactId: string, noteContent: string) {
     const accessToken = await getHubSpotToken(agentId);
 
     // In HubSpot, notes are "Engagements" or "Notes" objects
+    // Using associations in the create call is more reliable
     const res = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
         method: 'POST',
         headers: {
@@ -130,7 +185,13 @@ export async function addHubSpotNote(agentId: string, contactId: string, noteCon
             properties: {
                 hs_note_body: noteContent,
                 hs_timestamp: Date.now()
-            }
+            },
+            associations: [
+                {
+                    to: { id: contactId },
+                    types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }]
+                }
+            ]
         })
     });
 
@@ -138,15 +199,6 @@ export async function addHubSpotNote(agentId: string, contactId: string, noteCon
     if (note.status === 'error') {
         throw new Error(`HubSpot Note Error: ${note.message}`);
     }
-
-    // Associate with Contact
-    await fetch(`https://api.hubapi.com/crm/v3/objects/notes/${note.id}/associations/contact/${contactId}/202`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        }
-    });
 
     return { success: true, id: note.id };
 }

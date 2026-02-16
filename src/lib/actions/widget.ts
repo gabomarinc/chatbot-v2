@@ -355,20 +355,20 @@ INSTRUCCIONES DE EJECUCIÓN:
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
 
 ${hasZoho ? `INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
-- Leads: USA 'create_zoho_lead' inmediatamente cuando el usuario mencione su nombre o email. Puedes incluir qué busca el usuario en el campo 'Description'.
-- Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave o intereses detallados.
+- Registro Inicial: USA 'create_zoho_lead' INMEDIATAMENTE cuando el usuario mencione su nombre o email. Pon qué busca el usuario en el campo 'Description'.
+- Notas de Seguimiento: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave o intereses detallados.
 - IMPORTANTE: Crea el Lead con 'create_zoho_lead' antes de añadir notas.` : ''}
 
 ${hasOdoo ? `INSTRUCCIONES ESPECÍFICAS DE ODOO CRM:
-- Leads: USA 'create_odoo_lead' INMEDIATAMENTE cuando el usuario diga su nombre.
-- Notas: USA 'add_odoo_note' para guardar requerimientos.
-- IMPORTANTE: DEBES crear el lead/oportunidad con 'create_odoo_lead' antes de intentar añadir notas.` : ''}
+- IMPORTANTE: Captura CUALQUIER interés, requerimiento o detalle del usuario (ej: 'busco casa', 'interesado en sitio web').
+- Registro Inicial: USA 'create_odoo_lead' INMEDIATAMENTE cuando el usuario diga su nombre o email. DEBES poner lo que busca en el campo 'description'.
+- Notas de Seguimiento: USA 'add_odoo_note' para guardar requerimientos adicionales durante la charla.` : ''}
 
 ${hasHubSpot ? `INSTRUCCIONES ESPECÍFICAS DE HUBSPOT CRM:
-- Contactos: USA 'create_hubspot_contact' inmediatamente cuando el usuario mencione su nombre o email. Puedes incluir qué busca el usuario en el campo 'description'.
-- Notas: USA 'add_hubspot_note' para guardar requerimientos o intereses detallados.
-- Tratos (Deals): USA 'create_hubspot_deal' si el usuario muestra un interés claro en contratar o comprar algo específico.
-- IMPORTANTE: Debes crear el contacto antes de crear un trato o añadir notas.` : ''}
+- IMPORTANTE: Captura CUALQUIER interés o detalle del usuario.
+- Registro Inicial: USA 'create_hubspot_contact' inmediatamente cuando el usuario mencione su nombre o email. DEBES poner qué busca el usuario en el campo 'description'.
+- Notas de Seguimiento: USA 'add_hubspot_note' para guardar requerimientos específicos o detalles que surjan después.
+- Tratos (Deals): USA 'create_hubspot_deal' si hay un interés claro de compra.` : ''}
 `;
 
             // Custom Fields Collection
@@ -479,7 +479,7 @@ When calling 'update_contact':
                 tools.push(
                     {
                         name: "create_zoho_lead",
-                        description: "Crea o actualiza un Lead en Zoho CRM. Úsala inmediatamente cuando el usuario mencione su nombre o email.",
+                        description: "Crea o actualiza un Lead en Zoho CRM. Úsala INMEDIATAMENTE cuando el usuario mencione su nombre o email. Pon en 'Description' lo que el usuario está buscando.",
                         parameters: {
                             type: "object",
                             properties: {
@@ -539,7 +539,7 @@ When calling 'update_contact':
                 tools.push(
                     {
                         name: "create_odoo_lead",
-                        description: "Crea o actualiza un Lead/Oportunidad en Odoo CRM. Úsala inmediatamente cuando el usuario mencione su nombre o email.",
+                        description: "Crea o actualiza un Lead/Oportunidad en Odoo CRM. Úsala INMEDIATAMENTE cuando el usuario mencione su nombre o email. Pon en 'description' lo que el usuario está buscando.",
                         parameters: {
                             type: "object",
                             properties: {
@@ -569,7 +569,7 @@ When calling 'update_contact':
                 tools.push(
                     {
                         name: "create_hubspot_contact",
-                        description: "Crea o actualiza un Contacto en HubSpot CRM. Úsala inmediatamente cuando el usuario mencione su nombre o email.",
+                        description: "Crea o actualiza un Contacto en HubSpot CRM. Úsala INMEDIATAMENTE cuando el usuario mencione su nombre o email. Pon en el campo 'description' lo que el usuario busca.",
                         parameters: {
                             type: "object",
                             properties: {
