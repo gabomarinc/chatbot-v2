@@ -292,14 +292,14 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
 
             <Dialog open={isAltaplazaModalOpen} onOpenChange={setIsAltaplazaModalOpen}>
                 <DialogContent className="sm:max-w-md bg-white rounded-[2.5rem] p-8 border-none shadow-2xl">
-                    <DialogHeader>
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 mb-6 transition-transform hover:scale-110 duration-300">
+                    <DialogHeader className="sm:text-center flex flex-col items-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 mb-6 transition-transform hover:scale-110 duration-300">
                             <span className="text-4xl">🛍️</span>
                         </div>
-                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
+                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full">
                             Altaplaza - Konsul API
                         </DialogTitle>
-                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2">
+                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full">
                             Integración robusta diseñada para Altaplaza. Registra facturas, consulta estados de cuenta y sincroniza data en tiempo real.
                         </DialogDescription>
                     </DialogHeader>
@@ -322,11 +322,11 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             </ul>
                         </div>
 
-                        <div className="group space-y-2 pt-2">
-                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1 group-focus-within:text-indigo-600 transition-colors">
+                        <div className="group space-y-2 pt-2 flex flex-col items-center">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 w-full text-center group-focus-within:text-indigo-600 transition-colors">
                                 Contraseña de Activación
                             </label>
-                            <div className="relative">
+                            <div className="relative w-full">
                                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-indigo-400 transition-colors" />
                                 <input
                                     type="password"
@@ -340,7 +340,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         </div>
                     </div>
 
-                    <DialogFooter className="flex flex-row justify-center items-center gap-3">
+                    <DialogFooter className="sm:justify-center flex flex-row justify-center items-center gap-3">
                         <Button
                             variant="outline"
                             onClick={() => setIsAltaplazaModalOpen(false)}
@@ -361,14 +361,14 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
 
             <Dialog open={isOdooModalOpen} onOpenChange={setIsOdooModalOpen}>
                 <DialogContent className="sm:max-w-md bg-white rounded-[2.5rem] p-8 border-none shadow-2xl">
-                    <DialogHeader>
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-50 mb-6 transition-transform hover:scale-110 duration-300">
+                    <DialogHeader className="sm:text-center flex flex-col items-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-50 mb-6 transition-transform hover:scale-110 duration-300">
                             <span className="text-4xl">🟣</span>
                         </div>
-                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
+                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full">
                             Conectar Odoo CRM
                         </DialogTitle>
-                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2">
+                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full">
                             Ingresa las credenciales de tu instancia de Odoo para comenzar.
                         </DialogDescription>
                     </DialogHeader>
@@ -443,7 +443,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         </div>
                     </div>
 
-                    <DialogFooter className="flex flex-row justify-center items-center gap-3">
+                    <DialogFooter className="sm:justify-center flex flex-row justify-center items-center gap-3">
                         <Button
                             variant="outline"
                             onClick={() => setIsOdooModalOpen(false)}
@@ -468,19 +468,19 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
 
             <Dialog open={!!integrationToDelete} onOpenChange={(open) => !open && setIntegrationToDelete(null)}>
                 <DialogContent className="sm:max-w-md bg-white rounded-[2.5rem] p-8 border-none shadow-2xl">
-                    <DialogHeader>
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 mb-6 transition-transform hover:scale-110 duration-300">
+                    <DialogHeader className="sm:text-center flex flex-col items-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 mb-6 transition-transform hover:scale-110 duration-300">
                             <AlertTriangle className="h-8 w-8 text-red-600" />
                         </div>
-                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
+                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full">
                             ¿Desconectar integración?
                         </DialogTitle>
-                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2">
+                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full">
                             Al desconectar, el agente perderá acceso inmediato a esta herramienta.
                             Deberás volver a configurar si quieres usarla de nuevo.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="flex flex-row justify-center items-center gap-3 mt-4">
+                    <DialogFooter className="sm:justify-center flex flex-row justify-center items-center gap-3 mt-4">
                         <Button
                             variant="outline"
                             onClick={() => setIntegrationToDelete(null)}
