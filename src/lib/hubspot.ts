@@ -72,6 +72,7 @@ export async function createHubSpotContact(agentId: string, contactData: {
         lastname: lastname || ' (Chatbot)',
         email: contactData.email,
         phone: contactData.phone,
+        description: contactData.description,
     };
 
     if (hubspotContactId) {
@@ -114,6 +115,41 @@ export async function createHubSpotContact(agentId: string, contactData: {
 
         return { success: true, id: data.id };
     }
+}
+
+export async function addHubSpotNote(agentId: string, contactId: string, noteContent: string) {
+    const accessToken = await getHubSpotToken(agentId);
+
+    // In HubSpot, notes are "Engagements" or "Notes" objects
+    const res = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            properties: {
+                hs_note_body: noteContent,
+                hs_timestamp: Date.now()
+            }
+        })
+    });
+
+    const note = await res.json();
+    if (note.status === 'error') {
+        throw new Error(`HubSpot Note Error: ${note.message}`);
+    }
+
+    // Associate with Contact
+    await fetch(`https://api.hubapi.com/crm/v3/objects/notes/${note.id}/associations/contact/${contactId}/202`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        }
+    });
+
+    return { success: true, id: note.id };
 }
 
 export async function createHubSpotDeal(agentId: string, contactId: string, dealData: {

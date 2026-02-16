@@ -364,9 +364,10 @@ ${hasOdoo ? `INSTRUCCIONES ESPECÍFICAS DE ODOO CRM:
 - IMPORTANTE: DEBES crear el lead/oportunidad con 'create_odoo_lead' antes de intentar añadir notas.` : ''}
 
 ${hasHubSpot ? `INSTRUCCIONES ESPECÍFICAS DE HUBSPOT CRM:
-- Contactos: USA 'create_hubspot_contact' inmediatamente cuando el usuario mencione su nombre o email.
+- Contactos: USA 'create_hubspot_contact' inmediatamente cuando el usuario mencione su nombre o email. Puedes incluir qué busca el usuario en el campo 'description'.
+- Notas: USA 'add_hubspot_note' para guardar requerimientos o intereses detallados.
 - Tratos (Deals): USA 'create_hubspot_deal' si el usuario muestra un interés claro en contratar o comprar algo específico.
-- IMPORTANTE: Debes crear el contacto antes de crear un trato.` : ''}
+- IMPORTANTE: Debes crear el contacto antes de crear un trato o añadir notas.` : ''}
 `;
 
             // Custom Fields Collection
@@ -573,9 +574,21 @@ When calling 'update_contact':
                             properties: {
                                 name: { type: "string", description: "Nombre completo del contacto" },
                                 email: { type: "string", description: "Email de contacto" },
-                                phone: { type: "string", description: "Teléfono" }
+                                phone: { type: "string", description: "Teléfono" },
+                                description: { type: "string", description: "Intereses o notas sobre el contacto" }
                             },
                             required: ["name"]
+                        }
+                    },
+                    {
+                        name: "add_hubspot_note",
+                        description: "Añade una nota a la línea de tiempo del contacto en HubSpot.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                noteContent: { type: "string", description: "Contenido de la nota" }
+                            },
+                            required: ["noteContent"]
                         }
                     },
                     {
@@ -912,6 +925,19 @@ When calling 'update_contact':
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] createHubSpotContact error:', e.message);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "add_hubspot_note") {
+                                console.log('[GEMINI] Tool add_hubspot_note called');
+                                try {
+                                    const meta = (conversation.metadata as any) || {};
+                                    const contactId = meta.hubspotContactId;
+                                    if (!contactId) throw new Error("No Contact ID found. Create a contact first.");
+                                    const { addHubSpotNote } = await import('@/lib/hubspot');
+                                    const res = await addHubSpotNote(channel.agentId, contactId, (args as any).noteContent);
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] addHubSpotNote error:', e.message);
                                     toolResult = { success: false, error: e.message };
                                 }
                             } else if (name === "create_hubspot_deal") {
@@ -1349,6 +1375,19 @@ When calling 'update_contact':
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] createHubSpotContact error:', e.message);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "add_hubspot_note") {
+                            console.log('[OPENAI] Tool add_hubspot_note called');
+                            try {
+                                const meta = (conversation.metadata as any) || {};
+                                const contactId = meta.hubspotContactId;
+                                if (!contactId) throw new Error("No Contact ID found. Create a contact first.");
+                                const { addHubSpotNote } = await import('@/lib/hubspot');
+                                const res = await addHubSpotNote(channel.agentId, contactId, (args as any).noteContent);
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] addHubSpotNote error:', e.message);
                                 toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "create_hubspot_deal") {
