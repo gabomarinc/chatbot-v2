@@ -108,6 +108,8 @@ export async function createOdooLead(agentId: string, leadData: {
 
         const config = integration.configJson as any as OdooConfig;
 
+        let finalId = odooLeadId;
+
         if (odooLeadId) {
             // Update
             const updateProps: any = {};
@@ -120,7 +122,6 @@ export async function createOdooLead(agentId: string, leadData: {
             if (leadData.description) updateProps.description = leadData.description;
 
             await odooCall(config, 'crm.lead', 'write', [[parseInt(odooLeadId)], updateProps]);
-            return { success: true, id: odooLeadId };
         } else {
             // Create - Using only essential fields to avoid validation errors
             const createProps = {
@@ -133,20 +134,22 @@ export async function createOdooLead(agentId: string, leadData: {
             };
 
             const newId = await odooCall(config, 'crm.lead', 'create', [createProps]);
-
             if (!newId) throw new Error("Odoo no devolvió un ID para el nuevo lead.");
-
-            // Also add as a message/note for visibility in chatter if description exists
-            if (leadData.description) {
-                try {
-                    await addOdooNote(agentId, newId.toString(), leadData.description);
-                } catch (e) {
-                    console.error('[ODOO] Auto-note error:', e);
-                }
-            }
-
-            return { success: true, id: newId.toString() };
+            finalId = newId.toString();
         }
+
+        // --- ENHANCED INTEREST RECORDING ---
+        // Always add description as a note/message, whether it's a create or update
+        if (finalId && leadData.description) {
+            try {
+                await addOdooNote(agentId, finalId, leadData.description);
+                console.log(`[ODOO] Auto-note added for lead ${finalId}`);
+            } catch (e: any) {
+                console.error('[ODOO] Auto-note error:', e.message);
+            }
+        }
+
+        return { success: true, id: finalId! };
     } catch (err: any) {
         console.error('[ODOO_ACTION_ERROR]', err.message);
         throw err;

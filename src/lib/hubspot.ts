@@ -157,13 +157,15 @@ export async function createHubSpotContact(agentId: string, contactData: {
         }
     }
 
-    // 2. If description provided, add it as a Note automatically
+    // --- ENHANCED INTEREST RECORDING ---
+    // If description (interest) provided, add it as a Note automatically
+    // we do this on every call (create or update) to ensure nothing is missed
     if (resultId && contactData.description) {
         try {
             await addHubSpotNote(agentId, resultId, contactData.description);
-        } catch (noteErr) {
-            console.error('[HUBSPOT] Auto-note error:', noteErr);
-            // Don't fail the whole contact creation if only the note fails
+            console.log(`[HUBSPOT] Auto-note added for contact ${resultId}`);
+        } catch (noteErr: any) {
+            console.error('[HUBSPOT] Auto-note error:', noteErr.message);
         }
     }
 
@@ -173,8 +175,7 @@ export async function createHubSpotContact(agentId: string, contactData: {
 export async function addHubSpotNote(agentId: string, contactId: string, noteContent: string) {
     const accessToken = await getHubSpotToken(agentId);
 
-    // In HubSpot, notes are "Engagements" or "Notes" objects
-    // Using associations in the create call is more reliable
+    // 1. Create the Note object
     const res = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
         method: 'POST',
         headers: {
@@ -184,23 +185,34 @@ export async function addHubSpotNote(agentId: string, contactId: string, noteCon
         body: JSON.stringify({
             properties: {
                 hs_note_body: noteContent,
-                hs_timestamp: Date.now()
-            },
-            associations: [
-                {
-                    to: { id: contactId },
-                    types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }]
-                }
-            ]
+                hs_timestamp: new Date().toISOString()
+            }
         })
     });
 
-    const note = await res.json();
-    if (note.status === 'error') {
-        throw new Error(`HubSpot Note Error: ${note.message}`);
+    const data = await res.json();
+    if (data.status === 'error') {
+        throw new Error(`HubSpot Note Creation Error: ${data.message}`);
     }
 
-    return { success: true, id: note.id };
+    const noteId = data.id;
+
+    // 2. Associate Note with Contact (Separate call is often more reliable across API versions)
+    const assocRes = await fetch(`https://api.hubapi.com/crm/v3/objects/notes/${noteId}/associations/contact/${contactId}/202`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+        }
+    });
+
+    // Check association result but don't fail the whole process
+    if (!assocRes.ok) {
+        const assocData = await assocRes.json().catch(() => ({}));
+        console.error('[HUBSPOT] Note Association Error:', assocData.message || assocRes.statusText);
+    }
+
+    return { success: true, id: noteId };
 }
 
 export async function createHubSpotDeal(agentId: string, contactId: string, dealData: {
