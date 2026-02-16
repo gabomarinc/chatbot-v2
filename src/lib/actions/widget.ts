@@ -355,7 +355,8 @@ INSTRUCCIONES DE EJECUCIÓN:
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
 
 ${hasZoho ? `INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
-- Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave.
+- Leads: USA 'create_zoho_lead' inmediatamente cuando el usuario mencione su nombre o email. Puedes incluir qué busca el usuario en el campo 'Description'.
+- Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave o intereses detallados.
 - IMPORTANTE: Crea el Lead con 'create_zoho_lead' antes de añadir notas.` : ''}
 
 ${hasOdoo ? `INSTRUCCIONES ESPECÍFICAS DE ODOO CRM:
@@ -478,7 +479,7 @@ When calling 'update_contact':
                 tools.push(
                     {
                         name: "create_zoho_lead",
-                        description: "Crea un nuevo Lead en Zoho CRM con los datos proporcionados.",
+                        description: "Crea o actualiza un Lead en Zoho CRM. Úsala inmediatamente cuando el usuario mencione su nombre o email.",
                         parameters: {
                             type: "object",
                             properties: {
