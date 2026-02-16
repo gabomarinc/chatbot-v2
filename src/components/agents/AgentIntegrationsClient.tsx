@@ -291,22 +291,22 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             </div>
 
             <Dialog open={isAltaplazaModalOpen} onOpenChange={setIsAltaplazaModalOpen}>
-                <DialogContent className="sm:max-w-md bg-white rounded-[2.5rem] p-8 border-none shadow-2xl">
-                    <DialogHeader className="sm:text-center flex flex-col items-center">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 mb-6 transition-transform hover:scale-110 duration-300">
-                            <span className="text-4xl">🛍️</span>
+                <DialogContent className="max-w-md w-full bg-white rounded-[2.5rem] p-6 md:p-10 border-none shadow-2xl">
+                    <DialogHeader className="flex flex-col items-center text-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 mb-6 transition-transform hover:scale-110 duration-300 mx-auto">
+                            <span className="text-4xl text-center">🛍️</span>
                         </div>
-                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full">
+                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full flex justify-center">
                             Altaplaza - Konsul API
                         </DialogTitle>
-                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full">
+                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full max-w-sm mx-auto">
                             Integración robusta diseñada para Altaplaza. Registra facturas, consulta estados de cuenta y sincroniza data en tiempo real.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-8">
-                        <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100/50 flex flex-col items-center">
-                            <ul className="text-xs font-bold text-blue-700 space-y-3">
+                        <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100/50 flex justify-center">
+                            <ul className="text-xs font-bold text-blue-700 space-y-3 inline-block">
                                 <li className="flex items-center gap-3">
                                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full shrink-0" />
                                     Conectar con el núcleo de Altaplaza
@@ -340,18 +340,18 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         </div>
                     </div>
 
-                    <DialogFooter className="sm:justify-center flex flex-row justify-center items-center gap-3">
+                    <DialogFooter className="flex flex-row items-center gap-3 pt-2">
                         <Button
                             variant="outline"
                             onClick={() => setIsAltaplazaModalOpen(false)}
-                            className="rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest border-gray-100 hover:bg-gray-50 transition-all"
+                            className="flex-1 rounded-2xl h-12 text-xs font-black uppercase tracking-widest border-gray-100 hover:bg-gray-50 transition-all"
                         >
                             Cancelar
                         </Button>
                         <Button
                             onClick={handleAltaplazaConnect}
                             disabled={!altaplazaPassword}
-                            className="rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
+                            className="flex-[1.5] rounded-2xl h-12 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2"
                         >
                             Activar Integración
                         </Button>
@@ -360,22 +360,22 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             </Dialog>
 
             <Dialog open={isOdooModalOpen} onOpenChange={setIsOdooModalOpen}>
-                <DialogContent className="sm:max-w-md bg-white rounded-[2.5rem] p-8 border-none shadow-2xl">
-                    <DialogHeader className="sm:text-center flex flex-col items-center">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-50 mb-6 transition-transform hover:scale-110 duration-300">
-                            <span className="text-4xl">🟣</span>
+                <DialogContent className="max-w-md w-full bg-white rounded-[2.5rem] p-6 md:p-10 border-none shadow-2xl">
+                    <DialogHeader className="flex flex-col items-center text-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-50 mb-6 transition-transform hover:scale-110 duration-300 mx-auto">
+                            <span className="text-4xl text-center">🟣</span>
                         </div>
-                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full">
+                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full flex justify-center">
                             Conectar Odoo CRM
                         </DialogTitle>
-                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full">
+                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full max-w-sm mx-auto">
                             Ingresa las credenciales de tu instancia de Odoo para comenzar.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-6">
-                        <div className="group space-y-2">
-                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1 group-focus-within:text-indigo-600 transition-colors">
+                        <div className="group space-y-2 flex flex-col items-center">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 w-full text-center group-focus-within:text-indigo-600 transition-colors">
                                 URL de Instancia
                             </label>
                             <div className="relative">
@@ -391,8 +391,8 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="group space-y-2">
-                                <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1 group-focus-within:text-indigo-600 transition-colors">
+                            <div className="group space-y-2 flex flex-col items-center">
+                                <label className="text-xs font-black uppercase tracking-widest text-gray-400 w-full text-center group-focus-within:text-indigo-600 transition-colors">
                                     Base de Datos
                                 </label>
                                 <div className="relative">
@@ -406,8 +406,8 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                     />
                                 </div>
                             </div>
-                            <div className="group space-y-2">
-                                <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1 group-focus-within:text-indigo-600 transition-colors">
+                            <div className="group space-y-2 flex flex-col items-center">
+                                <label className="text-xs font-black uppercase tracking-widest text-gray-400 w-full text-center group-focus-within:text-indigo-600 transition-colors">
                                     Usuario (Email)
                                 </label>
                                 <div className="relative">
@@ -423,8 +423,8 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             </div>
                         </div>
 
-                        <div className="group space-y-2">
-                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1 group-focus-within:text-indigo-600 transition-colors">
+                        <div className="group space-y-2 flex flex-col items-center">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 w-full text-center group-focus-within:text-indigo-600 transition-colors">
                                 API Key
                             </label>
                             <div className="relative">
@@ -443,18 +443,18 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         </div>
                     </div>
 
-                    <DialogFooter className="sm:justify-center flex flex-row justify-center items-center gap-3">
+                    <DialogFooter className="flex flex-row items-center gap-3 pt-2">
                         <Button
                             variant="outline"
                             onClick={() => setIsOdooModalOpen(false)}
-                            className="rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest border-gray-100 hover:bg-gray-50 transition-all"
+                            className="flex-1 rounded-2xl h-12 text-xs font-black uppercase tracking-widest border-gray-100 hover:bg-gray-50 transition-all"
                         >
                             Cancelar
                         </Button>
                         <Button
                             onClick={handleSaveOdoo}
                             disabled={isLoading === 'ODOO' || !odooConfig.url || !odooConfig.db || !odooConfig.username || !odooConfig.apiKey}
-                            className="rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
+                            className="flex-[1.5] rounded-2xl h-12 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2"
                         >
                             {isLoading === 'ODOO' ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -467,33 +467,33 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             </Dialog>
 
             <Dialog open={!!integrationToDelete} onOpenChange={(open) => !open && setIntegrationToDelete(null)}>
-                <DialogContent className="sm:max-w-md bg-white rounded-[2.5rem] p-8 border-none shadow-2xl">
-                    <DialogHeader className="sm:text-center flex flex-col items-center">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 mb-6 transition-transform hover:scale-110 duration-300">
+                <DialogContent className="max-w-md w-full bg-white rounded-[2.5rem] p-6 md:p-10 border-none shadow-2xl">
+                    <DialogHeader className="flex flex-col items-center text-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 mb-6 transition-transform hover:scale-110 duration-300 mx-auto">
                             <AlertTriangle className="h-8 w-8 text-red-600" />
                         </div>
-                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full">
+                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full flex justify-center">
                             ¿Desconectar integración?
                         </DialogTitle>
-                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full">
+                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full max-w-sm mx-auto">
                             Al desconectar, el agente perderá acceso inmediato a esta herramienta.
                             Deberás volver a configurar si quieres usarla de nuevo.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="sm:justify-center flex flex-row justify-center items-center gap-3 mt-4">
+                    <DialogFooter className="flex flex-row items-center gap-3 pt-2">
                         <Button
                             variant="outline"
                             onClick={() => setIntegrationToDelete(null)}
-                            className="rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest border-gray-100 hover:bg-gray-50 transition-all"
+                            className="flex-1 rounded-2xl h-12 text-xs font-black uppercase tracking-widest border-gray-100 hover:bg-gray-50 transition-all"
                         >
                             Cancelar
                         </Button>
                         <Button
                             variant="destructive"
                             onClick={confirmDisconnect}
-                            className="rounded-2xl px-8 h-12 text-xs font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 transition-all flex items-center gap-2"
+                            className="flex-1 rounded-2xl h-12 text-xs font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 transition-all flex items-center justify-center gap-2"
                         >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                             Sí, desconectar
                         </Button>
                     </DialogFooter>
