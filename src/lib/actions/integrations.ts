@@ -56,3 +56,27 @@ export async function saveOdooIntegration(agentId: string, config: { url: string
     revalidatePath(`/agents/${agentId}/settings`);
     return integration;
 }
+
+export async function saveAltaplazaIntegration(agentId: string) {
+    const integration = await prisma.agentIntegration.upsert({
+        where: {
+            agentId_provider: {
+                agentId,
+                provider: 'ALTAPLAZA'
+            }
+        },
+        update: {
+            configJson: {},
+            enabled: true
+        },
+        create: {
+            agentId,
+            provider: 'ALTAPLAZA',
+            configJson: {},
+            enabled: true
+        }
+    });
+
+    revalidatePath(`/agents/${agentId}/settings`);
+    return integration;
+}

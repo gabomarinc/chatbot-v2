@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { initiateGoogleAuth, deleteIntegration, saveOdooIntegration } from '@/lib/actions/integrations';
+import { initiateGoogleAuth, deleteIntegration, saveOdooIntegration, saveAltaplazaIntegration } from '@/lib/actions/integrations';
 import { Loader2, CheckCircle2, Trash2, AlertTriangle, Globe, Database, User, Key, Search, Sparkles, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -125,14 +125,21 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
         }
     };
 
-    const handleAltaplazaConnect = () => {
+    const handleAltaplazaConnect = async () => {
         if (altaplazaPassword === 'ALtaplaza2026@.') {
-            toast.success('¡Acceso concedido! Conectando con Altaplaza...');
-            setTimeout(() => {
+            setIsLoading('ALTAPLAZA');
+            try {
+                await saveAltaplazaIntegration(agentId);
+                toast.success('¡Acceso concedido! Integración con Altaplaza activada.');
                 setIsAltaplazaModalOpen(false);
                 setAltaplazaPassword('');
-                toast.success('Integración con Altaplaza activada correctamente.');
-            }, 1000);
+                window.location.reload();
+            } catch (error) {
+                console.error('Altaplaza connect error:', error);
+                toast.error('Error al activar la integración.');
+            } finally {
+                setIsLoading(null);
+            }
         } else {
             toast.error('Contraseña incorrecta. Acceso denegado.');
         }
@@ -350,10 +357,14 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         </Button>
                         <Button
                             onClick={handleAltaplazaConnect}
-                            disabled={!altaplazaPassword}
+                            disabled={!altaplazaPassword || isLoading === 'ALTAPLAZA'}
                             className="flex-[1.5] rounded-2xl h-12 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2"
                         >
-                            Activar Integración
+                            {isLoading === 'ALTAPLAZA' ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                'Activar Integración'
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

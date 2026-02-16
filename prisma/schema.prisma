@@ -429,6 +429,7 @@ enum IntegrationProvider {
   ZOHO
   ODOO
   HUBSPOT
+  ALTAPLAZA
 }
 
 enum PlanType {
