@@ -35,7 +35,16 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
         apiKey: ''
     });
 
-    const integrations = [
+    interface Integration {
+        id: string;
+        name: string;
+        description: string;
+        icon: string;
+        color: string;
+        isComingSoon?: boolean;
+    }
+
+    const integrations: Integration[] = [
         {
             id: 'ZOHO',
             name: 'Zoho CRM',
@@ -67,7 +76,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
         },
     ];
 
-    const onDemandIntegrations = [
+    const onDemandIntegrations: Integration[] = [
         {
             id: 'ALTAPLAZA',
             name: 'Altaplaza - Konsul API',
