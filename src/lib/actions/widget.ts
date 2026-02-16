@@ -43,7 +43,7 @@ export async function sendWidgetMessage(data: {
                 agent: {
                     include: {
                         workspace: { include: { creditBalance: true } },
-                        integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO'] }, enabled: true } },
+                        integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT'] }, enabled: true } },
                         intents: { where: { enabled: true } },
                         customFieldDefinitions: true
                     }
@@ -308,6 +308,9 @@ export async function sendWidgetMessage(data: {
             const odooIntegration = agent.integrations.find((i: any) => i.provider === 'ODOO');
             const hasOdoo = !!odooIntegration;
 
+            const hubspotIntegration = agent.integrations.find((i: any) => i.provider === 'HUBSPOT');
+            const hasHubSpot = !!hubspotIntegration;
+
             // Get agent media for image search tool
             const agentMedia = await prisma.agentMedia.findMany({
                 where: { agentId: channel.agentId }
@@ -337,7 +340,7 @@ CONFIGURACIÓN DINÁMICA DEL CHAT:
 - Restricción de Temas: ${agent.restrictTopics ? 'ESTRICTA. Solo responde sobre temas del negocio. Si preguntan algo ajeno, declina amablemente.' : 'Flexible. Puedes charlar de forma general pero siempre volviendo al negocio.'}
 - Transferencia Humana: ${agent.transferToHuman ? 'Disponible. Si el usuario pide hablar con una persona, indícale que puedes transferirlo.' : 'No disponible por ahora.'}
 ${hasCalendar ? '- Calendario: TIENES ACCESO a Google Calendar para revisar disponibilidad y agendar citas.' : '- Calendario: No disponible.'}
-${hasZoho || hasOdoo ? `- CRM: TIENES ACCESO a ${hasZoho ? 'Zoho CRM' : ''}${hasZoho && hasOdoo ? ' y ' : ''}${hasOdoo ? 'Odoo CRM' : ''}. Es OBLIGATORIO usar las herramientas de creación de leads tan pronto el usuario brinde SU NOMBRE O EMAIL. No esperes a tener ambos; si solo tienes el nombre, ¡guárdalo ya! Luego, si da el email, vuelve a usar la herramienta para actualizarlo. Además, guarda como NOTA cualquier información importante del negocio.` : '- CRM: No disponible.'}
+${hasZoho || hasOdoo || hasHubSpot ? `- CRM: TIENES ACCESO a ${[hasZoho && 'Zoho CRM', hasOdoo && 'Odoo CRM', hasHubSpot && 'HubSpot CRM'].filter(Boolean).join(', ')}. Es OBLIGATORIO usar las herramientas de creación de registros tan pronto el usuario brinde SU NOMBRE O EMAIL.` : '- CRM: No disponible.'}
 ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG):
@@ -352,15 +355,18 @@ INSTRUCCIONES DE EJECUCIÓN:
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
 
 ${hasZoho ? `INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
-- Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave sobre su proyecto, presupuesto, urgencia o dolores (pain points).
-- Seguimiento: USA 'create_zoho_task' si el usuario pide ser contactado más tarde.
-- Citas: USA 'schedule_zoho_event' si el usuario acepta una reunión.
-- IMPORTANTE: Crea el Lead con 'create_zoho_lead' antes de añadir notas o tareas.` : ''}
+- Notas: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave.
+- IMPORTANTE: Crea el Lead con 'create_zoho_lead' antes de añadir notas.` : ''}
 
 ${hasOdoo ? `INSTRUCCIONES ESPECÍFICAS DE ODOO CRM:
-- Leads: USA 'create_odoo_lead' INMEDIATAMENTE cuando el usuario diga su nombre. No esperes a más datos. Si luego da el email o teléfono, úsala de nuevo para actualizar el registro.
-- Notas: USA 'add_odoo_note' para guardar requerimientos, presupuesto o detalles del proyecto que no quepan en los campos estándar.
+- Leads: USA 'create_odoo_lead' INMEDIATAMENTE cuando el usuario diga su nombre.
+- Notas: USA 'add_odoo_note' para guardar requerimientos.
 - IMPORTANTE: DEBES crear el lead/oportunidad con 'create_odoo_lead' antes de intentar añadir notas.` : ''}
+
+${hasHubSpot ? `INSTRUCCIONES ESPECÍFICAS DE HUBSPOT CRM:
+- Contactos: USA 'create_hubspot_contact' inmediatamente cuando el usuario mencione su nombre o email.
+- Tratos (Deals): USA 'create_hubspot_deal' si el usuario muestra un interés claro en contratar o comprar algo específico.
+- IMPORTANTE: Debes crear el contacto antes de crear un trato.` : ''}
 `;
 
             // Custom Fields Collection
@@ -552,6 +558,36 @@ When calling 'update_contact':
                                 noteContent: { type: "string", description: "Contenido de la nota" }
                             },
                             required: ["noteContent"]
+                        }
+                    }
+                );
+            }
+
+            if (hasHubSpot) {
+                tools.push(
+                    {
+                        name: "create_hubspot_contact",
+                        description: "Crea o actualiza un Contacto en HubSpot CRM. Úsala inmediatamente cuando el usuario mencione su nombre o email.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                name: { type: "string", description: "Nombre completo del contacto" },
+                                email: { type: "string", description: "Email de contacto" },
+                                phone: { type: "string", description: "Teléfono" }
+                            },
+                            required: ["name"]
+                        }
+                    },
+                    {
+                        name: "create_hubspot_deal",
+                        description: "Crea un Trato (Deal) en HubSpot y lo asocia con el contacto actual.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                name: { type: "string", description: "Nombre o descripción breve del trato (ej: 'Servicio Web - Andres')" },
+                                amount: { type: "number", description: "Monto estimado del trato (si se menciona)" }
+                            },
+                            required: ["name"]
                         }
                     }
                 );
@@ -857,6 +893,38 @@ When calling 'update_contact':
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] addOdooNote error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "create_hubspot_contact") {
+                                console.log('[GEMINI] Tool create_hubspot_contact called');
+                                try {
+                                    const { createHubSpotContact } = await import('@/lib/hubspot');
+                                    const meta = (conversation.metadata as any) || {};
+                                    const currentContactId = meta.hubspotContactId;
+                                    const res = await createHubSpotContact(channel.agentId, args as any, currentContactId);
+                                    if (res.id && res.id !== currentContactId) {
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: { metadata: { ...meta, hubspotContactId: res.id } }
+                                        });
+                                        conversation.metadata = { ...meta, hubspotContactId: res.id };
+                                    }
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] createHubSpotContact error:', e.message);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "create_hubspot_deal") {
+                                console.log('[GEMINI] Tool create_hubspot_deal called');
+                                try {
+                                    const meta = (conversation.metadata as any) || {};
+                                    const contactId = meta.hubspotContactId;
+                                    if (!contactId) throw new Error("No Contact ID found. Create a contact first.");
+                                    const { createHubSpotDeal } = await import('@/lib/hubspot');
+                                    const res = await createHubSpotDeal(channel.agentId, contactId, args as any);
+                                    toolResult = { success: true, api_response: res };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] createHubSpotDeal error:', e.message);
                                     toolResult = { success: false, error: e.message };
                                 }
                             }
@@ -1262,6 +1330,38 @@ When calling 'update_contact':
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] addOdooNote error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "create_hubspot_contact") {
+                            console.log('[OPENAI] Tool create_hubspot_contact called');
+                            try {
+                                const { createHubSpotContact } = await import('@/lib/hubspot');
+                                const meta = (conversation.metadata as any) || {};
+                                const currentContactId = meta.hubspotContactId;
+                                const res = await createHubSpotContact(channel.agentId, args as any, currentContactId);
+                                if (res.id && res.id !== currentContactId) {
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { metadata: { ...meta, hubspotContactId: res.id } }
+                                    });
+                                    conversation.metadata = { ...meta, hubspotContactId: res.id };
+                                }
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] createHubSpotContact error:', e.message);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "create_hubspot_deal") {
+                            console.log('[OPENAI] Tool create_hubspot_deal called');
+                            try {
+                                const meta = (conversation.metadata as any) || {};
+                                const contactId = meta.hubspotContactId;
+                                if (!contactId) throw new Error("No Contact ID found. Create a contact first.");
+                                const { createHubSpotDeal } = await import('@/lib/hubspot');
+                                const res = await createHubSpotDeal(channel.agentId, contactId, args as any);
+                                toolResult = { success: true, api_response: res };
+                            } catch (e: any) {
+                                console.error('[OPENAI] createHubSpotDeal error:', e.message);
                                 toolResult = { success: false, error: e.message };
                             }
                         }

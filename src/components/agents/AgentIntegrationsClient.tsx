@@ -46,19 +46,18 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             color: 'purple',
         },
         {
+            id: 'HUBSPOT',
+            name: 'HubSpot CRM',
+            description: 'Sincroniza contactos y tratos con tu cuenta de HubSpot',
+            icon: '🟠',
+            color: 'orange',
+        },
+        {
             id: 'GOOGLE_CALENDAR',
             name: 'Google Calendar',
             description: 'Sincroniza y gestiona eventos automáticamente',
             icon: '📅',
             color: 'purple',
-            isComingSoon: true,
-        },
-        {
-            id: 'CRM_SYNC',
-            name: 'CRM Sync',
-            description: 'Sincroniza tus prospectos con HubSpot, Pipedrive o Salesforce',
-            icon: '🔄',
-            color: 'blue',
             isComingSoon: true,
         },
     ];
@@ -79,6 +78,9 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             }
             if (provider === 'ODOO') {
                 setIsOdooModalOpen(true);
+            }
+            if (provider === 'HUBSPOT') {
+                window.location.href = `/api/oauth/hubspot?agentId=${agentId}`;
             }
         } catch (error) {
             console.error('Activation error:', error);

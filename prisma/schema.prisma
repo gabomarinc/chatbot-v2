@@ -428,6 +428,7 @@ enum IntegrationProvider {
   EVENDI
   ZOHO
   ODOO
+  HUBSPOT
 }
 
 enum PlanType {
