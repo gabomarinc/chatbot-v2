@@ -30,7 +30,9 @@ export async function GET(request: Request) {
         'crm.objects.contacts.read',
         'crm.objects.contacts.write',
         'crm.objects.deals.read',
-        'crm.objects.deals.write'
+        'crm.objects.deals.write',
+        'crm.objects.notes.read',
+        'crm.objects.notes.write'
     ].join(' ');
 
     const params = new URLSearchParams({
