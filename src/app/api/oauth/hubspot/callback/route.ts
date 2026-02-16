@@ -75,7 +75,7 @@ export async function GET(request: Request) {
         });
 
         // Redirect back to agent integrations page
-        return NextResponse.redirect(new URL(`/agents/${agentId}/settings?success=hubspot_connected`, request.url));
+        return NextResponse.redirect(new URL(`/agents/${agentId}/integrations?success=hubspot_connected`, request.url));
 
     } catch (error: any) {
         console.error('[HUBSPOT] Callback Exception:', error);
