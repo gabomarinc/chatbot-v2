@@ -358,9 +358,9 @@ ${hasZoho ? `INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
 - IMPORTANTE: Crea el Lead con 'create_zoho_lead' antes de añadir notas o tareas.` : ''}
 
 ${hasOdoo ? `INSTRUCCIONES ESPECÍFICAS DE ODOO CRM:
-- Leads: USA 'create_odoo_lead' para crear o actualizar prospectos. Tan pronto el usuario diga su nombre, ¡guárdalo!
-- Notas: USA 'add_odoo_note' para documentar detalles importantes, presupuesto, requerimientos técnicos, etc.
-- IMPORTANTE: Antes de añadir una nota, DEBES haber creado el Lead con 'create_odoo_lead'.` : ''}
+- Leads: USA 'create_odoo_lead' INMEDIATAMENTE cuando el usuario diga su nombre. No esperes a más datos. Si luego da el email o teléfono, úsala de nuevo para actualizar el registro.
+- Notas: USA 'add_odoo_note' para guardar requerimientos, presupuesto o detalles del proyecto que no quepan en los campos estándar.
+- IMPORTANTE: DEBES crear el lead/oportunidad con 'create_odoo_lead' antes de intentar añadir notas.` : ''}
 `;
 
             // Custom Fields Collection
@@ -531,16 +531,16 @@ When calling 'update_contact':
                 tools.push(
                     {
                         name: "create_odoo_lead",
-                        description: "Crea o actualiza un Lead/Oportunidad en Odoo CRM.",
+                        description: "Crea o actualiza un Lead/Oportunidad en Odoo CRM. Úsala inmediatamente cuando el usuario mencione su nombre o email.",
                         parameters: {
                             type: "object",
                             properties: {
-                                name: { type: "string", description: "Nombre del lead" },
-                                email: { type: "string", description: "Email" },
+                                name: { type: "string", description: "Nombre del contacto o lead" },
+                                email: { type: "string", description: "Email de contacto" },
                                 phone: { type: "string", description: "Teléfono" },
-                                description: { type: "string", description: "Descripción o notas" }
+                                description: { type: "string", description: "Notas adicionales sobre lo que busca el cliente" }
                             },
-                            required: []
+                            required: ["name"]
                         }
                     },
                     {
