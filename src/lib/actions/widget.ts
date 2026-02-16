@@ -354,21 +354,20 @@ INSTRUCCIONES DE EJECUCIÓN:
 5. Mantén el Estilo de Comunicación (${styleDescription}) en cada palabra.
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
 
-${hasZoho ? `INSTRUCCIONES ESPECÍFICAS DE ZOHO CRM (DOCUMENTACIÓN):
-- Registro Inicial: USA 'create_zoho_lead' INMEDIATAMENTE cuando el usuario mencione su nombre o email. Pon qué busca el usuario en el campo 'Description'.
-- Notas de Seguimiento: USA 'add_zoho_note' cada vez que el usuario proporcione detalles clave o intereses detallados.
-- IMPORTANTE: Crea el Lead con 'create_zoho_lead' antes de añadir notas.` : ''}
+${hasZoho ? `INSTRUCCIONES ZOHO CRM:
+- ACTUALIZACIÓN CONTINUA: USA 'create_zoho_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes al final.
+- CAMPO DESCRIPTION: DEBES poner lo que el usuario busca en el campo 'Description' de Zoho.
+- NOTAS: USA 'add_zoho_note' para detalles específicos o requerimientos complejos.` : ''}
 
-${hasOdoo ? `INSTRUCCIONES ESPECÍFICAS DE ODOO CRM:
-- IMPORTANTE: Captura CUALQUIER interés, requerimiento o detalle del usuario (ej: 'busco casa', 'interesado en sitio web').
-- Registro Inicial: USA 'create_odoo_lead' INMEDIATAMENTE cuando el usuario diga su nombre o email. DEBES poner lo que busca en el campo 'description'.
-- Notas de Seguimiento: USA 'add_odoo_note' para guardar requerimientos adicionales durante la charla.` : ''}
+${hasOdoo ? `INSTRUCCIONES ODOO CRM:
+- ACTUALIZACIÓN CONTINUA: USA 'create_odoo_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes.
+- CAMPO DESCRIPTION: DEBES poner lo que el usuario busca en el campo 'description' de Odoo.
+- NOTAS: USA 'add_odoo_note' para guardar requerimientos adicionales.` : ''}
 
-${hasHubSpot ? `INSTRUCCIONES ESPECÍFICAS DE HUBSPOT CRM:
-- IMPORTANTE: Captura CUALQUIER interés o detalle del usuario.
-- Registro Inicial: USA 'create_hubspot_contact' inmediatamente cuando el usuario mencione su nombre o email. DEBES poner qué busca el usuario en el campo 'description'.
-- Notas de Seguimiento: USA 'add_hubspot_note' para guardar requerimientos específicos o detalles que surjan después.
-- Tratos (Deals): USA 'create_hubspot_deal' si hay un interés claro de compra.` : ''}
+${hasHubSpot ? `INSTRUCCIONES HUBSPOT CRM:
+- ACTUALIZACIÓN CONTINUA: USA 'create_hubspot_contact' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés).
+- CAMPO DESCRIPTION: DEBES poner lo que el usuario busca en el campo 'description' de la herramienta. Esto creará una nota automática.
+- NOTAS: USA 'add_hubspot_note' para guardar requerimientos específicos adicionales.` : ''}
 `;
 
             // Custom Fields Collection

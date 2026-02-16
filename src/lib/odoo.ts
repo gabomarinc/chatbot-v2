@@ -121,16 +121,18 @@ export async function createOdooLead(agentId: string, leadData: {
             if (leadData.phone) updateProps.phone = leadData.phone;
             if (leadData.description) updateProps.description = leadData.description;
 
-            await odooCall(config, 'crm.lead', 'write', [[parseInt(odooLeadId)], updateProps]);
+            if (Object.keys(updateProps).length > 0) {
+                await odooCall(config, 'crm.lead', 'write', [[parseInt(odooLeadId)], updateProps]);
+            }
         } else {
-            // Create - Using only essential fields to avoid validation errors
+            // Create
             const createProps = {
                 name: `Oportunidad: ${leadData.name || 'Nuevo Prospecto'}`,
                 contact_name: leadData.name || 'Cliente Chatbot',
                 email_from: leadData.email,
                 phone: leadData.phone,
                 description: leadData.description || 'Lead generado automáticamente por Kônsul AI',
-                type: 'opportunity' // 'opportunity' ensures it appears in the CRM Pipeline
+                type: 'opportunity'
             };
 
             const newId = await odooCall(config, 'crm.lead', 'create', [createProps]);

@@ -57,7 +57,7 @@ async function getHubSpotToken(agentId: string) {
 }
 
 export async function createHubSpotContact(agentId: string, contactData: {
-    name: string;
+    name?: string;
     email?: string;
     phone?: string;
     description?: string;
@@ -101,35 +101,44 @@ export async function createHubSpotContact(agentId: string, contactData: {
         }
     }
 
-    const [firstname, ...lastnameParts] = contactData.name.split(' ');
-    const lastname = lastnameParts.join(' ');
-
-    const properties: any = {
-        firstname,
-        lastname: lastname || ' (Chatbot)',
-        email: contactData.email,
-        phone: contactData.phone,
-    };
+    const properties: any = {};
+    if (contactData.name) {
+        const [firstname, ...lastnameParts] = contactData.name.split(' ');
+        properties.firstname = firstname;
+        properties.lastname = lastnameParts.join(' ') || ' (Chatbot)';
+    }
+    if (contactData.email) properties.email = contactData.email;
+    if (contactData.phone) properties.phone = contactData.phone;
 
     let resultId = contactIdToUse;
 
     if (contactIdToUse) {
-        // Update
-        const res = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactIdToUse}`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ properties })
-        });
+        // Update - Only if we have something to update
+        if (Object.keys(properties).length > 0) {
+            const res = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactIdToUse}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ properties })
+            });
 
-        const data = await res.json();
-        if (data.status === 'error') {
-            throw new Error(`HubSpot Contact Update Error: ${data.message}`);
+            const data = await res.json();
+            if (data.status === 'error') {
+                if (data.category === 'NOT_FOUND') {
+                    resultId = undefined; // Try to create instead
+                } else {
+                    console.error('[HUBSPOT] Update Error:', data.message);
+                }
+            }
         }
-    } else {
-        // Create
+    }
+
+    // If no resultId (not update or update failed), Create
+    if (!resultId) {
+        if (!contactData.name) throw new Error("Name is required for new HubSpot contact");
+
         const res = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
             method: 'POST',
             headers: {
@@ -141,17 +150,11 @@ export async function createHubSpotContact(agentId: string, contactData: {
 
         const data = await res.json();
         if (data.status === 'error') {
-            // Fallback for unexpected conflict if search failed
             if (data.category === 'CONFLICT' && data.message.includes('id:')) {
                 const match = data.message.match(/id:\s*(\d+)/);
-                if (match) {
-                    resultId = match[1];
-                } else {
-                    throw new Error(`HubSpot Conflict: ${data.message}`);
-                }
-            } else {
-                throw new Error(`HubSpot Contact Create Error: ${data.message}`);
+                resultId = match ? match[1] : undefined;
             }
+            if (!resultId) throw new Error(`HubSpot Contact Create Error: ${data.message}`);
         } else {
             resultId = data.id;
         }
