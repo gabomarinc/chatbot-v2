@@ -595,7 +595,7 @@ When calling 'update_contact':
                         console.log('[GEMINI] Using model name:', geminiModelName);
                         console.log('[GEMINI] GoogleGenerativeAI initialized, getting model:', geminiModelName);
 
-                        const geminiTools = hasCalendar ? [{
+                        const geminiTools = tools.length > 0 ? [{
                             functionDeclarations: tools.map(t => ({
                                 name: t.name,
                                 description: t.description,
