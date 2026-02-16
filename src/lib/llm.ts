@@ -27,6 +27,7 @@ export async function generateAgentReply(
     where: { id: agentId },
     include: {
       customFieldDefinitions: true,
+      integrations: true,
       knowledgeBases: {
         include: {
           sources: {
@@ -94,8 +95,11 @@ export async function generateAgentReply(
     contextChunks = chunks.map((chunk) => chunk.content);
   }
 
+  // Altaplaza Integration Check
+  const altaplazaIntegration = agent.integrations?.find((i: any) => i.provider === 'ALTAPLAZA' && i.enabled);
+
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(agent, contextChunks);
+  const systemPrompt = buildSystemPrompt(agent, contextChunks, !!altaplazaIntegration);
 
   // Get conversation history
   const messages = await prisma.message.findMany({
@@ -158,6 +162,65 @@ export async function generateAgentReply(
       }
     }
   ];
+
+  // Add Altaplaza tools if enabled
+  if (altaplazaIntegration) {
+    tools.push(
+      {
+        type: 'function',
+        function: {
+          name: 'altaplaza_check_user',
+          description: 'Verify if a user exists in Altaplaza system using their ID card (cédula).',
+          parameters: {
+            type: 'object',
+            properties: {
+              idCard: { type: 'string', description: 'The user\'s ID card number (cédula).' }
+            },
+            required: ['idCard']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'altaplaza_register_user',
+          description: 'Register a new user in Altaplaza. Call this if check_user returns that the user does not exist.',
+          parameters: {
+            type: 'object',
+            properties: {
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
+              email: { type: 'string' },
+              idCard: { type: 'string' },
+              birthDate: { type: 'string', description: 'Format: YYYY-MM-DD' },
+              phone: { type: 'string' },
+              neighborhood: { type: 'string' }
+            },
+            required: ['firstName', 'lastName', 'email', 'idCard', 'birthDate']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'altaplaza_register_invoice',
+          description: 'Register a processed invoice in Altaplaza system.',
+          parameters: {
+            type: 'object',
+            properties: {
+              idCard: { type: 'string' },
+              invoiceNumber: { type: 'string' },
+              amount: { type: 'number' },
+              storeName: { type: 'string' },
+              imageUrl: { type: 'string' },
+              date: { type: 'string', description: 'Optional. Format: YYYY-MM-DD' }
+            },
+            required: ['idCard', 'invoiceNumber', 'amount', 'storeName']
+          }
+        }
+      }
+    );
+  }
 
   // Call OpenAI API (Loop for tool calls)
   const openai = getOpenAIClient();
@@ -317,6 +380,64 @@ export async function generateAgentReply(
             });
           }
         }
+
+        // --- ALTAPLAZA HANDLERS ---
+        if ((toolCall as any).function.name === 'altaplaza_check_user') {
+          try {
+            const { idCard } = JSON.parse((toolCall as any).function.arguments);
+            const { checkUser } = await import('@/lib/altaplaza');
+            const result = await checkUser(idCard);
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(result)
+            });
+          } catch (error: any) {
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: false, error: error.message })
+            });
+          }
+        }
+
+        if ((toolCall as any).function.name === 'altaplaza_register_user') {
+          try {
+            const userData = JSON.parse((toolCall as any).function.arguments);
+            const { registerUser } = await import('@/lib/altaplaza');
+            const result = await registerUser(userData);
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(result)
+            });
+          } catch (error: any) {
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: false, error: error.message })
+            });
+          }
+        }
+
+        if ((toolCall as any).function.name === 'altaplaza_register_invoice') {
+          try {
+            const invoiceData = JSON.parse((toolCall as any).function.arguments);
+            const { registerInvoice } = await import('@/lib/altaplaza');
+            const result = await registerInvoice(invoiceData);
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(result)
+            });
+          } catch (error: any) {
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: false, error: error.message })
+            });
+          }
+        }
       }
       // Loop continues to get the next response from AI
     } else {
@@ -378,7 +499,7 @@ export async function generateAgentReply(
   };
 }
 
-function buildSystemPrompt(agent: any, contextChunks: string[]): string {
+function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: boolean = false): string {
   let prompt = '';
 
   // Communication style
@@ -456,6 +577,19 @@ function buildSystemPrompt(agent: any, contextChunks: string[]): string {
     prompt += '\nCuando el usuario te proporcione esta información, USA LA HERRAMIENTA "update_contact" para guardarla.\n';
     prompt += 'Para campos con Opciones válidas, DEBES ajustar la respuesta del usuario a una de las opciones exactas si es posible, o pedir clarificación.\n';
     prompt += 'No seas intrusivo. Pregunta por estos datos de manera natural durante la conversación.\n\n';
+  }
+
+  // Altaplaza Specific Instructions
+  if (hasAltaplaza) {
+    prompt += `
+INSTRUCCIONES PARA INTEGRACIÓN ALTAPLAZA:
+Eres capaz de gestionar el flujo de Altaplaza. Sigue este protocolo:
+1. SI el usuario quiere registrar una factura o consultar puntos, PRIMERO pide su cédula y usa 'altaplaza_check_user'.
+2. SI 'altaplaza_check_user' dice que el usuario NO existe, pide sus datos (Nombre, Apellido, Email, Fecha Nacimiento) y usa 'altaplaza_register_user'. Informa al usuario su "temporaryPassword" si se genera una.
+3. SI el usuario ya existe o acaba de ser registrado, puedes proceder a registrar facturas usando 'altaplaza_register_invoice'.
+4. La fecha de nacimiento debe ser en formato AAAA-MM-DD.
+5. Sé amable y guía al usuario en cada paso.
+\n`;
   }
 
   // STANDARD CONTACT INFO COLLECTION (Always Active)
