@@ -83,7 +83,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
     const onDemandIntegrations: Integration[] = [
         {
             id: 'ALTAPLAZA',
-            name: 'Altaplaza - Konsul API',
+            name: 'Altaplaza - Kônsul API',
             description: 'Integración privada para registro y consulta de facturas',
             icon: '🛍️',
             color: 'blue',
@@ -339,7 +339,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             <span className="text-4xl text-center">🛍️</span>
                         </div>
                         <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full flex justify-center">
-                            Altaplaza - Konsul API
+                            Altaplaza - Kônsul API
                         </DialogTitle>
                         <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full max-w-sm mx-auto">
                             Integración robusta diseñada para Altaplaza. Registra facturas, consulta estados de cuenta y sincroniza data en tiempo real.
