@@ -166,30 +166,29 @@ export function Sidebar() {
 
             {/* Help Center Card - Only for OWNER and MANAGER */}
             {userRole !== 'AGENT' && (
-                <div className="p-6">
-                    <div className="bg-gradient-to-br from-white to-[#F8FAFB] rounded-3xl p-6 border border-gray-100 shadow-xl shadow-gray-200/20 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/10 transition-all duration-500 cursor-pointer active:scale-[0.98]">
-                        <div className="absolute -top-12 -right-12 w-24 h-24 bg-[#21AC96]/10 rounded-full blur-2xl group-hover:bg-[#21AC96]/20 transition-all duration-500"></div>
+                <div className="px-6 pb-6 pt-2">
+                    <div className="bg-gradient-to-br from-white to-[#F8FAFB] rounded-3xl p-5 border border-gray-100 shadow-xl shadow-gray-200/20 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/10 transition-all duration-500 cursor-pointer active:scale-[0.98]">
+                        <div className="absolute -top-12 -right-12 w-20 h-20 bg-[#21AC96]/10 rounded-full blur-2xl group-hover:bg-[#21AC96]/20 transition-all duration-500"></div>
 
                         <div className="relative">
-                            <div className="w-10 h-10 bg-white shadow-md rounded-xl flex items-center justify-center mb-4 transform group-hover:-rotate-12 transition-all duration-300">
-                                <Sparkles className="w-5 h-5 text-[#21AC96]" />
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-8 h-8 shrink-0 bg-white shadow-md rounded-lg flex items-center justify-center transform group-hover:-rotate-12 transition-all duration-300">
+                                    <Sparkles className="w-4 h-4 text-[#21AC96]" />
+                                </div>
+                                <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#21AC96] transition-colors">Centro de Ayuda</h3>
                             </div>
 
-                            <div className="space-y-1 mb-4">
-                                <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#21AC96] transition-colors">Centro de Ayuda</h3>
-                                <p className="text-xs text-gray-500 leading-relaxed">¿Dudas? Vuelve a ver el tutorial interactivo del agente.</p>
-                            </div>
+                            <p className="text-[10px] text-gray-500 leading-relaxed mb-4">¿Dudas? Vuelve a ver el tutorial interactivo.</p>
 
                             <button
                                 onClick={() => {
                                     if (pathname.includes('/agents/')) {
                                         window.dispatchEvent(new CustomEvent('trigger-agent-tour'));
                                     } else {
-                                        // Optional: Redirect to first agent or show toast
                                         alert('Ve al perfil de un agente para ver el tutorial.');
                                     }
                                 }}
-                                className="w-full bg-[#21AC96] text-white rounded-2xl py-3 text-xs font-bold hover:bg-[#1a8a78] transition-all duration-300 shadow-lg shadow-[#21AC96]/20 group-hover:shadow-[#21AC96]/40 cursor-pointer"
+                                className="w-full bg-[#21AC96] text-white rounded-xl py-2.5 text-[10px] font-bold hover:bg-[#1a8a78] transition-all duration-300 shadow-lg shadow-[#21AC96]/20 group-hover:shadow-[#21AC96]/40 cursor-pointer"
                             >
                                 Ver Tutorial
                             </button>
