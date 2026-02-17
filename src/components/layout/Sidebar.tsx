@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Bot, Users, Radio, MessageSquare, UserCircle, CreditCard, Settings, Gift, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Bot, Users, Radio, MessageSquare, UserCircle, CreditCard, Settings, Gift, Sparkles, PieChart } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,8 @@ export function Sidebar() {
         {
             title: 'VISIÓN GENERAL',
             items: [
-                { id: 'dashboard', href: '/dashboard', label: 'Paneles', icon: LayoutDashboard, color: 'blue' },
+                { id: 'dashboard', href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'blue' },
+                { id: 'reports', href: '/reports', label: 'Reportes', icon: PieChart, color: 'cyan' },
             ]
         },
         {
@@ -64,6 +65,7 @@ export function Sidebar() {
                 title: 'VISIÓN GENERAL',
                 items: [
                     { id: 'dashboard', href: '/dashboard', label: 'Mi Panel', icon: LayoutDashboard, color: 'blue' },
+                    { id: 'reports', href: '/reports', label: 'Mis Reportes', icon: PieChart, color: 'cyan' },
                 ]
             },
             {
