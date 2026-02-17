@@ -24,7 +24,10 @@ import {
     X,
     Info,
     CheckCircle2,
-    BarChart as BarChartIcon
+    BarChart as BarChartIcon,
+    Activity,
+    Globe,
+    ZapOff
 } from 'lucide-react';
 import {
     BarChart,
@@ -37,7 +40,9 @@ import {
     Cell,
     FunnelChart,
     Funnel,
-    LabelList
+    LabelList,
+    PieChart as RechartsPieChart,
+    Pie
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -77,6 +82,13 @@ export function ReportsClient({
         { id: 'engagement', name: 'Interacción', value: funnelData.engaged, fill: '#B2DFDB', desc: 'Conversaciones donde el usuario envió al menos un mensaje después del saludo inicial.' },
         { id: 'leads', name: 'Leads', value: funnelData.leads, fill: '#4DB6AC', desc: 'Contactos únicos creados automáticamente cuando la IA identifica datos de contacto.' },
         { id: 'qualified', name: 'Cualificados', value: funnelData.qualified, fill: '#00897B', desc: 'Leads que han completado campos adicionales de perfil (presupuesto, zona, etc).' },
+    ];
+
+    // Mock channel data for Freshie value
+    const channelData = [
+        { name: 'Webchat', value: 65, color: '#21AC96' },
+        { name: 'WhatsApp', value: 25, color: '#25D366' },
+        { name: 'Instagram', value: 10, color: '#E4405F' },
     ];
 
     // AI Tips Logic
@@ -127,7 +139,7 @@ export function ReportsClient({
                 {children}
             </div>
             {isLocked && (
-                <div className="absolute inset-0 z-[20] flex flex-col items-center justify-center rounded-[40px] p-8 text-center bg-white/60 backdrop-blur-[12px] overflow-hidden border border-white/40 shadow-inner">
+                <div className="absolute -inset-1 z-[20] flex flex-col items-center justify-center p-8 text-center bg-white/60 backdrop-blur-[12px] overflow-hidden rounded-inherit border border-white/40 shadow-inner">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
                     <div className="relative z-[21] flex flex-col items-center">
                         <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-4 transform -rotate-6 transition-transform duration-500 hover:rotate-0 border border-gray-100">
@@ -349,8 +361,78 @@ export function ReportsClient({
                 {/* 2. Advanced Insights Section */}
                 <div className="lg:col-span-12 xl:col-span-8 space-y-8">
 
+                    {/* NEW VALUE FOR FRESHIE: Global Health & Distribution */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 relative overflow-hidden group">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 className="text-gray-900 font-black text-xl tracking-tight">Salud del Canal</h3>
+                                    <p className="text-xs text-gray-400 font-medium tracking-tight">Distribución de tráfico por red</p>
+                                </div>
+                                <Activity className="w-6 h-6 text-[#21AC96] animate-pulse" />
+                            </div>
+
+                            <div className="flex items-center gap-8 h-48">
+                                <div className="w-1/2 h-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RechartsPieChart>
+                                            <Pie
+                                                data={channelData}
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                paddingAngle={8}
+                                                dataKey="value"
+                                            >
+                                                {channelData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip />
+                                        </RechartsPieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="w-1/2 space-y-3">
+                                    {channelData.map((channel, i) => (
+                                        <div key={i} className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: channel.color }}></div>
+                                                <span className="text-xs font-bold text-gray-600">{channel.name}</span>
+                                            </div>
+                                            <span className="text-xs font-black text-gray-900">{channel.value}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 relative overflow-hidden group">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 className="text-gray-900 font-black text-xl tracking-tight">Retención IA</h3>
+                                    <p className="text-xs text-gray-400 font-medium tracking-tight">Usuarios que vuelven a hablar</p>
+                                </div>
+                                <Users className="w-6 h-6 text-indigo-500" />
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="flex items-end gap-2">
+                                    <span className="text-5xl font-black text-gray-900 tracking-tighter">18.4%</span>
+                                    <span className="text-green-500 font-black text-sm mb-2 flex items-center gap-1">
+                                        <TrendingUp className="w-4 h-4" /> +2.1%
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                                    De cada 100 usuarios, **18 vuelven** a interactuar con tu marca en menos de 7 días. Esto indica un alto nivel de confianza en las respuestas de tu IA.
+                                </p>
+                                <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-500 w-[18.4%] rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Performance Table Section */}
-                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group min-h-[500px]">
+                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group min-h-[500px] relative">
                         <FeatureLock isLocked={!access.agentBench} title="Comparativa de Agentes">
                             <div className="p-8">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -423,82 +505,86 @@ export function ReportsClient({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                         {/* Heatmap Card */}
-                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group h-[380px] relative overflow-hidden">
+                        <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 group h-[380px] relative overflow-hidden">
                             <FeatureLock isLocked={!access.heatmap} title="Mapa de Actividad 24/7">
-                                <div className="flex items-center justify-between mb-8">
-                                    <h3 className="text-gray-900 font-black text-xl tracking-tight">Actividad 24/7</h3>
-                                    <Clock className="w-6 h-6 text-pink-500" />
-                                </div>
+                                <div className="p-8 h-full flex flex-col">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-gray-900 font-black text-xl tracking-tight">Actividad 24/7</h3>
+                                        <Clock className="w-6 h-6 text-pink-500" />
+                                    </div>
 
-                                <div
-                                    className="grid gap-1.5 h-32"
-                                    style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
-                                >
-                                    {heatmapData.map((dayRow, dayIdx) => (
-                                        <React.Fragment key={dayIdx}>
-                                            {dayRow.map((count, hourIdx) => {
-                                                const intensity = Math.min(count * 25, 100);
-                                                return (
-                                                    <div
-                                                        key={`${dayIdx}-${hourIdx}`}
-                                                        className="rounded-[2px] transition-all hover:scale-150 hover:z-20 cursor-help group/cell relative"
-                                                        style={{
-                                                            backgroundColor: count === 0 ? '#F9FAFB' : `rgba(33, 172, 150, ${Math.max(0.1, intensity / 100)})`
-                                                        }}
-                                                    >
-                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-1.5 bg-gray-900 text-white text-[10px] rounded-xl opacity-0 group-hover/cell:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-all font-black shadow-2xl">
-                                                            {['D', 'L', 'M', 'X', 'J', 'V', 'S'][dayIdx]} @ {hourIdx}:00h — {count} Leads
+                                    <div
+                                        className="grid gap-1.5 h-32"
+                                        style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
+                                    >
+                                        {heatmapData.map((dayRow, dayIdx) => (
+                                            <React.Fragment key={dayIdx}>
+                                                {dayRow.map((count, hourIdx) => {
+                                                    const intensity = Math.min(count * 25, 100);
+                                                    return (
+                                                        <div
+                                                            key={`${dayIdx}-${hourIdx}`}
+                                                            className="rounded-[2px] transition-all hover:scale-150 hover:z-20 cursor-help group/cell relative"
+                                                            style={{
+                                                                backgroundColor: count === 0 ? '#F9FAFB' : `rgba(33, 172, 150, ${Math.max(0.1, intensity / 100)})`
+                                                            }}
+                                                        >
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-1.5 bg-gray-900 text-white text-[10px] rounded-xl opacity-0 group-hover/cell:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-all font-black shadow-2xl">
+                                                                {['D', 'L', 'M', 'X', 'J', 'V', 'S'][dayIdx]} @ {hourIdx}:00h — {count} Leads
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </React.Fragment>
-                                    ))}
-                                </div>
-                                <div className="flex justify-between mt-6 px-1">
-                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">00:00</span>
-                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Mediodía</span>
-                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">23:59</span>
+                                                    )
+                                                })}
+                                            </React.Fragment>
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-between mt-6 px-1">
+                                        <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">00:00</span>
+                                        <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Mediodía</span>
+                                        <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">23:59</span>
+                                    </div>
                                 </div>
                             </FeatureLock>
                         </div>
 
                         {/* BI Insights Card */}
-                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group h-[380px] overflow-hidden relative">
+                        <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 group h-[380px] overflow-hidden relative">
                             <FeatureLock isLocked={!access.dataInsights} title="BI: Inteligencia Cualitativa">
-                                <div className="flex items-center justify-between mb-8">
-                                    <h3 className="text-gray-900 font-black text-xl tracking-tight">Segmentación</h3>
-                                    <PieChart className="w-6 h-6 text-amber-500" />
-                                </div>
+                                <div className="p-8 h-full flex flex-col">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-gray-900 font-black text-xl tracking-tight">Segmentación</h3>
+                                        <PieChart className="w-6 h-6 text-amber-500" />
+                                    </div>
 
-                                <div className="space-y-6">
-                                    {customFieldsData.length > 0 ? customFieldsData.slice(0, 2).map((field, i) => (
-                                        <div key={field.key}>
-                                            <div className="flex items-center justify-between mb-3 px-1">
-                                                <span className="text-sm font-extrabold text-gray-700">{field.label}</span>
-                                                <span className="text-[10px] text-gray-400 font-bold uppercase">{field.total} entradas</span>
-                                            </div>
-                                            <div className="space-y-2">
-                                                {field.data.slice(0, 3).map((item: any, idx: number) => (
-                                                    <div key={idx} className="relative h-7 bg-gray-50 rounded-lg overflow-hidden group/bar">
-                                                        <div
-                                                            className="absolute top-0 left-0 h-full bg-amber-100 transition-all duration-1000"
-                                                            style={{ width: `${(item.count / field.total) * 100}%` }}
-                                                        ></div>
-                                                        <div className="relative h-full flex items-center justify-between px-3">
-                                                            <span className="text-[11px] font-bold text-gray-700 truncate max-w-[140px]">{item.label}</span>
-                                                            <span className="text-[11px] font-black text-amber-600">{Math.round((item.count / field.total) * 100)}%</span>
+                                    <div className="space-y-6">
+                                        {customFieldsData.length > 0 ? customFieldsData.slice(0, 2).map((field, i) => (
+                                            <div key={field.key}>
+                                                <div className="flex items-center justify-between mb-3 px-1">
+                                                    <span className="text-sm font-extrabold text-gray-700">{field.label}</span>
+                                                    <span className="text-[10px] text-gray-400 font-bold uppercase">{field.total} entradas</span>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {field.data.slice(0, 3).map((item: any, idx: number) => (
+                                                        <div key={idx} className="relative h-7 bg-gray-50 rounded-lg overflow-hidden group/bar">
+                                                            <div
+                                                                className="absolute top-0 left-0 h-full bg-amber-100 transition-all duration-1000"
+                                                                style={{ width: `${(item.count / field.total) * 100}%` }}
+                                                            ></div>
+                                                            <div className="relative h-full flex items-center justify-between px-3">
+                                                                <span className="text-[11px] font-bold text-gray-700 truncate max-w-[140px]">{item.label}</span>
+                                                                <span className="text-[11px] font-black text-amber-600">{Math.round((item.count / field.total) * 100)}%</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )) : (
-                                        <div className="flex flex-col items-center justify-center h-48 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                                            <MousePointer2 className="w-8 h-8 text-gray-300 mb-3" />
-                                            <p className="text-gray-400 text-xs font-medium max-w-[180px]">Configura campos personalizados para ver insights cualitativos.</p>
-                                        </div>
-                                    )}
+                                        )) : (
+                                            <div className="flex flex-col items-center justify-center h-48 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                                                <MousePointer2 className="w-8 h-8 text-gray-300 mb-3" />
+                                                <p className="text-gray-400 text-xs font-medium max-w-[180px]">Configura campos personalizados para ver insights cualitativos.</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </FeatureLock>
                         </div>
