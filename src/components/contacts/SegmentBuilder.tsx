@@ -69,8 +69,9 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
             setResults(res.contacts);
             setTotalResults(res.total);
             setHasSearched(true);
-        } catch (error) {
-            toast.error("Error running query");
+        } catch (error: any) {
+            console.error("Filter error:", error);
+            toast.error(error.message || "Error running query");
         } finally {
             setIsLoading(false);
         }

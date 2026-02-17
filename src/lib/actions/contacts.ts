@@ -32,16 +32,11 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                 const isAgentField = lowerField === 'agentid';
 
                 if (isAgentField) {
-                    return {
-                        conversations: {
-                            some: {
-                                agentId: value
-                            }
-                        }
-                    };
+                    return { conversations: { some: { agentId: value } } };
                 }
 
                 if (isStandardField) {
+                    // Standard Field Logic
                     if (operator === 'equals') {
                         return { [lowerField]: { equals: value, mode: 'insensitive' } };
                     } else if (operator === 'contains') {
@@ -51,24 +46,21 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                     } else if (operator === 'lt') {
                         return { [lowerField]: { lt: Number(value) } };
                     } else if (operator === 'isSet') {
-                        const conditions: any[] = [
+                        const standardConditions = [
                             { [lowerField]: { not: null } },
                             { [lowerField]: { not: '' } }
                         ];
-
-                        // Special case for names: exclude placeholders like 'Visitante'
                         if (lowerField === 'name') {
-                            conditions.push({
+                            standardConditions.push({
                                 name: {
                                     not: {
-                                        startsWith: 'Visitante',
+                                        contains: 'Visitante',
                                         mode: 'insensitive'
                                     }
-                                }
+                                } as any
                             });
                         }
-
-                        return { AND: conditions };
+                        return { AND: standardConditions };
                     } else if (operator === 'isNotSet') {
                         return {
                             OR: [
@@ -77,9 +69,9 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                             ]
                         };
                     }
-                    return {}; // Fallback
+                    return {};
                 } else {
-                    // JSON Custom Field Filter
+                    // Custom Field (JSONB) Logic
                     let jsonOp: any = {};
                     if (operator === 'equals') jsonOp = { equals: value };
                     else if (operator === 'contains') jsonOp = { string_contains: value };
@@ -98,9 +90,12 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
             });
 
             if (jsonFilters.length > 0) {
-                where.AND = jsonFilters;
+                // Flatten any nested AND arrays to keep the query clean for Prisma
+                where.AND = jsonFilters.flatMap(f => (f as any).AND ? (f as any).AND : [f]);
             }
         }
+
+        console.log('[getContacts] Final Where Clause:', JSON.stringify(where, null, 2));
 
         const [contacts, total] = await Promise.all([
             prisma.contact.findMany({
@@ -123,12 +118,11 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
             totalPages: Math.ceil(total / pageSize),
             currentPage: page
         };
-    } catch (error) {
-        console.error('Error fetching contacts:', error);
-        throw new Error('Failed to fetch contacts');
+    } catch (error: any) {
+        console.error('[getContacts] Error:', error);
+        throw new Error(`Error en la consulta: ${error.message || 'Fallo desconocido'}`);
     }
 }
-
 // Debug Logger Helper
 async function logDebug(message: string, data?: any) {
     const fs = await import('fs');
