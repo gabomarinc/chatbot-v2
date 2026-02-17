@@ -34,6 +34,8 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
         username: '',
         apiKey: ''
     });
+    const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
     interface Integration {
         id: string;
@@ -194,7 +196,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                         className={`flex items-center gap-2 px-6 py-3 rounded-xl capitalize text-sm font-black transition-all ${activeTab === 'standard' ? 'bg-white text-indigo-600 shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         <LayoutGrid className="w-4 h-4" />
-                        Soportadas
+                        Oficiales
                     </button>
                     <button
                         onClick={() => setActiveTab('on-demand')}
@@ -226,7 +228,13 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                     return (
                         <div
                             key={integration.id}
-                            className={`bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden ${integration.isComingSoon ? 'opacity-80' : ''}`}
+                            onClick={() => {
+                                if (!integration.isComingSoon) {
+                                    setSelectedIntegration(integration);
+                                    setIsDetailsModalOpen(true);
+                                }
+                            }}
+                            className={`bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden cursor-pointer active:scale-[0.98] ${integration.isComingSoon ? 'opacity-80 cursor-not-allowed' : ''}`}
                         >
                             {active && (
                                 <div className="absolute top-0 right-0 p-4">
@@ -271,7 +279,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                     ) : integration.isComingSoon ? (
                                         'Bloqueado'
                                     ) : active ? (
-                                        'Reconectar'
+                                        'Gestionar'
                                     ) : (
                                         'Activar'
                                     )}
@@ -508,6 +516,170 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             Sí, desconectar
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+                <DialogContent className="max-w-2xl w-full bg-white rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden">
+                    {selectedIntegration && (
+                        <div className="flex flex-col h-full">
+                            {/* Header Section */}
+                            <div className="p-8 md:p-10 bg-gray-50/50 border-b border-gray-100">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[2rem] bg-white shadow-xl shadow-gray-200/50 text-5xl">
+                                        {selectedIntegration.icon}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+                                                {selectedIntegration.name}
+                                            </h2>
+                                            {isEnabled(selectedIntegration.id) && (
+                                                <span className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-100 animate-pulse">
+                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                                                    Activo
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-gray-400 font-bold leading-relaxed">
+                                            {selectedIntegration.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Status Body */}
+                            <div className="p-8 md:p-10 space-y-8">
+                                {isEnabled(selectedIntegration.id) ? (
+                                    <div className="space-y-8">
+                                        {/* Real-time Status Mocks */}
+                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                            <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Salud de Conexión</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />
+                                                    <span className="text-sm font-black text-gray-900">Excelente</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Sincronización</span>
+                                                <span className="text-sm font-black text-gray-900 flex items-center gap-2">
+                                                    <Search className="w-4 h-4 text-indigo-500" />
+                                                    Hace 3 min
+                                                </span>
+                                            </div>
+                                            <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2 col-span-2 lg:col-span-1">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Eventos Hoy</span>
+                                                <span className="text-sm font-black text-gray-900 flex items-center gap-2">
+                                                    <Sparkles className="w-4 h-4 text-amber-500" />
+                                                    12 procesados
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Features List */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Capacidades del Agente</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div className="flex items-center gap-4 p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100/50">
+                                                    <div className="bg-indigo-600 p-2 rounded-xl">
+                                                        <Database className="w-4 h-4 text-white" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-gray-700">Sincronización de Leads</span>
+                                                </div>
+                                                <div className="flex items-center gap-4 p-4 bg-purple-50/30 rounded-2xl border border-purple-100/50">
+                                                    <div className="bg-purple-600 p-2 rounded-xl">
+                                                        <User className="w-4 h-4 text-white" />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-gray-700">Enriquecimiento de Perfiles</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-8">
+                                        {/* Promotional Content */}
+                                        <div className="bg-indigo-50/50 p-8 rounded-[2rem] border border-indigo-100 flex flex-col items-center text-center gap-4">
+                                            <div className="h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 flex shadow-lg shadow-indigo-200">
+                                                <Sparkles className="h-8 w-8 text-indigo-50" />
+                                            </div>
+                                            <div className="max-w-sm">
+                                                <h4 className="text-xl font-black text-indigo-900 mb-2">Desbloquea el poder del CRM</h4>
+                                                <p className="text-sm font-bold text-indigo-600/80">
+                                                    Al activar esta integración, tu agente podrá gestionar datos técnicos y sincronizar la información del cliente en tiempo real.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex gap-4 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                                                <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center text-xl">✅</div>
+                                                <div>
+                                                    <p className="font-black text-gray-900 text-sm">Instalación Rápida</p>
+                                                    <p className="text-xs font-bold text-gray-400">Configura en menos de 2 minutos.</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-4 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                                                <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center text-xl">🛡️</div>
+                                                <div>
+                                                    <p className="font-black text-gray-900 text-sm">Seguridad de Datos</p>
+                                                    <p className="text-xs font-bold text-gray-400">Encriptación de punto a punto.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer Actions */}
+                            <div className="p-8 md:p-10 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between gap-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsDetailsModalOpen(false)}
+                                    className="px-8 rounded-2xl h-14 text-xs font-black uppercase tracking-widest border-gray-200 hover:bg-white transition-all shadow-sm"
+                                >
+                                    Cerrar
+                                </Button>
+
+                                <div className="flex items-center gap-3 flex-1 justify-end">
+                                    {isEnabled(selectedIntegration.id) ? (
+                                        <>
+                                            <Button
+                                                onClick={() => {
+                                                    setIsDetailsModalOpen(false);
+                                                    handleDisconnectClick(isEnabled(selectedIntegration.id).id);
+                                                }}
+                                                variant="outline"
+                                                className="px-6 rounded-2xl h-14 text-xs font-black uppercase tracking-widest border-red-100 text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                                Desconectar
+                                            </Button>
+                                            <Button
+                                                onClick={() => {
+                                                    setIsDetailsModalOpen(false);
+                                                    handleActivate(selectedIntegration.id);
+                                                }}
+                                                className="flex-1 max-w-[200px] rounded-2xl h-14 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 transition-all"
+                                            >
+                                                Configurar
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <Button
+                                            onClick={() => {
+                                                setIsDetailsModalOpen(false);
+                                                handleActivate(selectedIntegration.id);
+                                            }}
+                                            className="w-full md:w-auto px-12 rounded-2xl h-14 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 transition-all"
+                                        >
+                                            Activar Ahora
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
