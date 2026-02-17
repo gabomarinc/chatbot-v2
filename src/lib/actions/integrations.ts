@@ -96,13 +96,13 @@ export async function getIntegrationStats(agentId: string, provider: 'ZOHO' | 'O
         prisma.integrationEvent.count({
             where: {
                 agentId,
-                provider,
+                provider: provider as any,
                 createdAt: { gte: last7Days },
                 status: 'SUCCESS'
             }
         }),
         prisma.integrationEvent.findFirst({
-            where: { agentId, provider },
+            where: { agentId, provider: provider as any },
             orderBy: { createdAt: 'desc' }
         })
     ]);

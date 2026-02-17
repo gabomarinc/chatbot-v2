@@ -592,10 +592,20 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                             </div>
                                             <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Sincronización</span>
-                                                <span className="text-sm font-black text-gray-900 flex items-center gap-2">
-                                                    <Search className="w-4 h-4 text-indigo-500" />
-                                                    {isStatsLoading ? 'Cargando...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleString() : 'N/A'}
-                                                </span>
+                                                <div className="flex flex-col gap-2 mt-1">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-2 h-2 rounded-full border-2 border-indigo-400 bg-white shadow-[0_0_8px_rgba(129,140,248,0.3)]" />
+                                                        <span className="text-sm font-black text-gray-900">
+                                                            {isStatsLoading ? '...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleDateString() : 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-2 h-2 rounded-full border-2 border-gray-200 bg-white" />
+                                                        <span className="text-sm font-bold text-gray-400">
+                                                            {isStatsLoading ? '...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2 col-span-2 lg:col-span-1">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Eventos Semanales</span>

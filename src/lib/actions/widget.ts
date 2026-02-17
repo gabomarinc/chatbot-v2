@@ -1471,7 +1471,9 @@ When calling 'update_contact':
                                 const contactId = meta.hubspotContactId;
                                 if (!contactId) throw new Error("No Contact ID found. Create a contact first.");
                                 const { addHubSpotNote } = await import('@/lib/hubspot');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const res = await addHubSpotNote(channel.agentId, contactId, (args as any).noteContent);
+                                await logIntegrationEvent(channel.agentId, 'HUBSPOT', 'ADD_NOTE', 'SUCCESS');
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] addHubSpotNote error:', e.message);
@@ -1484,7 +1486,9 @@ When calling 'update_contact':
                                 const contactId = meta.hubspotContactId;
                                 if (!contactId) throw new Error("No Contact ID found. Create a contact first.");
                                 const { createHubSpotDeal } = await import('@/lib/hubspot');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const res = await createHubSpotDeal(channel.agentId, contactId, args as any);
+                                await logIntegrationEvent(channel.agentId, 'HUBSPOT', 'CREATE_DEAL', 'SUCCESS');
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] createHubSpotDeal error:', e.message);
