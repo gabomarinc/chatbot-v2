@@ -315,8 +315,8 @@ export function ReportsClient({
 
                     <div className="h-[420px] w-full mt-4 cursor-pointer">
                         <ResponsiveContainer width="100%" height="100%">
-                            <FunnelChart onClick={(data) => {
-                                if (data && data.activePayload) {
+                            <FunnelChart onClick={(data: any) => {
+                                if (data && data.activePayload && data.activePayload.length > 0) {
                                     setSelectedMetric(data.activePayload[0].payload.id);
                                 }
                             }}>
