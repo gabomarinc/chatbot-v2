@@ -1,20 +1,97 @@
 'use client';
 
 import { useState } from 'react';
-import { UserCircle, Search, Filter, MoreVertical, MessageSquare, Calendar, Phone } from 'lucide-react';
+import { UserCircle, Search, Filter, MoreVertical, MessageSquare, Calendar, Phone, Download, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ProspectDetailsModal } from './ProspectDetailsModal';
 import { getProspectDetails } from '@/lib/actions/dashboard';
+import { toast } from 'sonner';
 
 interface ProspectsTableClientProps {
     initialProspects: any[];
+    workspaceId?: string;
+    customFields?: any[];
 }
 
-export function ProspectsTableClient({ initialProspects }: ProspectsTableClientProps) {
+export function ProspectsTableClient({ initialProspects, workspaceId, customFields }: ProspectsTableClientProps) {
     const [selectedProspectId, setSelectedProspectId] = useState<string | null>(null);
     const [modalData, setModalData] = useState<any>(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            const prospects = initialProspects;
+            if (prospects.length === 0) {
+                toast.error("No hay contactos para exportar");
+                return;
+            }
+
+            // Headers
+            const headers = [
+                'Nombre',
+                'Email',
+                'Telefono',
+                'Canal',
+                'Estado',
+                'Agente',
+                'Mensajes',
+                'Etiquetas',
+                'Fecha Captacion',
+                'Ultima Interaccion'
+            ];
+
+            // Add custom field headers
+            const relevantFields = customFields || [];
+            if (relevantFields.length > 0) {
+                headers.push(...relevantFields.map((f: any) => f.label));
+            }
+
+            const csvRows = [headers.join(',')];
+
+            prospects.forEach(p => {
+                const tags = (p.tags || []).join(', ');
+                const row = [
+                    `"${(p.name || '').replace(/"/g, '""')}"`,
+                    p.email || '',
+                    p.phone || '',
+                    p.channelType || 'WEBCHAT',
+                    p.status || 'OPEN',
+                    `"${(p.agentName || '').replace(/"/g, '""')}"`,
+                    p.messagesCount || 0,
+                    `"${tags.replace(/"/g, '""')}"`,
+                    format(new Date(p.createdAt), 'yyyy-MM-dd HH:mm'),
+                    format(new Date(p.lastContact), 'yyyy-MM-dd HH:mm')
+                ];
+
+                relevantFields.forEach((f: any) => {
+                    const value = p.customData?.[f.key] ?? '';
+                    row.push(`"${String(value).replace(/"/g, '""')}"`);
+                });
+
+                csvRows.push(row.join(','));
+            });
+
+            const csvContent = "\uFEFF" + csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `contactos_global_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success(`${prospects.length} contactos exportados correctamente`);
+        } catch (error) {
+            console.error("Export error:", error);
+            toast.error("Error al exportar contactos");
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const handleRowClick = async (prospectId: string) => {
         setSelectedProspectId(prospectId);
@@ -38,6 +115,17 @@ export function ProspectsTableClient({ initialProspects }: ProspectsTableClientP
 
     return (
         <>
+            <div className="flex justify-end mb-6">
+                <button
+                    onClick={handleExport}
+                    disabled={isExporting}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer disabled:opacity-50"
+                >
+                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    Exportar CSV
+                </button>
+            </div>
+
             <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">

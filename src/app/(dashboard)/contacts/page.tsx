@@ -1,9 +1,18 @@
-import { getProspects } from '@/lib/actions/dashboard';
-import { Search, Filter } from 'lucide-react';
+import { getProspects, getUserWorkspace } from '@/lib/actions/dashboard';
+import { Search } from 'lucide-react';
 import { ProspectsTableClient } from '@/components/prospects/ProspectsTableClient';
+import { prisma } from '@/lib/prisma';
 
 export default async function ProspectsPage() {
+    const workspace = await getUserWorkspace();
+    if (!workspace) return null;
+
     const prospects = await getProspects();
+
+    // Fetch workspace custom fields for export logic
+    const customFields = await prisma.customFieldDefinition.findMany({
+        where: { agent: { workspaceId: workspace.id } }
+    });
 
     // Serialize dates for client component
     const serializedProspects = prospects.map(p => ({
@@ -30,18 +39,15 @@ export default async function ProspectsPage() {
                             className="pl-12 pr-4 py-2.5 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] transition-all w-64 shadow-sm"
                         />
                     </div>
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-100 rounded-2xl text-sm text-gray-700 hover:shadow-md hover:border-gray-200 transition-all font-bold cursor-pointer group shadow-sm">
-                        <Filter className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96]" />
-                        Filtrar
-                    </button>
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer">
-                        Exportar CSV
-                    </button>
                 </div>
             </div>
 
             {/* Client Component */}
-            <ProspectsTableClient initialProspects={serializedProspects} />
+            <ProspectsTableClient
+                initialProspects={serializedProspects}
+                workspaceId={workspace.id}
+                customFields={customFields}
+            />
         </div>
     );
 }

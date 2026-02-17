@@ -812,6 +812,9 @@ export async function getProspects() {
         include: {
             agent: true,
             contact: true,
+            channel: {
+                select: { type: true }
+            },
             _count: {
                 select: { messages: true }
             }
@@ -826,7 +829,11 @@ export async function getProspects() {
         lastContact: conv.lastMessageAt || conv.createdAt,
         agentName: conv.agent.name,
         messagesCount: conv._count?.messages || 0,
-        createdAt: conv.createdAt
+        createdAt: conv.createdAt,
+        channelType: conv.channel?.type || 'WEBCHAT',
+        status: conv.status,
+        tags: conv.contact?.tags || [],
+        customData: conv.contact?.customData || {}
     }))
 }
 
