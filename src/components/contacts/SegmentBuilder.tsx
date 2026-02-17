@@ -66,6 +66,10 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                 page: page,
                 pageSize: pageSize
             });
+            if (res.success === false) {
+                toast.error(res.error || "Error running query");
+                return;
+            }
             setResults(res.contacts);
             setTotalResults(res.total);
             setHasSearched(true);

@@ -51,14 +51,13 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                             { [lowerField]: { not: '' } }
                         ];
                         if (lowerField === 'name') {
-                            standardConditions.push({
-                                name: {
-                                    not: {
-                                        contains: 'Visitante',
-                                        mode: 'insensitive'
-                                    }
-                                } as any
-                            });
+                            return {
+                                AND: [
+                                    { name: { not: null } },
+                                    { name: { not: '' } },
+                                    { NOT: { name: { contains: 'Visitante', mode: 'insensitive' } } }
+                                ]
+                            };
                         }
                         return { AND: standardConditions };
                     } else if (operator === 'isNotSet') {
@@ -95,7 +94,7 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
             }
         }
 
-        console.log('[getContacts] Final Where Clause:', JSON.stringify(where, null, 2));
+        await logDebug('[getContacts] Final Where Clause', where);
 
         const [contacts, total] = await Promise.all([
             prisma.contact.findMany({
@@ -116,11 +115,22 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
             contacts,
             total,
             totalPages: Math.ceil(total / pageSize),
-            currentPage: page
+            currentPage: page,
+            success: true
         };
     } catch (error: any) {
+        await logDebug('[getContacts] CRITICAL ERROR', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
         console.error('[getContacts] Error:', error);
-        throw new Error(`Error en la consulta: ${error.message || 'Fallo desconocido'}`);
+        return {
+            contacts: [],
+            total: 0,
+            success: false,
+            error: error.message || 'Error desconocido'
+        };
     }
 }
 // Debug Logger Helper
