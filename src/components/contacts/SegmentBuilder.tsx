@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Filter as FilterIcon, Search, Users, Plus, X, ChevronRight, Save, Play, Loader2, UserCircle, Phone } from 'lucide-react';
+import { Filter as FilterIcon, Search, Users, Plus, X, ChevronRight, Save, Play, Loader2, UserCircle, Phone, Download } from 'lucide-react';
 import { CustomFieldDefinition } from '@prisma/client';
 import { toast } from 'sonner';
 import { getContacts, FilterCondition } from '@/lib/actions/contacts';
@@ -55,6 +55,74 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
         newFilters.splice(index, 1);
         setFilters(newFilters);
         setPage(1);
+    };
+
+    const handleExport = async () => {
+        setIsLoading(true);
+        try {
+            // Fetch ALL contacts matching the filter (using a high pageSize for export)
+            const res = await getContacts({
+                workspaceId,
+                filters: filters,
+                page: 1,
+                pageSize: 5000 // High enough for most segments
+            });
+
+            if (res.success === false) {
+                toast.error(res.error || "Error exportando contactos");
+                return;
+            }
+
+            const contacts = res.contacts;
+            if (contacts.length === 0) {
+                toast.error("No hay contactos para exportar");
+                return;
+            }
+
+            // Headers
+            const headers = ['Nombre', 'Email', 'Telefono', 'Fecha Captacion'];
+            // Add custom field headers based on definitions
+            const relevantFields = customFields.filter(f =>
+                contacts.some(c => (c.customData as any)?.[f.key] !== undefined)
+            );
+            headers.push(...relevantFields.map(f => f.label));
+
+            const csvRows = [headers.join(',')];
+
+            contacts.forEach(c => {
+                const row = [
+                    `"${(c.name || '').replace(/"/g, '""')}"`,
+                    c.email || '',
+                    c.phone || '',
+                    format(new Date(c.createdAt), 'yyyy-MM-dd HH:mm')
+                ];
+
+                relevantFields.forEach(f => {
+                    const value = (c.customData as any)?.[f.key] ?? '';
+                    row.push(`"${String(value).replace(/"/g, '""')}"`);
+                });
+
+                csvRows.push(row.join(','));
+            });
+
+            // Handle UTF-8 with BOM for Excel compatibility
+            const csvContent = "\uFEFF" + csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `segmento_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success(`${contacts.length} contactos exportados correctamente`);
+        } catch (error: any) {
+            console.error("Export error:", error);
+            toast.error("Error al generar el archivo");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const runQuery = async () => {
@@ -351,10 +419,20 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                         </div>
 
                         {hasSearched && totalResults > 0 && (
-                            <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-gray-800 hover:-translate-y-0.5 transition-all">
-                                <Save className="w-4 h-4" />
-                                Guardar Segmento
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleExport}
+                                    disabled={isLoading}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-100 text-gray-700 rounded-xl text-sm font-bold shadow-sm hover:shadow-md hover:border-gray-200 transition-all disabled:opacity-50"
+                                >
+                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-[#21AC96]" />}
+                                    Exportar Excel
+                                </button>
+                                <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-gray-800 hover:-translate-y-0.5 transition-all">
+                                    <Save className="w-4 h-4" />
+                                    Guardar Segmento
+                                </button>
+                            </div>
                         )}
                     </div>
 
