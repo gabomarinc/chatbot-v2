@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { UserCircle, Search, Filter, MoreVertical, MessageSquare, Calendar, Phone, Download, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ProspectDetailsModal } from './ProspectDetailsModal';
 import { getProspectDetails } from '@/lib/actions/dashboard';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 interface ProspectsTableClientProps {
     initialProspects: any[];
@@ -19,11 +20,24 @@ export function ProspectsTableClient({ initialProspects, workspaceId, customFiel
     const [modalData, setModalData] = useState<any>(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Client-side filtering
+    const filteredProspects = useMemo(() => {
+        if (!searchQuery.trim()) return initialProspects;
+
+        const query = searchQuery.toLowerCase().trim();
+        return initialProspects.filter(p =>
+            (p.name?.toLowerCase().includes(query)) ||
+            (p.phone?.toLowerCase().includes(query)) ||
+            (p.email?.toLowerCase().includes(query))
+        );
+    }, [initialProspects, searchQuery]);
 
     const handleExport = async () => {
         setIsExporting(true);
         try {
-            const prospects = initialProspects;
+            const prospects = filteredProspects; // Export filtered results
             if (prospects.length === 0) {
                 toast.error("No hay contactos para exportar");
                 return;
@@ -115,11 +129,31 @@ export function ProspectsTableClient({ initialProspects, workspaceId, customFiel
 
     return (
         <>
-            <div className="flex justify-end mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-end gap-3 mb-8">
+                {/* Unified Action Bar */}
+                <div className="relative group min-w-[320px]">
+                    <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#21AC96] transition-all" />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre, email o teléfono..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] transition-all shadow-sm"
+                    />
+                </div>
+
+                <Link
+                    href="/prospects"
+                    className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-100 rounded-2xl text-sm text-gray-700 hover:shadow-md hover:border-gray-200 transition-all font-bold group shadow-sm"
+                >
+                    <Filter className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96]" />
+                    Filtros
+                </Link>
+
                 <button
                     onClick={handleExport}
                     disabled={isExporting}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer disabled:opacity-50"
                 >
                     {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     Exportar CSV
@@ -139,8 +173,8 @@ export function ProspectsTableClient({ initialProspects, workspaceId, customFiel
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {initialProspects.length > 0 ? (
-                                initialProspects.map((prospect) => (
+                            {filteredProspects.length > 0 ? (
+                                filteredProspects.map((prospect) => (
                                     <tr
                                         key={prospect.id}
                                         onClick={() => handleRowClick(prospect.id)}
@@ -203,9 +237,9 @@ export function ProspectsTableClient({ initialProspects, workspaceId, customFiel
                                             <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mb-6 border border-gray-100 shadow-inner">
                                                 <UserCircle className="w-10 h-10 text-gray-200" />
                                             </div>
-                                            <h3 className="text-gray-900 font-extrabold text-xl tracking-tight mb-2">No tienes prospectos aún</h3>
+                                            <h3 className="text-gray-900 font-extrabold text-xl tracking-tight mb-2">No se encontraron contactos</h3>
                                             <p className="text-gray-400 font-medium max-w-sm">
-                                                Tus prospectos aparecerán aquí una vez que tus agentes comiencen a interactuar con usuarios.
+                                                No hay resultados para tu búsqueda actual. Prueba con otros términos.
                                             </p>
                                         </div>
                                     </td>
