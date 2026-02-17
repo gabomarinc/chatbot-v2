@@ -584,11 +584,35 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                             <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Salud de Conexión</span>
                                                 <div className="flex items-center gap-2">
-                                                    <div className={`w-2.5 h-2.5 rounded-full ${integrationStats?.health === 'WARNING' ? 'bg-amber-500' : 'bg-green-500'}`} />
+                                                    <div className={`w-2.5 h-2.5 rounded-full ${integrationStats?.health === 'WARNING' ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`} />
                                                     <span className="text-sm font-black text-gray-900">
                                                         {isStatsLoading ? 'Cargando...' : integrationStats?.health === 'WARNING' ? 'Atención' : 'Excelente'}
                                                     </span>
                                                 </div>
+                                                {integrationStats?.health !== 'WARNING' && !isStatsLoading && (
+                                                    <div className="mt-2 h-6 w-full flex items-center justify-center opacity-40">
+                                                        <svg viewBox="0 0 100 20" className="w-full h-full text-green-500 fill-none stroke-2">
+                                                            <path
+                                                                d="M0,10 L35,10 L40,2 L45,18 L50,10 L100,10"
+                                                                className="stroke-green-500"
+                                                                style={{
+                                                                    strokeLinecap: 'round',
+                                                                    strokeLinejoin: 'round',
+                                                                    animation: 'heartbeat 2s ease-in-out infinite'
+                                                                }}
+                                                            />
+                                                        </svg>
+                                                        <style dangerouslySetInnerHTML={{
+                                                            __html: `
+                                                            @keyframes heartbeat {
+                                                                0% { stroke-dasharray: 0, 100; stroke-dashoffset: 0; opacity: 0; }
+                                                                20% { opacity: 1; }
+                                                                50% { stroke-dasharray: 100, 100; stroke-dashoffset: 0; }
+                                                                100% { stroke-dasharray: 100, 100; stroke-dashoffset: -100; opacity: 0; }
+                                                            }
+                                                        `}} />
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Sincronización</span>
