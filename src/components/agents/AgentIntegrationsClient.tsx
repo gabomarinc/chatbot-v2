@@ -594,14 +594,14 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Sincronización</span>
                                                 <span className="text-sm font-black text-gray-900 flex items-center gap-2">
                                                     <Search className="w-4 h-4 text-indigo-500" />
-                                                    {isStatsLoading ? 'Cargando...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleTimeString() : 'N/A'}
+                                                    {isStatsLoading ? 'Cargando...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleString() : 'N/A'}
                                                 </span>
                                             </div>
                                             <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2 col-span-2 lg:col-span-1">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Eventos Hoy</span>
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Eventos Semanales</span>
                                                 <span className="text-sm font-black text-gray-900 flex items-center gap-2">
                                                     <Sparkles className="w-4 h-4 text-amber-500" />
-                                                    {isStatsLoading ? '...' : `${integrationStats?.eventsToday || 0} procesados`}
+                                                    {isStatsLoading ? '...' : `${integrationStats?.eventsWeekly || 0} procesados`}
                                                 </span>
                                             </div>
                                         </div>

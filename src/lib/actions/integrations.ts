@@ -82,8 +82,9 @@ export async function saveAltaplazaIntegration(agentId: string) {
 }
 
 export async function getIntegrationStats(agentId: string, provider: 'ZOHO' | 'ODOO' | 'HUBSPOT' | 'ALTAPLAZA' | 'GOOGLE_CALENDAR') {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const last7Days = new Date();
+    last7Days.setDate(last7Days.getDate() - 7);
+    last7Days.setHours(0, 0, 0, 0);
 
     const integration = await prisma.agentIntegration.findFirst({
         where: { agentId, provider }
@@ -91,12 +92,12 @@ export async function getIntegrationStats(agentId: string, provider: 'ZOHO' | 'O
 
     if (!integration) return null;
 
-    const [eventsToday, lastEvent] = await Promise.all([
+    const [eventsWeekly, lastEvent] = await Promise.all([
         prisma.integrationEvent.count({
             where: {
                 agentId,
                 provider,
-                createdAt: { gte: today },
+                createdAt: { gte: last7Days },
                 status: 'SUCCESS'
             }
         }),
@@ -119,7 +120,7 @@ export async function getIntegrationStats(agentId: string, provider: 'ZOHO' | 'O
     return {
         enabled: integration.enabled,
         lastSync: integration.updatedAt,
-        eventsToday,
+        eventsWeekly,
         lastEventAt: lastEvent?.createdAt || null,
         health: errorsLast24h > 0 ? 'WARNING' : 'EXCELLENT'
     };
