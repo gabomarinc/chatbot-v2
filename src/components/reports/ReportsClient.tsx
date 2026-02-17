@@ -393,6 +393,42 @@ export function ReportsClient({
                                     Estás un **50% por encima** de la media global. Para mantener este ritmo, podrías activar recordatorios automáticos de seguimiento.
                                 </p>
                             </div>
+
+                            {/* Additional Visualization: Peak Conversion Days */}
+                            <div className="pt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-left">Días de Alta Conversión</span>
+                                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                </div>
+                                <div className="space-y-3">
+                                    {(() => {
+                                        const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                        const dailyTotals = heatmapData.map((day, i) => ({
+                                            name: dayNames[i],
+                                            total: day.reduce((a, b) => a + b, 0)
+                                        }));
+                                        const maxLeads = Math.max(...dailyTotals.map(d => d.total), 1);
+
+                                        return dailyTotals
+                                            .sort((a, b) => b.total - a.total)
+                                            .slice(0, 3)
+                                            .map((day, idx) => (
+                                                <div key={idx} className="space-y-1">
+                                                    <div className="flex justify-between text-[11px] font-bold text-gray-700">
+                                                        <span>{day.name}</span>
+                                                        <span className="text-gray-400">{day.total} leads</span>
+                                                    </div>
+                                                    <div className="h-1 bg-gray-50 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-[#21AC96] rounded-full opacity-70 transition-all duration-1000"
+                                                            style={{ width: `${(day.total / maxLeads) * 100}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            ));
+                                    })()}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
