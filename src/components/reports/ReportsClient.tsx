@@ -27,7 +27,10 @@ import {
     BarChart as BarChartIcon,
     Activity,
     Globe,
-    ZapOff
+    ZapOff,
+    Trophy,
+    TrendingDown,
+    Zap as ZapIcon
 } from 'lucide-react';
 import {
     BarChart,
@@ -322,10 +325,10 @@ export function ReportsClient({
 
                     <div className="mb-4 relative">
                         <h3 className="text-gray-900 font-black text-2xl tracking-tight mb-1">Tu Funnel de Ventas</h3>
-                        <p className="text-sm text-gray-400 font-medium">Haz clic en cada sección para ver cómo mejorar.</p>
+                        <p className="text-sm text-gray-400 font-medium tracking-tight">Analítica de captación en tiempo real.</p>
                     </div>
 
-                    <div className="h-[420px] w-full mt-4 cursor-pointer">
+                    <div className="h-[400px] w-full mt-4 cursor-pointer">
                         <ResponsiveContainer width="100%" height="100%">
                             <FunnelChart onClick={(data: any) => {
                                 if (data && data.activePayload && data.activePayload.length > 0) {
@@ -356,12 +359,48 @@ export function ReportsClient({
                             </button>
                         ))}
                     </div>
+
+                    {/* NEW VALUE: Strategy & Benchmark Section in the white space */}
+                    <div className="mt-8 pt-8 border-t border-gray-50 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Benchmark vs Industria</span>
+                            <Trophy className="w-4 h-4 text-amber-500" />
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-[11px] font-bold">
+                                    <span className="text-gray-500">Tu Desempeño</span>
+                                    <span className="text-[#21AC96]">Superior</span>
+                                </div>
+                                <div className="h-1.5 bg-gray-50 rounded-full overflow-hidden relative">
+                                    <div className="absolute top-0 left-0 h-full bg-[#21AC96] rounded-full w-[85%]"></div>
+                                    <div className="absolute top-0 left-[35%] h-full w-0.5 bg-gray-300 z-10"></div> {/* Industry Avg marker */}
+                                </div>
+                                <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold uppercase tracking-tight">
+                                    <span>Incio</span>
+                                    <span>Promedio Inmobiliario (35%)</span>
+                                    <span>Meta</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-indigo-50 to-white rounded-2xl p-4 border border-indigo-100/50">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <ZapIcon className="w-3 h-3 text-indigo-500 fill-indigo-500" />
+                                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Estrategia de Crecimiento</span>
+                                </div>
+                                <p className="text-[11px] text-gray-600 font-medium leading-relaxed">
+                                    Estás un **50% por encima** de la media. Para mantener este ritmo, podrías activar recordatorios automáticos de seguimiento.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* 2. Advanced Insights Section */}
                 <div className="lg:col-span-12 xl:col-span-8 space-y-8">
 
-                    {/* NEW VALUE FOR FRESHIE: Global Health & Distribution */}
+                    {/* Global Health & Distribution */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 relative overflow-hidden group">
                             <div className="flex items-center justify-between mb-6">
