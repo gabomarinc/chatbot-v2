@@ -51,12 +51,24 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                     } else if (operator === 'lt') {
                         return { [lowerField]: { lt: Number(value) } };
                     } else if (operator === 'isSet') {
-                        return {
-                            AND: [
-                                { [lowerField]: { not: null } },
-                                { [lowerField]: { not: '' } }
-                            ]
-                        };
+                        const conditions: any[] = [
+                            { [lowerField]: { not: null } },
+                            { [lowerField]: { not: '' } }
+                        ];
+
+                        // Special case for names: exclude placeholders like 'Visitante'
+                        if (lowerField === 'name') {
+                            conditions.push({
+                                name: {
+                                    not: {
+                                        startsWith: 'Visitante',
+                                        mode: 'insensitive'
+                                    }
+                                }
+                            });
+                        }
+
+                        return { AND: conditions };
                     } else if (operator === 'isNotSet') {
                         return {
                             OR: [
