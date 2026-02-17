@@ -20,7 +20,11 @@ import {
     Search,
     ChevronRight,
     UserCheck,
-    Smartphone
+    Smartphone,
+    X,
+    Info,
+    CheckCircle2,
+    BarChart as BarChartIcon
 } from 'lucide-react';
 import {
     BarChart,
@@ -59,6 +63,7 @@ export function ReportsClient({
 }: ReportsClientProps) {
     const plan = workspaceInfo.plan?.type || 'FRESHIE';
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
     // Feature access levels
     const access = {
@@ -68,10 +73,10 @@ export function ReportsClient({
     };
 
     const funnelChartData = [
-        { name: 'Chats', value: funnelData.interactions, fill: '#E0F2F1' },
-        { name: 'Interacción', value: funnelData.engaged, fill: '#B2DFDB' },
-        { name: 'Leads', value: funnelData.leads, fill: '#4DB6AC' },
-        { name: 'Cualificados', value: funnelData.qualified, fill: '#00897B' },
+        { id: 'chats', name: 'Chats', value: funnelData.interactions, fill: '#E0F2F1', desc: 'Total de conversaciones iniciadas por usuarios en todos tus canales conectados.' },
+        { id: 'engagement', name: 'Interacción', value: funnelData.engaged, fill: '#B2DFDB', desc: 'Conversaciones donde el usuario envió al menos un mensaje después del saludo inicial.' },
+        { id: 'leads', name: 'Leads', value: funnelData.leads, fill: '#4DB6AC', desc: 'Contactos únicos creados automáticamente cuando la IA identifica datos de contacto.' },
+        { id: 'qualified', name: 'Cualificados', value: funnelData.qualified, fill: '#00897B', desc: 'Leads que han completado campos adicionales de perfil (presupuesto, zona, etc).' },
     ];
 
     // AI Tips Logic
@@ -117,24 +122,121 @@ export function ReportsClient({
     }, [funnelData, agentPerformance]);
 
     const FeatureLock = ({ children, isLocked, title }: { children: React.ReactNode, isLocked: boolean, title: string }) => (
-        <div className="relative h-full flex flex-col">
-            {children}
+        <div className="relative h-full flex flex-col isolation-auto">
+            <div className={cn("h-full flex flex-col", isLocked && "pointer-events-none")}>
+                {children}
+            </div>
             {isLocked && (
-                <div className="absolute inset-0 z-10 backdrop-blur-[8px] bg-white/40 flex flex-col items-center justify-center rounded-[32px] p-8 text-center border border-white/20">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-4 transform -rotate-6 transition-transform duration-500 hover:rotate-0">
-                        <Lock className="w-8 h-8 text-[#21AC96]" />
+                <div className="absolute inset-0 z-[20] flex flex-col items-center justify-center rounded-[40px] p-8 text-center bg-white/60 backdrop-blur-[12px] overflow-hidden border border-white/40 shadow-inner">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                    <div className="relative z-[21] flex flex-col items-center">
+                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-4 transform -rotate-6 transition-transform duration-500 hover:rotate-0 border border-gray-100">
+                            <Lock className="w-8 h-8 text-[#21AC96]" />
+                        </div>
+                        <h4 className="text-gray-900 font-bold text-lg mb-2">Desbloquea {title}</h4>
+                        <p className="text-gray-500 text-sm max-w-[240px] mb-6 font-medium leading-relaxed">
+                            Esta analítica profunda es exclusiva para planes superiores. ¡Lleva tu negocio al siguiente nivel!
+                        </p>
+                        <Link href="/billing" className="bg-[#21AC96] text-white px-8 py-3.5 rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:scale-105 transition-all inline-block active:scale-95">
+                            Mejorar Plan
+                        </Link>
                     </div>
-                    <h4 className="text-gray-900 font-bold text-lg mb-2">Desbloquea {title}</h4>
-                    <p className="text-gray-500 text-sm max-w-[240px] mb-6 font-medium">
-                        Esta métrica avanzada está disponible en planes superiores.
-                    </p>
-                    <Link href="/billing" className="bg-[#21AC96] text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:scale-105 transition-all inline-block">
-                        Mejorar Plan
-                    </Link>
                 </div>
             )}
         </div>
     );
+
+    const MetricDetailModal = () => {
+        if (!selectedMetric) return null;
+        const metric = funnelChartData.find(m => m.id === selectedMetric);
+        if (!metric) return null;
+
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
+                <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setSelectedMetric(null)}></div>
+                <div className="bg-white rounded-[40px] w-full max-w-lg relative z-[101] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="p-8">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-[#21AC96]/10 rounded-2xl flex items-center justify-center text-[#21AC96]">
+                                    <BarChartIcon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-gray-900 font-black text-2xl">{metric.name}</h3>
+                                    <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Definición de Métrica</span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedMetric(null)}
+                                className="w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                                <p className="text-gray-700 font-medium leading-relaxed italic">
+                                    "{metric.desc}"
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4 text-[#21AC96]" /> ¿Cómo mejorar esto?
+                                </h4>
+                                <ul className="space-y-3">
+                                    {selectedMetric === 'chats' && (
+                                        <>
+                                            <li className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] mt-2 shrink-0"></div>
+                                                Optimiza la burbuja del widget para que sea más llamativa con un mensaje claro.
+                                            </li>
+                                            <li className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] mt-2 shrink-0"></div>
+                                                Asegúrate de que tus enlaces de WhatsApp e Instagram estén visibles en tus redes.
+                                            </li>
+                                        </>
+                                    )}
+                                    {selectedMetric === 'leads' && (
+                                        <>
+                                            <li className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] mt-2 shrink-0"></div>
+                                                Configura el bot para que pregunte por el nombre y correo en los primeros 3 mensajes.
+                                            </li>
+                                            <li className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] mt-2 shrink-0"></div>
+                                                Usa una oferta de valor (Lead Magnet) para incentivar al usuario a dejar sus datos.
+                                            </li>
+                                        </>
+                                    )}
+                                    {(selectedMetric === 'engagement' || selectedMetric === 'qualified') && (
+                                        <>
+                                            <li className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] mt-2 shrink-0"></div>
+                                                Refina el prompt de tu agente para que sea más persuasivo y haga preguntas abiertas.
+                                            </li>
+                                            <li className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] mt-2 shrink-0"></div>
+                                                Añade más fuentes de conocimiento para que el bot resuelva dudas complejas sin trabarse.
+                                            </li>
+                                        </>
+                                    )}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setSelectedMetric(null)}
+                            className="w-full mt-10 bg-gray-900 text-white rounded-2xl py-4 font-bold hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
+                        >
+                            Entendido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in p-6 pb-20">
@@ -171,7 +273,7 @@ export function ReportsClient({
                 </div>
             </div>
 
-            {/* AI Insights Section - BIG VALUE FOR FRESHIE */}
+            {/* AI Insights Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 {aiTips.map((tip, i) => (
                     <div key={i} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
@@ -198,25 +300,30 @@ export function ReportsClient({
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                {/* 1. Funnel Section (Always Available) */}
-                <div className="lg:col-span-4 bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 relative overflow-hidden group border-b-4 border-b-[#21AC96]">
+                {/* 1. Funnel Section */}
+                <div className="lg:col-span-12 xl:col-span-4 bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 relative overflow-hidden group border-b-4 border-b-[#21AC96]">
                     <div className="absolute top-0 right-0 p-8">
                         <div className="w-12 h-12 bg-[#21AC96]/5 rounded-2xl flex items-center justify-center text-[#21AC96] group-hover:rotate-12 transition-transform">
                             <Target className="w-6 h-6" />
                         </div>
                     </div>
 
-                    <div className="mb-8 relative">
-                        <h3 className="text-gray-900 font-black text-2xl tracking-tight mb-1">Conversión</h3>
-                        <p className="text-sm text-gray-400 font-medium">Radiografía del éxito de tus agentes</p>
+                    <div className="mb-4 relative">
+                        <h3 className="text-gray-900 font-black text-2xl tracking-tight mb-1">Tu Funnel de Ventas</h3>
+                        <p className="text-sm text-gray-400 font-medium">Haz clic en cada sección para ver cómo mejorar.</p>
                     </div>
 
-                    <div className="h-[380px] w-full mt-4">
+                    <div className="h-[420px] w-full mt-4 cursor-pointer">
                         <ResponsiveContainer width="100%" height="100%">
-                            <FunnelChart>
+                            <FunnelChart onClick={(data) => {
+                                if (data && data.activePayload) {
+                                    setSelectedMetric(data.activePayload[0].payload.id);
+                                }
+                            }}>
                                 <Tooltip
                                     contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)', padding: '16px' }}
                                     itemStyle={{ fontWeight: 'bold' }}
+                                    cursor={{ fill: 'rgba(33, 172, 150, 0.05)' }}
                                 />
                                 <Funnel dataKey="value" data={funnelChartData} isAnimationActive>
                                     <LabelList position="right" fill="#6B7280" stroke="none" dataKey="name" fontSize={11} offset={15} fontWeight="800" />
@@ -228,23 +335,23 @@ export function ReportsClient({
                     {/* Funnel Metrics Grid */}
                     <div className="grid grid-cols-2 gap-4 mt-8">
                         {[
-                            { label: 'Tasa Captura', val: funnelData.interactions > 0 ? ((funnelData.leads / funnelData.interactions) * 100).toFixed(1) : 0, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/5' },
-                            { label: 'Calificación', val: funnelData.leads > 0 ? ((funnelData.qualified / funnelData.leads) * 100).toFixed(1) : 0, color: 'text-indigo-600', bg: 'bg-indigo-50' }
+                            { id: 'leads', label: 'Tasa Captura', val: funnelData.interactions > 0 ? ((funnelData.leads / funnelData.interactions) * 100).toFixed(1) : 0, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/5' },
+                            { id: 'qualified', label: 'Calificación', val: funnelData.leads > 0 ? ((funnelData.qualified / funnelData.leads) * 100).toFixed(1) : 0, color: 'text-indigo-600', bg: 'bg-indigo-50' }
                         ].map((m, i) => (
-                            <div key={i} className={cn("p-5 rounded-[2rem] transition-all hover:scale-105", m.bg)}>
-                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block mb-1">{m.label}</span>
+                            <button key={i} onClick={() => setSelectedMetric(m.id)} className={cn("p-5 rounded-[2rem] transition-all hover:scale-105 text-left border-none cursor-pointer", m.bg)}>
+                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block mb-1">{m.label} <Info className="w-2.5 h-2.5 inline-block opacity-40 ml-1" /></span>
                                 <span className={cn("text-3xl font-black tracking-tighter", m.color)}>{m.val}%</span>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </div>
 
-                {/* 2. Interactive Insights Table - NEW VALUE FOR FRESHIE */}
-                <div className="lg:col-span-8 space-y-8">
+                {/* 2. Advanced Insights Section */}
+                <div className="lg:col-span-12 xl:col-span-8 space-y-8">
 
                     {/* Performance Table Section */}
-                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group">
-                        <FeatureLock isLocked={!access.agentBench} title="Performance Detallada">
+                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group min-h-[500px]">
+                        <FeatureLock isLocked={!access.agentBench} title="Comparativa de Agentes">
                             <div className="p-8">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                     <div>
@@ -256,7 +363,9 @@ export function ReportsClient({
                                         <input
                                             type="text"
                                             placeholder="Filtrar agentes..."
-                                            className="pl-9 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-[#21AC96]/20 outline-none w-full md:w-48"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="pl-9 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-[#21AC96]/20 outline-none w-full md:w-48 transition-all"
                                         />
                                     </div>
                                 </div>
@@ -272,7 +381,7 @@ export function ReportsClient({
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
-                                            {agentPerformance.map((agent, i) => (
+                                            {agentPerformance.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase())).map((agent, i) => (
                                                 <tr key={agent.id} className="group/row hover:bg-gray-50/80 transition-all cursor-pointer">
                                                     <td className="py-5">
                                                         <div className="flex items-center gap-4">
@@ -314,7 +423,7 @@ export function ReportsClient({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                         {/* Heatmap Card */}
-                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group">
+                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group h-[380px] relative overflow-hidden">
                             <FeatureLock isLocked={!access.heatmap} title="Mapa de Actividad 24/7">
                                 <div className="flex items-center justify-between mb-8">
                                     <h3 className="text-gray-900 font-black text-xl tracking-tight">Actividad 24/7</h3>
@@ -355,7 +464,7 @@ export function ReportsClient({
                         </div>
 
                         {/* BI Insights Card */}
-                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group overflow-hidden">
+                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group h-[380px] overflow-hidden relative">
                             <FeatureLock isLocked={!access.dataInsights} title="BI: Inteligencia Cualitativa">
                                 <div className="flex items-center justify-between mb-8">
                                     <h3 className="text-gray-900 font-black text-xl tracking-tight">Segmentación</h3>
@@ -396,6 +505,8 @@ export function ReportsClient({
                     </div>
                 </div>
             </div>
+
+            <MetricDetailModal />
         </div>
     );
 }
