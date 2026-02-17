@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { initiateGoogleAuth, deleteIntegration, saveOdooIntegration, saveAltaplazaIntegration } from '@/lib/actions/integrations';
+import { useState, useEffect } from 'react';
+import { initiateGoogleAuth, deleteIntegration, saveOdooIntegration, saveAltaplazaIntegration, getIntegrationStats } from '@/lib/actions/integrations';
 import { Loader2, CheckCircle2, Trash2, AlertTriangle, Globe, Database, User, Key, Search, Sparkles, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -28,6 +28,8 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
     const [isOdooModalOpen, setIsOdooModalOpen] = useState(false);
     const [isAltaplazaModalOpen, setIsAltaplazaModalOpen] = useState(false);
     const [altaplazaPassword, setAltaplazaPassword] = useState('');
+    const [integrationStats, setIntegrationStats] = useState<any>(null);
+    const [isStatsLoading, setIsStatsLoading] = useState(false);
     const [odooConfig, setOdooConfig] = useState({
         url: '',
         db: '',
@@ -146,6 +148,31 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             toast.error('Contraseña incorrecta. Acceso denegado.');
         }
     };
+    const fetchStats = async () => {
+        if (isDetailsModalOpen && selectedIntegration) {
+            const active = isEnabled(selectedIntegration.id);
+            if (active) {
+                setIsStatsLoading(true);
+                try {
+                    const stats = await getIntegrationStats(agentId, selectedIntegration.id as any);
+                    setIntegrationStats(stats);
+                } catch (error) {
+                    console.error('Error fetching stats:', error);
+                } finally {
+                    setIsStatsLoading(false);
+                }
+            } else {
+                setIntegrationStats(null);
+            }
+        }
+    };
+
+    useEffect(() => {
+        fetchStats();
+        if (!isDetailsModalOpen) {
+            setSelectedIntegration(null);
+        }
+    }, [isDetailsModalOpen, selectedIntegration, agentId]);
 
     const handleDisconnectClick = (activeIntegrationId: string) => {
         setIntegrationToDelete(activeIntegrationId);
@@ -552,27 +579,29 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             <div className="p-8 md:p-10 space-y-8">
                                 {isEnabled(selectedIntegration.id) ? (
                                     <div className="space-y-8">
-                                        {/* Real-time Status Mocks */}
+                                        {/* Real-time Status */}
                                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                                             <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Salud de Conexión</span>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />
-                                                    <span className="text-sm font-black text-gray-900">Excelente</span>
+                                                    <div className={`w-2.5 h-2.5 rounded-full ${integrationStats?.health === 'WARNING' ? 'bg-amber-500' : 'bg-green-500'}`} />
+                                                    <span className="text-sm font-black text-gray-900">
+                                                        {isStatsLoading ? 'Cargando...' : integrationStats?.health === 'WARNING' ? 'Atención' : 'Excelente'}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Sincronización</span>
                                                 <span className="text-sm font-black text-gray-900 flex items-center gap-2">
                                                     <Search className="w-4 h-4 text-indigo-500" />
-                                                    Hace 3 min
+                                                    {isStatsLoading ? 'Cargando...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleTimeString() : 'N/A'}
                                                 </span>
                                             </div>
                                             <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2 col-span-2 lg:col-span-1">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Eventos Hoy</span>
                                                 <span className="text-sm font-black text-gray-900 flex items-center gap-2">
                                                     <Sparkles className="w-4 h-4 text-amber-500" />
-                                                    12 procesados
+                                                    {isStatsLoading ? '...' : `${integrationStats?.eventsToday || 0} procesados`}
                                                 </span>
                                             </div>
                                         </div>

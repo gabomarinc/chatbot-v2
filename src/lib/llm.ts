@@ -387,12 +387,19 @@ export async function generateAgentReply(
             const { idCard } = JSON.parse((toolCall as any).function.arguments);
             const { checkUser } = await import('@/lib/altaplaza');
             const result = await checkUser(idCard);
+
+            // Log Event
+            const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+            await logIntegrationEvent(agentId, 'ALTAPLAZA', 'CHECK_USER', 'SUCCESS', { idCard });
+
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
               content: JSON.stringify(result)
             });
           } catch (error: any) {
+            const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+            await logIntegrationEvent(agentId, 'ALTAPLAZA', 'CHECK_USER', 'ERROR', { error: error.message });
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
@@ -406,12 +413,19 @@ export async function generateAgentReply(
             const userData = JSON.parse((toolCall as any).function.arguments);
             const { registerUser } = await import('@/lib/altaplaza');
             const result = await registerUser(userData);
+
+            // Log Event
+            const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+            await logIntegrationEvent(agentId, 'ALTAPLAZA', 'REGISTER_USER', 'SUCCESS', { email: userData.email });
+
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
               content: JSON.stringify(result)
             });
           } catch (error: any) {
+            const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+            await logIntegrationEvent(agentId, 'ALTAPLAZA', 'REGISTER_USER', 'ERROR', { error: error.message });
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
@@ -425,12 +439,19 @@ export async function generateAgentReply(
             const invoiceData = JSON.parse((toolCall as any).function.arguments);
             const { registerInvoice } = await import('@/lib/altaplaza');
             const result = await registerInvoice(invoiceData);
+
+            // Log Event
+            const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+            await logIntegrationEvent(agentId, 'ALTAPLAZA', 'REGISTER_INVOICE', 'SUCCESS', { amount: invoiceData.amount, invoiceNumber: invoiceData.invoiceNumber });
+
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
               content: JSON.stringify(result)
             });
           } catch (error: any) {
+            const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+            await logIntegrationEvent(agentId, 'ALTAPLAZA', 'REGISTER_INVOICE', 'ERROR', { error: error.message });
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,

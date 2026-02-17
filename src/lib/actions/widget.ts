@@ -311,6 +311,9 @@ export async function sendWidgetMessage(data: {
             const hubspotIntegration = agent.integrations.find((i: any) => i.provider === 'HUBSPOT');
             const hasHubSpot = !!hubspotIntegration;
 
+            const altaplazaIntegration = agent.integrations.find((i: any) => i.provider === 'ALTAPLAZA');
+            const hasAltaplaza = !!altaplazaIntegration && altaplazaIntegration.enabled;
+
             // Get agent media for image search tool
             const agentMedia = await prisma.agentMedia.findMany({
                 where: { agentId: channel.agentId }
@@ -606,6 +609,60 @@ When calling 'update_contact':
                 );
             }
 
+            if (hasAltaplaza) {
+                tools.push(
+                    {
+                        name: "altaplaza_check_user",
+                        description: "Verifica si un usuario existe en Altaplaza usando su cédula.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                idCard: { type: "string", description: "Cédula del usuario" }
+                            },
+                            required: ["idCard"]
+                        }
+                    },
+                    {
+                        name: "altaplaza_register_user",
+                        description: "Registra un nuevo usuario en Altaplaza.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                firstName: { type: "string" },
+                                lastName: { type: "string" },
+                                email: { type: "string" },
+                                idCard: { type: "string" },
+                                birthDate: { type: "string", description: "AAAA-MM-DD" },
+                                phone: { type: "string" },
+                                neighborhood: { type: "string" }
+                            },
+                            required: ["firstName", "lastName", "email", "idCard", "birthDate"]
+                        }
+                    },
+                    {
+                        name: "altaplaza_register_invoice",
+                        description: "Registra una factura en Altaplaza.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                idCard: { type: "string" },
+                                invoiceNumber: { type: "string" },
+                                amount: { type: "number" },
+                                storeName: { type: "string" },
+                                imageUrl: { type: "string" },
+                                date: { type: "string", description: "AAAA-MM-DD" }
+                            },
+                            required: ["idCard", "invoiceNumber", "amount", "storeName"]
+                        }
+                    }
+                );
+
+                systemPrompt += `\nINSTRUCCIONES ALTAPLAZA:
+                1. SI el usuario quiere registrar factura, pide cédula y usa 'altaplaza_check_user'.
+                2. SI no existe, regístralo con 'altaplaza_register_user'.
+                3. LUEGO usa 'altaplaza_register_invoice'.\n`;
+            }
+
             // Try Gemini first if model is Gemini, with fallback to OpenAI
             let useOpenAI = false;
             let fallbackModel = 'gpt-4o'; // Default fallback model
@@ -812,7 +869,9 @@ When calling 'update_contact':
                                     const meta = (conversation.metadata as any) || {};
                                     const currentLeadId = meta.zohoLeadId;
 
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const res = await createZohoLead(channel.agentId, args as any, currentLeadId);
+                                    await logIntegrationEvent(channel.agentId, 'ZOHO', 'CREATE_LEAD', 'SUCCESS', { leadId: res.data?.[0]?.details?.id });
 
                                     // Save new Lead ID if created/found
                                     if (res.data && res.data[0]?.details?.id) {
@@ -841,7 +900,9 @@ When calling 'update_contact':
                                     if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
 
                                     const { addZohoNote } = await import('@/lib/zoho');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const res = await addZohoNote(channel.agentId, leadId, (args as any).noteContent);
+                                    await logIntegrationEvent(channel.agentId, 'ZOHO', 'ADD_NOTE', 'SUCCESS');
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] addZohoNote error:', e);
@@ -855,7 +916,9 @@ When calling 'update_contact':
                                     if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
 
                                     const { createZohoTask } = await import('@/lib/zoho');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const res = await createZohoTask(channel.agentId, leadId, args as any);
+                                    await logIntegrationEvent(channel.agentId, 'ZOHO', 'CREATE_TASK', 'SUCCESS');
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] createZohoTask error:', e);
@@ -869,7 +932,9 @@ When calling 'update_contact':
                                     if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
 
                                     const { scheduleZohoEvent } = await import('@/lib/zoho');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const res = await scheduleZohoEvent(channel.agentId, leadId, args as any);
+                                    await logIntegrationEvent(channel.agentId, 'ZOHO', 'SCHEDULE_EVENT', 'SUCCESS');
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] scheduleZohoEvent error:', e);
@@ -879,9 +944,11 @@ When calling 'update_contact':
                                 console.log('[GEMINI] Tool create_odoo_lead called with args:', JSON.stringify(args));
                                 try {
                                     const { createOdooLead } = await import('@/lib/odoo');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const meta = (conversation.metadata as any) || {};
                                     const currentLeadId = meta.odooLeadId;
                                     const res = await createOdooLead(channel.agentId, args as any, currentLeadId);
+                                    await logIntegrationEvent(channel.agentId, 'ODOO', 'CREATE_LEAD', 'SUCCESS', { id: res.id });
                                     console.log('[GEMINI] createOdooLead result:', JSON.stringify(res));
                                     if (res.id && res.id !== currentLeadId) {
                                         await prisma.conversation.update({
@@ -902,7 +969,9 @@ When calling 'update_contact':
                                     const leadId = meta.odooLeadId;
                                     if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
                                     const { addOdooNote } = await import('@/lib/odoo');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const res = await addOdooNote(channel.agentId, leadId, (args as any).noteContent);
+                                    await logIntegrationEvent(channel.agentId, 'ODOO', 'ADD_NOTE', 'SUCCESS');
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] addOdooNote error:', e);
@@ -912,9 +981,11 @@ When calling 'update_contact':
                                 console.log('[GEMINI] Tool create_hubspot_contact called');
                                 try {
                                     const { createHubSpotContact } = await import('@/lib/hubspot');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const meta = (conversation.metadata as any) || {};
                                     const currentContactId = meta.hubspotContactId;
                                     const res = await createHubSpotContact(channel.agentId, args as any, currentContactId);
+                                    await logIntegrationEvent(channel.agentId, 'HUBSPOT', 'CREATE_CONTACT', 'SUCCESS', { id: res.id });
                                     if (res.id && res.id !== currentContactId) {
                                         await prisma.conversation.update({
                                             where: { id: conversation.id },
@@ -934,7 +1005,9 @@ When calling 'update_contact':
                                     const contactId = meta.hubspotContactId;
                                     if (!contactId) throw new Error("No Contact ID found. Create a contact first.");
                                     const { addHubSpotNote } = await import('@/lib/hubspot');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const res = await addHubSpotNote(channel.agentId, contactId, (args as any).noteContent);
+                                    await logIntegrationEvent(channel.agentId, 'HUBSPOT', 'ADD_NOTE', 'SUCCESS');
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] addHubSpotNote error:', e.message);
@@ -947,7 +1020,9 @@ When calling 'update_contact':
                                     const contactId = meta.hubspotContactId;
                                     if (!contactId) throw new Error("No Contact ID found. Create a contact first.");
                                     const { createHubSpotDeal } = await import('@/lib/hubspot');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const res = await createHubSpotDeal(channel.agentId, contactId, args as any);
+                                    await logIntegrationEvent(channel.agentId, 'HUBSPOT', 'CREATE_DEAL', 'SUCCESS');
                                     toolResult = { success: true, api_response: res };
                                 } catch (e: any) {
                                     console.error('[GEMINI] createHubSpotDeal error:', e.message);
@@ -1291,7 +1366,9 @@ When calling 'update_contact':
                                 if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
 
                                 const { addZohoNote } = await import('@/lib/zoho');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const res = await addZohoNote(channel.agentId, leadId, (args as any).noteContent);
+                                await logIntegrationEvent(channel.agentId, 'ZOHO', 'ADD_NOTE', 'SUCCESS');
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] addZohoNote error:', e);
@@ -1305,7 +1382,9 @@ When calling 'update_contact':
                                 if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
 
                                 const { createZohoTask } = await import('@/lib/zoho');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const res = await createZohoTask(channel.agentId, leadId, args as any);
+                                await logIntegrationEvent(channel.agentId, 'ZOHO', 'CREATE_TASK', 'SUCCESS');
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] createZohoTask error:', e);
@@ -1319,7 +1398,9 @@ When calling 'update_contact':
                                 if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
 
                                 const { scheduleZohoEvent } = await import('@/lib/zoho');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const res = await scheduleZohoEvent(channel.agentId, leadId, args as any);
+                                await logIntegrationEvent(channel.agentId, 'ZOHO', 'SCHEDULE_EVENT', 'SUCCESS');
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] scheduleZohoEvent error:', e);
@@ -1329,9 +1410,11 @@ When calling 'update_contact':
                             console.log('[OPENAI] Tool create_odoo_lead called with args:', JSON.stringify(args));
                             try {
                                 const { createOdooLead } = await import('@/lib/odoo');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const meta = (conversation.metadata as any) || {};
                                 const currentLeadId = meta.odooLeadId;
                                 const res = await createOdooLead(channel.agentId, args as any, currentLeadId);
+                                await logIntegrationEvent(channel.agentId, 'ODOO', 'CREATE_LEAD', 'SUCCESS', { id: res.id });
                                 console.log('[OPENAI] createOdooLead result:', JSON.stringify(res));
                                 if (res.id && res.id !== currentLeadId) {
                                     await prisma.conversation.update({
@@ -1352,7 +1435,9 @@ When calling 'update_contact':
                                 const leadId = meta.odooLeadId;
                                 if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
                                 const { addOdooNote } = await import('@/lib/odoo');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const res = await addOdooNote(channel.agentId, leadId, (args as any).noteContent);
+                                await logIntegrationEvent(channel.agentId, 'ODOO', 'ADD_NOTE', 'SUCCESS');
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] addOdooNote error:', e);
@@ -1362,9 +1447,11 @@ When calling 'update_contact':
                             console.log('[OPENAI] Tool create_hubspot_contact called');
                             try {
                                 const { createHubSpotContact } = await import('@/lib/hubspot');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const meta = (conversation.metadata as any) || {};
                                 const currentContactId = meta.hubspotContactId;
                                 const res = await createHubSpotContact(channel.agentId, args as any, currentContactId);
+                                await logIntegrationEvent(channel.agentId, 'HUBSPOT', 'CREATE_CONTACT', 'SUCCESS', { id: res.id });
                                 if (res.id && res.id !== currentContactId) {
                                     await prisma.conversation.update({
                                         where: { id: conversation.id },

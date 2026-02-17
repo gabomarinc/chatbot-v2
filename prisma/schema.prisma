@@ -93,6 +93,7 @@ model Agent {
   knowledgeBases     KnowledgeBase[]
   media              AgentMedia[]
   customFieldDefinitions CustomFieldDefinition[] // Added relation
+  integrationEvents   IntegrationEvent[]
 }
 
 model KnowledgeBase {
@@ -198,9 +199,25 @@ model AgentIntegration {
   provider   IntegrationProvider
   configJson Json
   enabled    Boolean             @default(false)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @default(now()) @updatedAt
   agent      Agent               @relation(fields: [agentId], references: [id])
 
   @@unique([agentId, provider])
+}
+
+model IntegrationEvent {
+  id            String              @id @default(cuid())
+  agentId       String
+  provider      IntegrationProvider
+  event         String              // e.g., "REGISTER_INVOICE", "CREATE_LEAD"
+  status        String              @default("SUCCESS") // "SUCCESS", "ERROR"
+  metadata      Json?
+  createdAt     DateTime            @default(now())
+  agent         Agent               @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([provider])
 }
 
 model AgentMCPServer {

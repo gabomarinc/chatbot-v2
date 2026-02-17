@@ -80,3 +80,47 @@ export async function saveAltaplazaIntegration(agentId: string) {
     revalidatePath(`/agents/${agentId}/settings`);
     return integration;
 }
+
+export async function getIntegrationStats(agentId: string, provider: 'ZOHO' | 'ODOO' | 'HUBSPOT' | 'ALTAPLAZA' | 'GOOGLE_CALENDAR') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const integration = await prisma.agentIntegration.findFirst({
+        where: { agentId, provider }
+    });
+
+    if (!integration) return null;
+
+    const [eventsToday, lastEvent] = await Promise.all([
+        prisma.integrationEvent.count({
+            where: {
+                agentId,
+                provider,
+                createdAt: { gte: today },
+                status: 'SUCCESS'
+            }
+        }),
+        prisma.integrationEvent.findFirst({
+            where: { agentId, provider },
+            orderBy: { createdAt: 'desc' }
+        })
+    ]);
+
+    // Health is excellent if no errors in last 24h
+    const errorsLast24h = await prisma.integrationEvent.count({
+        where: {
+            agentId,
+            provider,
+            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+            status: 'ERROR'
+        }
+    });
+
+    return {
+        enabled: integration.enabled,
+        lastSync: integration.updatedAt,
+        eventsToday,
+        lastEventAt: lastEvent?.createdAt || null,
+        health: errorsLast24h > 0 ? 'WARNING' : 'EXCELLENT'
+    };
+}
