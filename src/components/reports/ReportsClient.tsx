@@ -137,8 +137,8 @@ export function ReportsClient({
     }, [funnelData, agentPerformance]);
 
     const FeatureLock = ({ children, isLocked, title }: { children: React.ReactNode, isLocked: boolean, title: string }) => (
-        <div className="relative h-full flex flex-col isolation-auto">
-            <div className={cn("h-full flex flex-col", isLocked && "pointer-events-none")}>
+        <div className="relative flex-1 flex flex-col isolation-auto">
+            <div className={cn("flex-1 flex flex-col", isLocked && "pointer-events-none")}>
                 {children}
             </div>
             {isLocked && (
@@ -507,7 +507,7 @@ export function ReportsClient({
                     </div>
 
                     {/* Performance Table Section */}
-                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group min-h-[500px] relative">
+                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group min-h-[500px] relative flex flex-col">
                         <FeatureLock isLocked={!access.agentBench} title="Comparativa de Agentes">
                             <div className="p-8">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -580,7 +580,7 @@ export function ReportsClient({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                         {/* Heatmap Card */}
-                        <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 group h-[380px] relative overflow-hidden">
+                        <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 group h-[380px] relative overflow-hidden flex flex-col">
                             <FeatureLock isLocked={!access.heatmap} title="Mapa de Actividad 24/7">
                                 <div className="p-8 h-full flex flex-col">
                                     <div className="flex items-center justify-between mb-8">
@@ -623,7 +623,7 @@ export function ReportsClient({
                         </div>
 
                         {/* BI Insights Card */}
-                        <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 group h-[380px] overflow-hidden relative">
+                        <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 group h-[380px] overflow-hidden relative flex flex-col">
                             <FeatureLock isLocked={!access.dataInsights} title="BI: Inteligencia Cualitativa">
                                 <div className="p-8 h-full flex flex-col">
                                     <div className="flex items-center justify-between mb-8">
