@@ -24,20 +24,14 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
         };
 
         if (filters.length > 0) {
-            // Build JSONB filter query
+            // Build filter query array
             const jsonFilters = filters.map(filter => {
                 const { field, operator, value } = filter;
                 const lowerField = field.toLowerCase();
                 const isStandardField = ['name', 'email', 'phone'].includes(lowerField);
                 const isAgentField = lowerField === 'agentid';
 
-                // Initialize operation object
-                let op: any = {};
-
                 if (isAgentField) {
-                    // Agent Filter: Find contacts with conversations with this agent
-                    // Logic: contacts where conversations some agentId = value
-                    // We return a top-level where clause for this.
                     return {
                         conversations: {
                             some: {
@@ -47,60 +41,36 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                     };
                 }
 
-                if (operator === 'equals') {
-                    op = { equals: value, mode: 'insensitive' }; // Case insensitive for standard fields
-                } else if (operator === 'contains' && typeof value === 'string') {
-                    op = { contains: value, mode: 'insensitive' };
-                } else if (operator === 'gt') {
-                    op = { gt: Number(value) };
-                } else if (operator === 'lt') {
-                    op = { lt: Number(value) };
-                } else if (operator === 'isSet') {
-                    if (isStandardField) {
-                        op = {
-                            AND: [
-                                { not: null },
-                                { not: '' }
-                            ]
-                        };
-                    } else {
-                        op = { not: Prisma.JsonNull };
-                    }
-                } else if (operator === 'isNotSet') {
-                    if (isStandardField) {
-                        op = {
-                            OR: [
-                                { equals: null },
-                                { equals: '' }
-                            ]
-                        };
-                    } else {
-                        op = { equals: Prisma.JsonNull };
-                    }
-                }
-
                 if (isStandardField) {
-                    // Standard Field Filter (Top Level)
-                    // If we are filtering by name, email or phone directly on the columns
-                    // We return a special marker to be hoisted up or we structure it differently.
-                    // Since map returns one object, we can't easily hoist it out of this array map structure 
-                    // if we strictly follow the current "jsonFilters" array approach which puts everything in AND.
-                    // HOWEVER, we can just return the prisma where clause piece.
-
-                    // NOTE: The current code puts the result of this map into `jsonFilters`.
-                    // We need to return a structure that can be distinguished or change the logic before mapping.
-
-                    // Let's return the simplified object and filter/hoist later or 
-                    // better yet, just return the where clause object.
-                    return {
-                        [lowerField]: op
-                    };
+                    if (operator === 'equals') {
+                        return { [lowerField]: { equals: value, mode: 'insensitive' } };
+                    } else if (operator === 'contains') {
+                        return { [lowerField]: { contains: value, mode: 'insensitive' } };
+                    } else if (operator === 'gt') {
+                        return { [lowerField]: { gt: Number(value) } };
+                    } else if (operator === 'lt') {
+                        return { [lowerField]: { lt: Number(value) } };
+                    } else if (operator === 'isSet') {
+                        return {
+                            AND: [
+                                { [lowerField]: { not: null } },
+                                { [lowerField]: { not: '' } }
+                            ]
+                        };
+                    } else if (operator === 'isNotSet') {
+                        return {
+                            OR: [
+                                { [lowerField]: null },
+                                { [lowerField]: '' }
+                            ]
+                        };
+                    }
+                    return {}; // Fallback
                 } else {
                     // JSON Custom Field Filter
-                    // Re-map operators for JSON without 'mode' if strict JSON
                     let jsonOp: any = {};
-                    if (operator === 'equals') jsonOp = { equals: value }; // JSON equals is usually case-sensitive strings or direct numbers
-                    else if (operator === 'contains') jsonOp = { string_contains: value }; // Prisma specialized JSON filter
+                    if (operator === 'equals') jsonOp = { equals: value };
+                    else if (operator === 'contains') jsonOp = { string_contains: value };
                     else if (operator === 'gt') jsonOp = { gt: Number(value) };
                     else if (operator === 'lt') jsonOp = { lt: Number(value) };
                     else if (operator === 'isSet') jsonOp = { not: Prisma.JsonNull };
@@ -114,13 +84,6 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                     };
                 }
             });
-
-            if (jsonFilters.length > 0) {
-                // If there were any filters, add them to AND
-                // Note: jsonFilters now contains both standard field objects { name: ... } and customData objects { customData: ... }
-                // Prisma AND accepts an array of where clauses, so this works perfectly for both!
-                where.AND = jsonFilters;
-            }
 
             if (jsonFilters.length > 0) {
                 where.AND = jsonFilters;
