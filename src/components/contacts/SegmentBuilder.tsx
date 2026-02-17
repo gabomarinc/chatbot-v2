@@ -80,7 +80,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
             }
 
             // Headers
-            const headers = ['Nombre', 'Email', 'Telefono', 'Fecha Captacion'];
+            const headers = ['Nombre', 'Email', 'Telefono', 'Agente', 'Interacciones', 'Etiquetas', 'Fecha Captacion', 'ID Interno'];
             // Add custom field headers based on definitions
             const relevantFields = customFields.filter(f =>
                 contacts.some(c => (c.customData as any)?.[f.key] !== undefined)
@@ -90,11 +90,19 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
             const csvRows = [headers.join(',')];
 
             contacts.forEach(c => {
+                const lastAgent = (c as any).conversations?.[0]?.agent?.name || 'N/A';
+                const interactions = c._count?.conversations || 0;
+                const tags = (c.tags || []).join(', ');
+
                 const row = [
                     `"${(c.name || '').replace(/"/g, '""')}"`,
                     c.email || '',
                     c.phone || '',
-                    format(new Date(c.createdAt), 'yyyy-MM-dd HH:mm')
+                    `"${lastAgent.replace(/"/g, '""')}"`,
+                    interactions,
+                    `"${tags.replace(/"/g, '""')}"`,
+                    format(new Date(c.createdAt), 'yyyy-MM-dd HH:mm'),
+                    c.id
                 ];
 
                 relevantFields.forEach(f => {
@@ -465,7 +473,9 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                             <tr>
                                                 <th className="px-8 py-5">Nombre</th>
                                                 <th className="px-6 py-5">Email / Teléfono</th>
-                                                {availableCustomFields.slice(0, 3).map(f => ( // Show first 3 relevant custom fields
+                                                <th className="px-6 py-5">Agente</th>
+                                                <th className="px-6 py-5 text-center">Interacciones</th>
+                                                {availableCustomFields.slice(0, 1).map(f => ( // Reduced to 1 to make space
                                                     <th key={f.id} className="px-6 py-5">{f.label}</th>
                                                 ))}
                                                 <th className="px-6 py-5">Contactado</th>
@@ -498,7 +508,16 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                         {contact.email && <div className="text-sm font-medium text-gray-700">{contact.email}</div>}
                                                         {contact.phone && <div className="text-xs text-gray-500 font-mono mt-0.5">{contact.phone}</div>}
                                                     </td>
-                                                    {availableCustomFields.slice(0, 3).map(f => (
+                                                    <td className="px-6 py-5">
+                                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold whitespace-nowrap">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
+                                                            {contact.conversations?.[0]?.agent?.name || 'N/A'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5 text-center">
+                                                        <span className="text-sm font-bold text-gray-900">{contact._count?.conversations || 0}</span>
+                                                    </td>
+                                                    {availableCustomFields.slice(0, 1).map(f => (
                                                         <td key={f.id} className="px-6 py-5">
                                                             {contact.customData?.[f.key] ? (
                                                                 <span className="px-2.5 py-1.5 bg-[#21AC96]/10 text-[#21AC96] rounded-lg text-xs font-bold inline-block border border-[#21AC96]/20">

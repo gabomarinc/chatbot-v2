@@ -103,6 +103,15 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                 take: pageSize,
                 orderBy: { createdAt: 'desc' },
                 include: {
+                    conversations: {
+                        take: 1,
+                        orderBy: { createdAt: 'desc' },
+                        select: {
+                            agent: {
+                                select: { name: true }
+                            }
+                        }
+                    },
                     _count: {
                         select: { conversations: true }
                     }
