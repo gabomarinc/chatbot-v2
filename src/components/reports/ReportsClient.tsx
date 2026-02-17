@@ -379,7 +379,7 @@ export function ReportsClient({
                                 </div>
                                 <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold uppercase tracking-tight">
                                     <span>Incio</span>
-                                    <span>Promedio Inmobiliario (35%)</span>
+                                    <span>Media Sectorial (35%)</span>
                                     <span>Meta</span>
                                 </div>
                             </div>
@@ -390,7 +390,7 @@ export function ReportsClient({
                                     <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Estrategia de Crecimiento</span>
                                 </div>
                                 <p className="text-[11px] text-gray-600 font-medium leading-relaxed">
-                                    Estás un **50% por encima** de la media. Para mantener este ritmo, podrías activar recordatorios automáticos de seguimiento.
+                                    Estás un **50% por encima** de la media global. Para mantener este ritmo, podrías activar recordatorios automáticos de seguimiento.
                                 </p>
                             </div>
                         </div>
