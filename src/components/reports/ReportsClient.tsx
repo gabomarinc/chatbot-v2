@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     BarChart3,
     PieChart,
@@ -13,7 +13,14 @@ import {
     Zap,
     MousePointer2,
     MessageSquare,
-    Clock
+    Clock,
+    ShieldCheck,
+    Lightbulb,
+    ArrowRight,
+    Search,
+    ChevronRight,
+    UserCheck,
+    Smartphone
 } from 'lucide-react';
 import {
     BarChart,
@@ -24,15 +31,14 @@ import {
     Tooltip,
     ResponsiveContainer,
     Cell,
-    PieChart as RePieChart,
-    Pie,
-    AreaChart,
-    Area,
     FunnelChart,
     Funnel,
     LabelList
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import Link from 'next/link';
 
 interface ReportsClientProps {
     workspaceInfo: any;
@@ -52,6 +58,7 @@ export function ReportsClient({
     agentPerformance
 }: ReportsClientProps) {
     const plan = workspaceInfo.plan?.type || 'FRESHIE';
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Feature access levels
     const access = {
@@ -61,214 +68,277 @@ export function ReportsClient({
     };
 
     const funnelChartData = [
-        { name: 'Chats Totales', value: funnelData.interactions, fill: '#E0F2F1' },
-        { name: 'Comprometidos', value: funnelData.engaged, fill: '#B2DFDB' },
-        { name: 'Contactos', value: funnelData.leads, fill: '#4DB6AC' },
+        { name: 'Chats', value: funnelData.interactions, fill: '#E0F2F1' },
+        { name: 'Interacción', value: funnelData.engaged, fill: '#B2DFDB' },
+        { name: 'Leads', value: funnelData.leads, fill: '#4DB6AC' },
         { name: 'Cualificados', value: funnelData.qualified, fill: '#00897B' },
     ];
 
+    // AI Tips Logic
+    const aiTips = useMemo(() => {
+        const tips = [];
+        if (funnelData.interactions > 0 && (funnelData.leads / funnelData.interactions) < 0.2) {
+            tips.push({
+                icon: Target,
+                title: "Optimiza la Captura",
+                desc: "Tu bot tiene muchos chats pero pocos leads. Prueba a pedir los datos (email/tel) más temprano en la conversación.",
+                color: "text-amber-600",
+                bg: "bg-amber-50"
+            });
+        } else if (funnelData.leads > 0) {
+            tips.push({
+                icon: UserCheck,
+                title: "Alta Conversión",
+                desc: "¡Excelente! Tu tasa de conversión es superior al promedio. Considera aumentar el tráfico a tus canales.",
+                color: "text-green-600",
+                bg: "bg-green-50"
+            });
+        }
+
+        if (agentPerformance.some(a => (a.efficiency || 0) < 30)) {
+            tips.push({
+                icon: Sparkles,
+                title: "Mejora el Entrenamiento",
+                desc: "Algunos agentes tienen baja eficiencia. Revisa sus fuentes de conocimiento para que den respuestas más precisas.",
+                color: "text-blue-600",
+                bg: "bg-blue-50"
+            });
+        }
+
+        tips.push({
+            icon: Smartphone,
+            title: "Tip Omnicanal",
+            desc: "WhatsApp suele convertir 3x más que el Webchat. ¿Ya conectaste tu número oficial?",
+            color: "text-purple-600",
+            bg: "bg-purple-50"
+        });
+
+        return tips.slice(0, 3);
+    }, [funnelData, agentPerformance]);
+
     const FeatureLock = ({ children, isLocked, title }: { children: React.ReactNode, isLocked: boolean, title: string }) => (
-        <div className="relative h-full">
+        <div className="relative h-full flex flex-col">
             {children}
             {isLocked && (
-                <div className="absolute inset-0 z-10 backdrop-blur-[6px] bg-white/40 flex flex-col items-center justify-center rounded-3xl p-6 text-center border border-white/20">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-4 transform -rotate-6 group-hover:rotate-0 transition-transform duration-500">
+                <div className="absolute inset-0 z-10 backdrop-blur-[8px] bg-white/40 flex flex-col items-center justify-center rounded-[32px] p-8 text-center border border-white/20">
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-4 transform -rotate-6 transition-transform duration-500 hover:rotate-0">
                         <Lock className="w-8 h-8 text-[#21AC96]" />
                     </div>
                     <h4 className="text-gray-900 font-bold text-lg mb-2">Desbloquea {title}</h4>
                     <p className="text-gray-500 text-sm max-w-[240px] mb-6 font-medium">
-                        Actualiza tu plan para acceder a analíticas avanzadas de última generación.
+                        Esta métrica avanzada está disponible en planes superiores.
                     </p>
-                    <button className="bg-[#21AC96] text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:scale-105 transition-all">
+                    <Link href="/billing" className="bg-[#21AC96] text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:scale-105 transition-all inline-block">
                         Mejorar Plan
-                    </button>
+                    </Link>
                 </div>
             )}
         </div>
     );
 
     return (
-        <div className="max-w-[1600px] mx-auto animate-fade-in p-6">
+        <div className="max-w-[1600px] mx-auto animate-fade-in p-6 pb-20">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
-                        <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight">Reporting Hub</h1>
+                        <h1 className="text-gray-900 text-4xl font-black tracking-tight">Reporting Hub</h1>
                         <div className={cn(
-                            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5",
-                            plan === 'FRESHIE' ? "bg-blue-50 text-blue-600" :
-                                plan === 'MONEY_HONEY' ? "bg-purple-50 text-purple-600" :
-                                    "bg-amber-50 text-amber-600"
+                            "px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm border",
+                            plan === 'FRESHIE' ? "bg-white text-blue-600 border-blue-100" :
+                                plan === 'MONEY_HONEY' ? "bg-white text-purple-600 border-purple-100" :
+                                    "bg-white text-amber-600 border-amber-100"
                         )}>
-                            <Zap className="w-3 h-3" />
+                            <div className={cn("w-2 h-2 rounded-full animate-pulse",
+                                plan === 'FRESHIE' ? "bg-blue-600" :
+                                    plan === 'MONEY_HONEY' ? "bg-purple-600" : "bg-amber-600"
+                            )}></div>
                             PLAN {workspaceInfo.plan?.name || plan}
                         </div>
                     </div>
-                    <p className="text-gray-500 font-medium max-w-2xl">
-                        Análisis estratégico de la operación. Descubre la inteligencia capturada por tus agentes y optimiza tu funnel de ventas.
+                    <p className="text-gray-500 font-medium max-w-2xl text-lg">
+                        Visualiza el impacto real de tu IA en el crecimiento de tu negocio.
                     </p>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <div className="hidden md:flex flex-col items-end">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Estado Global</span>
+                        <span className="text-green-500 font-bold flex items-center gap-1.5">
+                            <ShieldCheck className="w-4 h-4" /> Operativo
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            {/* Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-                {/* 1. Funnel Section (Available for all) */}
-                <div className="lg:col-span-4 bg-white rounded-[32px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 relative overflow-hidden group">
-                    <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#21AC96]/5 rounded-full blur-3xl group-hover:bg-[#21AC96]/10 transition-all duration-700"></div>
-
-                    <div className="flex items-center justify-between mb-8 relative">
-                        <div>
-                            <h3 className="text-gray-900 font-bold text-xl tracking-tight mb-1">Funnel de Conversión</h3>
-                            <p className="text-xs text-gray-400 font-medium">Flujo desde primer chat hasta lead calificado</p>
+            {/* AI Insights Section - BIG VALUE FOR FRESHIE */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                {aiTips.map((tip, i) => (
+                    <div key={i} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                        <div className={cn("absolute -right-4 -bottom-4 w-24 h-24 rounded-full blur-2xl opacity-10 transition-all group-hover:scale-150", tip.bg)}></div>
+                        <div className="flex items-start gap-4 relative">
+                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm", tip.bg, tip.color)}>
+                                <tip.icon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h4 className="text-gray-900 font-bold text-base mb-1">{tip.title}</h4>
+                                <p className="text-gray-500 text-xs leading-relaxed font-medium">{tip.desc}</p>
+                            </div>
                         </div>
-                        <div className="w-12 h-12 bg-[#21AC96]/5 rounded-2xl flex items-center justify-center text-[#21AC96]">
+                        <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                                <Lightbulb className="w-3 h-3 text-amber-400" /> IA Insight
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#21AC96] group-hover:translate-x-1 transition-all" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                {/* 1. Funnel Section (Always Available) */}
+                <div className="lg:col-span-4 bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 relative overflow-hidden group border-b-4 border-b-[#21AC96]">
+                    <div className="absolute top-0 right-0 p-8">
+                        <div className="w-12 h-12 bg-[#21AC96]/5 rounded-2xl flex items-center justify-center text-[#21AC96] group-hover:rotate-12 transition-transform">
                             <Target className="w-6 h-6" />
                         </div>
                     </div>
 
-                    <div className="h-[400px] w-full mt-4">
+                    <div className="mb-8 relative">
+                        <h3 className="text-gray-900 font-black text-2xl tracking-tight mb-1">Conversión</h3>
+                        <p className="text-sm text-gray-400 font-medium">Radiografía del éxito de tus agentes</p>
+                    </div>
+
+                    <div className="h-[380px] w-full mt-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <FunnelChart>
                                 <Tooltip
-                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: '600' }}
+                                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)', padding: '16px' }}
+                                    itemStyle={{ fontWeight: 'bold' }}
                                 />
-                                <Funnel
-                                    dataKey="value"
-                                    data={funnelChartData}
-                                    isAnimationActive
-                                >
-                                    <LabelList position="right" fill="#374151" stroke="none" dataKey="name" fontSize={12} offset={20} fontWeight="bold" />
+                                <Funnel dataKey="value" data={funnelChartData} isAnimationActive>
+                                    <LabelList position="right" fill="#6B7280" stroke="none" dataKey="name" fontSize={11} offset={15} fontWeight="800" />
                                 </Funnel>
                             </FunnelChart>
                         </ResponsiveContainer>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-50">
-                        <div className="p-4 bg-gray-50 rounded-2xl">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">Conversión</span>
-                            <span className="text-2xl font-extrabold text-[#21AC96]">
-                                {funnelData.interactions > 0 ? Math.round((funnelData.leads / funnelData.interactions) * 100) : 0}%
-                            </span>
-                        </div>
-                        <div className="p-4 bg-gray-50 rounded-2xl">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">Calificación</span>
-                            <span className="text-2xl font-extrabold text-blue-600">
-                                {funnelData.leads > 0 ? Math.round((funnelData.qualified / funnelData.leads) * 100) : 0}%
-                            </span>
-                        </div>
+                    {/* Funnel Metrics Grid */}
+                    <div className="grid grid-cols-2 gap-4 mt-8">
+                        {[
+                            { label: 'Tasa Captura', val: funnelData.interactions > 0 ? ((funnelData.leads / funnelData.interactions) * 100).toFixed(1) : 0, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/5' },
+                            { label: 'Calificación', val: funnelData.leads > 0 ? ((funnelData.qualified / funnelData.leads) * 100).toFixed(1) : 0, color: 'text-indigo-600', bg: 'bg-indigo-50' }
+                        ].map((m, i) => (
+                            <div key={i} className={cn("p-5 rounded-[2rem] transition-all hover:scale-105", m.bg)}>
+                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest block mb-1">{m.label}</span>
+                                <span className={cn("text-3xl font-black tracking-tighter", m.color)}>{m.val}%</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                {/* 2. Agent Benchmarking (Locked for Freshie) */}
-                <div className="lg:col-span-8 bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group min-h-[500px]">
-                    <FeatureLock isLocked={!access.agentBench} title="Performance de Agentes">
-                        <div className="p-8 h-full flex flex-col">
-                            <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h3 className="text-gray-900 font-bold text-xl tracking-tight mb-1">Eficiencia por Agente</h3>
-                                    <p className="text-xs text-gray-400 font-medium">Comparativa de captura de leads por cada bot</p>
-                                </div>
-                                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-                                    <BarChart3 className="w-6 h-6" />
-                                </div>
-                            </div>
+                {/* 2. Interactive Insights Table - NEW VALUE FOR FRESHIE */}
+                <div className="lg:col-span-8 space-y-8">
 
-                            <div className="flex-1 min-h-[300px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={agentPerformance} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                                        <XAxis
-                                            dataKey="name"
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }}
-                                            dy={10}
+                    {/* Performance Table Section */}
+                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group">
+                        <FeatureLock isLocked={!access.agentBench} title="Performance Detallada">
+                            <div className="p-8">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                                    <div>
+                                        <h3 className="text-gray-900 font-black text-2xl tracking-tight mb-1">Efectividad por Agente</h3>
+                                        <p className="text-sm text-gray-400 font-medium">Comportamiento en vivo de tu equipo digital</p>
+                                    </div>
+                                    <div className="relative">
+                                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Filtrar agentes..."
+                                            className="pl-9 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-[#21AC96]/20 outline-none w-full md:w-48"
                                         />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} />
-                                        <Tooltip
-                                            cursor={{ fill: '#F9FAFB' }}
-                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                                        />
-                                        <Bar dataKey="leadsCaptured" name="Leads Captados" radius={[10, 10, 0, 0]} barSize={40}>
-                                            {agentPerformance.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
+                                    </div>
+                                </div>
 
-                            <div className="mt-8 overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="text-[10px] text-gray-400 font-bold uppercase tracking-widest border-b border-gray-50 pb-4">
-                                            <th className="pb-4">Agente</th>
-                                            <th className="pb-4 text-center">Total Chats</th>
-                                            <th className="pb-4 text-center">Leads</th>
-                                            <th className="pb-4 text-center">Eficiencia</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-50">
-                                        {agentPerformance.map((agent, i) => (
-                                            <tr key={agent.id} className="group/row hover:bg-gray-50 transition-colors">
-                                                <td className="py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                                                        <span className="font-bold text-gray-900">{agent.name}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 text-center font-medium text-gray-500">{agent.totalChats}</td>
-                                                <td className="py-4 text-center font-medium text-gray-500">{agent.leadsCaptured}</td>
-                                                <td className="py-4 text-center">
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-600 text-[10px] font-bold">
-                                                        {agent.efficiency}%
-                                                    </span>
-                                                </td>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="text-[10px] text-gray-400 font-black uppercase tracking-widest border-b border-gray-50">
+                                                <th className="pb-4 text-left">Ranking / Agente</th>
+                                                <th className="pb-4 text-center">Interacciones</th>
+                                                <th className="pb-4 text-center">Leads</th>
+                                                <th className="pb-4 text-right">Efectividad</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </FeatureLock>
-                </div>
-
-                {/* 3. Heatmap of Activity (Locked for Freshie) */}
-                <div className="lg:col-span-5 bg-white rounded-[32px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group min-h-[400px]">
-                    <FeatureLock isLocked={!access.heatmap} title="Mapa de Calor de Captación">
-                        <div className="h-full flex flex-col">
-                            <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h3 className="text-gray-900 font-bold text-xl tracking-tight mb-1">Momentos de Oro</h3>
-                                    <p className="text-xs text-gray-400 font-medium">Cuándo tus bots capturan más leads (últimos 30 días)</p>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                            {agentPerformance.map((agent, i) => (
+                                                <tr key={agent.id} className="group/row hover:bg-gray-50/80 transition-all cursor-pointer">
+                                                    <td className="py-5">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center font-black text-xs text-gray-400 border border-gray-100 group-hover/row:bg-[#21AC96] group-hover/row:text-white transition-colors">
+                                                                {i + 1}
+                                                            </div>
+                                                            <span className="font-extrabold text-gray-900">{agent.name}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-5 text-center">
+                                                        <div className="flex flex-col items-center">
+                                                            <span className="text-sm font-bold text-gray-900">{agent.totalChats}</span>
+                                                            <div className="w-16 h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
+                                                                <div className="h-full bg-blue-400 rounded-full" style={{ width: `${Math.min(agent.totalChats * 2, 100)}%` }}></div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-5 text-center">
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 rounded-xl text-xs font-black">
+                                                            <Users className="w-3 h-3" /> {agent.leadsCaptured}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-5 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="text-sm font-black text-[#21AC96]">{agent.efficiency}%</span>
+                                                            <span className="text-[9px] text-gray-400 font-bold uppercase">Tasa Conversión</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div className="w-12 h-12 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-600">
-                                    <Clock className="w-6 h-6" />
-                                </div>
                             </div>
+                        </FeatureLock>
+                    </div>
 
-                            <div className="flex-1">
+                    {/* Bottom Split: Heatmap & BI Insights */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                        {/* Heatmap Card */}
+                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group">
+                            <FeatureLock isLocked={!access.heatmap} title="Mapa de Actividad 24/7">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h3 className="text-gray-900 font-black text-xl tracking-tight">Actividad 24/7</h3>
+                                    <Clock className="w-6 h-6 text-pink-500" />
+                                </div>
+
                                 <div
-                                    className="grid gap-1 h-32"
+                                    className="grid gap-1.5 h-32"
                                     style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
                                 >
-                                    {/* Heatmap implementation */}
                                     {heatmapData.map((dayRow, dayIdx) => (
                                         <React.Fragment key={dayIdx}>
                                             {dayRow.map((count, hourIdx) => {
-                                                const intensity = Math.min(count * 20, 100);
+                                                const intensity = Math.min(count * 25, 100);
                                                 return (
                                                     <div
                                                         key={`${dayIdx}-${hourIdx}`}
-                                                        className="rounded-sm transition-all hover:scale-125 hover:z-20 cursor-help group/cell relative"
+                                                        className="rounded-[2px] transition-all hover:scale-150 hover:z-20 cursor-help group/cell relative"
                                                         style={{
-                                                            backgroundColor: count === 0 ? '#F9FAFB' : `rgba(33, 172, 150, ${intensity / 100})`,
-                                                            minHeight: '12px'
+                                                            backgroundColor: count === 0 ? '#F9FAFB' : `rgba(33, 172, 150, ${Math.max(0.1, intensity / 100)})`
                                                         }}
                                                     >
-                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 group-hover/cell:opacity-100 pointer-events-none whitespace-nowrap z-30 transition-all font-bold">
-                                                            {['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'][dayIdx]} @ {hourIdx}:00 — {count} leads
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-1.5 bg-gray-900 text-white text-[10px] rounded-xl opacity-0 group-hover/cell:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-all font-black shadow-2xl">
+                                                            {['D', 'L', 'M', 'X', 'J', 'V', 'S'][dayIdx]} @ {hourIdx}:00h — {count} Leads
                                                         </div>
                                                     </div>
                                                 )
@@ -276,59 +346,54 @@ export function ReportsClient({
                                         </React.Fragment>
                                     ))}
                                 </div>
-                                <div className="flex justify-between mt-4 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                    <span>00:00</span>
-                                    <span>Mediodía</span>
-                                    <span>23:59</span>
+                                <div className="flex justify-between mt-6 px-1">
+                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">00:00</span>
+                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Mediodía</span>
+                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">23:59</span>
                                 </div>
-                            </div>
+                            </FeatureLock>
                         </div>
-                    </FeatureLock>
-                </div>
 
-                {/* 4. Data Insights (Locked for Wolf) */}
-                <div className="lg:col-span-7 bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group min-h-[400px]">
-                    <FeatureLock isLocked={!access.dataInsights} title="Data Intelligence (BI)">
-                        <div className="p-8 h-full flex flex-col">
-                            <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h3 className="text-gray-900 font-bold text-xl tracking-tight mb-1">Inteligencia de Datos</h3>
-                                    <p className="text-xs text-gray-400 font-medium">Distribución de valores en tus campos personalizados</p>
+                        {/* BI Insights Card */}
+                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 group overflow-hidden">
+                            <FeatureLock isLocked={!access.dataInsights} title="BI: Inteligencia Cualitativa">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h3 className="text-gray-900 font-black text-xl tracking-tight">Segmentación</h3>
+                                    <PieChart className="w-6 h-6 text-amber-500" />
                                 </div>
-                                <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
-                                    <Sparkles className="w-6 h-6" />
-                                </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
-                                {customFieldsData.length > 0 ? customFieldsData.slice(0, 2).map((field, i) => (
-                                    <div key={field.key} className="flex flex-col">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="w-1.5 h-6 bg-[#21AC96] rounded-full"></div>
-                                            <span className="font-bold text-gray-900">{field.label}</span>
+                                <div className="space-y-6">
+                                    {customFieldsData.length > 0 ? customFieldsData.slice(0, 2).map((field, i) => (
+                                        <div key={field.key}>
+                                            <div className="flex items-center justify-between mb-3 px-1">
+                                                <span className="text-sm font-extrabold text-gray-700">{field.label}</span>
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase">{field.total} entradas</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {field.data.slice(0, 3).map((item: any, idx: number) => (
+                                                    <div key={idx} className="relative h-7 bg-gray-50 rounded-lg overflow-hidden group/bar">
+                                                        <div
+                                                            className="absolute top-0 left-0 h-full bg-amber-100 transition-all duration-1000"
+                                                            style={{ width: `${(item.count / field.total) * 100}%` }}
+                                                        ></div>
+                                                        <div className="relative h-full flex items-center justify-between px-3">
+                                                            <span className="text-[11px] font-bold text-gray-700 truncate max-w-[140px]">{item.label}</span>
+                                                            <span className="text-[11px] font-black text-amber-600">{Math.round((item.count / field.total) * 100)}%</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="h-[200px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={field.data} layout="vertical" margin={{ left: -20 }}>
-                                                    <XAxis type="number" hide />
-                                                    <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600 }} />
-                                                    <Tooltip cursor={{ fill: '#F9FAFB' }} contentStyle={{ borderRadius: '12px', border: 'none' }} />
-                                                    <Bar dataKey="count" fill="#21AC96" radius={[0, 4, 4, 0]} barSize={20} />
-                                                </BarChart>
-                                            </ResponsiveContainer>
+                                    )) : (
+                                        <div className="flex flex-col items-center justify-center h-48 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                                            <MousePointer2 className="w-8 h-8 text-gray-300 mb-3" />
+                                            <p className="text-gray-400 text-xs font-medium max-w-[180px]">Configura campos personalizados para ver insights cualitativos.</p>
                                         </div>
-                                    </div>
-                                )) : (
-                                    <div className="col-span-2 flex flex-col items-center justify-center py-12 text-center">
-                                        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 text-gray-200">
-                                            <MousePointer2 className="w-8 h-8" />
-                                        </div>
-                                        <p className="text-gray-400 font-medium">No hay datos suficientes para generar insights cualitativos.</p>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            </FeatureLock>
                         </div>
-                    </FeatureLock>
+                    </div>
                 </div>
             </div>
         </div>
