@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Bot, Users, Radio, MessageSquare, UserCircle, CreditCard, Settings, Gift, Sparkles, PieChart } from 'lucide-react';
+import { LayoutDashboard, Bot, Users, Radio, MessageSquare, UserCircle, CreditCard, Settings, Gift, Sparkles, PieChart, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ export function Sidebar() {
     const pathname = usePathname();
     const { data: session } = useSession();
     const [userRole, setUserRole] = useState<'OWNER' | 'MANAGER' | 'AGENT' | null>(null);
+    const [showTourModal, setShowTourModal] = useState(false);
 
     useEffect(() => {
         getUserWorkspaceRole().then(setUserRole);
@@ -167,31 +168,62 @@ export function Sidebar() {
             {/* Help Center Card - Only for OWNER and MANAGER */}
             {userRole !== 'AGENT' && (
                 <div className="px-6 pb-6 pt-2">
-                    <div className="bg-gradient-to-br from-white to-[#F8FAFB] rounded-3xl p-5 border border-gray-100 shadow-xl shadow-gray-200/20 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/10 transition-all duration-500 cursor-pointer active:scale-[0.98]">
+                    <div className="bg-gradient-to-br from-white to-[#F8FAFB] rounded-[2rem] p-4 border border-gray-100 shadow-xl shadow-gray-200/20 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/10 transition-all duration-500 cursor-pointer active:scale-[0.98]">
                         <div className="absolute -top-12 -right-12 w-20 h-20 bg-[#21AC96]/10 rounded-full blur-2xl group-hover:bg-[#21AC96]/20 transition-all duration-500"></div>
 
                         <div className="relative">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-8 h-8 shrink-0 bg-white shadow-md rounded-lg flex items-center justify-center transform group-hover:-rotate-12 transition-all duration-300">
-                                    <Sparkles className="w-4 h-4 text-[#21AC96]" />
+                            <div className="flex items-center gap-2.5 mb-2">
+                                <div className="w-7 h-7 shrink-0 bg-white shadow-md rounded-lg flex items-center justify-center transform group-hover:-rotate-12 transition-all duration-300">
+                                    <Sparkles className="w-3.5 h-3.5 text-[#21AC96]" />
                                 </div>
-                                <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#21AC96] transition-colors">Centro de Ayuda</h3>
+                                <h3 className="text-[11px] font-bold text-gray-900 group-hover:text-[#21AC96] transition-colors">Centro de Ayuda</h3>
                             </div>
-
-                            <p className="text-[10px] text-gray-500 leading-relaxed mb-4">¿Dudas? Vuelve a ver el tutorial interactivo.</p>
 
                             <button
                                 onClick={() => {
                                     if (pathname.includes('/agents/')) {
                                         window.dispatchEvent(new CustomEvent('trigger-agent-tour'));
                                     } else {
-                                        alert('Ve al perfil de un agente para ver el tutorial.');
+                                        setShowTourModal(true);
                                     }
                                 }}
-                                className="w-full bg-[#21AC96] text-white rounded-xl py-2.5 text-[10px] font-bold hover:bg-[#1a8a78] transition-all duration-300 shadow-lg shadow-[#21AC96]/20 group-hover:shadow-[#21AC96]/40 cursor-pointer"
+                                className="w-full bg-[#21AC96] text-white rounded-xl py-2 text-[10px] font-bold hover:bg-[#1a8a78] transition-all duration-300 shadow-lg shadow-[#21AC96]/20 group-hover:shadow-[#21AC96]/40 cursor-pointer"
                             >
                                 Ver Tutorial
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Tutorial Redirect Modal */}
+            {showTourModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
+                    <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowTourModal(false)}></div>
+                    <div className="bg-white rounded-[40px] w-full max-w-sm relative z-[101] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100">
+                        <div className="p-8 text-center">
+                            <div className="w-16 h-16 bg-[#21AC96]/10 rounded-3xl flex items-center justify-center text-[#21AC96] mx-auto mb-6">
+                                <Bot className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-gray-900 font-black text-xl mb-3">Tutorial del Agente</h3>
+                            <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">
+                                Para ver el tutorial interactivo, necesitas estar dentro del perfil de uno de tus agentes.
+                            </p>
+                            <div className="space-y-3">
+                                <Link
+                                    href="/agents"
+                                    onClick={() => setShowTourModal(false)}
+                                    className="w-full bg-[#21AC96] text-white rounded-2xl py-4 font-bold hover:bg-[#1a8a78] transition-all flex items-center justify-center gap-2"
+                                >
+                                    Ir a Agentes <ArrowRight className="w-4 h-4" />
+                                </Link>
+                                <button
+                                    onClick={() => setShowTourModal(false)}
+                                    className="w-full bg-gray-50 text-gray-500 rounded-2xl py-4 font-bold hover:bg-gray-100 transition-all"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

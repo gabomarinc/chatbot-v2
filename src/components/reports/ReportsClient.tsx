@@ -142,9 +142,9 @@ export function ReportsClient({
                 {children}
             </div>
             {isLocked && (
-                <div className="absolute -inset-1 z-[20] flex flex-col items-center justify-center p-8 text-center bg-white/60 backdrop-blur-[12px] overflow-hidden rounded-inherit border border-white/40 shadow-inner">
+                <div className="absolute inset-0 z-[20] flex flex-col items-center justify-center p-12 text-center bg-white/60 backdrop-blur-[12px] overflow-hidden rounded-[40px] border border-white/40 shadow-inner">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-                    <div className="relative z-[21] flex flex-col items-center">
+                    <div className="relative z-[21] flex flex-col items-center justify-center">
                         <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl mb-4 transform -rotate-6 transition-transform duration-500 hover:rotate-0 border border-gray-100">
                             <Lock className="w-8 h-8 text-[#21AC96]" />
                         </div>
