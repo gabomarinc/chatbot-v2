@@ -120,7 +120,7 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                             <div className="space-y-3">
                                                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                                                     <Phone className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-gray-700 font-medium">{prospectData?.externalId || '-'}</span>
+                                                    <span className="text-gray-700 font-medium">{prospectData?.phone || prospectData?.externalId || '-'}</span>
                                                 </div>
                                                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                                                     <Mail className="w-4 h-4 text-gray-400" />

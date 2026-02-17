@@ -811,6 +811,7 @@ export async function getProspects() {
         orderBy: { createdAt: 'desc' },
         include: {
             agent: true,
+            contact: true,
             _count: {
                 select: { messages: true }
             }
@@ -819,9 +820,9 @@ export async function getProspects() {
 
     return conversations.map(conv => ({
         id: conv.id,
-        name: conv.contactName || conv.externalId,
-        phone: conv.externalId,
-        email: (conv as any).contactEmail || null,
+        name: conv.contact?.name || conv.contactName || conv.externalId,
+        phone: conv.contact?.phone || conv.externalId,
+        email: conv.contact?.email || (conv as any).contactEmail || null,
         lastContact: conv.lastMessageAt || conv.createdAt,
         agentName: conv.agent.name,
         messagesCount: conv._count?.messages || 0,
@@ -843,6 +844,7 @@ export const getProspectDetails = cache(async (conversationId: string) => {
         include: {
             agent: true,
             channel: true,
+            contact: true,
             messages: {
                 orderBy: { createdAt: 'desc' },
                 take: 50 // Get last 50 messages
@@ -868,6 +870,9 @@ export const getProspectDetails = cache(async (conversationId: string) => {
 
     return {
         ...conversation,
+        contactName: conversation.contact?.name || conversation.contactName,
+        contactEmail: conversation.contact?.email || conversation.contactEmail,
+        phone: conversation.contact?.phone || conversation.externalId,
         messages: conversation.messages.reverse(), // Return in chronological order
         documents
     }
