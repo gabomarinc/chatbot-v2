@@ -84,7 +84,7 @@ export default async function ChannelsPage() {
                                             </span>
                                         </div>
                                         {/* Additional Metadata Row */}
-                                        <div className="flex items-center gap-4 text-sm text-gray-400 font-medium">
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-400 font-medium">
                                             {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.followersCount !== undefined) ? (
                                                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-md">
                                                     <Users className="w-3 h-3 text-gray-500" />
@@ -93,14 +93,14 @@ export default async function ChannelsPage() {
                                             ) : (
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="text-[#21AC96] font-bold text-xs uppercase tracking-tight">Agente:</span>
-                                                    {channel.agent.name}
+                                                    <span className="text-gray-600 text-xs truncate max-w-[120px]">{channel.agent.name}</span>
                                                 </div>
                                             )}
 
-                                            <div className="w-1 h-1 bg-gray-200 rounded-full"></div>
+                                            <div className="hidden xs:block w-1 h-1 bg-gray-200 rounded-full"></div>
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-indigo-400 font-bold text-xs uppercase tracking-tight">Tipo:</span>
-                                                {channel.type}
+                                                <span className="text-gray-600 text-xs">{channel.type}</span>
                                             </div>
                                         </div>
                                     </div>

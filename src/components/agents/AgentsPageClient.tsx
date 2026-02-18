@@ -115,27 +115,27 @@ function AgentCard({ agent }: { agent: Agent }) {
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-8 bg-gray-50/50 rounded-3xl p-6 border border-gray-50">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8 bg-gray-50/50 rounded-3xl p-4 sm:p-6 border border-gray-50">
                         <div className="flex flex-col items-center">
                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-2 shadow-sm">
                                 <LayoutGrid className="w-4 h-4 text-[#21AC96]" />
                             </div>
-                            <span className="text-lg text-gray-900 font-extrabold">{agent._count.channels}</span>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Canales</span>
+                            <span className="text-base sm:text-lg text-gray-900 font-extrabold">{agent._count.channels}</span>
+                            <span className="text-[8px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">Canales</span>
                         </div>
                         <div className="flex flex-col items-center">
                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-2 shadow-sm">
                                 <MessageSquare className="w-4 h-4 text-indigo-500" />
                             </div>
-                            <span className="text-lg text-gray-900 font-extrabold">{agent._count.conversations}</span>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Chats</span>
+                            <span className="text-base sm:text-lg text-gray-900 font-extrabold">{agent._count.conversations}</span>
+                            <span className="text-[8px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">Chats</span>
                         </div>
                         <div className="flex flex-col items-center">
                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-2 shadow-sm">
                                 <Zap className="w-4 h-4 text-orange-500" />
                             </div>
-                            <span className="text-lg text-gray-900 font-extrabold">{agent.trainingScore ?? 0}</span>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Puntos</span>
+                            <span className="text-base sm:text-lg text-gray-900 font-extrabold">{agent.trainingScore ?? 0}</span>
+                            <span className="text-[8px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">Puntos</span>
                         </div>
                     </div>
 
@@ -231,14 +231,14 @@ export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientPr
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in text-gray-900">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
                 <div>
                     <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight mb-2">Agentes</h1>
                     <p className="text-gray-500 font-medium">Crea, entrena y gestiona tus agentes de IA personalizados</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    {/* View Toggle */}
-                    <div className="bg-white p-1 rounded-xl border border-gray-100 flex items-center shadow-sm">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    {/* View Toggle - Hidden on very small screens to save space */}
+                    <div className="hidden xs:flex bg-white p-1 rounded-xl border border-gray-100 items-center shadow-sm">
                         <button
                             onClick={() => setViewMode('GRID')}
                             className={`p-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-gray-100 text-[#21AC96]' : 'text-gray-400 hover:text-gray-600'}`}
@@ -260,10 +260,10 @@ export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientPr
                     {canCreate && (
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="flex items-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer group active:scale-95"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer group active:scale-95"
                         >
                             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                            Crear Nuevo Agente
+                            <span className="whitespace-nowrap">Nuevo Agente</span>
                         </button>
                     )}
                 </div>

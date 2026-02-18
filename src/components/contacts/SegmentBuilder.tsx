@@ -413,32 +413,32 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
             {/* Results Panel */}
             <div className="lg:col-span-8">
                 <div className="bg-white rounded-3xl min-h-[600px] border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col backdrop-blur-sm bg-white/80">
-                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500">
+                            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 shrink-0">
                                 <Users className="w-6 h-6" />
                             </div>
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-900">Resultados</h2>
-                                <p className="text-xs text-gray-500 font-medium tracking-wide uppercase">
+                            <div className="min-w-0">
+                                <h2 className="text-xl font-bold text-gray-900 truncate">Resultados</h2>
+                                <p className="text-xs text-gray-500 font-medium tracking-wide uppercase truncate">
                                     {hasSearched ? `${totalResults} contactos encontrados` : 'Esperando búsqueda...'}
                                 </p>
                             </div>
                         </div>
 
                         {hasSearched && totalResults > 0 && (
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                                 <button
                                     onClick={handleExport}
                                     disabled={isLoading}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-100 text-gray-700 rounded-xl text-sm font-bold shadow-sm hover:shadow-md hover:border-gray-200 transition-all disabled:opacity-50"
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-100 text-gray-700 rounded-xl text-sm font-bold shadow-sm hover:shadow-md hover:border-gray-200 transition-all disabled:opacity-50"
                                 >
                                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-[#21AC96]" />}
-                                    Exportar Excel
+                                    <span className="whitespace-nowrap">Exportar Excel</span>
                                 </button>
-                                <button className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-gray-800 hover:-translate-y-0.5 transition-all">
+                                <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-gray-800 transition-all">
                                     <Save className="w-4 h-4" />
-                                    Guardar Segmento
+                                    <span className="whitespace-nowrap">Guardar Segmento</span>
                                 </button>
                             </div>
                         )}
@@ -538,27 +538,27 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                 </div>
 
                                 {/* Pagination Controls */}
-                                <div className="p-6 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
-                                    <p className="text-xs font-medium text-gray-500">
+                                <div className="p-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/30">
+                                    <p className="text-xs font-medium text-gray-500 order-2 sm:order-1">
                                         Mostrando <span className="text-gray-900 font-bold">{results.length}</span> de <span className="text-gray-900 font-bold">{totalResults}</span> resultados
                                     </p>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 order-1 sm:order-2 w-full sm:w-auto">
                                         <button
                                             onClick={() => setPage(prev => Math.max(1, prev - 1))}
                                             disabled={page === 1}
-                                            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                                            className="flex-1 sm:flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                                         >
-                                            Anterior
+                                            Ant.
                                         </button>
                                         <span className="text-xs font-bold text-gray-900 bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm min-w-[80px] text-center">
-                                            Página {page}
+                                            {page}
                                         </span>
                                         <button
                                             onClick={() => setPage(prev => prev + 1)}
                                             disabled={results.length < pageSize}
-                                            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                                            className="flex-1 sm:flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                                         >
-                                            Siguiente
+                                            Sig.
                                         </button>
                                     </div>
                                 </div>

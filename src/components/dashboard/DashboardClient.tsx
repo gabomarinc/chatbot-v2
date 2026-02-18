@@ -266,8 +266,8 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                     </div>
 
                     {/* Week Navigation */}
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-between sm:justify-start">
                             <button
                                 onClick={() => handleWeekChange(weekOffset - 1)}
                                 disabled={isLoadingWeeklyData}
@@ -275,13 +275,13 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                             >
                                 <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-[#21AC96] transition-colors" />
                             </button>
-                            <div className="px-5 py-2.5 bg-gray-50 rounded-xl min-w-[200px] text-center">
+                            <div className="px-3 md:px-5 py-2.5 bg-gray-50 rounded-xl flex-1 sm:flex-none sm:min-w-[200px] text-center">
                                 {isLoadingWeeklyData ? (
                                     <div className="animate-pulse">
-                                        <div className="h-4 bg-gray-200 rounded w-32 mx-auto"></div>
+                                        <div className="h-4 bg-gray-200 rounded w-24 md:w-32 mx-auto"></div>
                                     </div>
                                 ) : (
-                                    <span className="text-sm font-bold text-gray-700">
+                                    <span className="text-xs md:text-sm font-bold text-gray-700 whitespace-nowrap">
                                         {formatWeekRange(weeklyData.weekStart, weeklyData.weekEnd)}
                                     </span>
                                 )}
@@ -293,15 +293,16 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                             >
                                 <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#21AC96] transition-colors" />
                             </button>
-                            {weekOffset !== 0 && (
-                                <button
-                                    onClick={() => handleWeekChange(0)}
-                                    className="ml-2 px-4 py-2 text-sm font-bold text-[#21AC96] hover:bg-[#21AC96]/10 rounded-xl transition-colors"
-                                >
-                                    Hoy
-                                </button>
-                            )}
                         </div>
+
+                        {weekOffset !== 0 && (
+                            <button
+                                onClick={() => handleWeekChange(0)}
+                                className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-[#21AC96] hover:bg-[#21AC96]/10 rounded-xl transition-colors text-center"
+                            >
+                                Volver a Hoy
+                            </button>
+                        )}
                     </div>
 
                     <div className="h-[280px] w-full">

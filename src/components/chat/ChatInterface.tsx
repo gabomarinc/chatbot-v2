@@ -145,13 +145,17 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
         }
     };
 
+    const [showSidebarOnMobile, setShowSidebarOnMobile] = useState(true);
+
     useEffect(() => {
         if (selectedConvId) {
+            setShowSidebarOnMobile(false);
             loadMessages(selectedConvId);
+        } else {
+            setShowSidebarOnMobile(true);
         }
     }, [selectedConvId]);
 
-    // Polling for new messages
     useEffect(() => {
         if (!selectedConvId) return;
 
@@ -184,9 +188,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
         setIsLoadingMessages(true);
         try {
             const msgs = await getChatMessages(id);
-            // Transform date strings to Date objects if needed and log metadata for debugging
             const transformedMessages = msgs.map(m => {
-                // Log metadata to help debug image display issues
                 if (m.metadata) {
                     console.log('[ChatInterface] Message metadata:', m.id, m.metadata);
                 }
@@ -223,16 +225,13 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
             const result = await sendManualMessage(selectedConvId, newMessage);
 
             if (result.success && result.message) {
-                // Append the real message from server
                 const newMsg: Message = {
                     ...result.message,
                     metadata: result.message.metadata as any || null,
-                    role: 'HUMAN' // Ensure role is correctly typed for UI
+                    role: 'HUMAN'
                 };
                 setMessages(prev => [...prev, newMsg]);
                 setNewMessage('');
-                // Also update conversation in list to show last message?
-                // router.refresh() handles this usually, but we can do it locally if needed
             } else {
                 console.error('Error sending message:', result.error);
                 alert(result.error || 'Error al enviar mensaje');
@@ -246,9 +245,12 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
     };
 
     return (
-        <div className="flex h-[calc(100vh-140px)] bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden mx-6 mb-6 animate-fade-in">
+        <div className="flex h-[calc(100vh-110px)] md:h-[calc(100vh-140px)] bg-white rounded-none md:rounded-[2rem] border-x-0 md:border border-gray-100 shadow-sm overflow-hidden mx-0 md:mx-6 mb-0 md:mb-6 animate-fade-in relative">
             {/* Sidebar List */}
-            <div className="w-80 border-r border-gray-100 flex flex-col bg-white">
+            <div className={cn(
+                "w-full md:w-80 border-r border-gray-100 flex flex-col bg-white transition-all duration-300",
+                !showSidebarOnMobile && "hidden md:flex"
+            )}>
                 <div className="p-6 border-b border-gray-50">
                     <div className="relative group">
                         <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1E9A86] transition-colors" />
@@ -338,44 +340,54 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
             {/* Main Chat Area */}
             {
                 selectedConvId && activeConversation ? (
-                    <div className="flex-1 flex flex-col bg-[#F8FAFC]">
+                    <div className={cn(
+                        "flex-1 flex flex-col bg-[#F8FAFC]",
+                        showSidebarOnMobile && "hidden md:flex"
+                    )}>
                         {/* Chat Header */}
-                        <div className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] z-10">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-gradient-to-br from-[#1E9A86] to-[#158571] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#1E9A86]/20 font-bold text-lg">
+                        <div className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] z-10 transition-all">
+                            <div className="flex items-center gap-3 md:gap-4">
+                                {/* Back Button Mobile */}
+                                <button
+                                    onClick={() => setSelectedConvId(null)}
+                                    className="md:hidden p-2 -ml-2 text-gray-400 hover:text-[#1E9A86] transition-colors"
+                                >
+                                    <ArrowLeft className="w-6 h-6" />
+                                </button>
+
+                                <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-[#1E9A86] to-[#158571] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#1E9A86]/20 font-bold text-base md:text-lg">
                                     {activeConversation.contactName?.charAt(0).toUpperCase() || '?'}
                                 </div>
-                                <div>
-                                    <h3 className="text-gray-900 text-sm font-extrabold">{activeConversation.contactName || activeConversation.externalId}</h3>
+                                <div className="min-w-0">
+                                    <h3 className="text-gray-900 text-[13px] md:text-sm font-extrabold truncate max-w-[120px] md:max-w-none">
+                                        {activeConversation.contactName || activeConversation.externalId}
+                                    </h3>
                                     <div className="flex items-center gap-2">
                                         <span className={cn(
                                             "w-1.5 h-1.5 rounded-full animate-pulse",
                                             activeConversation.assignedUser ? "bg-blue-500" : "bg-green-500"
                                         )}></span>
-                                        <p className="text-xs text-gray-500 font-medium">
+                                        <p className="text-[10px] md:text-xs text-gray-500 font-medium truncate">
                                             {activeConversation.assignedUser
                                                 ? `Manejada por ${activeConversation.assignedUser.name || activeConversation.assignedUser.email.split('@')[0]}`
-                                                : `Atendido por ${activeConversation.agent.name} (Bot)`
+                                                : `Atendido por ${activeConversation.agent.name}`
                                             }
                                         </p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <button className="p-2.5 hover:bg-gray-50 rounded-xl transition-all text-gray-400 hover:text-gray-600 hover:scale-105 active:scale-95">
-                                    <Phone className="w-5 h-5" />
+                            <div className="flex items-center gap-1 md:gap-2">
+                                <button className="p-2 md:p-2.5 hover:bg-gray-50 rounded-xl transition-all text-gray-400 hover:text-gray-600 active:scale-95">
+                                    <Phone className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
-                                <button className="p-2.5 hover:bg-gray-50 rounded-xl transition-all text-gray-400 hover:text-gray-600 hover:scale-105 active:scale-95">
-                                    <Video className="w-5 h-5" />
-                                </button>
-                                <button className="p-2.5 hover:bg-gray-50 rounded-xl transition-all text-gray-400 hover:text-gray-600 hover:scale-105 active:scale-95">
-                                    <MoreVertical className="w-5 h-5" />
+                                <button className="p-2 md:p-2.5 hover:bg-gray-50 rounded-xl transition-all text-gray-400 hover:text-gray-600 active:scale-95">
+                                    <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
                             </div>
                         </div>
 
                         {/* Messages Feed */}
-                        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6">
                             {isLoadingMessages ? (
                                 <div className="flex items-center justify-center h-full text-gray-400 text-sm font-medium animate-pulse">
                                     Cargando historial...
@@ -388,11 +400,11 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                     return (
                                         <div key={msg.id} className={cn("flex w-full", isUser ? 'justify-start' : 'justify-end')}>
                                             <div className={cn(
-                                                "max-w-[70%] space-y-1",
+                                                "max-w-[85%] md:max-w-[70%] space-y-1",
                                                 isUser ? 'order-1' : 'order-2'
                                             )}>
                                                 <div className={cn(
-                                                    "p-4 shadow-sm text-sm font-medium leading-relaxed",
+                                                    "p-3 md:p-4 shadow-sm text-[13px] md:text-sm font-medium leading-relaxed",
                                                     isAgent || isHuman
                                                         ? "bg-gradient-to-br from-[#1E9A86] to-[#158571] text-white rounded-[1.25rem] rounded-tr-none shadow-[#1E9A86]/10"
                                                         : "bg-white text-gray-800 border border-gray-100 rounded-[1.25rem] rounded-tl-none"
@@ -529,23 +541,23 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                         </div>
 
                         {/* Input Area */}
-                        <div className="p-6 bg-white border-t border-gray-100">
-                            <form onSubmit={handleSendMessage} className="flex items-center gap-4">
-                                <button type="button" className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors">
-                                    <Paperclip className="w-5 h-5" />
+                        <div className="p-4 md:p-6 bg-white border-t border-gray-100">
+                            <form onSubmit={handleSendMessage} className="flex items-center gap-2 md:gap-4">
+                                <button type="button" className="p-2 md:p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors">
+                                    <Paperclip className="w-5 h-5 md:w-5 md:h-5" />
                                 </button>
                                 <input
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
                                     placeholder="Escribe un mensaje..."
-                                    className="flex-1 bg-gray-50 border-0 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1E9A86]/20 transition-all placeholder-gray-400"
+                                    className="flex-1 bg-gray-50 border-0 rounded-2xl px-4 md:px-6 py-3 md:py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1E9A86]/20 transition-all placeholder-gray-400"
                                 />
 
                                 <button
                                     type="submit"
                                     disabled={!newMessage.trim() || isSending}
-                                    className="p-4 bg-[#1E9A86] text-white rounded-2xl shadow-lg shadow-[#1E9A86]/20 hover:bg-[#158571] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                                    className="p-3 md:p-4 bg-[#1E9A86] text-white rounded-2xl shadow-lg shadow-[#1E9A86]/20 hover:bg-[#158571] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                                 >
                                     <Send className="w-5 h-5" />
                                 </button>
