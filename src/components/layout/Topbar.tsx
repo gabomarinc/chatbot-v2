@@ -180,7 +180,7 @@ export function Topbar() {
 
     return (
         <>
-            <div className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-all duration-300">
+            <div className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 transition-all duration-300 pt-safe">
                 {/* Left side */}
                 <div className="flex items-center gap-2 md:gap-6">
                     {/* Mobile Menu Toggle */}
@@ -211,7 +211,7 @@ export function Topbar() {
                         />
                     </div>
 
-                    <div className="relative group max-w-[200px] md:max-w-none" ref={searchRef}>
+                    <div className="relative group hidden sm:block md:block" ref={searchRef}>
                         <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#21AC96] group-focus-within:scale-110 transition-all duration-300" />
                         <input
                             type="text"
@@ -232,6 +232,11 @@ export function Topbar() {
                             isLoading={isSearching}
                             onClose={() => setIsSearchOpen(false)}
                         />
+                    </div>
+
+                    {/* Simple Title on Mobile */}
+                    <div className="sm:hidden flex items-center">
+                        <span className="text-gray-900 font-extrabold text-lg tracking-tight">Kônsul</span>
                     </div>
                 </div>
 

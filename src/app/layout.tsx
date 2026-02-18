@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -17,6 +17,24 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kônsul Agentes de IA",
   description: "Crea y gestiona tus agentes de IA",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Kônsul",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#21AC96",
 };
 
 export default function RootLayout({
