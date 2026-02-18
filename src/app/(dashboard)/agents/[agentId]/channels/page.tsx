@@ -44,19 +44,21 @@ export default async function AgentChannelsPage({ params }: { params: Promise<{ 
     return (
         <div className="max-w-3xl animate-fade-in">
             <div className="space-y-8">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                     <div>
                         <h3 className="text-gray-900 font-extrabold text-2xl tracking-tight mb-2">Canales conectados</h3>
                         <p className="text-gray-500 font-medium">Gestiona los canales donde este agente está activo</p>
                     </div>
-                    <ConnectChannelButton agentId={agentId} />
+                    <div className="w-full sm:w-auto">
+                        <ConnectChannelButton agentId={agentId} />
+                    </div>
                 </div>
 
                 {channels.length > 0 ? (
                     <div className="grid gap-4">
                         {channels.map((channel) => (
-                            <div key={channel.id} className="bg-white rounded-[1.5rem] p-6 border border-gray-100 flex items-center justify-between hover:border-[#21AC96]/20 hover:shadow-xl hover:shadow-[#21AC96]/5 transition-all group">
-                                <div className="flex items-center gap-5">
+                            <div key={channel.id} className="bg-white rounded-[1.5rem] p-5 md:p-6 border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#21AC96]/20 hover:shadow-xl hover:shadow-[#21AC96]/5 transition-all group">
+                                <div className="flex items-center gap-4 md:gap-5">
                                     {/* Icon / Avatar Logic */}
                                     {(channel.type === 'INSTAGRAM' && (channel.configJson as any)?.profilePictureUrl) ? (
                                         <div className="relative group-hover:scale-110 transition-transform duration-300">
@@ -104,7 +106,7 @@ export default async function AgentChannelsPage({ params }: { params: Promise<{ 
                                         </div>
                                     </div>
                                 </div>
-                                <button className="px-4 py-2 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-100 transition-colors">
+                                <button className="w-full sm:w-auto px-4 py-2 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-100 transition-colors">
                                     Configurar
                                 </button>
                             </div>

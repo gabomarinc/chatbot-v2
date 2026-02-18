@@ -57,11 +57,10 @@ export function AgentJobForm({ agent }: AgentJobFormProps) {
                 </div>
             </div>
 
-            <div className="space-y-8 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                {/* Job Type */}
+            <div className="space-y-6 md:space-y-8 bg-white p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm">
                 <div className="space-y-4">
                     <label className="text-sm font-extrabold text-gray-700 ml-1 uppercase tracking-wider">Objetivo del Agente</label>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                         {[
                             { id: 'SALES', label: 'Comercial', icon: Target, desc: 'Enfocado en ventas' },
                             { id: 'SUPPORT', label: 'Soporte', icon: Shield, desc: 'Ayuda técnica' },
@@ -126,9 +125,9 @@ export function AgentJobForm({ agent }: AgentJobFormProps) {
 
                 {/* Job Description */}
                 <div className="space-y-2">
-                    <div className="flex items-center justify-between ml-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 ml-1">
                         <label className="text-sm font-extrabold text-gray-700 uppercase tracking-wider">Descripción del Negocio</label>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-full w-fit">
                             {formData.jobDescription.length} / 1000
                         </span>
                     </div>

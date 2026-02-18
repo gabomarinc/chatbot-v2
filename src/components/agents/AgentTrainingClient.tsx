@@ -112,19 +112,19 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
         <>
             <div className="max-w-4xl space-y-10 animate-fade-in">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-[#21AC96]/10 rounded-2xl flex items-center justify-center text-[#21AC96]">
-                            <Database className="w-8 h-8" />
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-[#21AC96]/10 rounded-2xl flex items-center justify-center text-[#21AC96] shrink-0">
+                            <Database className="w-6 h-6 md:w-8 md:h-8" />
                         </div>
                         <div>
-                            <h2 className="text-gray-900 font-extrabold text-2xl tracking-tight">Base de Conocimientos</h2>
-                            <p className="text-gray-500 font-medium">Entrena a tu agente con documentos, sitios web y texto</p>
+                            <h2 className="text-gray-900 font-extrabold text-xl md:text-2xl tracking-tight">Base de Conocimientos</h2>
+                            <p className="text-xs md:text-sm text-gray-500 font-medium leading-tight">Entrena a tu agente con documentos, sitios web y texto</p>
                         </div>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-6 py-3.5 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all active:scale-95 group"
+                        className="flex items-center justify-center gap-2 px-6 py-4 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all active:scale-95 group w-full md:w-auto"
                     >
                         <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                         Añadir Fuente
@@ -132,15 +132,15 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                 </div>
 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
                     {[
-                        { label: 'Fuentes Totales', value: allSources.length, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/5' },
-                        { label: 'Estado del Entrenamiento', value: 'Optimizado', color: 'text-blue-600', bg: 'bg-blue-50' },
-                        { label: 'Última Actualización', value: 'Hoy', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        { label: 'Fuentes', value: allSources.length, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/5' },
+                        { label: 'Estado', value: 'Optimizado', color: 'text-blue-600', bg: 'bg-blue-50' },
+                        { label: 'Última Act.', value: 'Hoy', color: 'text-indigo-600', bg: 'bg-indigo-50' },
                     ].map((stat, i) => (
-                        <div key={i} className={cn("p-6 rounded-3xl border border-transparent shadow-sm", stat.bg)}>
-                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-1">{stat.label}</div>
-                            <div className={cn("text-2xl font-black", stat.color)}>{stat.value}</div>
+                        <div key={i} className={cn("p-4 md:p-6 rounded-[1.5rem] md:rounded-3xl border border-transparent shadow-sm", stat.bg, i === 2 && "col-span-2 md:col-span-1")}>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{stat.label}</div>
+                            <div className={cn("text-lg md:text-2xl font-black", stat.color)}>{stat.value}</div>
                         </div>
                     ))}
                 </div>
@@ -148,8 +148,8 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                 {/* Content Area */}
                 <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
                     {/* Tabs */}
-                    <div className="px-8 pt-6 border-b border-gray-50">
-                        <div className="flex gap-8">
+                    <div className="px-5 md:px-8 pt-6 border-b border-gray-50">
+                        <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar">
                             {['Fuentes de Datos', 'Ajustes de Respuesta'].map((tab, i) => (
                                 <button
                                     key={tab}
@@ -171,7 +171,7 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                     </div>
 
                     {activeTab === 'sources' ? (
-                        <div className="p-8">
+                        <div className="p-5 md:p-8">
                             {allSources.length > 0 ? (
                                 <div className="space-y-4">
                                     {allSources.map((source) => (
@@ -258,7 +258,7 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                             )}
                         </div>
                     ) : (
-                        <div className="p-8 space-y-8 animate-fade-in">
+                        <div className="p-5 md:p-8 space-y-8 animate-fade-in">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-6">
                                     <div>

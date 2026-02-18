@@ -132,10 +132,12 @@
 
   body {
     @apply bg-background text-foreground;
+
     /* Prevent bouncy scrolling on the main body of our app */
     @supports (overflow: clip) {
       overflow-x: hidden;
     }
+
     /* Native-like touch behavior */
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
@@ -145,9 +147,11 @@
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
   .pb-safe-offset-1 {
     padding-bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
   }
+
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
@@ -301,4 +305,14 @@ div.driver-popover .driver-popover-close-btn:hover {
   100% {
     transform: translateY(-80%);
   }
+}
+
+/* Scrollbar Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

@@ -91,8 +91,8 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
             </div>
 
             {/* Tabs Nav */}
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-2">
-                <div className="flex overflow-x-auto scrollbar-hide gap-1">
+            <div className="bg-white rounded-[1.5rem] md:rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-1.5 md:p-2">
+                <div className="flex overflow-x-auto no-scrollbar gap-1 px-1">
                     {visibleTabs.map((tab) => {
                         const isActive = pathname === tab.href;
                         return (
@@ -101,13 +101,13 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
                                 key={tab.id}
                                 href={tab.href}
                                 className={cn(
-                                    "flex items-center gap-2.5 px-6 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap",
+                                    "flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3.5 rounded-xl md:rounded-2xl text-[13px] md:text-sm font-bold transition-all whitespace-nowrap",
                                     isActive
                                         ? 'bg-[#21AC96]/10 text-[#21AC96] shadow-sm'
                                         : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
                                 )}
                             >
-                                <span className="text-lg">{tab.icon}</span>
+                                <span className="text-base md:text-lg">{tab.icon}</span>
                                 {tab.label}
                             </Link>
                         );
