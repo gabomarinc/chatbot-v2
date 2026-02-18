@@ -333,7 +333,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             </div>
 
             <Dialog open={isAltaplazaModalOpen} onOpenChange={setIsAltaplazaModalOpen}>
-                <DialogContent className="max-w-md w-full bg-white rounded-[2.5rem] p-6 md:p-10 border-none shadow-2xl">
+                <DialogContent className="max-w-md w-[95%] sm:w-full bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-10 border-none shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
                     <DialogHeader className="flex flex-col items-center text-center">
                         <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 mb-6 transition-transform hover:scale-110 duration-300 mx-auto">
                             <span className="text-4xl text-center">🛍️</span>
@@ -406,7 +406,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             </Dialog>
 
             <Dialog open={isOdooModalOpen} onOpenChange={setIsOdooModalOpen}>
-                <DialogContent className="max-w-md w-full bg-white rounded-[2.5rem] p-6 md:p-10 border-none shadow-2xl">
+                <DialogContent className="max-w-md w-[95%] sm:w-full bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-10 border-none shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
                     <DialogHeader className="flex flex-col items-center text-center">
                         <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-50 mb-6 transition-transform hover:scale-110 duration-300 mx-auto">
                             <span className="text-4xl text-center">🟣</span>
@@ -513,7 +513,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             </Dialog>
 
             <Dialog open={!!integrationToDelete} onOpenChange={(open) => !open && setIntegrationToDelete(null)}>
-                <DialogContent className="max-w-md w-full bg-white rounded-[2.5rem] p-6 md:p-10 border-none shadow-2xl">
+                <DialogContent className="max-w-md w-[95%] sm:w-full bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-10 border-none shadow-2xl">
                     <DialogHeader className="flex flex-col items-center text-center">
                         <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 mb-6 transition-transform hover:scale-110 duration-300 mx-auto">
                             <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -547,41 +547,41 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             </Dialog>
 
             <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-                <DialogContent className="max-w-2xl w-full bg-white rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden">
+                <DialogContent className="max-w-2xl w-[95%] sm:w-full bg-white rounded-[2rem] md:rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
                     {selectedIntegration && (
                         <div className="flex flex-col h-full">
                             {/* Header Section */}
-                            <div className="p-8 md:p-10 bg-gray-50/50 border-b border-gray-100">
-                                <div className="flex items-center gap-6">
-                                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[2rem] bg-white shadow-xl shadow-gray-200/50 text-5xl">
+                            <div className="p-6 md:p-10 bg-gray-50/50 border-b border-gray-100 shrink-0">
+                                <div className="flex items-center gap-4 md:gap-6">
+                                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-2xl md:rounded-[2rem] bg-white shadow-xl shadow-gray-200/50 text-3xl md:text-5xl">
                                         {selectedIntegration.icon}
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                            <h2 className="text-xl md:text-3xl font-black text-gray-900 tracking-tight truncate">
                                                 {selectedIntegration.name}
                                             </h2>
                                             {isEnabled(selectedIntegration.id) && (
-                                                <span className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-100 animate-pulse">
+                                                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-600 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-green-100 animate-pulse">
                                                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
                                                     Activo
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-gray-400 font-bold leading-relaxed">
+                                        <p className="text-xs md:text-gray-400 font-bold leading-relaxed line-clamp-2 md:line-clamp-none">
                                             {selectedIntegration.description}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Status Body */}
-                            <div className="p-8 md:p-10 space-y-8">
+                            {/* Status Body - Scrollable */}
+                            <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 no-scrollbar">
                                 {isEnabled(selectedIntegration.id) ? (
                                     <div className="space-y-8">
                                         {/* Real-time Status */}
                                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                                            <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
+                                            <div className="bg-white p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Salud de Conexión</span>
                                                 <div className="flex items-center gap-2">
                                                     <div className={`w-2.5 h-2.5 rounded-full ${integrationStats?.health === 'WARNING' ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`} />
@@ -589,53 +589,25 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                                         {isStatsLoading ? 'Cargando...' : integrationStats?.health === 'WARNING' ? 'Atención' : 'Excelente'}
                                                     </span>
                                                 </div>
-                                                {integrationStats?.health !== 'WARNING' && !isStatsLoading && (
-                                                    <div className="mt-2 h-6 w-full flex items-center justify-center opacity-40">
-                                                        <svg viewBox="0 0 100 20" className="w-full h-full text-green-500 fill-none stroke-2">
-                                                            <path
-                                                                d="M0,10 L35,10 L40,2 L45,18 L50,10 L100,10"
-                                                                className="stroke-green-500"
-                                                                style={{
-                                                                    strokeLinecap: 'round',
-                                                                    strokeLinejoin: 'round',
-                                                                    animation: 'heartbeat 2s ease-in-out infinite'
-                                                                }}
-                                                            />
-                                                        </svg>
-                                                        <style dangerouslySetInnerHTML={{
-                                                            __html: `
-                                                            @keyframes heartbeat {
-                                                                0% { stroke-dasharray: 0, 100; stroke-dashoffset: 0; opacity: 0; }
-                                                                20% { opacity: 1; }
-                                                                50% { stroke-dasharray: 100, 100; stroke-dashoffset: 0; }
-                                                                100% { stroke-dasharray: 100, 100; stroke-dashoffset: -100; opacity: 0; }
-                                                            }
-                                                        `}} />
-                                                    </div>
-                                                )}
                                             </div>
-                                            <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Sincronización</span>
-                                                <div className="flex flex-col gap-2 mt-1">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-2 h-2 rounded-full border-2 border-indigo-400 bg-white shadow-[0_0_8px_rgba(129,140,248,0.3)]" />
-                                                        <span className="text-sm font-black text-gray-900">
-                                                            {isStatsLoading ? '...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleDateString() : 'N/A'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-2 h-2 rounded-full border-2 border-gray-200 bg-white" />
-                                                        <span className="text-sm font-bold text-gray-400">
-                                                            {isStatsLoading ? '...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                                        </span>
-                                                    </div>
+
+                                            <div className="bg-white p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sincronización</span>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-xs md:text-sm font-black text-gray-900">
+                                                        {isStatsLoading ? '...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleDateString() : 'N/A'}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-gray-400">
+                                                        {isStatsLoading ? '...' : integrationStats?.lastSync ? new Date(integrationStats.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2 col-span-2 lg:col-span-1">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Eventos Semanales</span>
-                                                <span className="text-sm font-black text-gray-900 flex items-center gap-2">
-                                                    <Sparkles className="w-4 h-4 text-amber-500" />
-                                                    {isStatsLoading ? '...' : `${integrationStats?.eventsWeekly || 0} procesados`}
+
+                                            <div className="bg-white p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100 shadow-sm flex flex-col gap-2 col-span-2 lg:col-span-1">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Eventos</span>
+                                                <span className="text-xs md:text-sm font-black text-gray-900 flex items-center gap-2">
+                                                    <Sparkles className="w-3 h-3 text-amber-500" />
+                                                    {isStatsLoading ? '...' : `${integrationStats?.eventsWeekly || 0} p.`}
                                                 </span>
                                             </div>
                                         </div>
@@ -644,49 +616,49 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                         <div className="space-y-4">
                                             <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Capacidades del Agente</h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                <div className="flex items-center gap-4 p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100/50">
-                                                    <div className="bg-indigo-600 p-2 rounded-xl">
-                                                        <Database className="w-4 h-4 text-white" />
+                                                <div className="flex items-center gap-3 md:gap-4 p-4 bg-indigo-50/30 rounded-xl md:rounded-2xl border border-indigo-100/50">
+                                                    <div className="bg-indigo-600 p-2 rounded-lg md:rounded-xl">
+                                                        <Database className="w-3 h-3 md:w-4 md:h-4 text-white" />
                                                     </div>
-                                                    <span className="text-sm font-bold text-gray-700">Sincronización de Leads</span>
+                                                    <span className="text-xs md:text-sm font-bold text-gray-700">Sincronización de Leads</span>
                                                 </div>
-                                                <div className="flex items-center gap-4 p-4 bg-purple-50/30 rounded-2xl border border-purple-100/50">
-                                                    <div className="bg-purple-600 p-2 rounded-xl">
-                                                        <User className="w-4 h-4 text-white" />
+                                                <div className="flex items-center gap-3 md:gap-4 p-4 bg-purple-50/30 rounded-xl md:rounded-2xl border border-purple-100/50">
+                                                    <div className="bg-purple-600 p-2 rounded-lg md:rounded-xl">
+                                                        <User className="w-3 h-3 md:w-4 md:h-4 text-white" />
                                                     </div>
-                                                    <span className="text-sm font-bold text-gray-700">Enriquecimiento de Perfiles</span>
+                                                    <span className="text-xs md:text-sm font-bold text-gray-700">Enriquecimiento de Perfiles</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="space-y-8">
+                                    <div className="space-y-6 md:space-y-8">
                                         {/* Promotional Content */}
-                                        <div className="bg-indigo-50/50 p-8 rounded-[2rem] border border-indigo-100 flex flex-col items-center text-center gap-4">
-                                            <div className="h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 flex shadow-lg shadow-indigo-200">
-                                                <Sparkles className="h-8 w-8 text-indigo-50" />
+                                        <div className="bg-indigo-50/50 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-indigo-100 flex flex-col items-center text-center gap-4">
+                                            <div className="h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-xl md:rounded-2xl bg-indigo-600 flex shadow-lg shadow-indigo-200">
+                                                <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-indigo-50" />
                                             </div>
                                             <div className="max-w-sm">
-                                                <h4 className="text-xl font-black text-indigo-900 mb-2">Desbloquea el poder del CRM</h4>
-                                                <p className="text-sm font-bold text-indigo-600/80">
+                                                <h4 className="text-lg md:text-xl font-black text-indigo-900 mb-1 md:mb-2">Desbloquea el poder del CRM</h4>
+                                                <p className="text-xs md:text-sm font-bold text-indigo-600/80 leading-relaxed px-2">
                                                     Al activar esta integración, tu agente podrá gestionar datos técnicos y sincronizar la información del cliente en tiempo real.
                                                 </p>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="flex gap-4 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                                            <div className="flex gap-4 p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl border border-gray-100 shadow-sm">
                                                 <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center text-xl">✅</div>
                                                 <div>
-                                                    <p className="font-black text-gray-900 text-sm">Instalación Rápida</p>
-                                                    <p className="text-xs font-bold text-gray-400">Configura en menos de 2 minutos.</p>
+                                                    <p className="font-black text-gray-900 text-[13px] md:text-sm">Instalación Rápida</p>
+                                                    <p className="text-[10px] md:text-xs font-bold text-gray-400">Configura en menos de 2 minutos.</p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-4 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                                            <div className="flex gap-4 p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl border border-gray-100 shadow-sm">
                                                 <div className="w-10 h-10 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center text-xl">🛡️</div>
                                                 <div>
-                                                    <p className="font-black text-gray-900 text-sm">Seguridad de Datos</p>
-                                                    <p className="text-xs font-bold text-gray-400">Encriptación de punto a punto.</p>
+                                                    <p className="font-black text-gray-900 text-[13px] md:text-sm">Seguridad de Datos</p>
+                                                    <p className="text-[10px] md:text-xs font-bold text-gray-400">Encriptación de punto a punto.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -695,25 +667,28 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             </div>
 
                             {/* Footer Actions */}
-                            <div className="p-8 md:p-10 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between gap-4">
+                            <div className="p-6 md:p-10 border-t border-gray-100 bg-gray-50/30 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
                                 <Button
                                     variant="outline"
                                     onClick={() => setIsDetailsModalOpen(false)}
-                                    className="px-8 rounded-2xl h-14 text-xs font-black uppercase tracking-widest border-gray-200 hover:bg-white transition-all shadow-sm"
+                                    className="w-full sm:w-auto px-8 rounded-2xl h-12 md:h-14 text-[10px] md:text-xs font-black uppercase tracking-widest border-gray-200 hover:bg-white transition-all shadow-sm order-2 sm:order-1"
                                 >
                                     Cerrar
                                 </Button>
 
-                                <div className="flex items-center gap-3 flex-1 justify-end">
+                                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-1 justify-end order-1 sm:order-2">
                                     {isEnabled(selectedIntegration.id) ? (
                                         <>
                                             <Button
                                                 onClick={() => {
-                                                    setIsDetailsModalOpen(false);
-                                                    handleDisconnectClick(isEnabled(selectedIntegration.id).id);
+                                                    const integration = isEnabled(selectedIntegration.id);
+                                                    if (integration) {
+                                                        setIsDetailsModalOpen(false);
+                                                        handleDisconnectClick(integration.id);
+                                                    }
                                                 }}
                                                 variant="outline"
-                                                className="px-6 rounded-2xl h-14 text-xs font-black uppercase tracking-widest border-red-100 text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                className="w-full sm:w-auto px-6 rounded-2xl h-12 md:h-14 text-[10px] md:text-xs font-black uppercase tracking-widest border-red-100 text-red-600 hover:bg-red-50 flex items-center justify-center gap-2"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                                 Desconectar
@@ -723,7 +698,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                                     setIsDetailsModalOpen(false);
                                                     handleActivate(selectedIntegration.id);
                                                 }}
-                                                className="flex-1 max-w-[200px] rounded-2xl h-14 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 transition-all"
+                                                className="w-full sm:w-auto sm:min-w-[140px] rounded-2xl h-12 md:h-14 text-[10px] md:text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 transition-all"
                                             >
                                                 Configurar
                                             </Button>
@@ -734,7 +709,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                                 setIsDetailsModalOpen(false);
                                                 handleActivate(selectedIntegration.id);
                                             }}
-                                            className="w-full md:w-auto px-12 rounded-2xl h-14 text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 transition-all"
+                                            className="w-full sm:w-auto sm:px-12 rounded-2xl h-12 md:h-14 text-[10px] md:text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 transition-all"
                                         >
                                             Activar Ahora
                                         </Button>
