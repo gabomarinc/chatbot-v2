@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createChannel, updateChannel } from '@/lib/actions/dashboard';
-import { Loader2, Check, Phone, Copy, ArrowRight, ShieldCheck, Settings2, Info } from 'lucide-react';
+import { Loader2, Check, Phone, Copy, ArrowRight, ShieldCheck, Settings2, Info, Zap, CheckCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { WhatsAppEmbeddedSignup } from './WhatsAppEmbeddedSignup';
@@ -256,13 +256,34 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                 <div className="bg-gradient-to-r from-green-600 to-green-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl shadow-green-500/20 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-fullblur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000"></div>
                     <div className="relative z-10 text-center">
-                        <div className="inline-flex items-center justify-center p-4 bg-white/20 backdrop-blur-md rounded-3xl mb-6 shadow-inner">
-                            <Phone className="w-12 h-12 text-white" />
+                        <div className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full mb-8 border border-white/20 shadow-xl">
+                            <ShieldCheck className="w-4 h-4 text-white" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Meta Tech Provider Oficial</span>
                         </div>
-                        <h2 className="text-4xl font-black tracking-tight text-white mb-4">Conexión Oficial</h2>
-                        <p className="text-green-50 text-xl font-medium max-w-xl mx-auto leading-relaxed">
-                            Vincula tu número de WhatsApp Business en un clic para automatizar tus respuestas con IA.
+
+                        <div className="inline-flex items-center justify-center p-5 bg-white/10 backdrop-blur-xl rounded-[2.5rem] mb-8 shadow-2xl border border-white/10">
+                            <Phone className="w-14 h-14 text-white drop-shadow-lg" />
+                        </div>
+
+                        <h2 className="text-5xl font-black tracking-tighter text-white mb-6">Conexión Oficial</h2>
+
+                        <p className="text-green-50/80 text-lg font-bold max-w-2xl mx-auto leading-relaxed mb-10">
+                            Utilizamos la API Cloud oficial de Meta para garantizar la máxima seguridad y el 100% de entrega en tus mensajes.
                         </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                            {[
+                                { icon: ShieldCheck, title: "Seguridad Grado Enterprise", desc: "Cifrado oficial de extremo a extremo." },
+                                { icon: Zap, title: "Estabilidad 99.9%", desc: "Conexión directa sin intermediarios." },
+                                { icon: CheckCircle, title: "Tilde Azul de Verificación", desc: "Compatible con el proceso de verificación." }
+                            ].map((benefit, i) => (
+                                <div key={i} className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 text-left">
+                                    <benefit.icon className="w-5 h-5 text-white mb-3" />
+                                    <p className="text-xs font-black text-white mb-1 uppercase tracking-tight">{benefit.title}</p>
+                                    <p className="text-[10px] text-green-50/60 font-medium leading-tight">{benefit.desc}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -314,25 +335,38 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
             {/* Header */}
-            <div className="bg-gradient-to-r from-green-600 to-green-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl shadow-green-500/20 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-fullblur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000"></div>
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-green-500/10 rounded-full blur-[100px] -mr-48 -mt-48"></div>
 
                 <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
-                            <Phone className="w-8 h-8 text-white" />
+                    <div className="flex flex-col md:flex-row md:items-center gap-8">
+                        <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl">
+                            <Phone className="w-10 h-10 text-white" />
                         </div>
-                        <div>
-                            <h2 className="text-3xl font-black tracking-tight text-white mb-2">WhatsApp Business</h2>
-                            <div className="flex items-center gap-2 text-green-100 font-medium">
-                                <span className="px-2 py-0.5 rounded-md bg-green-500/50 border border-green-400/50 text-xs font-bold uppercase tracking-wider">OFFICIAL API</span>
-                                <span>Integración Directa</span>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                                <h2 className="text-3xl font-black tracking-tight text-white leading-none">WhatsApp Cloud API</h2>
+                                <span className="px-3 py-1 bg-green-500 text-slate-900 text-[9px] font-black uppercase tracking-widest rounded-full">Official</span>
                             </div>
+                            <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-xl">
+                                Como <span className="text-white font-black italic">Meta Tech Provider Oficial</span>, garantizamos una integración directa, sin cargos ocultos y con el respaldo tecnológico de Meta.
+                            </p>
                         </div>
                     </div>
-                    <p className="text-green-50 text-lg max-w-2xl font-medium leading-relaxed">
-                        Configura manualmente tus credenciales de la API de WhatsApp Cloud para un control total.
-                    </p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-10 pt-10 border-t border-white/5">
+                        {[
+                            { t: "Cero Latencia", d: "Entrega instantánea" },
+                            { t: "Escalabilidad", d: "Volumen ilimitado" },
+                            { t: "Costes Oficiales", d: "Sin intermediarios" },
+                            { t: "API Permanente", d: "Token de larga duración" }
+                        ].map((item, i) => (
+                            <div key={i}>
+                                <p className="text-white text-xs font-black uppercase tracking-widest mb-1">{item.t}</p>
+                                <p className="text-slate-500 text-[10px] font-bold">{item.d}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
