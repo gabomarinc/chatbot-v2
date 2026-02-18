@@ -68,15 +68,9 @@ export async function POST(req: NextRequest) {
         const senderId = messaging.sender?.id;
 
         // --- SELF-MESSAGE / ECHO PROTECTION ---
-        // 1. Check for 'is_echo' flag
-        if (messaging.message?.is_echo) {
-            console.log('Ignoring ECHO message (from bot)');
-            return NextResponse.json({ status: 'ok' });
-        }
-
-        // 2. Advanced Self-Message Check
+        // 2. Advanced Self-Message Check & Auto-Pause
         // Check if the sender ID belongs to ANY of our active channels (User ID, Page ID, or Alternate ID)
-        if (senderId) {
+        if (senderId || messaging.message?.is_echo) {
             const isSelf = channels.some(c => {
                 const conf = c.configJson as any;
                 return (
@@ -86,8 +80,38 @@ export async function POST(req: NextRequest) {
                 );
             });
 
-            if (isSelf) {
-                console.log(`Ignoring Self-Message: Sender ${senderId} is one of our active channels.`);
+            if (isSelf || messaging.message?.is_echo) {
+                console.log(`[HUMAN RESPONSE] Detected response from owner/bot. Pausing bot for this conversation.`);
+
+                // If it's a self-message or echo, we should find the corresponding conversation and pause it
+                // This prevents the bot from interjecting when a human starts talking in the official app
+                const targetVisitorId = messaging.message?.is_echo ? messaging.recipient?.id : senderId;
+
+                if (targetVisitorId) {
+                    const conv = await prisma.conversation.findFirst({
+                        where: {
+                            externalId: targetVisitorId,
+                            status: { not: 'CLOSED' }
+                        }
+                    });
+
+                    if (conv) {
+                        await prisma.conversation.update({
+                            where: { id: conv.id },
+                            data: { isPaused: true }
+                        });
+
+                        // Also save the message as a HUMAN message in our system
+                        await prisma.message.create({
+                            data: {
+                                conversationId: conv.id,
+                                role: 'HUMAN',
+                                content: messaging.message?.text || '(Mensaje multimedia desde Instagram)'
+                            }
+                        });
+                    }
+                }
+
                 return NextResponse.json({ status: 'ok' });
             }
         }

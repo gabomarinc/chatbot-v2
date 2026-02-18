@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send, MoreVertical, Phone, Video, UserPlus, X, Calendar, MessageCircle, Bot, Paperclip, User, Hand, ArrowLeft, Mic } from 'lucide-react';
+import { Search, Send, MoreVertical, Phone, Video, UserPlus, X, Calendar, MessageCircle, Bot, Paperclip, User, Hand, ArrowLeft, Mic, Instagram, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getChatMessages, getConversations } from '@/lib/actions/dashboard';
 import { format } from 'date-fns';
@@ -744,7 +744,9 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                 <div>
                                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1 block">Canal</label>
                                     <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                                        {activeConversation.channel?.type || 'WEBCHAT'}
+                                        {activeConversation.channel?.type === 'INSTAGRAM' && <Instagram size={14} className="text-[#E4405F]" />}
+                                        {activeConversation.channel?.type === 'WHATSAPP' && <MessageSquare size={14} className="text-[#25D366]" />}
+                                        {activeConversation.channel?.type || (activeConversation.id.startsWith('cml') && activeConversation.externalId.length > 10 ? 'INSTAGRAM' : 'WEBCHAT')}
                                     </p>
                                 </div>
                                 <div>
