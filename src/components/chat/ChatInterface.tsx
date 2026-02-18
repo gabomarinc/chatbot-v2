@@ -36,6 +36,7 @@ interface Conversation {
     channel?: { type: string; displayName: string };
     assignedTo?: string | null;
     assignedUser?: { id: string; name: string | null; email: string } | null;
+    isPaused: boolean;
 }
 
 interface TeamMember {
@@ -114,35 +115,33 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
     const activeConversation = conversations.find(c => c.id === selectedConvId);
 
     // Helper function to update conversation assignment in local state
-    const updateConversationAssignment = (conversationId: string, userId: string | null) => {
-        if (userId) {
-            const user = teamMembers.find(m => m.user.id === userId);
-            if (user) {
-                setConversations(prev => prev.map(conv =>
-                    conv.id === conversationId
-                        ? {
-                            ...conv,
-                            assignedTo: userId,
-                            assignedUser: {
-                                id: user.user.id,
-                                name: user.user.name,
-                                email: user.user.email
-                            }
-                        }
-                        : conv
-                ));
+    const updateConversationAssignment = (conversationId: string, userId: string | null, isPausedChange?: boolean) => {
+        setConversations(prev => prev.map(conv => {
+            if (conv.id !== conversationId) return conv;
+
+            const updatedConv = { ...conv };
+
+            if (userId) {
+                const user = teamMembers.find(m => m.user.id === userId);
+                if (user) {
+                    updatedConv.assignedTo = userId;
+                    updatedConv.assignedUser = {
+                        id: user.user.id,
+                        name: user.user.name,
+                        email: user.user.email
+                    };
+                }
+            } else {
+                updatedConv.assignedTo = null;
+                updatedConv.assignedUser = null;
             }
-        } else {
-            setConversations(prev => prev.map(conv =>
-                conv.id === conversationId
-                    ? {
-                        ...conv,
-                        assignedTo: null,
-                        assignedUser: null
-                    }
-                    : conv
-            ));
-        }
+
+            if (isPausedChange !== undefined) {
+                updatedConv.isPaused = isPausedChange;
+            }
+
+            return updatedConv;
+        }));
     };
 
     const [showSidebarOnMobile, setShowSidebarOnMobile] = useState(true);
@@ -213,8 +212,8 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (activeConversation && !activeConversation.assignedTo) {
-            toast.error("Debes asumir la conversación para enviar mensajes.");
+        if (activeConversation && !activeConversation.isPaused) {
+            toast.error("Debes pausar el bot (Asumir control) para enviar mensajes manuales.");
             return;
         }
 
@@ -365,12 +364,12 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                     <div className="flex items-center gap-2">
                                         <span className={cn(
                                             "w-1.5 h-1.5 rounded-full animate-pulse",
-                                            activeConversation.assignedUser ? "bg-blue-500" : "bg-green-500"
+                                            activeConversation.isPaused ? "bg-amber-500" : "bg-green-500"
                                         )}></span>
                                         <p className="text-[10px] md:text-xs text-gray-500 font-medium truncate">
-                                            {activeConversation.assignedUser
-                                                ? `Manejada por ${activeConversation.assignedUser.name || activeConversation.assignedUser.email.split('@')[0]}`
-                                                : `Atendido por ${activeConversation.agent.name}`
+                                            {activeConversation.isPaused
+                                                ? `Control Humano: ${activeConversation.assignedUser?.name || 'Agente'}`
+                                                : `Atención Automática: Bot activo`
                                             }
                                         </p>
                                     </div>
@@ -590,8 +589,26 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                         <div className="space-y-6">
                             <div className="space-y-3">
                                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Asignación</label>
-                                {activeConversation.assignedUser ? (
-                                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                {activeConversation.isPaused ? (
+                                    <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl mb-4">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Bot className="w-3.5 h-3.5 text-amber-600" />
+                                            <p className="text-xs text-amber-700 font-bold">Bot Pausado</p>
+                                        </div>
+                                        <p className="text-[10px] text-amber-600 font-medium">Un humano tiene el control manual.</p>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 bg-green-50 border border-green-100 rounded-xl mb-4">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Bot className="w-3.5 h-3.5 text-green-600" />
+                                            <p className="text-xs text-green-700 font-bold">Bot Activo</p>
+                                        </div>
+                                        <p className="text-[10px] text-green-600 font-medium">El bot responderá automáticamente.</p>
+                                    </div>
+                                )}
+
+                                {activeConversation.assignedUser && (
+                                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 mb-4">
                                         <p className="text-xs text-gray-500 font-medium mb-2">Asignada a:</p>
                                         <div className="flex items-center gap-2">
                                             <div className="w-8 h-8 bg-gradient-to-br from-[#1E9A86] to-[#158571] rounded-lg flex items-center justify-center">
@@ -601,79 +618,65 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                                 <p className="text-sm font-bold text-gray-900 truncate">
                                                     {activeConversation.assignedUser.name || activeConversation.assignedUser.email.split('@')[0]}
                                                 </p>
-                                                {activeConversation.assignedUser.name && (
-                                                    <p className="text-xs text-gray-500 truncate">{activeConversation.assignedUser.email}</p>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-xl">
-                                        <p className="text-xs text-yellow-700 font-medium">No asignada - El bot está manejando la conversación</p>
-                                    </div>
                                 )}
 
-                                {/* Asumir Conversación - Solo mostrar si NO está asignada */}
-                                {!activeConversation.assignedUser && (
-                                    <button
-                                        onClick={async () => {
-                                            if (!selectedConvId || isProcessing || !currentUserId) return;
-                                            setIsProcessing(true);
-                                            try {
-                                                const result = await assumeConversation(selectedConvId);
-                                                if (result.error) {
-                                                    alert(result.error);
-                                                } else {
-                                                    // Actualizar estado local inmediatamente
-                                                    if (currentUserId) {
-                                                        updateConversationAssignment(selectedConvId, currentUserId);
+                                {/* Control Buttons */}
+                                <div className="space-y-2">
+                                    {!activeConversation.isPaused ? (
+                                        <button
+                                            onClick={async () => {
+                                                if (!selectedConvId || isProcessing || !currentUserId) return;
+                                                setIsProcessing(true);
+                                                try {
+                                                    const result = await assumeConversation(selectedConvId);
+                                                    if (result.error) {
+                                                        alert(result.error);
+                                                    } else {
+                                                        updateConversationAssignment(selectedConvId, currentUserId, true);
+                                                        router.refresh();
                                                     }
-                                                    router.refresh();
+                                                } catch (error) {
+                                                    console.error('Error assuming control:', error);
+                                                } finally {
+                                                    setIsProcessing(false);
                                                 }
-                                            } catch (error) {
-                                                console.error('Error assuming conversation:', error);
-                                                alert('Error al asumir la conversación');
-                                            } finally {
-                                                setIsProcessing(false);
-                                            }
-                                        }}
-                                        disabled={isProcessing}
-                                        className="w-full flex items-center gap-3 px-4 py-3 bg-[#1E9A86] text-white rounded-xl hover:bg-[#158571] transition-colors font-bold text-xs group disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <Hand className="w-4 h-4" />
-                                        {isProcessing ? 'Procesando...' : 'Asumir Conversación'}
-                                    </button>
-                                )}
-
-                                {/* Delegar Conversación - Solo mostrar si está asignada Y es del usuario actual */}
-                                {activeConversation.assignedUser && activeConversation.assignedUser.id === currentUserId && (
-                                    <button
-                                        onClick={async () => {
-                                            if (!selectedConvId || isProcessing) return;
-                                            setIsProcessing(true);
-                                            try {
-                                                const result = await delegateToBot(selectedConvId);
-                                                if (result.error) {
-                                                    alert(result.error);
-                                                } else {
-                                                    // Actualizar estado local inmediatamente
-                                                    updateConversationAssignment(selectedConvId, null);
-                                                    router.refresh();
+                                            }}
+                                            disabled={isProcessing}
+                                            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#1E9A86] text-white rounded-xl hover:bg-[#158571] transition-all font-bold text-xs shadow-lg shadow-[#1E9A86]/20 disabled:opacity-50"
+                                        >
+                                            <Hand className="w-4 h-4" />
+                                            {isProcessing ? 'Procesando...' : 'Asumir Control'}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={async () => {
+                                                if (!selectedConvId || isProcessing) return;
+                                                setIsProcessing(true);
+                                                try {
+                                                    const result = await delegateToBot(selectedConvId);
+                                                    if (result.error) {
+                                                        alert(result.error);
+                                                    } else {
+                                                        updateConversationAssignment(selectedConvId, activeConversation.assignedTo || null, false);
+                                                        router.refresh();
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error delegating to bot:', error);
+                                                } finally {
+                                                    setIsProcessing(false);
                                                 }
-                                            } catch (error) {
-                                                console.error('Error delegating to bot:', error);
-                                                alert('Error al delegar la conversación');
-                                            } finally {
-                                                setIsProcessing(false);
-                                            }
-                                        }}
-                                        disabled={isProcessing}
-                                        className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors font-bold text-xs group disabled:opacity-50 disabled:cursor-not-allowed border border-blue-200"
-                                    >
-                                        <ArrowLeft className="w-4 h-4" />
-                                        {isProcessing ? 'Procesando...' : 'Delegar al Bot'}
-                                    </button>
-                                )}
+                                            }}
+                                            disabled={isProcessing}
+                                            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white text-[#1E9A86] border-2 border-[#1E9A86]/20 rounded-xl hover:bg-green-50 transition-all font-bold text-xs disabled:opacity-50"
+                                        >
+                                            <Bot className="w-4 h-4" />
+                                            {isProcessing ? 'Procesando...' : 'Re-activar Bot'}
+                                        </button>
+                                    )}
+                                </div>
 
                                 {/* Cambiar asignación - Solo para OWNER/MANAGER o si está asignada */}
                                 {(userRole === 'OWNER' || userRole === 'MANAGER' || activeConversation.assignedUser) && (

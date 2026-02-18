@@ -202,9 +202,9 @@ export async function sendWidgetMessage(data: {
         }
 
         // 4.6. Check if conversation is handled by human OR pending handoff
-        // If assignedTo is not null OR status is PENDING, a human is handling it (or will), so bot should NOT auto-respond
-        if (conversation.assignedTo !== null || conversation.status === 'PENDING') {
-            console.log(`[HUMAN HANDLING] Conversation ${conversation.id} is handled by human (${conversation.assignedTo}) or pending (${conversation.status}), skipping bot response`);
+        // If isPaused is true OR status is PENDING, a human is handling it (or will), so bot should NOT auto-respond
+        if (conversation.isPaused || conversation.status === 'PENDING') {
+            console.log(`[PAUSED/PENDING] Conversation ${conversation.id} is paused for human takeover or pending (${conversation.status}), skipping bot response`);
 
             // Return without generating bot response
             return {

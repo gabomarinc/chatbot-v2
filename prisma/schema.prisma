@@ -152,6 +152,7 @@ model Conversation {
   lastMessageAt DateTime?
   assignedTo    String?            // User ID who is assigned to this conversation
   assignedAt    DateTime?          // When the conversation was assigned
+  isPaused      Boolean            @default(false) // Whether the bot is paused for human takeover
   metadata      Json?              // Debug info and context
   createdAt     DateTime           @default(now())
   agent         Agent              @relation(fields: [agentId], references: [id])
