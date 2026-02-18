@@ -263,8 +263,10 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                 </div>
 
                 {/* List */}
-                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] relative">
-                    <div className="overflow-x-auto">
+                {/* List Container */}
+                <div className="bg-white md:rounded-[2.5rem] md:border md:border-gray-100 md:shadow-[20px_0_40px_rgba(0,0,0,0.02)] relative overflow-hidden">
+                    {/* Desktop View: Table */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-gray-50">
@@ -272,7 +274,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Rol del Sistema</th>
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Estado</th>
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Último Login</th>
-                                    <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
+                                    <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -420,6 +422,163 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                 )}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile View: Cards */}
+                    <div className="md:hidden space-y-4 p-4">
+                        {members.length > 0 ? (
+                            members.map((member) => {
+                                const status = getUserStatus(member);
+                                const buttonRect = buttonRefs.current[member.id]?.getBoundingClientRect();
+                                return (
+                                    <div
+                                        key={member.id}
+                                        onClick={(e) => handleMemberClick(member, e)}
+                                        className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm active:scale-[0.98] transition-all relative overflow-hidden"
+                                    >
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-14 h-14 rounded-2xl bg-[#21AC96]/5 flex items-center justify-center text-[#21AC96] shadow-sm">
+                                                    <User className="w-7 h-7" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-gray-900 font-black text-lg tracking-tight">{member.user.name || 'Sin nombre'}</span>
+                                                    <div className="flex items-center gap-1.5 text-xs text-gray-400 font-bold">
+                                                        <Mail className="w-3 h-3" />
+                                                        {member.user.email}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {(userRole === 'OWNER' || userRole === 'MANAGER') && (
+                                                <button
+                                                    ref={(el) => {
+                                                        if (el) buttonRefs.current[member.id] = el;
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIsActionMenuOpen(isActionMenuOpen === member.id ? null : member.id);
+                                                    }}
+                                                    disabled={member.role === 'OWNER'}
+                                                    className="p-3 hover:bg-gray-50 rounded-2xl transition-colors text-gray-400 disabled:opacity-30"
+                                                >
+                                                    <MoreVertical className="w-6 h-6" />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
+                                            <div className="flex flex-col gap-1.5">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Rol</span>
+                                                <div className={cn(
+                                                    "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black border w-fit",
+                                                    getRoleBadgeStyle(member.role)
+                                                )}>
+                                                    <Shield className="w-3 h-3" />
+                                                    {getRoleLabel(member.role)}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 items-end text-right">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</span>
+                                                {status === 'active' && (
+                                                    <div className="flex items-center gap-2 text-green-500 font-black text-[13px]">
+                                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                                        Activo
+                                                    </div>
+                                                )}
+                                                {status === 'pending' && (
+                                                    <div className="flex items-center gap-2 text-amber-500 font-black text-[13px]">
+                                                        <Clock className="w-4 h-4" />
+                                                        Pendiente
+                                                    </div>
+                                                )}
+                                                {status === 'offline' && (
+                                                    <div className="flex items-center gap-2 text-gray-400 font-black text-[13px]">
+                                                        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                                                        Offline
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Último Login</span>
+                                                <span className="text-xs text-gray-700 font-bold">
+                                                    {formatLastLogin(member.user.lastLoginAt)}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Mobile Portal for action menu */}
+                                        {isActionMenuOpen === member.id && mounted && buttonRect && (
+                                            createPortal(
+                                                <div
+                                                    ref={(el) => {
+                                                        if (el) actionMenuRefs.current[member.id] = el;
+                                                    }}
+                                                    className="fixed bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 py-3 z-[200] min-w-[220px]"
+                                                    style={{
+                                                        top: `${Math.min(buttonRect.bottom + 8, window.innerHeight - 150)}px`,
+                                                        right: `16px`,
+                                                    }}
+                                                >
+                                                    {member.role !== 'OWNER' && member.role !== 'MANAGER' && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleUpdateRole(member.id, 'MANAGER');
+                                                            }}
+                                                            className="w-full px-6 py-3 text-left text-[13px] font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                                                        >
+                                                            <Edit className="w-4 h-4 text-[#21AC96]" />
+                                                            Promover a Admin
+                                                        </button>
+                                                    )}
+                                                    {member.role === 'MANAGER' && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleUpdateRole(member.id, 'AGENT');
+                                                            }}
+                                                            className="w-full px-6 py-3 text-left text-[13px] font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                                                        >
+                                                            <Edit className="w-4 h-4 text-[#21AC96]" />
+                                                            Degradar a Agente
+                                                        </button>
+                                                    )}
+                                                    {member.role !== 'OWNER' && (
+                                                        <>
+                                                            <div className="h-px bg-gray-100 my-2"></div>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleRemoveMemberClick(member.id, member.user.name || member.user.email);
+                                                                }}
+                                                                className="w-full px-6 py-3 text-left text-[13px] font-bold text-red-600 hover:bg-red-50 flex items-center gap-3"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                                Eliminar del equipo
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>,
+                                                document.body
+                                            )
+                                        )}
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="bg-white rounded-[2.5rem] border border-gray-100 p-10 text-center">
+                                <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-6 mx-auto">
+                                    <User className="w-10 h-10 text-gray-200" />
+                                </div>
+                                <h3 className="text-gray-900 font-black text-xl mb-2">Sin miembros</h3>
+                                <p className="text-gray-400 font-bold text-sm">
+                                    Tus colaboradores aparecerán aquí.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

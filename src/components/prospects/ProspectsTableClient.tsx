@@ -131,37 +131,40 @@ export function ProspectsTableClient({ initialProspects, workspaceId, customFiel
         <>
             <div className="flex flex-col md:flex-row md:items-center justify-end gap-3 mb-8">
                 {/* Unified Action Bar */}
-                <div className="relative group min-w-[320px]">
+                <div className="relative group w-full md:min-w-[320px]">
                     <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#21AC96] transition-all" />
                     <input
                         type="text"
                         placeholder="Buscar por nombre, email o teléfono..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] transition-all shadow-sm"
+                        className="w-full pl-12 pr-4 py-3.5 md:py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] transition-all shadow-sm"
                     />
                 </div>
 
-                <Link
-                    href="/prospects"
-                    className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-100 rounded-2xl text-sm text-gray-700 hover:shadow-md hover:border-gray-200 transition-all font-bold group shadow-sm"
-                >
-                    <Filter className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96]" />
-                    Filtros
-                </Link>
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <Link
+                        href="/prospects"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3.5 md:py-3 bg-white border border-gray-100 rounded-2xl text-sm text-gray-700 hover:shadow-md hover:border-gray-200 transition-all font-bold group shadow-sm"
+                    >
+                        <Filter className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96]" />
+                        Filtros
+                    </Link>
 
-                <button
-                    onClick={handleExport}
-                    disabled={isExporting}
-                    className="flex items-center gap-2 px-6 py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer disabled:opacity-50"
-                >
-                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    Exportar CSV
-                </button>
+                    <button
+                        onClick={handleExport}
+                        disabled={isExporting}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 md:py-3 bg-[#21AC96] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#21AC96]/20 hover:bg-[#1a8a78] transition-all cursor-pointer disabled:opacity-50"
+                    >
+                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        Exportar
+                    </button>
+                </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="bg-white md:rounded-[2.5rem] md:border md:border-gray-100 md:shadow-[20px_0_40px_rgba(0,0,0,0.02)] overflow-hidden">
+                {/* Desktop View: Table */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-gray-50">
@@ -247,6 +250,87 @@ export function ProspectsTableClient({ initialProspects, workspaceId, customFiel
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile View: Cards */}
+                <div className="md:hidden space-y-4 p-4">
+                    {filteredProspects.length > 0 ? (
+                        filteredProspects.map((prospect) => (
+                            <div
+                                key={prospect.id}
+                                onClick={() => handleRowClick(prospect.id)}
+                                className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm active:scale-[0.98] transition-all relative overflow-hidden"
+                            >
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 rounded-2xl bg-[#21AC96]/5 flex items-center justify-center text-[#21AC96] shadow-sm">
+                                            <UserCircle className="w-7 h-7" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-900 font-black text-lg tracking-tight line-clamp-1">{prospect.name}</span>
+                                            <div className="flex items-center gap-1.5 text-xs text-gray-400 font-bold">
+                                                <Phone className="w-3 h-3" />
+                                                {prospect.phone || 'Sin teléfono'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-400"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Action logic if needed
+                                        }}
+                                    >
+                                        <MoreVertical className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Últ. Interacción</span>
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-1.5 text-[13px] font-black text-gray-700">
+                                                <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                                {format(new Date(prospect.lastContact), "d MMM", { locale: es })}
+                                            </div>
+                                            <span className="text-[11px] text-gray-400 font-bold">
+                                                {format(new Date(prospect.lastContact), "HH:mm 'hs'")}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5 items-end text-right">
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Agente</span>
+                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-[11px] font-black border border-indigo-100">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
+                                            {prospect.agentName || 'Sin asignar'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+                                    <div className="flex items-center gap-2 text-sm font-black text-gray-900">
+                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                                            <MessageSquare className="w-4 h-4 text-[#21AC96]" />
+                                        </div>
+                                        <span>{prospect.messagesCount} mensajes</span>
+                                    </div>
+                                    <div className="text-[10px] font-black text-[#21AC96] uppercase tracking-widest bg-[#21AC96]/5 px-3 py-1 rounded-full">
+                                        Ver Detalles
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="bg-white rounded-[2rem] border border-gray-100 p-10 text-center">
+                            <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-6 mx-auto">
+                                <UserCircle className="w-10 h-10 text-gray-200" />
+                            </div>
+                            <h3 className="text-gray-900 font-black text-xl mb-2">Sin contactos</h3>
+                            <p className="text-gray-400 font-bold text-sm">
+                                No hay resultados para tu búsqueda.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
 
