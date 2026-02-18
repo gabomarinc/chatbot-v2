@@ -32,7 +32,7 @@ export function BottomNav() {
         },
         {
             label: 'Equipo',
-            href: '/admin/team',
+            href: '/team',
             icon: Users
         }
     ];
