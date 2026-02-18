@@ -31,9 +31,9 @@ export function BottomNav() {
             icon: Users
         },
         {
-            label: 'Ajustes',
-            href: '/admin/settings',
-            icon: Settings
+            label: 'Equipo',
+            href: '/admin/team',
+            icon: Users
         }
     ];
 
