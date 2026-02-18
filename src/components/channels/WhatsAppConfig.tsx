@@ -253,36 +253,36 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
         return (
             <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-green-600 to-green-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl shadow-green-500/20 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-fullblur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000"></div>
+                <div className="bg-gradient-to-r from-green-600 to-green-500 rounded-[2.5rem] p-6 md:p-10 text-white shadow-xl shadow-green-500/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000"></div>
                     <div className="relative z-10 text-center">
-                        <div className="inline-flex items-center justify-center p-5 bg-white/10 backdrop-blur-xl rounded-[2.5rem] mb-8 shadow-2xl border border-white/10">
-                            <Phone className="w-14 h-14 text-white drop-shadow-lg" />
+                        <div className="inline-flex items-center justify-center p-3 bg-white/15 backdrop-blur-xl rounded-2xl mb-5 shadow-xl border border-white/20">
+                            <Phone className="w-8 h-8 text-white drop-shadow-md" />
                         </div>
 
-                        <h2 className="text-5xl font-black tracking-tighter text-white mb-6">Conexión Oficial</h2>
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white mb-2 leading-none">Conexión Oficial</h2>
 
-                        <p className="text-green-50/80 text-lg font-bold max-w-2xl mx-auto leading-relaxed mb-10">
-                            Utilizamos la API Cloud oficial de Meta para garantizar la máxima seguridad y el 100% de entrega en tus mensajes.
+                        <p className="text-green-50/90 text-sm font-bold max-w-xl mx-auto leading-relaxed mb-8">
+                            Utilizamos la API Cloud de Meta para garantizar la máxima seguridad y el 100% de entrega en tus mensajes.
                         </p>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8">
                             {[
-                                { icon: ShieldCheck, title: "Seguridad Grado Enterprise", desc: "Cifrado oficial de extremo a extremo." },
-                                { icon: Zap, title: "Estabilidad 99.9%", desc: "Conexión directa sin intermediarios." },
-                                { icon: CheckCircle, title: "Tilde Azul de Verificación", desc: "Compatible con el proceso de verificación." }
+                                { icon: ShieldCheck, title: "Seguridad", desc: "Cifrado oficial de extremo a extremo." },
+                                { icon: Zap, title: "Estabilidad", desc: "Conexión directa 99.9%." },
+                                { icon: CheckCircle, title: "Oficial", desc: "Compatible con el proceso de Meta." }
                             ].map((benefit, i) => (
-                                <div key={i} className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 text-left">
-                                    <benefit.icon className="w-5 h-5 text-white mb-3" />
-                                    <p className="text-xs font-black text-white mb-1 uppercase tracking-tight">{benefit.title}</p>
-                                    <p className="text-[10px] text-green-50/60 font-medium leading-tight">{benefit.desc}</p>
+                                <div key={i} className="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-left">
+                                    <benefit.icon className="w-4 h-4 text-white mb-2" />
+                                    <p className="text-[10px] font-black text-white mb-0.5 uppercase tracking-tight">{benefit.title}</p>
+                                    <p className="text-[9px] text-green-50/70 font-medium leading-tight">{benefit.desc}</p>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md rounded-full border border-white/20 shadow-xl">
-                            <ShieldCheck className="w-5 h-5 text-white" />
-                            <span className="text-xs font-black uppercase tracking-[0.2em] text-white">Meta Tech Provider Oficial</span>
+                        <div className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/15 backdrop-blur-md rounded-full border border-white/20 shadow-lg">
+                            <ShieldCheck className="w-4 h-4 text-white" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Meta Tech Provider Oficial</span>
                         </div>
                     </div>
                 </div>
