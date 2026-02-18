@@ -1,3 +1,5 @@
+"use client";
+
 import { Search, Bell, ChevronDown, Coins, LogOut, User, Settings, CreditCard, Sparkles, Menu } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
