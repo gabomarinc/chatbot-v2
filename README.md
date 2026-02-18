@@ -63,19 +63,6 @@ WHATSAPP_PHONE_NUMBER_ID="tu-phone-number-id"
 WHATSAPP_BUSINESS_ACCOUNT_ID="tu-business-account-id"
 ```
 
-4. **Configurar la base de datos**
-
-```bash
-# Generar cliente de Prisma
-npx prisma generate
-
-# Ejecutar migraciones
-npx prisma migrate dev
-
-# (Opcional) Abrir Prisma Studio para ver los datos
-npx prisma studio
-```
-
 5. **Ejecutar en desarrollo**
 
 ```bash
