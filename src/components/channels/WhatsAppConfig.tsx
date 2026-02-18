@@ -6,7 +6,6 @@ import { Loader2, Check, Phone, Copy, ArrowRight, ShieldCheck, Settings2, Info }
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { WhatsAppEmbeddedSignup } from './WhatsAppEmbeddedSignup';
-import { YcloudSetup } from './YcloudSetup';
 import { getWhatsAppTemplates, sendWhatsAppTemplateAction, deleteWhatsAppTemplateAction } from '@/lib/actions/whatsapp-auth';
 import { useEffect } from 'react';
 import { TemplateManager } from './TemplateManager';
@@ -251,123 +250,10 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     // Automatic Setup Mode (Default if App ID exists and Manual Mode not requested)
     if (metaAppId && !showManual && !existingChannel) {
 
-
-        const hasCode = searchParams?.get('code');
-        // New Selection State
-        const [connectionMethod, setConnectionMethod] = useState<'SELECTION' | 'OFFICIAL' | 'YCLOUD'>(hasCode ? 'OFFICIAL' : 'SELECTION');
-
-        if (connectionMethod === 'SELECTION') {
-            return (
-                <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
-                    {/* Header */}
-                    <div className="text-center mb-10">
-                        <div className="inline-flex items-center justify-center p-4 bg-green-100 rounded-3xl mb-6 shadow-sm">
-                            <Phone className="w-10 h-10 text-green-600" />
-                        </div>
-                        <h2 className="text-4xl font-black tracking-tight text-gray-900 mb-4">Conectar WhatsApp</h2>
-                        <p className="text-gray-500 text-xl font-medium max-w-xl mx-auto leading-relaxed">
-                            Selecciona el método de conexión que mejor se adapte a tu negocio.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                        {/* Official Connection Card */}
-                        <div
-                            onClick={() => setConnectionMethod('OFFICIAL')}
-                            className="group relative bg-white rounded-[2.5rem] p-8 border-2 border-gray-100 hover:border-green-500 hover:shadow-2xl hover:shadow-green-500/10 transition-all cursor-pointer overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform">
-                                    <ShieldCheck className="w-7 h-7" />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-xl text-gray-900">Oficial (Meta)</h3>
-                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wide rounded ml-1">Recomendado</span>
-                                </div>
-                            </div>
-
-                            <p className="text-gray-500 text-sm font-medium leading-relaxed mb-6">
-                                Conexión directa con Meta.
-                                <br />
-                                <span className="text-gray-400 text-xs">• Requiere Facebook Login</span>
-                                <br />
-                                <span className="text-gray-400 text-xs">• Precios estándar de Meta</span>
-                            </p>
-
-                            <div className="w-full py-3 bg-gray-50 text-gray-400 rounded-xl text-sm font-bold group-hover:bg-green-600 group-hover:text-white transition-colors text-center">
-                                Seleccionar
-                            </div>
-                        </div>
-
-                        {/* Ycloud Connection Card */}
-                        <div
-                            onClick={() => setConnectionMethod('YCLOUD')}
-                            className="group relative bg-white rounded-[2.5rem] p-8 border-2 border-gray-100 hover:border-[#0057FF] hover:shadow-2xl hover:shadow-[#0057FF]/10 transition-all cursor-pointer overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#0057FF]/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-[#0057FF] group-hover:scale-110 transition-transform">
-                                    <Settings2 className="w-7 h-7" />
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-xl text-gray-900">Rápida (Ycloud)</h3>
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wide rounded ml-1">Alternative</span>
-                                </div>
-                            </div>
-
-                            <p className="text-gray-500 text-sm font-medium leading-relaxed mb-6">
-                                Conexión vía partner Ycloud.
-                                <br />
-                                <span className="text-gray-400 text-xs">• Setup con API Key</span>
-                                <br />
-                                <span className="text-gray-400 text-xs">• Ideal high-volume / testing</span>
-                            </p>
-
-                            <div className="w-full py-3 bg-gray-50 text-gray-400 rounded-xl text-sm font-bold group-hover:bg-[#0057FF] group-hover:text-white transition-colors text-center">
-                                Seleccionar
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        if (connectionMethod === 'YCLOUD') {
-            return (
-                <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-                    <button
-                        onClick={() => setConnectionMethod('SELECTION')}
-                        className="flex items-center gap-2 text-gray-400 font-extrabold text-sm uppercase tracking-widest hover:text-green-600 transition-colors group mb-6"
-                    >
-                        <ArrowRight className="w-5 h-5 group-hover:-translate-x-1 transition-transform rotate-180" />
-                        Volver a Selección
-                    </button>
-
-                    <YcloudSetup
-                        agentId={formData.agentId || (agents.length > 0 ? agents[0].id : '')}
-                        existingChannel={existingChannel}
-                        onSuccess={() => router.refresh()}
-                        onCancel={() => setConnectionMethod('SELECTION')}
-                    />
-                </div>
-            );
-        }
-
         return (
             <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-green-600 to-green-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-xl shadow-green-500/20 relative overflow-hidden group">
-                    {/* Back button to selection */}
-                    <button
-                        onClick={() => setConnectionMethod('SELECTION')}
-                        className="absolute top-8 left-8 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors z-20"
-                    >
-                        <ArrowRight className="w-5 h-5 text-white rotate-180" />
-                    </button>
-
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-fullblur-[80px] -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000"></div>
                     <div className="relative z-10 text-center">
                         <div className="inline-flex items-center justify-center p-4 bg-white/20 backdrop-blur-md rounded-3xl mb-6 shadow-inner">
