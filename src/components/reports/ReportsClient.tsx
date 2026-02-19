@@ -58,6 +58,8 @@ interface ReportsClientProps {
     funnelData: any;
     heatmapData: number[][];
     agentPerformance: any[];
+    channelDistribution: any[];
+    retentionRate: { rate: number; trend: number };
 }
 
 const COLORS = ['#21AC96', '#6366F1', '#A855F7', '#EC4899', '#F59E0B', '#10B981'];
@@ -67,7 +69,9 @@ export function ReportsClient({
     customFieldsData,
     funnelData,
     heatmapData,
-    agentPerformance
+    agentPerformance,
+    channelDistribution,
+    retentionRate
 }: ReportsClientProps) {
     const plan = workspaceInfo.plan?.type || 'FRESHIE';
     const [searchTerm, setSearchTerm] = useState('');
@@ -87,12 +91,26 @@ export function ReportsClient({
         { id: 'qualified', name: 'Cualificados', value: funnelData.qualified, fill: '#00897B', desc: 'Leads que han completado campos adicionales de perfil (presupuesto, zona, etc).' },
     ];
 
-    // Mock channel data for Freshie value
-    const channelData = [
-        { name: 'Webchat', value: 65, color: '#21AC96' },
-        { name: 'WhatsApp', value: 25, color: '#25D366' },
-        { name: 'Instagram', value: 10, color: '#E4405F' },
-    ];
+    // Channel data from props with colors
+    const colorsMap: Record<string, string> = {
+        'WEBCHAT': '#21AC96',
+        'WHATSAPP': '#25D366',
+        'INSTAGRAM': '#E4405F',
+        'MESSENGER': '#0084FF'
+    };
+
+    const channelData = useMemo(() => {
+        if (!channelDistribution || channelDistribution.length === 0) {
+            return [
+                { name: 'Sin Datos', value: 100, color: '#F3F4F6' }
+            ];
+        }
+        return channelDistribution.map(d => ({
+            name: d.name,
+            value: d.percentage,
+            color: colorsMap[d.name] || '#6366F1'
+        }));
+    }, [channelDistribution]);
 
     // AI Tips Logic
     const aiTips = useMemo(() => {
@@ -360,77 +378,93 @@ export function ReportsClient({
                         ))}
                     </div>
 
-                    {/* NEW VALUE: Strategy & Benchmark Section in the white space */}
-                    <div className="mt-8 pt-8 border-t border-gray-50 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Benchmark vs Industria</span>
-                            <Trophy className="w-4 h-4 text-amber-500" />
-                        </div>
+                    {/* Strategy & Benchmark Section */}
+                    {(() => {
+                        const captureRate = funnelData.interactions > 0 ? (funnelData.leads / funnelData.interactions) * 100 : 0;
+                        const industryAvg = 35;
+                        const performanceVsIndustry = captureRate - industryAvg;
+                        const isSuperior = performanceVsIndustry > 0;
 
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-[11px] font-bold">
-                                    <span className="text-gray-500">Tu Desempeño</span>
-                                    <span className="text-[#21AC96]">Superior</span>
+                        return (
+                            <div className="mt-8 pt-8 border-t border-gray-50 space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Benchmark vs Industria</span>
+                                    <Trophy className={cn("w-4 h-4", isSuperior ? "text-amber-500" : "text-gray-300")} />
                                 </div>
-                                <div className="h-1.5 bg-gray-50 rounded-full overflow-hidden relative">
-                                    <div className="absolute top-0 left-0 h-full bg-[#21AC96] rounded-full w-[85%]"></div>
-                                    <div className="absolute top-0 left-[35%] h-full w-0.5 bg-gray-300 z-10"></div> {/* Industry Avg marker */}
-                                </div>
-                                <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold uppercase tracking-tight">
-                                    <span>Incio</span>
-                                    <span>Media Sectorial (35%)</span>
-                                    <span>Meta</span>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between text-[11px] font-bold">
+                                            <span className="text-gray-500">Tu Desempeño</span>
+                                            <span className={isSuperior ? "text-[#21AC96]" : "text-amber-500"}>
+                                                {isSuperior ? 'Superior' : 'En Crecimiento'}
+                                            </span>
+                                        </div>
+                                        <div className="h-1.5 bg-gray-50 rounded-full overflow-hidden relative">
+                                            <div
+                                                className={cn("absolute top-0 left-0 h-full rounded-full transition-all duration-1000", isSuperior ? "bg-[#21AC96]" : "bg-amber-400")}
+                                                style={{ width: `${Math.min(captureRate, 100)}%` }}
+                                            ></div>
+                                            <div className="absolute top-0 left-[35%] h-full w-0.5 bg-gray-300 z-10"></div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold uppercase tracking-tight">
+                                            <span>Incio</span>
+                                            <span>Media Sectorial (35%)</span>
+                                            <span>Meta</span>
+                                        </div>
+                                    </div>
+
+                                    <div className={cn("rounded-2xl p-4 border", isSuperior ? "bg-gradient-to-br from-indigo-50 to-white border-indigo-100/50" : "bg-gray-50 border-gray-100")}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <ZapIcon className={cn("w-3 h-3", isSuperior ? "text-indigo-500 fill-indigo-500" : "text-gray-400")} />
+                                            <span className={cn("text-[10px] font-black uppercase tracking-widest", isSuperior ? "text-indigo-600" : "text-gray-500")}>Estrategia de Crecimiento</span>
+                                        </div>
+                                        <p className="text-[11px] text-gray-600 font-medium leading-relaxed">
+                                            {isSuperior
+                                                ? `Estás un **${Math.abs(performanceVsIndustry).toFixed(0)}% por encima** de la media global. Para mantener este ritmo, podrías activar recordatorios automáticos.`
+                                                : `Tu tasa actual es del **${captureRate.toFixed(1)}%**. Para alcanzar la media del sector (35%), intenta optimizar los mensajes de bienvenida de tus agentes.`}
+                                        </p>
+                                    </div>
+
+                                    {/* Additional Visualization: Peak Conversion Days */}
+                                    <div className="pt-4">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-left">Días de Alta Conversión</span>
+                                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            {(() => {
+                                                const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                                const dailyTotals = heatmapData.map((day, i) => ({
+                                                    name: dayNames[i],
+                                                    total: day.reduce((a, b) => a + b, 0)
+                                                }));
+                                                const maxLeads = Math.max(...dailyTotals.map(d => d.total), 1);
+
+                                                return dailyTotals
+                                                    .sort((a, b) => b.total - a.total)
+                                                    .slice(0, 3)
+                                                    .map((day, idx) => (
+                                                        <div key={idx} className="space-y-1">
+                                                            <div className="flex justify-between text-[11px] font-bold text-gray-700">
+                                                                <span>{day.name}</span>
+                                                                <span className="text-gray-400">{day.total} leads</span>
+                                                            </div>
+                                                            <div className="h-1 bg-gray-50 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-[#21AC96] rounded-full opacity-70 transition-all duration-1000"
+                                                                    style={{ width: `${(day.total / maxLeads) * 100}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                            })()}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="bg-gradient-to-br from-indigo-50 to-white rounded-2xl p-4 border border-indigo-100/50">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <ZapIcon className="w-3 h-3 text-indigo-500 fill-indigo-500" />
-                                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Estrategia de Crecimiento</span>
-                                </div>
-                                <p className="text-[11px] text-gray-600 font-medium leading-relaxed">
-                                    Estás un **50% por encima** de la media global. Para mantener este ritmo, podrías activar recordatorios automáticos de seguimiento.
-                                </p>
-                            </div>
-
-                            {/* Additional Visualization: Peak Conversion Days */}
-                            <div className="pt-4">
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-left">Días de Alta Conversión</span>
-                                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                                </div>
-                                <div className="space-y-3">
-                                    {(() => {
-                                        const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-                                        const dailyTotals = heatmapData.map((day, i) => ({
-                                            name: dayNames[i],
-                                            total: day.reduce((a, b) => a + b, 0)
-                                        }));
-                                        const maxLeads = Math.max(...dailyTotals.map(d => d.total), 1);
-
-                                        return dailyTotals
-                                            .sort((a, b) => b.total - a.total)
-                                            .slice(0, 3)
-                                            .map((day, idx) => (
-                                                <div key={idx} className="space-y-1">
-                                                    <div className="flex justify-between text-[11px] font-bold text-gray-700">
-                                                        <span>{day.name}</span>
-                                                        <span className="text-gray-400">{day.total} leads</span>
-                                                    </div>
-                                                    <div className="h-1 bg-gray-50 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-[#21AC96] rounded-full opacity-70 transition-all duration-1000"
-                                                            style={{ width: `${(day.total / maxLeads) * 100}%` }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
-                                            ));
-                                    })()}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        );
+                    })()}
                 </div>
 
                 {/* 2. Advanced Insights Section */}
@@ -491,16 +525,20 @@ export function ReportsClient({
 
                             <div className="space-y-6">
                                 <div className="flex items-end gap-2">
-                                    <span className="text-5xl font-black text-gray-900 tracking-tighter">18.4%</span>
-                                    <span className="text-green-500 font-black text-sm mb-2 flex items-center gap-1">
-                                        <TrendingUp className="w-4 h-4" /> +2.1%
+                                    <span className="text-5xl font-black text-gray-900 tracking-tighter">{retentionRate.rate}%</span>
+                                    <span className={cn(
+                                        "font-black text-sm mb-2 flex items-center gap-1",
+                                        retentionRate.trend >= 0 ? "text-green-500" : "text-red-500"
+                                    )}>
+                                        {retentionRate.trend >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                                        {retentionRate.trend >= 0 ? '+' : ''}{retentionRate.trend}%
                                     </span>
                                 </div>
                                 <p className="text-xs text-gray-500 font-medium leading-relaxed">
-                                    De cada 100 usuarios, **18 vuelven** a interactuar con tu marca en menos de 7 días. Esto indica un alto nivel de confianza en las respuestas de tu IA.
+                                    De cada 100 usuarios, **{Math.round(retentionRate.rate)} vuelven** a interactuar con tu marca. Esto indica el nivel de fidelidad de tus clientes con la IA.
                                 </p>
                                 <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
-                                    <div className="h-full bg-indigo-500 w-[18.4%] rounded-full"></div>
+                                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${retentionRate.rate}%` }}></div>
                                 </div>
                             </div>
                         </div>

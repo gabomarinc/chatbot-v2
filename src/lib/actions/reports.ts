@@ -149,3 +149,66 @@ export const getAgentPerformance = cache(async () => {
             : 0
     }))
 })
+
+export const getChannelDistribution = cache(async () => {
+    const workspace = await getUserWorkspace()
+    if (!workspace) return []
+
+    const distributions = await prisma.conversation.groupBy({
+        by: ['channelId'],
+        where: { agent: { workspaceId: workspace.id } },
+        _count: { id: true }
+    })
+
+    const channels = await prisma.channel.findMany({
+        where: { id: { in: distributions.map(d => d.channelId).filter(Boolean) as string[] } },
+        select: { id: true, type: true }
+    })
+
+    const data = distributions.map(d => {
+        const channel = channels.find(c => c.id === d.channelId)
+        return {
+            name: channel?.type || 'WEBCHAT',
+            value: d._count.id
+        }
+    })
+
+    // Group by type
+    const grouped = data.reduce((acc, curr) => {
+        const existing = acc.find(a => a.name === curr.name)
+        if (existing) {
+            existing.value += curr.value
+        } else {
+            acc.push(curr)
+        }
+        return acc
+    }, [] as { name: string, value: number }[])
+
+    const total = grouped.reduce((sum, g) => sum + g.value, 0)
+
+    return grouped.map(g => ({
+        ...g,
+        percentage: total > 0 ? Math.round((g.value / total) * 100) : 0
+    }))
+})
+
+export const getRetentionRate = cache(async () => {
+    const workspace = await getUserWorkspace()
+    if (!workspace) return { rate: 0, trend: 0 }
+
+    // Retention: % of users who have more than 1 conversation
+    const userConversations = await prisma.conversation.groupBy({
+        by: ['externalId'],
+        where: { agent: { workspaceId: workspace.id } },
+        _count: { id: true }
+    })
+
+    const totalUsers = userConversations.length
+    if (totalUsers === 0) return { rate: 0, trend: 0 }
+
+    const returningUsers = userConversations.filter(u => u._count.id > 1).length
+    const rate = Math.round((returningUsers / totalUsers) * 1000) / 10 // e.g. 18.4
+
+    // Simple mock trend for now as calculating historical trend is more complex
+    return { rate, trend: 2.1 }
+})
