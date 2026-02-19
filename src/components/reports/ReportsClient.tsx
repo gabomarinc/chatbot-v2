@@ -115,34 +115,54 @@ export function ReportsClient({
     // AI Tips Logic
     const aiTips = useMemo(() => {
         const tips = [];
-        if (funnelData.interactions > 0 && (funnelData.leads / funnelData.interactions) < 0.2) {
-            tips.push({
-                icon: Target,
-                title: "Optimiza la Captura",
-                desc: "Tu bot tiene muchos chats pero pocos leads. Prueba a pedir los datos (email/tel) más temprano en la conversación.",
-                color: "text-amber-600",
-                bg: "bg-amber-50"
-            });
-        } else if (funnelData.leads > 0) {
-            tips.push({
-                icon: UserCheck,
-                title: "Alta Conversión",
-                desc: "¡Excelente! Tu tasa de conversión es superior al promedio. Considera aumentar el tráfico a tus canales.",
-                color: "text-green-600",
-                bg: "bg-green-50"
-            });
-        }
+        const minVolume = 10; // Minimum interactions to give performance-based tips
 
-        if (agentPerformance.some(a => (a.efficiency || 0) < 30)) {
+        // 1. Initial State / Low Data
+        if (funnelData.interactions < minVolume) {
             tips.push({
                 icon: Sparkles,
-                title: "Mejora el Entrenamiento",
-                desc: "Algunos agentes tienen baja eficiencia. Revisa sus fuentes de conocimiento para que den respuestas más precisas.",
+                title: "Primeros Pasos",
+                desc: "Aún estamos recolectando datos. Empieza a compartir tus canales para que la IA genere insights valiosos.",
                 color: "text-blue-600",
                 bg: "bg-blue-50"
             });
         }
 
+        // 2. Conversion Performance (Only if enough data)
+        if (funnelData.interactions >= minVolume) {
+            const conversionRate = funnelData.leads / funnelData.interactions;
+
+            if (conversionRate < 0.2) {
+                tips.push({
+                    icon: Target,
+                    title: "Optimiza la Captura",
+                    desc: "Tu bot tiene tráfico pero pocos leads. Prueba a pedir los datos (email/tel) más temprano en la conversación.",
+                    color: "text-amber-600",
+                    bg: "bg-amber-50"
+                });
+            } else if (conversionRate > 0.4) {
+                tips.push({
+                    icon: UserCheck,
+                    title: "Alta Conversión",
+                    desc: "¡Excelente! Tu tasa de conversión es superior al promedio. Considera aumentar el tráfico a tus canales.",
+                    color: "text-green-600",
+                    bg: "bg-green-50"
+                });
+            }
+        }
+
+        // 3. Agent Efficiency
+        if (agentPerformance.some(a => a.totalChats >= 5 && a.efficiency < 30)) {
+            tips.push({
+                icon: ShieldCheck,
+                title: "Revisa el Entrenamiento",
+                desc: "Algunos agentes tienen baja eficiencia. Revisa sus fuentes de conocimiento para mejorar sus respuestas.",
+                color: "text-red-600",
+                bg: "bg-red-50"
+            });
+        }
+
+        // 4. Omnichannel Tip (Always useful)
         tips.push({
             icon: Smartphone,
             title: "Tip Omnicanal",
