@@ -106,9 +106,9 @@ export async function getScoreBreakdown(agentId: string) {
 
     const allSources = agent.knowledgeBases.flatMap((kb: any) => kb.sources);
     const hasWebsite = allSources.some((s: any) => s.type === 'WEBSITE');
-    const hasPDF = allSources.some((s: any) => s.type === 'PDF');
-    const allProcessed = allSources.length > 0 && allSources.every((s: any) => s.status === 'PROCESSED');
-    const hasErrorSources = allSources.some((s: any) => s.status === 'ERROR');
+    const hasPDF = allSources.some((s: any) => s.type === 'PDF' || s.fileUrl?.endsWith('.pdf'));
+    const allProcessed = allSources.length > 0 && allSources.every((s: any) => s.status === 'READY' || s.status === 'PROCESSED');
+    const failedSources = allSources.filter((s: any) => s.status === 'FAILED' || s.status === 'ERROR');
     const promptLength = agent.personalityPrompt?.length || 0;
     const hasJobDescription = !!agent.jobDescription && agent.jobDescription.length > 20;
     const isPremiumModel = agent.model.includes('gpt-4') || agent.model.includes('gemini');
@@ -117,13 +117,14 @@ export async function getScoreBreakdown(agentId: string) {
 
     return {
         knowledge: {
-            points: (allSources.length > 0 ? 10 : 0) + (hasWebsite ? 10 : 0) + (hasPDF ? 10 : 0) + (allProcessed && !hasErrorSources ? 10 : 0),
+            points: (allSources.length > 0 ? 10 : 0) + (hasWebsite ? 10 : 0) + (hasPDF ? 10 : 0) + (allProcessed ? 10 : 0),
             maxPoints: 40,
             details: {
                 hasSources: allSources.length > 0,
                 hasWebsite,
                 hasPDF,
-                allProcessed: allProcessed && !hasErrorSources,
+                allProcessed,
+                failedSources: failedSources.map((s: any) => s.displayName || s.url || s.fileUrl || 'Documento sin nombre'),
                 totalSources: allSources.length
             }
         },
@@ -167,8 +168,10 @@ export async function getScoreImprovements(agentId: string) {
     if (!breakdown.knowledge.details.hasPDF) {
         suggestions.push('Sube un PDF con información relevante para mejorar +1 punto');
     }
-    if (!breakdown.knowledge.details.allProcessed && breakdown.knowledge.details.hasSources) {
-        suggestions.push('Corrige los errores en las fuentes de conocimiento para mejorar +1 punto');
+    if (!breakdown.knowledge.details.allProcessed && breakdown.knowledge.details.failedSources.length > 0) {
+        breakdown.knowledge.details.failedSources.forEach((sourceName: string) => {
+            suggestions.push(`Revisa y corrige el error en la fuente: ${sourceName}`);
+        });
     }
 
     // Prompt suggestions
