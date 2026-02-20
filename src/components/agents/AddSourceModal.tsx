@@ -145,7 +145,7 @@ export function AddSourceModal({ isOpen, isLoading = false, onClose, onAdd }: Ad
                                         <LinkIcon className="w-4 h-4 text-[#21AC96]" />
                                         URL del Sitio Web o Sitemap (.xml)
                                     </div>
-                                    <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">Brutal Level 1 ⚡️</span>
+                                    <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">Motor Maestro ⚡️</span>
                                 </Label>
                                 <Input
                                     required
