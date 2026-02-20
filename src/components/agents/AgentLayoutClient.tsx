@@ -46,7 +46,7 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
             {/* Action Bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 {/* Config Toggle */}
-                <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
+                <div id="config-toggle" className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Configuración</span>
                     <div className="flex bg-gray-100/80 rounded-xl p-1 gap-1">
                         <button
@@ -54,6 +54,7 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
                                 setConfigMode('BASIC');
                                 router.push(`/agents/${agentId}/profile`);
                             }}
+                            id="config-basic"
                             className={cn(
                                 "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
                                 configMode === 'BASIC'
@@ -68,6 +69,7 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
                                 setConfigMode('ADVANCED');
                                 router.push(`/agents/${agentId}/settings`);
                             }}
+                            id="config-advanced"
                             className={cn(
                                 "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
                                 configMode === 'ADVANCED'
