@@ -39,6 +39,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     const [testPhone, setTestPhone] = useState('');
     const [isSendingTest, setIsSendingTest] = useState<string | null>(null);
     const [showTemplateManager, setShowTemplateManager] = useState(false);
+    const [showCredentials, setShowCredentials] = useState(false);
 
     // Test Param State
     const [testTemplate, setTestTemplate] = useState<any | null>(null);
@@ -372,120 +373,10 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Configuration Form */}
-                <div className="lg:col-span-2 space-y-6">
-                    <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm space-y-8">
-
-                        {/* Agent Selection */}
-                        <div className="space-y-4">
-                            <label className="block text-sm font-bold text-gray-900 uppercase tracking-wider">
-                                Agente Responsable
-                            </label>
-                            <div className="relative">
-                                <select
-                                    name="agentId"
-                                    value={formData.agentId}
-                                    onChange={(e) => setFormData({ ...formData, agentId: e.target.value })}
-                                    className="w-full pl-5 pr-10 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-medium focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all appearance-none cursor-pointer hover:bg-white"
-                                    required
-                                >
-                                    <option value="">Selecciona un Agente...</option>
-                                    {agents.map(agent => (
-                                        <option key={agent.id} value={agent.id}>
-                                            {agent.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                                    <ArrowRight className="w-5 h-5 rotate-90" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="h-px bg-gray-100"></div>
-
-                        {/* Credentials */}
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
-                                    <Check className="w-4 h-4 text-green-600" />
-                                </div>
-                                <h3 className="text-gray-900 font-bold text-lg">Credenciales de Meta</h3>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                                        System User Access Token (Permanente)
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            type="password"
-                                            value={formData.accessToken}
-                                            onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
-                                            placeholder="EAAG..."
-                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-mono text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all pr-12"
-                                            required={!existingChannel}
-                                        />
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
-                                            <Info className="w-5 h-5" />
-                                        </div>
-                                    </div>
-                                    <p className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1.5 bg-green-50 inline-block px-3 py-1.5 rounded-lg border border-green-100">
-                                        <Info className="w-3.5 h-3.5" />
-                                        Requiere permisos `whatsapp_business_messaging`
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                                            Phone Number ID
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.phoneNumberId}
-                                            onChange={(e) => setFormData({ ...formData, phoneNumberId: e.target.value })}
-                                            placeholder="102030..."
-                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-mono text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all"
-                                            required={!existingChannel}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                                            WABA ID (Opcional)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.wabaId}
-                                            onChange={(e) => setFormData({ ...formData, wabaId: e.target.value })}
-                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-mono text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="h-px bg-gray-100"></div>
-
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-green-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                        >
-                            {isLoading ? (
-                                <Loader2 className="w-6 h-6 animate-spin" />
-                            ) : (
-                                <>
-                                    <Check className="w-6 h-6" />
-                                    {existingChannel ? 'Actualizar Configuración' : 'Conectar WhatsApp'}
-                                </>
-                            )}
-                        </button>
-                    </form>
-
-                    {/* Templates Management Section */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Templates Management Section - MOVED TO TOP */}
                     {existingChannel && (
-                        <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm space-y-8 mt-8">
+                        <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm space-y-8">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
@@ -581,6 +472,130 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                             </div>
                         </div>
                     )}
+
+                    <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm space-y-8">
+
+                        {/* Agent Selection */}
+                        <div className="space-y-4">
+                            <label className="block text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                Agente Responsable
+                            </label>
+                            <div className="relative">
+                                <select
+                                    name="agentId"
+                                    value={formData.agentId}
+                                    onChange={(e) => setFormData({ ...formData, agentId: e.target.value })}
+                                    className="w-full pl-5 pr-10 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-medium focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all appearance-none cursor-pointer hover:bg-white"
+                                    required
+                                >
+                                    <option value="">Selecciona un Agente...</option>
+                                    {agents.map(agent => (
+                                        <option key={agent.id} value={agent.id}>
+                                            {agent.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                    <ArrowRight className="w-5 h-5 rotate-90" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="h-px bg-gray-100"></div>
+
+                        {/* Credentials */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
+                                    <Check className="w-4 h-4 text-green-600" />
+                                </div>
+                                <h3 className="text-gray-900 font-bold text-lg">Credenciales de Meta</h3>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                        System User Access Token (Permanente)
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="password"
+                                            value={formData.accessToken}
+                                            onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
+                                            placeholder="EAAG..."
+                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-mono text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all pr-12"
+                                            required={!existingChannel}
+                                        />
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                                            <Info className="w-5 h-5" />
+                                        </div>
+                                    </div>
+                                    <p className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1.5 bg-green-50 inline-block px-3 py-1.5 rounded-lg border border-green-100">
+                                        <Info className="w-3.5 h-3.5" />
+                                        Requiere permisos `whatsapp_business_messaging`
+                                    </p>
+                                </div>
+
+                                {/* Toggle Advanced IDs */}
+                                <div className="flex items-center justify-center py-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCredentials(!showCredentials)}
+                                        className="text-[10px] font-black uppercase tracking-widest text-[#21AC96] hover:bg-[#21AC96]/5 px-4 py-2 rounded-xl transition-all border border-[#21AC96]/20 flex items-center gap-2"
+                                    >
+                                        <Settings2 className="w-3 h-3" />
+                                        {showCredentials ? 'Ocultar' : 'Mostrar'} IDs avanzados (Phone ID / WABA)
+                                    </button>
+                                </div>
+
+                                {showCredentials && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                                Phone Number ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.phoneNumberId}
+                                                onChange={(e) => setFormData({ ...formData, phoneNumberId: e.target.value })}
+                                                placeholder="102030..."
+                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-mono text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all"
+                                                required={!existingChannel}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                                WABA ID (Opcional)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.wabaId}
+                                                onChange={(e) => setFormData({ ...formData, wabaId: e.target.value })}
+                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-mono text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="h-px bg-gray-100"></div>
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-green-500/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                        >
+                            {isLoading ? (
+                                <Loader2 className="w-6 h-6 animate-spin" />
+                            ) : (
+                                <>
+                                    <Check className="w-6 h-6" />
+                                    {existingChannel ? 'Actualizar Configuración' : 'Conectar WhatsApp'}
+                                </>
+                            )}
+                        </button>
+                    </form>
 
                     {/* Back to Simple Mode Link */}
                     {metaAppId && !existingChannel && (
