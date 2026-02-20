@@ -6,6 +6,59 @@ import { revalidatePath } from 'next/cache'
 import { load } from 'cheerio'
 import { generateEmbedding } from '@/lib/ai'
 import * as XLSX from 'xlsx'
+import TurndownService from 'turndown'
+// @ts-ignore
+import { gfm } from 'turndown-plugin-gfm'
+
+const turndownService = new TurndownService({
+    headingStyle: 'atx',
+    hr: '---',
+    bulletListMarker: '-',
+    codeBlockStyle: 'fenced',
+    emDelimiter: '_',
+    strongDelimiter: '**'
+})
+turndownService.use(gfm)
+
+/**
+ * BRUTAL SCRAPER: Level 1 - Semantic Markdown Conversion
+ */
+function convertToMarkdown(html: string): string {
+    const $ = load(html);
+
+    // Remove noise: scripts, styles, navs, footers, sidebars, ads
+    $('script, style, noscript, iframe, nav, footer, header, svg, aside, .ads, .sidebar, #footer, #header').remove();
+
+    // Extract main content if possible (heuristic)
+    const mainContent = $('main, article, #content, .content, .main').first();
+    const htmlToConvert = mainContent.length > 0 ? mainContent.html() : $('body').html();
+
+    return turndownService.turndown(htmlToConvert || '');
+}
+
+/**
+ * BRUTAL SCRAPER: Level 1 - Sitemap Discovery
+ */
+async function discoverSitemapUrls(sitemapUrl: string): Promise<string[]> {
+    try {
+        const response = await fetch(sitemapUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KonsulBot/1.0; +https://konsul.ai)' }
+        });
+        const xml = await response.text();
+        const $ = load(xml, { xmlMode: true });
+        const urls: string[] = [];
+
+        $('loc').each((_, el) => {
+            const url = $(el).text().trim();
+            if (url && url.startsWith('http')) urls.push(url);
+        });
+
+        return Array.from(new Set(urls)).slice(0, 30); // Max 30 pages for safety
+    } catch (e) {
+        console.error("[SITEMAP] Error discovering URLs:", e);
+        return [];
+    }
+}
 
 /**
  * Advanced Semantic Chunking with Overlap
@@ -130,62 +183,64 @@ export async function addKnowledgeSource(agentId: string, data: {
                     data: { status: 'READY' }
                 })
             }
-            // Handle WEBSITE type (Robust Scraping)
+            // Handle WEBSITE type (Robust Scraping Level 1)
             else if (data.type === 'WEBSITE' && data.url) {
-                let text = '';
+                let markdownContent = '';
                 const targetUrl = data.url.startsWith('http') ? data.url : `https://${data.url}`;
+                const isSitemap = targetUrl.endsWith('.xml') || targetUrl.includes('sitemap');
 
-                console.log(`[SCRAPING] Starting robust scrape for: ${targetUrl}`);
+                console.log(`[SCRAPING] Starting Level 1 Scrape: ${targetUrl} (Sitemap: ${isSitemap})`);
 
-                try {
-                    console.log('[SCRAPING] Strategy 1: Jina Reader');
-                    const jinaResponse = await fetch(`https://r.jina.ai/${targetUrl}`, {
-                        headers: {
-                            'User-Agent': 'KonsulBot/1.0',
-                            'Accept': 'text/plain'
-                        },
-                        signal: AbortSignal.timeout(25000)
-                    });
+                const urlsToProcess = isSitemap
+                    ? await discoverSitemapUrls(targetUrl)
+                    : [targetUrl];
 
-                    if (jinaResponse.ok) {
-                        text = await jinaResponse.text();
-                        if (text.length > 200 && !text.includes("Access Denied")) {
-                            console.log(`[SCRAPING] Jina success! Extracted ${text.length} chars`);
-                        } else {
-                            throw new Error("Jina returned empty or blocked content");
-                        }
-                    } else {
-                        throw new Error(`Jina failed with ${jinaResponse.status}`);
-                    }
-                } catch (jinaError) {
-                    console.warn('[SCRAPING] Strategy 1 failed, trying Strategy 2 (Direct Fetch):', jinaError);
+                // Process up to 5 pages for Level 1 performance/safety
+                const limitedUrls = urlsToProcess.slice(0, 5);
+
+                for (const url of limitedUrls) {
                     try {
-                        const response = await fetch(targetUrl, {
-                            headers: {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                            },
-                            signal: AbortSignal.timeout(20000)
-                        });
+                        console.log(`[SCRAPING] Processing: ${url}`);
+                        let pageText = '';
 
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        // Strategy 1: Jina Reader (Best for LLMs)
+                        try {
+                            const jinaResponse = await fetch(`https://r.jina.ai/${url}`, {
+                                headers: { 'User-Agent': 'KonsulBot/1.0', 'Accept': 'text/plain' },
+                                signal: AbortSignal.timeout(15000)
+                            });
+                            if (jinaResponse.ok) {
+                                pageText = await jinaResponse.text();
+                            }
+                        } catch (e) { console.warn(`Jina failed for ${url}, trying direct...`); }
 
-                        const html = await response.text();
-                        const $ = load(html);
-                        $('script, style, noscript, iframe, nav, footer, header, svg').remove();
-                        text = $('body').text().replace(/\s+/g, ' ').trim();
-                        if (text.length === 0) throw new Error("Empty body after cleanup");
+                        // Strategy 2: Direct Fetch + Markdown Conversion
+                        if (!pageText || pageText.length < 200) {
+                            const response = await fetch(url, {
+                                headers: {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                                    'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+                                },
+                                signal: AbortSignal.timeout(15000)
+                            });
+                            if (response.ok) {
+                                const html = await response.text();
+                                pageText = convertToMarkdown(html);
+                            }
+                        }
 
-                        console.log(`[SCRAPING] Direct success! Extracted ${text.length} chars`);
-                    } catch (cheerioError: any) {
-                        console.error('[SCRAPING] All strategies failed for', targetUrl);
-                        throw new Error(`Could not scrape website: ${cheerioError.message}`);
+                        if (pageText) {
+                            markdownContent += `\n\n--- FUENTE: ${url} ---\n\n${pageText}`;
+                        }
+                    } catch (err) {
+                        console.error(`Failed to scrape ${url}:`, err);
                     }
                 }
 
-                if (text.length > 0) {
-                    const chunks = chunkText(text);
-                    console.log(`[SCRAPING] Creating ${chunks.length} chunks for website.`);
+                if (markdownContent.length > 0) {
+                    const chunks = chunkText(markdownContent);
+                    console.log(`[SCRAPING] Created ${chunks.length} semantic markdown chunks.`);
 
                     for (const chunk of chunks) {
                         const embedding = await generateEmbedding(chunk);

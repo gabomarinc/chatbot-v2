@@ -140,19 +140,25 @@ export function AddSourceModal({ isOpen, isLoading = false, onClose, onAdd }: Ad
                     {activeTab === 'WEBSITE' && (
                         <>
                             <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
-                                    <LinkIcon className="w-4 h-4 text-[#21AC96]" />
-                                    Nuevo entrenamiento vía sitio web o sitemap
+                                <Label className="text-sm font-bold text-gray-700 ml-1 flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <LinkIcon className="w-4 h-4 text-[#21AC96]" />
+                                        URL del Sitio Web o Sitemap (.xml)
+                                    </div>
+                                    <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">Brutal Level 1 ⚡️</span>
                                 </Label>
                                 <Input
                                     required
                                     type="url"
                                     value={formData.url}
                                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                                    placeholder="Pegue la URL de un sitio web o sitemap"
+                                    placeholder="Ej: https://miweb.com/sitemap.xml o https://miweb.com"
                                     className="px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:bg-white focus:border-[#21AC96] transition-all font-medium"
                                 />
-                                <p className="text-xs text-gray-400 ml-1">0/1028 caracteres</p>
+                                <div className="flex items-center gap-2 ml-1">
+                                    <Sparkles className="w-3 h-3 text-indigo-400" />
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Ahora con motor de Markdown y detección automática de páginas</p>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
