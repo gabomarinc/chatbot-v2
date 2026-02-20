@@ -30,7 +30,8 @@ import {
     ZapOff,
     Trophy,
     TrendingDown,
-    Zap as ZapIcon
+    Zap as ZapIcon,
+    Star
 } from 'lucide-react';
 import {
     BarChart,
@@ -60,6 +61,7 @@ interface ReportsClientProps {
     agentPerformance: any[];
     channelDistribution: any[];
     retentionRate: { rate: number; trend: number };
+    npsData: any;
 }
 
 const COLORS = ['#21AC96', '#6366F1', '#A855F7', '#EC4899', '#F59E0B', '#10B981'];
@@ -71,7 +73,8 @@ export function ReportsClient({
     heatmapData,
     agentPerformance,
     channelDistribution,
-    retentionRate
+    retentionRate,
+    npsData
 }: ReportsClientProps) {
     const plan = workspaceInfo.plan?.type || 'FRESHIE';
     const [searchTerm, setSearchTerm] = useState('');
@@ -564,6 +567,84 @@ export function ReportsClient({
                         </div>
                     </div>
 
+                    {/* NPS Section */}
+                    {npsData && (
+                        <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-xl shadow-gray-200/20 relative overflow-hidden group">
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 className="text-gray-900 font-black text-xl tracking-tight">Voz del Cliente (NPS)</h3>
+                                    <p className="text-xs text-gray-400 font-medium tracking-tight">Escucha lo que dicen tus usuarios</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="text-right mr-3">
+                                        <div className="text-2xl font-black text-gray-900 leading-none">{npsData.score}</div>
+                                        <div className="text-[10px] text-gray-400 font-bold uppercase">NPS Score</div>
+                                    </div>
+                                    <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
+                                        <Trophy className="w-6 h-6" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="md:col-span-1 space-y-6">
+                                    <div className="flex items-end gap-2 mb-2">
+                                        <span className="text-5xl font-black text-gray-900 tracking-tighter">{npsData.average}</span>
+                                        <span className="text-sm font-bold text-gray-400 mb-2">/ 10 promedio</span>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {[
+                                            { label: 'Promotores (9-10)', color: 'bg-green-500', percentage: npsData.distribution.promoters.percentage },
+                                            { label: 'Pasivos (7-8)', color: 'bg-amber-400', percentage: npsData.distribution.passives.percentage },
+                                            { label: 'Detractores (0-6)', color: 'bg-red-500', percentage: npsData.distribution.detractors.percentage }
+                                        ].map((d, i) => (
+                                            <div key={i} className="space-y-1.5">
+                                                <div className="flex justify-between text-[11px] font-bold">
+                                                    <span className="text-gray-500">{d.label}</span>
+                                                    <span className="text-gray-900">{d.percentage}%</span>
+                                                </div>
+                                                <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
+                                                    <div className={cn("h-full rounded-full transition-all duration-1000", d.color)} style={{ width: `${d.percentage}%` }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2 bg-gray-50/50 rounded-[2.5rem] p-6 border border-gray-100 max-h-[300px] overflow-y-auto">
+                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Feedback Reciente</h4>
+                                    <div className="space-y-4">
+                                        {npsData.recentComments.length > 0 ? npsData.recentComments.map((c: any, i: number) => (
+                                            <div key={i} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn(
+                                                            "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black",
+                                                            c.score >= 9 ? "bg-green-50 text-green-600" :
+                                                                c.score >= 7 ? "bg-amber-50 text-amber-600" :
+                                                                    "bg-red-50 text-red-600"
+                                                        )}>
+                                                            {c.score}
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-gray-400">{c.agentName}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-gray-400">{format(new Date(c.date), 'd MMM', { locale: es })}</span>
+                                                </div>
+                                                <p className="text-sm text-gray-700 font-medium leading-relaxed italic">"{c.comment}"</p>
+                                            </div>
+                                        )) : (
+                                            <div className="flex flex-col items-center justify-center py-10 opacity-40">
+                                                <MessageSquare className="w-8 h-8 mb-2" />
+                                                <p className="text-xs font-bold">Sin comentarios aún</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Performance Table Section */}
                     <div className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden group min-h-[500px] relative flex flex-col">
                         <FeatureLock isLocked={!access.agentBench} title="Comparativa de Agentes">
@@ -603,7 +684,14 @@ export function ReportsClient({
                                                             <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center font-black text-xs text-gray-400 border border-gray-100 group-hover/row:bg-[#21AC96] group-hover/row:text-white transition-colors">
                                                                 {i + 1}
                                                             </div>
-                                                            <span className="font-extrabold text-gray-900">{agent.name}</span>
+                                                            <div>
+                                                                <span className="font-extrabold text-gray-900 block">{agent.name}</span>
+                                                                {agent.nps !== null && (
+                                                                    <span className="text-[10px] font-black text-amber-500 uppercase flex items-center gap-1 mt-0.5">
+                                                                        <Star className="w-2.5 h-2.5 fill-amber-500" /> {agent.nps} NPS
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </td>
                                                     <td className="py-5 text-center">

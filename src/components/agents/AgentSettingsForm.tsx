@@ -21,6 +21,7 @@ interface AgentSettingsFormProps {
         smartRetrieval: boolean;
         transferToHuman: boolean;
         responseDelay?: number;
+        enableNPS: boolean;
         handoffTargets?: any; // JSON
     };
 }
@@ -125,6 +126,7 @@ export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
                 { id: 'smartRetrieval', label: 'Búsqueda inteligente', desc: 'Usar RAG avanzado para precisión' },
                 { id: 'allowReminders', label: 'Permitir recordatorios', desc: 'Agendar eventos con el usuario' },
                 { id: 'transferToHuman', label: 'Transferir a humano', desc: 'Permitir escalar a un chat real' },
+                { id: 'enableNPS', label: 'Encuesta NPS', desc: 'Activa la encuesta de satisfacción al cerrar' },
             ]
         }
     ];

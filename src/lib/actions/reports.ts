@@ -134,20 +134,28 @@ export const getAgentPerformance = cache(async () => {
             },
             conversations: {
                 where: { contactId: { not: null } },
-                select: { id: true }
+                select: { id: true, npsScore: true } as any
             }
         }
-    })
+    }) as any[]
 
-    return agents.map(agent => ({
-        id: agent.id,
-        name: agent.name,
-        totalChats: agent._count.conversations,
-        leadsCaptured: agent.conversations.length,
-        efficiency: agent._count.conversations > 0
-            ? Math.round((agent.conversations.length / agent._count.conversations) * 100)
-            : 0
-    }))
+    return agents.map((agent: any) => {
+        const npsResponses = agent.conversations.filter((c: any) => c.npsScore !== null);
+        const avgNps = npsResponses.length > 0
+            ? Math.round((npsResponses.reduce((acc: number, c: any) => acc + c.npsScore, 0) / npsResponses.length) * 10) / 10
+            : null;
+
+        return {
+            id: agent.id,
+            name: agent.name,
+            totalChats: agent._count.conversations,
+            leadsCaptured: agent.conversations.length,
+            efficiency: agent._count.conversations > 0
+                ? Math.round((agent.conversations.length / agent._count.conversations) * 100)
+                : 0,
+            nps: avgNps
+        }
+    })
 })
 
 export const getChannelDistribution = cache(async () => {
@@ -211,4 +219,53 @@ export const getRetentionRate = cache(async () => {
 
     // Simple mock trend for now as calculating historical trend is more complex
     return { rate, trend: 2.1 }
+})
+
+export const getNPSAnalytics = cache(async () => {
+    const workspace = await getUserWorkspace()
+    if (!workspace) return null
+
+    const conversations = await prisma.conversation.findMany({
+        where: {
+            agent: { workspaceId: workspace.id },
+            npsScore: { not: null }
+        } as any,
+        select: {
+            npsScore: true,
+            npsComment: true,
+            createdAt: true,
+            agent: { select: { name: true } }
+        } as any,
+        orderBy: { createdAt: 'desc' }
+    }) as any[]
+
+    if (conversations.length === 0) return null
+
+    const total = conversations.length
+    const promoters = conversations.filter(c => c.npsScore >= 9).length
+    const passives = conversations.filter(c => c.npsScore >= 7 && c.npsScore <= 8).length
+    const detractors = conversations.filter(c => c.npsScore <= 6).length
+
+    const npsScore = Math.round(((promoters - detractors) / total) * 100)
+    const average = Math.round((conversations.reduce((acc, c) => acc + c.npsScore, 0) / total) * 10) / 10
+
+    return {
+        score: npsScore,
+        average,
+        total,
+        distribution: {
+            promoters: { count: promoters, percentage: Math.round((promoters / total) * 100) },
+            passives: { count: passives, percentage: Math.round((passives / total) * 100) },
+            detractors: { count: detractors, percentage: Math.round((detractors / total) * 100) }
+        },
+        recentComments: conversations
+            .filter(c => c.npsComment)
+            .slice(0, 10)
+            .map(c => ({
+                score: c.npsScore,
+                comment: c.npsComment,
+                agentName: c.agent.name,
+                date: c.createdAt
+            }))
+    }
 })

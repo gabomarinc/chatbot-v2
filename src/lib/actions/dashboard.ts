@@ -17,18 +17,22 @@ export const getDashboardStats = cache(async () => {
         conversaciones: 0,
         creditos: 0,
         contactos: 0,
-        tasaRespuesta: 0
+        tasaRespuesta: 0,
+        npsAvg: 0,
+        isNPSEnabled: false
     }
 
     // Parallelize basic queries
-    const [conversaciones, creditBalance] = await Promise.all([
-        prisma.conversation.count({
-            where: { agent: { workspaceId: workspace.id } }
-        }),
-        prisma.creditBalance.findUnique({
-            where: { workspaceId: workspace.id }
-        })
-    ])
+    const results = await Promise.all([
+        prisma.conversation.count({ where: { agent: { workspaceId: workspace.id } } }),
+        prisma.creditBalance.findUnique({ where: { workspaceId: workspace.id } }),
+        prisma.agent.findFirst({ where: { workspaceId: workspace.id, enableNPS: true } as any }),
+        prisma.conversation.aggregate({
+            where: { agent: { workspaceId: workspace.id }, npsScore: { not: null } } as any,
+            _avg: { npsScore: true } as any
+        }) as any
+    ]);
+    const [conversaciones, creditBalance, npsEnabledAgent, npsAggregate] = results;
 
     // Optimization: Unique contacts count (avoid grouping if possible, but distinct is fine)
     // In many DBs, findMany with distinct and select ID + .length is okay-ish but not count(distinct)
@@ -53,8 +57,10 @@ export const getDashboardStats = cache(async () => {
     return {
         conversaciones,
         creditos: creditBalance?.balance || 0,
-        contactos: contacts, // Placeholder for now or use real distinct if critical
-        tasaRespuesta
+        contactos: contacts,
+        tasaRespuesta,
+        npsAvg: npsAggregate._avg.npsScore ? Number(npsAggregate._avg.npsScore.toFixed(1)) : 0,
+        isNPSEnabled: !!npsEnabledAgent
     }
 })
 

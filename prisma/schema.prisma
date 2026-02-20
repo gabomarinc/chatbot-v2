@@ -82,6 +82,7 @@ model Agent {
   trainingScore      Int?               // 1-10 quality score based on knowledge, prompt, and config
   trainingScoreUpdatedAt DateTime?       // Last time score was calculated
   responseDelay      Int                @default(0)
+  enableNPS          Boolean            @default(false)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   workspace          Workspace          @relation(fields: [workspaceId], references: [id])
@@ -154,6 +155,8 @@ model Conversation {
   assignedAt    DateTime?          // When the conversation was assigned
   isPaused      Boolean            @default(false) // Whether the bot is paused for human takeover
   metadata      Json?              // Debug info and context
+  npsScore      Int?
+  npsComment    String?
   createdAt     DateTime           @default(now())
   agent         Agent              @relation(fields: [agentId], references: [id])
   channel       Channel?           @relation(fields: [channelId], references: [id])

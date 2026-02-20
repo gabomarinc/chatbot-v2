@@ -17,6 +17,8 @@ interface DashboardClientProps {
         creditos: number;
         contactos: number;
         tasaRespuesta: number;
+        npsAvg: number;
+        isNPSEnabled: boolean;
     };
     chartData: any[];
     channels: any[];
@@ -205,11 +207,11 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
             onClick: () => router.push('/prospects')
         },
         {
-            label: 'Tasa de Respuesta',
-            value: `${stats.tasaRespuesta}%`,
+            label: stats.isNPSEnabled ? 'Satisfacción (NPS)' : 'Tasa de Respuesta',
+            value: stats.isNPSEnabled ? `${stats.npsAvg}/10` : `${stats.tasaRespuesta}%`,
             change: '0%',
             isPositive: true,
-            icon: Calendar,
+            icon: stats.isNPSEnabled ? Bot : Calendar,
             onClick: handleResponseRateClick
         },
     ];

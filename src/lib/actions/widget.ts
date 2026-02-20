@@ -96,6 +96,8 @@ export async function sendWidgetMessage(data: {
             const updates: any = { lastMessageAt: new Date() };
             if (conversation.status === 'CLOSED') {
                 updates.status = 'OPEN';
+                updates.npsScore = null;
+                updates.npsComment = null;
                 console.log(`[WIDGET] Reopening conversation ${conversation.id} for user ${data.visitorId}`);
             }
 
@@ -381,6 +383,10 @@ ${hasHubSpot ? `INSTRUCCIONES HUBSPOT CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_hubspot_contact' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés).
 - CAMPO DESCRIPTION: DEBES poner lo que el usuario busca en el campo 'description' de la herramienta. Esto creará una nota automática.
 - NOTAS: USA 'add_hubspot_note' para guardar requerimientos específicos adicionales.` : ''}
+
+ENCUESTA DE SATISFACCIÓN (NPS):
+- Estado: ${(agent as any).enableNPS ? 'ACTIVADA' : 'DESACTIVADA'}
+${(agent as any).enableNPS ? '- REGLA: Antes de dar por finalizada la atención con "finalizar_atencion", DEBES preguntar al usuario: "¿Qué tan probable es que nos recomiendes a un amigo o colega? (Responde con un número del 0 al 10)".\n- Una vez que el usuario te dé la nota, usa la herramienta "registrar_nps" para guardarla y luego despídete y usa "finalizar_atencion".' : '- No es necesario preguntar por satisfacción.'}
 `;
 
             // Custom Fields Collection
@@ -440,6 +446,18 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
                         type: 'object',
                         properties: {},
                         required: []
+                    }
+                },
+                {
+                    name: 'registrar_nps',
+                    description: 'Registra la calificación de satisfacción (NPS) del usuario (0-10) y opcionalmente su comentario.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            score: { type: 'number', description: 'Calificación del 0 al 10' },
+                            comment: { type: 'string', description: 'Comentario opcional del usuario si lo proporciona' }
+                        },
+                        required: ['score']
                     }
                 }
             ];
@@ -1046,14 +1064,36 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
                                     console.error('[GEMINI] createHubSpotDeal error:', e.message);
                                     toolResult = { success: false, error: e.message };
                                 }
+                            } else if (name === "registrar_nps") {
+                                console.log('[GEMINI] Tool registrar_nps called');
+                                try {
+                                    const { score, comment } = args as any;
+                                    const validatedScore = Math.max(0, Math.min(10, Math.round(score)));
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { npsScore: validatedScore, npsComment: comment } as any
+                                    });
+                                    toolResult = { success: true, message: `Puntuación NPS ${validatedScore} registrada correctamente.` };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] registrar_nps error:', e);
+                                    toolResult = { success: false, error: "Error al registrar NPS." };
+                                }
                             } else if (name === "finalizar_atencion") {
                                 console.log('[GEMINI] Tool finalizar_atencion called');
                                 try {
-                                    await prisma.conversation.update({
-                                        where: { id: conversation.id },
-                                        data: { status: 'CLOSED', assignedTo: null, assignedAt: null }
-                                    });
-                                    toolResult = { success: true, message: "Conversación cerrada correctamente." };
+                                    // Check if NPS is enabled and not yet provided
+                                    if ((agent as any).enableNPS && !(conversation as any).npsScore) {
+                                        toolResult = {
+                                            success: false,
+                                            error: "La encuesta NPS está activa. DEBES preguntar al usuario su calificación del 0 al 10 antes de cerrar definitivamente."
+                                        };
+                                    } else {
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: { status: 'CLOSED', assignedTo: null, assignedAt: null }
+                                        });
+                                        toolResult = { success: true, message: "Conversación cerrada correctamente." };
+                                    }
                                 } catch (e: any) {
                                     console.error('[GEMINI] finalizar_atencion error:', e);
                                     toolResult = { success: false, error: "Error al cerrar la conversación." };
@@ -1524,14 +1564,35 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
                                 console.error('[OPENAI] createHubSpotDeal error:', e.message);
                                 toolResult = { success: false, error: e.message };
                             }
+                        } else if (name === "registrar_nps") {
+                            console.log('[OPENAI] Tool registrar_nps called');
+                            try {
+                                const { score, comment } = args as any;
+                                const validatedScore = Math.max(0, Math.min(10, Math.round(score)));
+                                await prisma.conversation.update({
+                                    where: { id: conversation.id },
+                                    data: { npsScore: validatedScore, npsComment: comment } as any
+                                });
+                                toolResult = { success: true, message: `Puntuación NPS ${validatedScore} registrada correctamente.` };
+                            } catch (e: any) {
+                                console.error('[OPENAI] registrar_nps error:', e);
+                                toolResult = { success: false, error: "Error al registrar NPS." };
+                            }
                         } else if (name === "finalizar_atencion") {
                             console.log('[OPENAI] Tool finalizar_atencion called');
                             try {
-                                await prisma.conversation.update({
-                                    where: { id: conversation.id },
-                                    data: { status: 'CLOSED', assignedTo: null, assignedAt: null }
-                                });
-                                toolResult = { success: true, message: "Conversación cerrada correctamente." };
+                                if ((agent as any).enableNPS && !(conversation as any).npsScore) {
+                                    toolResult = {
+                                        success: false,
+                                        error: "La encuesta NPS está activa. DEBES preguntar al usuario su calificación del 0 al 10 antes de cerrar definitivamente."
+                                    };
+                                } else {
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { status: 'CLOSED', assignedTo: null, assignedAt: null }
+                                    });
+                                    toolResult = { success: true, message: "Conversación cerrada correctamente." };
+                                }
                             } catch (e: any) {
                                 console.error('[OPENAI] finalizar_atencion error:', e);
                                 toolResult = { success: false, error: "Error al cerrar la conversación." };

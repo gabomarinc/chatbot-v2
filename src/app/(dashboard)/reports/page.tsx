@@ -6,7 +6,8 @@ import {
     getHeatmapData,
     getAgentPerformance,
     getChannelDistribution,
-    getRetentionRate
+    getRetentionRate,
+    getNPSAnalytics
 } from '@/lib/actions/reports';
 
 export default async function ReportsPage() {
@@ -21,14 +22,16 @@ export default async function ReportsPage() {
         heatmapData,
         agentPerformance,
         channelDistribution,
-        retentionRate
+        retentionRate,
+        npsData
     ] = await Promise.all([
         getCustomFieldsAnalytics(),
         getConversionFunnel(),
         getHeatmapData(),
         getAgentPerformance(),
         getChannelDistribution(),
-        getRetentionRate()
+        getRetentionRate(),
+        getNPSAnalytics()
     ]);
 
     return (
@@ -40,6 +43,7 @@ export default async function ReportsPage() {
             agentPerformance={agentPerformance}
             channelDistribution={channelDistribution}
             retentionRate={retentionRate}
+            npsData={npsData}
         />
     );
 }
