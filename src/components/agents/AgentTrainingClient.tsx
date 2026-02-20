@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Globe, Upload, FileText, Video as VideoIcon, CheckCircle2, AlertCircle, Loader2, Sparkles, Plus, MoreVertical, Search, Database, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -83,6 +83,23 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
     const [smartRetrieval, setSmartRetrieval] = useState(agent.smartRetrieval);
     const [temperature, setTemperature] = useState(agent.temperature || 0.3);
     const [isSavingSettings, setIsSavingSettings] = useState(false);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(true);
+
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            try {
+                const { getScoreImprovements } = await import('@/lib/scoring/agent-scoring');
+                const data = await getScoreImprovements(agentId);
+                setSuggestions(data);
+            } catch (e) {
+                console.error("Error fetching suggestions:", e);
+            } finally {
+                setIsLoadingSuggestions(false);
+            }
+        };
+        fetchSuggestions();
+    }, [agentId]);
 
     // Calculate last update from sources or agent updatedAt
     const allSources = knowledgeBases.flatMap(kb => kb.sources);
@@ -218,10 +235,10 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                 </div>
 
                 {/* Content Area */}
-                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm relative">
                     {/* Training Score Analysis (Additional Feature) */}
                     {score < 10 && (
-                        <div className="bg-[#21AC96]/5 p-6 md:p-8 border-b border-[#21AC96]/10">
+                        <div className="bg-[#21AC96]/5 p-6 md:p-8 border-b border-[#21AC96]/10 rounded-t-[2.5rem]">
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="p-3 bg-white rounded-2xl shadow-sm text-[#21AC96]">
                                     <Sparkles className="w-6 h-6" />
@@ -232,40 +249,37 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {score < 8 ? (
-                                    <div className="space-y-3">
-                                        <p className="text-sm text-gray-600 font-medium">Recomendaciones para llegar al nivel "Brutal":</p>
-                                        <ul className="space-y-2">
-                                            {allSources.length === 0 && (
-                                                <li className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-white/50 p-2 rounded-xl">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                                                    Sube al menos un PDF o sitio web oficial.
-                                                </li>
-                                            )}
-                                            {!smartRetrieval && (
-                                                <li className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-white/50 p-2 rounded-xl">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                                                    Activa la "Búsqueda Inteligente" en Ajustes.
-                                                </li>
-                                            )}
-                                            {agent.personalityPrompt.length < 300 && (
-                                                <li className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-white/50 p-2 rounded-xl">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                                                    Expande las instrucciones de personalidad.
-                                                </li>
-                                            )}
-                                        </ul>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                                <div className="space-y-4">
+                                    <p className="text-xs font-black text-[#21AC96] uppercase tracking-[0.15em] mb-1">Hoja de Ruta al Éxito</p>
+                                    <h4 className="text-gray-900 font-extrabold text-xl leading-snug">Recomendaciones para llegar al nivel "Maestro":</h4>
+
+                                    <div className="space-y-3 mt-4">
+                                        {isLoadingSuggestions ? (
+                                            <div className="flex items-center gap-3 p-4 bg-white/40 rounded-2xl animate-pulse">
+                                                <div className="w-2 h-2 rounded-full bg-gray-200" />
+                                                <div className="h-3 w-40 bg-gray-200 rounded" />
+                                            </div>
+                                        ) : suggestions.length > 0 ? (
+                                            suggestions.map((s, idx) => (
+                                                <div key={idx} className="flex items-start gap-3 p-4 bg-white/60 hover:bg-white rounded-2xl border border-transparent hover:border-[#21AC96]/20 transition-all group">
+                                                    <div className="w-5 h-5 rounded-full bg-[#21AC96]/10 text-[#21AC96] flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#21AC96] group-hover:text-white transition-colors">
+                                                        <Plus className="w-3 h-3" />
+                                                    </div>
+                                                    <p className="text-sm text-gray-700 font-bold leading-relaxed">{s}</p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="bg-white/40 p-5 rounded-2xl border border-[#21AC96]/20">
+                                                <p className="text-sm text-[#21AC96] font-extrabold flex items-center gap-2">
+                                                    <CheckCircle2 className="w-5 h-5" />
+                                                    ¡Entrenamiento de alto rendimiento!
+                                                </p>
+                                                <p className="text-xs text-gray-600 mt-2 font-medium">Tu agente ha alcanzado el nivel máximo de optimización configurado.</p>
+                                            </div>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="bg-white/40 p-4 rounded-2xl border border-[#21AC96]/20">
-                                        <p className="text-sm text-[#21AC96] font-extrabold flex items-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4" />
-                                            ¡Entrenamiento de alto rendimiento!
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-1">Tu agente está listo para manejar conversaciones complejas con máxima precisión.</p>
-                                    </div>
-                                )}
+                                </div>
 
                                 <div className="flex flex-col justify-center items-center p-6 bg-white rounded-2xl shadow-sm border border-[#21AC96]/10">
                                     <div className="relative w-20 h-20 flex items-center justify-center">
@@ -281,9 +295,9 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                         </div>
                     )}
 
-                    {/* Tabs */}
-                    <div className="px-5 md:px-8 pt-6 border-b border-gray-50">
-                        <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar">
+                    {/* Tabs Rediseñados */}
+                    <div className="px-5 md:px-8 py-8 border-b border-gray-50">
+                        <div className="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar bg-gray-50/50 p-2 rounded-[2rem] w-fit">
                             {[
                                 { id: 'sources', label: 'Fuentes de Datos' },
                                 { id: 'faq', label: 'Preguntas (FAQ) ✍️' },
@@ -294,16 +308,13 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={cn(
-                                        "pb-4 text-sm font-bold transition-all relative whitespace-nowrap",
+                                        "px-6 py-3 text-sm font-bold transition-all rounded-[1.5rem] whitespace-nowrap",
                                         activeTab === tab.id
-                                            ? "text-[#21AC96]"
-                                            : "text-gray-400 hover:text-gray-600"
+                                            ? "bg-white text-[#21AC96] shadow-md shadow-gray-200/50 scale-[1.02]"
+                                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
                                     )}
                                 >
                                     {tab.label}
-                                    {activeTab === tab.id && (
-                                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#21AC96] rounded-full shadow-[0_-2px_8px_rgba(33,172,150,0.5)]"></div>
-                                    )}
                                 </button>
                             ))}
                         </div>
@@ -365,7 +376,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                                         <MoreVertical className="w-5 h-5" />
                                                     </button>
                                                     {openMenuId === source.id && (
-                                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                                             <button
                                                                 onClick={() => {
                                                                     setSelectedSource(source);
