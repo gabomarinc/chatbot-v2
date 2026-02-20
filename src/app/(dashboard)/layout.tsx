@@ -3,6 +3,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Providers } from "@/components/providers/SessionProvider";
 import { SidebarProvider } from "@/components/providers/SidebarProvider";
+import { PushNotificationManager } from "@/components/notifications/PushNotificationManager";
 
 export default function DashboardLayout({
     children,
@@ -20,6 +21,7 @@ export default function DashboardLayout({
                             {children}
                         </main>
                         <BottomNav />
+                        <PushNotificationManager />
                     </div>
                 </div>
             </SidebarProvider>

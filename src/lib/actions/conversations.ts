@@ -5,6 +5,7 @@ import { auth } from '@/auth'
 import { getUserWorkspace } from './workspace'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
+import { adminMessaging } from '@/lib/firebase-admin'
 import OpenAI from 'openai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
@@ -189,6 +190,31 @@ export async function assignConversation(conversationId: string, userId: string)
             });
         } catch (emailError) {
             console.error('Error sending assignment email:', emailError);
+        }
+
+        // Send Push Notification
+        if (membership.user.fcmToken) {
+            try {
+                const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+                await adminMessaging.send({
+                    token: membership.user.fcmToken,
+                    notification: {
+                        title: '📌 Chat Asignado',
+                        body: `Se te ha asignado el chat de ${conversation.contactName || conversation.contact?.name || 'Visitante'}`,
+                    },
+                    data: {
+                        conversationId: conversation.id,
+                        url: `${APP_URL}/chat?id=${conversation.id}`
+                    },
+                    webpush: {
+                        fcmOptions: {
+                            link: `${APP_URL}/chat?id=${conversation.id}`
+                        }
+                    }
+                });
+            } catch (fcmError) {
+                console.error('Error sending FCM notification:', fcmError);
+            }
         }
 
         revalidatePath('/dashboard')

@@ -21,6 +21,7 @@ model User {
   workspaces   Workspace[]
   memberships  WorkspaceMember[]
   assignedConversations Conversation[]
+  fcmToken     String?           // Token for Firebase Push Notifications
 }
 
 model GlobalConfig {

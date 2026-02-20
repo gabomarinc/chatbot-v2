@@ -27,3 +27,19 @@ export async function markAgentTourSeen() {
 
     revalidatePath('/agents/[agentId]')
 }
+
+export async function saveFCMToken(token: string) {
+    const session = await auth()
+    if (!session?.user?.email) return { success: false }
+
+    try {
+        await prisma.user.update({
+            where: { email: session.user.email },
+            data: { fcmToken: token }
+        })
+        return { success: true }
+    } catch (error) {
+        console.error('Error saving FCM token:', error)
+        return { success: false }
+    }
+}
