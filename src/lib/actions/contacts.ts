@@ -233,3 +233,17 @@ export async function updateContact(contactId: string, updates: Record<string, a
         return { success: false, error: 'Failed to update contact' };
     }
 }
+
+export async function getContactsByIds(ids: string[]) {
+    try {
+        const contacts = await prisma.contact.findMany({
+            where: {
+                id: { in: ids }
+            }
+        });
+        return { success: true, contacts };
+    } catch (error: any) {
+        console.error('Error fetching contacts by ids:', error);
+        return { success: false, error: error.message };
+    }
+}

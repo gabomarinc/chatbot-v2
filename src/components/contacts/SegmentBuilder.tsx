@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Filter as FilterIcon, Search, Users, Plus, X, ChevronRight, Save, Play, Loader2, UserCircle, Phone, Download } from 'lucide-react';
+import { Filter as FilterIcon, Search, Users, Plus, X, ChevronRight, Save, Play, Loader2, UserCircle, Phone, Download, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { CustomFieldDefinition } from '@prisma/client';
 import { toast } from 'sonner';
 import { getContacts, FilterCondition } from '@/lib/actions/contacts';
@@ -9,6 +10,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { ContactSheet } from './ContactSheet';
+import { CampaignWizard } from './CampaignWizard';
 
 interface SegmentBuilderProps {
     workspaceId: string;
@@ -23,6 +25,8 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const [selectedContact, setSelectedContact] = useState<any>(null);
+    const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
+    const [isCampaignWizardOpen, setIsCampaignWizardOpen] = useState(false);
 
     // Pagination
     const [page, setPage] = useState(1);
@@ -190,6 +194,26 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
     const availableCustomFields = activeAgentId
         ? customFields.filter(f => f.agentId === activeAgentId)
         : Array.from(new Map(customFields.map(f => [f.key, f])).values()); // Deduplicate if showing all
+
+    // Multi-select handlers
+    const toggleSelectAll = () => {
+        if (selectedContactIds.size === results.length) {
+            setSelectedContactIds(new Set());
+        } else {
+            setSelectedContactIds(new Set(results.map(c => c.id)));
+        }
+    };
+
+    const toggleSelectContact = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Don't trigger the row click (ContactSheet)
+        const newSet = new Set(selectedContactIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
+        setSelectedContactIds(newSet);
+    };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -471,33 +495,63 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                     <table className="w-full text-left">
                                         <thead className="bg-gray-50/50 text-gray-500 text-[10px] uppercase font-bold tracking-widest">
                                             <tr>
-                                                <th className="px-8 py-5">Nombre</th>
-                                                <th className="px-6 py-5">Email / Teléfono</th>
-                                                <th className="px-6 py-5">Agente</th>
-                                                <th className="px-6 py-5 text-center">Interacciones</th>
+                                                <th className="px-6 py-5 w-10">
+                                                    <div className="flex items-center justify-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={results.length > 0 && selectedContactIds.size === results.length}
+                                                            onChange={toggleSelectAll}
+                                                            className="w-4 h-4 rounded border-gray-300 text-[#21AC96] focus:ring-[#21AC96]/20 transition-all cursor-pointer"
+                                                        />
+                                                    </div>
+                                                </th>
+                                                <th className="px-4 py-5 font-black">Nombre</th>
+                                                <th className="px-6 py-5 font-black">Email / Teléfono</th>
+                                                <th className="px-6 py-5 font-black">Agente</th>
+                                                <th className="px-6 py-5 text-center font-black">Interacciones</th>
                                                 {availableCustomFields.slice(0, 1).map(f => ( // Reduced to 1 to make space
-                                                    <th key={f.id} className="px-6 py-5">{f.label}</th>
+                                                    <th key={f.id} className="px-6 py-5 font-black">{f.label}</th>
                                                 ))}
-                                                <th className="px-6 py-5">Contactado</th>
+                                                <th className="px-6 py-5 font-black">Contactado</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
                                             {results.map((contact, idx) => (
                                                 <tr
                                                     key={contact.id}
-                                                    className="group hover:bg-indigo-50/30 transition-colors cursor-pointer"
+                                                    className={cn(
+                                                        "group transition-all cursor-pointer",
+                                                        selectedContactIds.has(contact.id)
+                                                            ? "bg-[#21AC96]/5 hover:bg-[#21AC96]/10"
+                                                            : "hover:bg-indigo-50/30"
+                                                    )}
                                                     onClick={() => setSelectedContact(contact)}
                                                     style={{ animationDelay: `${idx * 0.05}s` }}
                                                 >
-                                                    <td className="px-8 py-5">
+                                                    <td className="px-6 py-5" onClick={(e) => e.stopPropagation()}>
+                                                        <div className="flex items-center justify-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedContactIds.has(contact.id)}
+                                                                onChange={(e) => toggleSelectContact(contact.id, e as any)}
+                                                                className="w-4 h-4 rounded border-gray-300 text-[#21AC96] focus:ring-[#21AC96]/20 transition-all cursor-pointer"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-5">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-2xl bg-[#21AC96]/5 flex items-center justify-center text-[#21AC96] shadow-sm flex-shrink-0">
-                                                                <UserCircle className="w-6 h-6" />
+                                                            <div className={cn(
+                                                                "w-10 h-10 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 transition-transform group-hover:scale-110",
+                                                                selectedContactIds.has(contact.id)
+                                                                    ? "bg-[#21AC96] text-white"
+                                                                    : "bg-[#21AC96]/5 text-[#21AC96]"
+                                                            )}>
+                                                                <UserCircle className="w-5 h-5" />
                                                             </div>
-                                                            <div className="flex flex-col">
-                                                                <div className="font-extrabold text-gray-900 tracking-tight">{contact.name || 'Sin Nombre'}</div>
-                                                                <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
-                                                                    <span className="bg-gray-100 px-1.5 py-0.5 rounded-md font-mono text-[10px] text-gray-500">
+                                                            <div className="flex flex-col min-w-0">
+                                                                <div className="font-extrabold text-gray-900 tracking-tight truncate">{contact.name || 'Sin Nombre'}</div>
+                                                                <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-bold mt-0.5">
+                                                                    <span className="bg-gray-100 px-1.5 py-0.5 rounded-md font-mono">
                                                                         #{contact.id.slice(-6)}
                                                                     </span>
                                                                 </div>
@@ -505,22 +559,22 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-5">
-                                                        {contact.email && <div className="text-sm font-medium text-gray-700">{contact.email}</div>}
-                                                        {contact.phone && <div className="text-xs text-gray-500 font-mono mt-0.5">{contact.phone}</div>}
+                                                        {contact.email && <div className="text-[13px] font-bold text-gray-700 truncate max-w-[150px]">{contact.email}</div>}
+                                                        {contact.phone && <div className="text-[11px] text-gray-400 font-mono mt-0.5">{contact.phone}</div>}
                                                     </td>
                                                     <td className="px-6 py-5">
-                                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold whitespace-nowrap">
+                                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-[11px] font-black uppercase tracking-tighter whitespace-nowrap">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
                                                             {contact.conversations?.[0]?.agent?.name || 'N/A'}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-5 text-center">
-                                                        <span className="text-sm font-bold text-gray-900">{contact._count?.conversations || 0}</span>
+                                                        <span className="text-sm font-black text-gray-900">{contact._count?.conversations || 0}</span>
                                                     </td>
                                                     {availableCustomFields.slice(0, 1).map(f => (
                                                         <td key={f.id} className="px-6 py-5">
                                                             {contact.customData?.[f.key] ? (
-                                                                <span className="px-2.5 py-1.5 bg-[#21AC96]/10 text-[#21AC96] rounded-lg text-xs font-bold inline-block border border-[#21AC96]/20">
+                                                                <span className="px-2.5 py-1 text-[11px] bg-white text-[#21AC96] rounded-lg font-bold inline-block border border-[#21AC96]/20 shadow-sm">
                                                                     {String(contact.customData[f.key])}
                                                                 </span>
                                                             ) : (
@@ -528,7 +582,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                             )}
                                                         </td>
                                                     ))}
-                                                    <td className="px-6 py-5 text-xs text-gray-500 font-medium">
+                                                    <td className="px-6 py-5 text-[11px] text-gray-400 font-bold uppercase tracking-tighter">
                                                         {format(new Date(contact.createdAt), "d MMM yyyy", { locale: es })}
                                                     </td>
                                                 </tr>
@@ -567,6 +621,46 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                     </div>
                 </div>
             </div>
+
+            {/* Bulk Action Bar */}
+            {selectedContactIds.size > 0 && (
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-10 fade-in duration-500">
+                    <div className="bg-gray-900 text-white rounded-[2rem] px-8 py-5 flex items-center gap-10 shadow-2xl shadow-indigo-500/30 border border-white/10 backdrop-blur-xl">
+                        <div className="flex items-center gap-4 border-r border-white/10 pr-10">
+                            <div className="w-10 h-10 bg-indigo-500 rounded-2xl flex items-center justify-center font-black text-sm">
+                                {selectedContactIds.size}
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold">Contactos seleccionados</p>
+                                <button
+                                    onClick={() => setSelectedContactIds(new Set())}
+                                    className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors"
+                                >
+                                    Deshacer selección
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setIsCampaignWizardOpen(true)}
+                                className="px-6 py-3 bg-[#21AC96] hover:bg-[#1E9A86] text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-[#21AC96]/20 transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                <Play className="w-4 h-4 fill-current" />
+                                Crear Campaña
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Campaign Wizard */}
+            <CampaignWizard
+                isOpen={isCampaignWizardOpen}
+                onClose={() => setIsCampaignWizardOpen(false)}
+                selectedContactIds={Array.from(selectedContactIds)}
+                workspaceId={workspaceId}
+            />
 
             {/* Contact Details Sheet */}
             <ContactSheet
