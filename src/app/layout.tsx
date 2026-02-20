@@ -26,6 +26,10 @@ export const metadata: Metadata = {
     telephone: false,
   },
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icono-konsul.png",
+    apple: "/icono-konsul.png",
+  },
 };
 
 export const viewport: Viewport = {

@@ -199,8 +199,8 @@ export async function assignConversation(conversationId: string, userId: string)
                 await adminMessaging.send({
                     token: membership.user.fcmToken,
                     notification: {
-                        title: '📌 Chat Asignado',
-                        body: `Se te ha asignado el chat de ${conversation.contactName || conversation.contact?.name || 'Visitante'}`,
+                        title: `🚀 Nuevo Lead: ${conversation.contactName || conversation.contact?.name || 'Visitante'}`,
+                        body: `¡Hola ${membership.user.name ? membership.user.name.split(' ')[0] : 'Agente'}! Te han asignado un nuevo lead. Intención: ${intentSummary}`,
                     },
                     data: {
                         conversationId: conversation.id,
