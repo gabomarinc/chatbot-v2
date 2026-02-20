@@ -69,13 +69,14 @@ export async function sendWidgetMessage(data: {
             throw new Error("Insufficient credits");
         }
 
-        // 3. Find or Create Conversation (include assignedTo to check if human is handling)
+        // 3. Find or Create Conversation (Try to resume the latest one if possible)
         let conversation = await prisma.conversation.findFirst({
             where: {
                 channelId: channel.id,
                 externalId: data.visitorId,
-                status: { not: 'CLOSED' }
-            }
+            },
+            include: { contact: true },
+            orderBy: { lastMessageAt: 'desc' }
         })
 
         if (!conversation) {
@@ -87,12 +88,21 @@ export async function sendWidgetMessage(data: {
                     contactName: `Visitante ${data.visitorId.slice(0, 4)}`,
                     status: 'OPEN',
                     lastMessageAt: new Date()
-                }
+                },
+                include: { contact: true }
             })
         } else {
-            await prisma.conversation.update({
+            // Reopen if it was closed
+            const updates: any = { lastMessageAt: new Date() };
+            if (conversation.status === 'CLOSED') {
+                updates.status = 'OPEN';
+                console.log(`[WIDGET] Reopening conversation ${conversation.id} for user ${data.visitorId}`);
+            }
+
+            conversation = await prisma.conversation.update({
                 where: { id: conversation.id },
-                data: { lastMessageAt: new Date() }
+                data: updates,
+                include: { contact: true }
             })
         }
 
@@ -396,9 +406,8 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
 3. DO NOT just acknowledge data in text. You MUST call the tool to save it.
 4. If you fail to call the tool, the data is lost.
 
-When calling 'update_contact':
-- Extract Name, Email, Phone (standard fields).
 - Map user input to the *exact* custom field keys defined above (e.g. if field is "salary", map "5000" to "salary").
+5. FINALIZACIÓN DE ATENCIÓN: Solo usa 'finalizar_atencion' cuando el usuario ya no tenga dudas y la consulta haya sido resuelta. NO la uses si hay una cita agendada hoy o pendiente, o si el usuario dijo que volvería con una consulta específica mas tarde.
 `;
 
             // Define tools for Calendar and Image Search, and Contact Update
@@ -422,6 +431,15 @@ When calling 'update_contact':
                             }
                         },
                         required: ['updates']
+                    }
+                },
+                {
+                    name: 'finalizar_atencion',
+                    description: 'Finaliza la atención y cierra la conversación. Úsala solo cuando el usuario ya no tenga más dudas y la consulta haya sido resuelta satisfactoriamente. NO la uses si hay una cita pendiente o compromisos de seguimiento por parte del bot.',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
                     }
                 }
             ];
@@ -1028,6 +1046,18 @@ When calling 'update_contact':
                                     console.error('[GEMINI] createHubSpotDeal error:', e.message);
                                     toolResult = { success: false, error: e.message };
                                 }
+                            } else if (name === "finalizar_atencion") {
+                                console.log('[GEMINI] Tool finalizar_atencion called');
+                                try {
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { status: 'CLOSED', assignedTo: null, assignedAt: null }
+                                    });
+                                    toolResult = { success: true, message: "Conversación cerrada correctamente." };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] finalizar_atencion error:', e);
+                                    toolResult = { success: false, error: "Error al cerrar la conversación." };
+                                }
                             }
 
                             result = await chat.sendMessage([{
@@ -1493,6 +1523,18 @@ When calling 'update_contact':
                             } catch (e: any) {
                                 console.error('[OPENAI] createHubSpotDeal error:', e.message);
                                 toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "finalizar_atencion") {
+                            console.log('[OPENAI] Tool finalizar_atencion called');
+                            try {
+                                await prisma.conversation.update({
+                                    where: { id: conversation.id },
+                                    data: { status: 'CLOSED', assignedTo: null, assignedAt: null }
+                                });
+                                toolResult = { success: true, message: "Conversación cerrada correctamente." };
+                            } catch (e: any) {
+                                console.error('[OPENAI] finalizar_atencion error:', e);
+                                toolResult = { success: false, error: "Error al cerrar la conversación." };
                             }
                         }
                         openAiMessages.push({
