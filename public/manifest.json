@@ -8,14 +8,14 @@
     "theme_color": "#21AC96",
     "icons": [
         {
-            "src": "/icono-konsul.png",
+            "src": "/logo-konsul-isotipo.jpeg",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/jpeg"
         },
         {
-            "src": "/icono-konsul.png",
+            "src": "/logo-konsul-isotipo.jpeg",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/jpeg"
         }
     ]
 }
