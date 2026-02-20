@@ -397,7 +397,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                                         <MoreVertical className="w-5 h-5" />
                                                     </button>
                                                     {openMenuId === source.id && (
-                                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                        <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-bottom-2 zoom-in-95 duration-200">
                                                             <button
                                                                 onClick={() => {
                                                                     setSelectedSource(source);
