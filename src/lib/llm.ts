@@ -557,11 +557,17 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
 
   // Knowledge base context
   if (contextChunks.length > 0) {
-    prompt += 'Información relevante de tu base de conocimientos:\n';
+    prompt += `### CONTEXTO DE CONOCIMIENTO (ACTUALIZADO)\n`;
+    prompt += `Eres un experto con acceso a documentos oficiales. Utiliza exclusivamente la siguiente información para tus respuestas técnicas, comerciales o de soporte. Si la información no es suficiente, admítelo con profesionalismo.\n\n`;
+    prompt += `--------- FUENTES DE INFORMACIÓN ---------\n`;
     contextChunks.forEach((chunk, index) => {
-      prompt += `${index + 1}. ${chunk}\n`;
+      prompt += `[BLOQUE ${index + 1}]: ${chunk}\n`;
     });
-    prompt += '\n';
+    prompt += `------------------------------------------\n\n`;
+    prompt += `REGLAS DE ORO DE CONTESTACIÓN:\n`;
+    prompt += `1. **Prioridad Absoluta**: Si el conocimiento dice algo que contradice tu entrenamiento general, EL CONOCIMIENTO MANDA.\n`;
+    prompt += `2. **No Alucinación**: No inventes números de teléfono, correos electrónicos, precios o direcciones que no aparezcan arriba.\n`;
+    prompt += `3. **Estilo Natural**: No digas "según el bloque 1", simplemente integra la información de forma fluida y convincente.\n\n`;
   }
 
   // Restrictions

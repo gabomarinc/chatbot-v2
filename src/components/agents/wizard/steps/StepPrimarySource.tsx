@@ -29,8 +29,8 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
     const [inputVal, setInputVal] = useState(''); // Web URL
     const [manualCompany, setManualCompany] = useState('');
     const [manualDescription, setManualDescription] = useState('');
-    const [manualPdfUrl, setManualPdfUrl] = useState<string | null>(null);
-    const [manualPdfName, setManualPdfName] = useState<string | null>(null);
+    const [manualDocumentUrl, setManualDocumentUrl] = useState<string | null>(null);
+    const [manualDocumentName, setManualDocumentName] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -38,8 +38,12 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.type !== 'application/pdf') {
-            toast.error('Solo se permiten archivos PDF');
+        const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+            file.type === 'application/vnd.ms-excel';
+        const isPdf = file.type === 'application/pdf';
+
+        if (!isPdf && !isExcel) {
+            toast.error('Solo se permiten archivos PDF o Excel');
             return;
         }
 
@@ -78,9 +82,9 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
             console.log('[UPLOAD] Upload complete. Public URL:', publicUrl);
 
             // 3. Save Public URL
-            setManualPdfUrl(publicUrl || null);
-            setManualPdfName(file.name);
-            toast.success('PDF subido correctamente');
+            setManualDocumentUrl(publicUrl || null);
+            setManualDocumentName(file.name);
+            toast.success('Documento subido correctamente');
         } catch (error) {
             console.error('[UPLOAD] Final Error:', error);
             const msg = error instanceof Error ? error.message : 'Error desconocido';
@@ -163,9 +167,9 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
             onChange({
                 type: 'MANUAL',
                 companyName: manualCompany,
-                description: manualDescription,
-                pdfUrl: manualPdfUrl,
-                pdfName: manualPdfName,
+                companyDescription: manualDescription,
+                manualDocumentUrl,
+                manualDocumentName,
                 personality: option,
                 analysisSummary: analysisResult?.summary
             });
@@ -439,20 +443,20 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Material Adicional (PDF, Opcional)</label>
+                                <label className="text-sm font-medium text-gray-700">Material Adicional (PDF o Excel, Opcional)</label>
                                 <div
-                                    className={`border-2 border-dashed rounded-xl p-4 transition-colors ${manualPdfUrl ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:border-[#21AC96]/50'
+                                    className={`border-2 border-dashed rounded-xl p-4 transition-colors ${manualDocumentUrl ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:border-[#21AC96]/50'
                                         }`}
                                 >
                                     <input
                                         type="file"
-                                        accept="application/pdf"
+                                        accept=".pdf,.xlsx,.xls"
                                         onChange={handlePdfUpload}
                                         className="hidden"
                                         ref={fileInputRef}
                                     />
 
-                                    {!manualPdfUrl ? (
+                                    {!manualDocumentUrl ? (
                                         <div
                                             onClick={() => !isUploading && fileInputRef.current?.click()}
                                             className="flex flex-col items-center justify-center cursor-pointer py-4"
@@ -460,10 +464,10 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                                             {isUploading ? (
                                                 <Loader2 className="w-8 h-8 text-[#21AC96] animate-spin mb-2" />
                                             ) : (
-                                                <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                                <Upload className={`w-8 h-8 ${manualDocumentUrl ? 'text-[#21AC96]' : 'text-gray-300'}`} />
                                             )}
-                                            <p className="text-sm font-medium text-gray-600">
-                                                {isUploading ? 'Subiendo...' : 'Sube un PDF con información'}
+                                            <p className="text-xs font-bold text-gray-500 text-center px-4">
+                                                {manualDocumentName || 'Haz clic para subir un PDF o Excel'}
                                             </p>
                                             <p className="text-xs text-gray-400 mt-1">Máx 5MB</p>
                                         </div>
@@ -475,22 +479,22 @@ export function StepPrimarySource({ intent, name, primarySource, onChange }: Ste
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
-                                                        {manualPdfName}
+                                                        {manualDocumentName}
                                                     </p>
                                                     <p className="text-xs text-green-600">Listo para procesar</p>
                                                 </div>
                                             </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setManualPdfUrl(null);
-                                                    setManualPdfName(null);
-                                                }}
-                                                className="text-gray-400 hover:text-red-500"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </Button>
+                                            {manualDocumentUrl && (
+                                                <button
+                                                    onClick={() => {
+                                                        setManualDocumentUrl(null);
+                                                        setManualDocumentName(null);
+                                                    }}
+                                                    className="text-[10px] font-bold text-red-500 hover:text-red-600 uppercase tracking-widest"
+                                                >
+                                                    Eliminar archivo
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>

@@ -64,10 +64,14 @@ export function AddSourceModal({ isOpen, isLoading = false, onClose, onAdd }: Ad
             setIsUploading(false);
         };
 
-        if (file.type === 'application/pdf') {
-            reader.readAsDataURL(file); // Base64 for PDF
+        const isBinary = file.type === 'application/pdf' ||
+            file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+            file.type === 'application/vnd.ms-excel';
+
+        if (isBinary) {
+            reader.readAsDataURL(file); // Base64 for PDF and Excel
         } else {
-            reader.readAsText(file); // Text for others
+            reader.readAsText(file); // Text for others (txt, etc)
         }
     };
 
@@ -226,7 +230,7 @@ export function AddSourceModal({ isOpen, isLoading = false, onClose, onAdd }: Ad
                                 <input
                                     type="file"
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    accept=".pdf,.docx,.txt"
+                                    accept=".pdf,.docx,.txt,.xlsx,.xls"
                                     onChange={handleFileChange}
                                 />
                                 {formData.fileName ? (
@@ -239,7 +243,7 @@ export function AddSourceModal({ isOpen, isLoading = false, onClose, onAdd }: Ad
                                     <>
                                         <File className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-sm text-gray-600 font-medium mb-1">Arrastra un archivo aquí o haz clic para seleccionar</p>
-                                        <p className="text-xs text-gray-400">PDF, TXT (Máx. 5MB)</p>
+                                        <p className="text-xs text-gray-400">PDF, TXT, Excel (Máx. 5MB)</p>
                                     </>
                                 )}
                             </div>

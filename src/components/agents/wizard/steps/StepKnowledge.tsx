@@ -109,8 +109,12 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.type !== 'application/pdf') {
-                toast.error('Solo archivos PDF');
+            const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                file.type === 'application/vnd.ms-excel';
+            const isPdf = file.type === 'application/pdf';
+
+            if (!isPdf && !isExcel) {
+                toast.error('Solo archivos PDF o Excel');
                 return;
             }
             setFile(file);
@@ -120,7 +124,7 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
             reader.onload = (e) => {
                 const content = e.target?.result as string;
                 onChange({
-                    type: 'PDF',
+                    type: 'DOCUMENT',
                     source: content, // base64
                     fileName: file.name
                 });
@@ -352,7 +356,7 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                     <LayoutTemplate className="w-4 h-4" /> Plantillas
                 </button>
                 <button onClick={() => setSourceType('PDF')} className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${sourceType === 'PDF' ? 'bg-[#21AC96] text-white shadow-lg' : 'bg-white border hover:bg-gray-50'}`}>
-                    <FileText className="w-4 h-4" /> PDF
+                    <FileText className="w-4 h-4" /> PDF / Excel
                 </button>
                 <button onClick={() => setSourceType('TEXT')} className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${sourceType === 'TEXT' ? 'bg-[#21AC96] text-white shadow-lg' : 'bg-white border hover:bg-gray-50'}`}>
                     <Bot className="w-4 h-4" /> Texto Manual
@@ -435,13 +439,13 @@ export function StepKnowledge({ intent, name, knowledgeData, onChange }: StepKno
                     <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm max-w-xl mx-auto space-y-4 text-center border-2 border-dashed border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer relative">
                         <input
                             type="file"
-                            accept="application/pdf"
+                            accept=".pdf,.xlsx,.xls"
                             onChange={handleFileChange}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                         <Upload className="w-10 h-10 text-gray-400 mx-auto" />
                         <div>
-                            <p className="font-semibold text-gray-700">Haz clic para subir tu PDF</p>
+                            <p className="font-semibold text-gray-700">Haz clic para subir tu PDF o Excel</p>
                             <p className="text-xs text-gray-500 mt-1">Entrenaremos al agente con el contenido.</p>
                         </div>
                     </div>

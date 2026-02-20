@@ -1,4 +1,6 @@
 import { prisma } from './prisma';
+import { generateEmbedding, cosineSimilarity } from './ai';
+import { CohereClient } from 'cohere-ai';
 
 export interface DocumentChunk {
   id: string;
@@ -7,260 +9,189 @@ export interface DocumentChunk {
 }
 
 /**
- * Simple cosine similarity calculation
+ * Generates a hypothetical technical answer to improve vector search (HyDE)
  */
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length) return 0;
-  
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-  
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
+async function generateHypotheticalAnswer(query: string): Promise<string> {
+  try {
+    let openaiKey = process.env.OPENAI_API_KEY;
+    let googleKey = process.env.GOOGLE_API_KEY;
+
+    if (!openaiKey || !googleKey) {
+      const configs = await prisma.globalConfig.findMany({
+        where: { key: { in: ['OPENAI_API_KEY', 'GOOGLE_API_KEY'] } }
+      });
+      if (!openaiKey) openaiKey = configs.find((c: any) => c.key === 'OPENAI_API_KEY')?.value;
+      if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value;
+    }
+
+    const prompt = `Responde a la siguiente pregunta de un usuario de forma técnica y detallada, como si fueras un experto escribiendo un manual oficial. No digas "Hola" ni "Aquí tienes", ve directo al grano.\n\nPregunta: ${query}\n\nRespuesta hipotética:`;
+
+    if (openaiKey) {
+      const { OpenAI } = await import('openai');
+      const openai = new OpenAI({ apiKey: openaiKey });
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'system', content: prompt }],
+        max_tokens: 300
+      });
+      return completion.choices[0].message.content || query;
+    } else if (googleKey) {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(googleKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
+      return result.response.text() || query;
+    }
+    return query;
+  } catch (e) {
+    console.error('[HYDE] Generation failed:', e);
+    return query;
   }
-  
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
 /**
- * Retrieve relevant chunks for a query using vector similarity
- * This is a simplified version. In production, use pgvector or a dedicated vector DB.
+ * Retrieve relevant chunks for a query using Vector Search + HyDE + Cohere Re-ranking
  */
 export async function retrieveRelevantChunks(
   agentId: string,
   query: string,
   limit: number = 5
 ): Promise<DocumentChunk[]> {
-  // Get all ready knowledge sources for this agent
-  const knowledgeBases = await prisma.knowledgeBase.findMany({
-    where: {
-      agentId,
-      sources: {
-        some: {
-          status: 'READY' as const,
-        },
-      },
-    },
-    include: {
-      sources: {
-        where: { status: 'READY' as const },
-        include: {
-          chunks: true,
-        },
-      },
-    },
-  });
+  try {
+    console.log(`[RETRIEVAL] Starting advanced retrieval (HyDE + Vector + Rerank) for agent: ${agentId}`);
 
-  // Collect all chunks
-  const allChunks: DocumentChunk[] = [];
-  for (const kb of knowledgeBases) {
-    for (const source of kb.sources) {
-      for (const chunk of source.chunks) {
-        const embedding = chunk.embedding as number[];
-        allChunks.push({
-          id: chunk.id,
-          content: chunk.content,
-          embedding,
-        });
-      }
-    }
-  }
+    // 1. Generate hypothetical answer (HyDE)
+    const hypotheticalAnswer = await generateHypotheticalAnswer(query);
+    console.log('[RETRIEVAL] HyDE Answer generated. Length:', hypotheticalAnswer.length);
 
-  if (allChunks.length === 0) {
-    return [];
-  }
+    // 2. Generate embedding for the enriched context
+    // We combine the original query + hypothetical answer to capture both the user intent and technical terminology
+    const searchContext = `Pregunta: ${query}\nContexto: ${hypotheticalAnswer}`;
+    const queryEmbedding = await generateEmbedding(searchContext);
 
-  // For now, we'll do a simple text-based search
-  // In production, you'd generate an embedding for the query and use vector similarity
-  const queryLower = query.toLowerCase();
-  const scoredChunks = allChunks.map((chunk) => {
-    const contentLower = chunk.content.toLowerCase();
-    let score = 0;
-    
-    // Simple keyword matching
-    const queryWords = queryLower.split(/\s+/);
-    queryWords.forEach((word) => {
-      if (contentLower.includes(word)) {
-        score += 1;
+    // 3. Fetch all ready chunks for this agent
+    // Optimization: Directly query document chunks with relation filtering
+    const chunks = await prisma.documentChunk.findMany({
+      where: {
+        knowledgeSource: {
+          knowledgeBase: {
+            agentId
+          },
+          status: 'READY'
+        }
       }
     });
-    
-    // Boost score if exact phrase matches
-    if (contentLower.includes(queryLower)) {
-      score += 5;
+
+    if (chunks.length === 0) {
+      console.log('[RETRIEVAL] No knowledge found for this agent');
+      return [];
     }
-    
-    return { chunk, score };
-  });
 
-  // Sort by score and return top results
-  scoredChunks.sort((a, b) => b.score - a.score);
-  
-  return scoredChunks
-    .filter((item) => item.score > 0)
-    .slice(0, limit)
-    .map((item) => item.chunk);
+    console.log(`[RETRIEVAL] Found ${chunks.length} base chunks. Calculating similarity...`);
+
+    // 3. Calculate Vector Similarity (Cosine Similarity)
+    const scoredChunks = chunks.map((chunk) => {
+      const chunkEmbedding = chunk.embedding as number[];
+      const similarity = cosineSimilarity(queryEmbedding, chunkEmbedding);
+      return {
+        chunk: {
+          id: chunk.id,
+          content: chunk.content,
+          embedding: chunkEmbedding
+        },
+        score: similarity
+      };
+    });
+
+    // 4. Sort and take top candidates for re-ranking
+    // We take more than the limit (e.g., 20) to give Cohere enough context
+    scoredChunks.sort((a, b) => b.score - a.score);
+    const topCandidates = scoredChunks.slice(0, 20).map(sc => sc.chunk);
+
+    // 5. Advanced Phase: Cohere Re-ranking
+    let cohereKey = process.env.COHERE_API_KEY;
+    if (!cohereKey) {
+      const config = await prisma.globalConfig.findFirst({
+        where: { key: 'COHERE_API_KEY' }
+      });
+      cohereKey = config?.value;
+    }
+
+    if (cohereKey && topCandidates.length > 0) {
+      try {
+        console.log('[RETRIEVAL] Phase 2: Cohere Re-ranking enabled');
+        const cohere = new CohereClient({
+          token: cohereKey,
+        });
+
+        const rerank = await cohere.rerank({
+          query: query,
+          documents: topCandidates.map(c => c.content),
+          topN: limit,
+          model: 'rerank-multilingual-v3.0'
+        });
+
+        console.log('[RETRIEVAL] Re-ranking complete.');
+
+        // Map rerank results back to our chunk objects
+        return rerank.results.map(res => topCandidates[res.index]);
+      } catch (cohereError) {
+        console.error('[RETRIEVAL] Cohere Rerank error (falling back to vector search):', cohereError);
+        // Fallback to top vector search results if Cohere fails
+        return topCandidates.slice(0, limit);
+      }
+    }
+
+    console.log('[RETRIEVAL] Returning top vector similarity results (no re-ranking)');
+    return topCandidates.slice(0, limit);
+  } catch (error) {
+    console.error('[RETRIEVAL] Critical error:', error);
+    return [];
+  }
 }
 
 /**
- * Generate embedding for text (stub - in production use OpenAI embeddings API)
- */
-export async function generateEmbedding(text: string): Promise<number[]> {
-  // TODO: Implement using OpenAI embeddings API
-  // For now, return a dummy embedding
-  return new Array(1536).fill(0).map(() => Math.random());
-}
-
-/**
- * Ingest text content into knowledge base
+ * Legacy stubs and internal ingestion helpers (kept for compatibility)
  */
 export async function ingestText(
   agentId: string,
   text: string,
   knowledgeBaseName: string = 'Default'
 ): Promise<string> {
-  // Find or create knowledge base
-  let kb = await prisma.knowledgeBase.findFirst({
-    where: {
-      agentId,
-      name: knowledgeBaseName,
-    },
+  const { addKnowledgeSource } = await import('./actions/knowledge');
+  const source = await addKnowledgeSource(agentId, {
+    type: 'TEXT',
+    text: text
   });
-
-  if (!kb) {
-    kb = await prisma.knowledgeBase.create({
-      data: {
-        agentId,
-        name: knowledgeBaseName,
-      },
-    });
-  }
-
-  // Create knowledge source
-  const source = await prisma.knowledgeSource.create({
-    data: {
-      knowledgeBaseId: kb.id,
-      type: 'TEXT',
-      status: 'PROCESSING' as const,
-    },
-  });
-
-  // Split text into chunks (simple approach - in production use better chunking)
-  const chunkSize = 500;
-  const chunks: string[] = [];
-  for (let i = 0; i < text.length; i += chunkSize) {
-    chunks.push(text.slice(i, i + chunkSize));
-  }
-
-  // Process chunks
-  for (const chunkText of chunks) {
-    const embedding = await generateEmbedding(chunkText);
-    
-    await prisma.documentChunk.create({
-      data: {
-        knowledgeSourceId: source.id,
-        content: chunkText,
-        embedding,
-      },
-    });
-  }
-
-  // Update source status
-  await prisma.knowledgeSource.update({
-    where: { id: source.id },
-    data: { status: 'READY' },
-  });
-
   return source.id;
 }
 
-/**
- * Ingest website content
- */
 export async function ingestWebsite(
   agentId: string,
   url: string,
   crawlSubpages: boolean = false,
   updateInterval: string = 'NEVER'
 ): Promise<string> {
-  // Find or create knowledge base
-  let kb = await prisma.knowledgeBase.findFirst({
-    where: {
-      agentId,
-      name: 'Website',
-    },
+  const { addKnowledgeSource } = await import('./actions/knowledge');
+  const source = await addKnowledgeSource(agentId, {
+    type: 'WEBSITE',
+    url: url,
+    crawlSubpages,
+    updateInterval: updateInterval as any
   });
-
-  if (!kb) {
-    kb = await prisma.knowledgeBase.create({
-      data: {
-        agentId,
-        name: 'Website',
-      },
-    });
-  }
-
-  // Create knowledge source
-  const source = await prisma.knowledgeSource.create({
-    data: {
-      knowledgeBaseId: kb.id,
-      type: 'WEBSITE',
-      url,
-      status: 'PROCESSING' as const,
-      crawlSubpages,
-      updateInterval: updateInterval as any,
-    },
-  });
-
-  // TODO: Implement actual website crawling and content extraction
-  // For now, we'll mark it as processing
-  // In production, use a queue system to process this asynchronously
-  
   return source.id;
 }
 
-/**
- * Ingest document file
- */
 export async function ingestDocument(
   agentId: string,
   fileUrl: string,
   fileName: string
 ): Promise<string> {
-  // Find or create knowledge base
-  let kb = await prisma.knowledgeBase.findFirst({
-    where: {
-      agentId,
-      name: 'Documents',
-    },
+  const { addKnowledgeSource } = await import('./actions/knowledge');
+  const source = await addKnowledgeSource(agentId, {
+    type: 'DOCUMENT',
+    url: fileUrl,
+    fileName: fileName
   });
-
-  if (!kb) {
-    kb = await prisma.knowledgeBase.create({
-      data: {
-        agentId,
-        name: 'Documents',
-      },
-    });
-  }
-
-  // Create knowledge source
-  const source = await prisma.knowledgeSource.create({
-    data: {
-      knowledgeBaseId: kb.id,
-      type: 'DOCUMENT',
-      fileUrl,
-      status: 'PROCESSING' as const,
-    },
-  });
-
-  // TODO: Implement actual document parsing (PDF, DOCX, etc.)
-  // For now, we'll mark it as processing
-  // In production, use a queue system to process this asynchronously
-  
   return source.id;
 }
-
