@@ -25,6 +25,8 @@ export default async function AgentSettingsPage({ params }: { params: Promise<{ 
                 smartRetrieval: agent.smartRetrieval,
                 transferToHuman: agent.transferToHuman,
                 responseDelay: agent.responseDelay,
+                enableNPS: (agent as any).enableNPS,
+                handoffTargets: (agent as any).handoffTargets,
             }}
         />
     );
