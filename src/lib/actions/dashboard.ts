@@ -1180,6 +1180,110 @@ export async function getResponseRateDetails() {
     }
 }
 
+// Get detailed NPS information
+export async function getNPSDetails() {
+    const workspace = await getUserWorkspace()
+    if (!workspace) return null
+
+    const conversations = await prisma.conversation.findMany({
+        where: {
+            agent: { workspaceId: workspace.id },
+            npsScore: { not: null }
+        } as any,
+        include: {
+            agent: { select: { id: true, name: true } }
+        }
+    }) as any[]
+
+    if (conversations.length === 0) return null
+
+    const total = conversations.length
+    const promoters = conversations.filter(c => c.npsScore >= 9).length
+    const passives = conversations.filter(c => c.npsScore >= 7 && c.npsScore <= 8).length
+    const detractors = conversations.filter(c => c.npsScore <= 6).length
+
+    const score = Math.round(((promoters - detractors) / total) * 100)
+    const average = Math.round((conversations.reduce((acc, c) => acc + c.npsScore, 0) / total) * 10) / 10
+
+    // Group by agent
+    const agentStats: Record<string, { name: string; total: number; sum: number }> = {}
+    conversations.forEach(conv => {
+        const agentId = conv.agent.id
+        const agentName = conv.agent.name
+        if (!agentStats[agentId]) {
+            agentStats[agentId] = { name: agentName, total: 0, sum: 0 }
+        }
+        agentStats[agentId].total++
+        agentStats[agentId].sum += conv.npsScore
+    })
+
+    const agentStatsArray = Object.values(agentStats).map(stat => ({
+        name: stat.name,
+        average: Math.round((stat.sum / stat.total) * 10) / 10,
+        total: stat.total
+    })).sort((a, b) => b.average - a.average)
+
+    // Weekly average
+    const weeklyData = []
+    const subWeeks = (date: Date, weeks: number) => {
+        const d = new Date(date);
+        d.setDate(d.getDate() - (weeks * 7));
+        return d;
+    };
+    const startOfWeek = (date: Date) => {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    };
+
+    for (let i = 3; i >= 0; i--) {
+        const now = new Date();
+        const weekStart = startOfWeek(subWeeks(now, i));
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+
+        const weekConversations = conversations.filter(conv => {
+            const convDate = new Date(conv.createdAt)
+            return convDate >= weekStart && convDate <= weekEnd
+        })
+
+        const avg = weekConversations.length > 0
+            ? Math.round((weekConversations.reduce((acc, c) => acc + c.npsScore, 0) / weekConversations.length) * 10) / 10
+            : 0
+
+        weeklyData.push({
+            week: format(weekStart, 'd MMM', { locale: es }),
+            average: avg,
+            count: weekConversations.length
+        })
+    }
+
+    return {
+        score,
+        average,
+        total,
+        distribution: {
+            promoters: Math.round((promoters / total) * 100),
+            passives: Math.round((passives / total) * 100),
+            detractors: Math.round((detractors / total) * 100)
+        },
+        agentStats: agentStatsArray,
+        weeklyData,
+        comments: conversations
+            .filter(c => c.npsComment)
+            .slice(0, 10)
+            .map(c => ({
+                id: c.id,
+                score: c.npsScore,
+                comment: c.npsComment,
+                agentName: c.agent.name,
+                createdAt: c.createdAt
+            }))
+    }
+}
+
 // Get notification count (lightweight check)
 export async function getNotificationCount() {
     const workspace = await getUserWorkspace()

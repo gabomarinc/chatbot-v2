@@ -9,7 +9,8 @@ import { es } from 'date-fns/locale';
 import { ConversationsDayModal } from './ConversationsDayModal';
 import { CreditsDetailsModal } from './CreditsDetailsModal';
 import { ResponseRateDetailsModal } from './ResponseRateDetailsModal';
-import { getConversationsByDate, getCreditsDetails, getResponseRateDetails, getWeeklyConversationsData } from '@/lib/actions/dashboard';
+import { NPSDetailsModal } from './NPSDetailsModal';
+import { getConversationsByDate, getCreditsDetails, getResponseRateDetails, getWeeklyConversationsData, getNPSDetails } from '@/lib/actions/dashboard';
 
 interface DashboardClientProps {
     stats: {
@@ -86,6 +87,11 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
     const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
     const [responseData, setResponseData] = useState<any>(null);
     const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+
+    // NPS modal state
+    const [isNPSModalOpen, setIsNPSModalOpen] = useState(false);
+    const [npsData, setNPSData] = useState<any>(null);
+    const [isLoadingNPS, setIsLoadingNPS] = useState(false);
 
     // Weekly navigation state
     const [weekOffset, setWeekOffset] = useState(0);
@@ -169,15 +175,28 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
     };
 
     const handleResponseRateClick = async () => {
-        setIsResponseModalOpen(true);
-        setIsLoadingResponse(true);
-        try {
-            const data = await getResponseRateDetails();
-            setResponseData(data);
-        } catch (error) {
-            console.error('Error loading response rate details:', error);
-        } finally {
-            setIsLoadingResponse(false);
+        if (stats.isNPSEnabled) {
+            setIsNPSModalOpen(true);
+            setIsLoadingNPS(true);
+            try {
+                const data = await getNPSDetails();
+                setNPSData(data);
+            } catch (error) {
+                console.error('Error loading NPS details:', error);
+            } finally {
+                setIsLoadingNPS(false);
+            }
+        } else {
+            setIsResponseModalOpen(true);
+            setIsLoadingResponse(true);
+            try {
+                const data = await getResponseRateDetails();
+                setResponseData(data);
+            } catch (error) {
+                console.error('Error loading response rate details:', error);
+            } finally {
+                setIsLoadingResponse(false);
+            }
         }
     };
 
@@ -605,6 +624,14 @@ export default function DashboardClient({ stats, chartData, channels, topAgents,
                 onClose={() => setIsResponseModalOpen(false)}
                 responseData={responseData}
                 isLoading={isLoadingResponse}
+            />
+
+            {/* NPS Details Modal */}
+            <NPSDetailsModal
+                isOpen={isNPSModalOpen}
+                onClose={() => setIsNPSModalOpen(false)}
+                npsData={npsData}
+                isLoading={isLoadingNPS}
             />
         </div>
     );
