@@ -505,51 +505,49 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
                         {/* Credentials */}
                         <div className="space-y-6">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
-                                    <Check className="w-4 h-4 text-green-600" />
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
+                                        <Check className="w-4 h-4 text-green-600" />
+                                    </div>
+                                    <h3 className="text-gray-900 font-bold text-lg">Credenciales de Meta</h3>
                                 </div>
-                                <h3 className="text-gray-900 font-bold text-lg">Credenciales de Meta</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCredentials(!showCredentials)}
+                                    className="text-[10px] font-black uppercase tracking-widest text-[#21AC96] hover:bg-[#21AC96]/5 px-4 py-2 rounded-xl transition-all border border-[#21AC96]/20 flex items-center gap-2"
+                                >
+                                    <Settings2 className="w-3 h-3" />
+                                    {showCredentials ? 'Ocultar' : 'Mostrar'} Configuración Técnica
+                                </button>
                             </div>
 
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                                        System User Access Token (Permanente)
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            type="password"
-                                            value={formData.accessToken}
-                                            onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
-                                            placeholder="EAAG..."
-                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-mono text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all pr-12"
-                                            required={!existingChannel}
-                                        />
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
-                                            <Info className="w-5 h-5" />
+                            {showCredentials && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                            System User Access Token (Permanente)
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="password"
+                                                value={formData.accessToken}
+                                                onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
+                                                placeholder="EAAG..."
+                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-mono text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all pr-12"
+                                                required={!existingChannel}
+                                            />
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                                                <Info className="w-5 h-5" />
+                                            </div>
                                         </div>
+                                        <p className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1.5 bg-green-50 inline-block px-3 py-1.5 rounded-lg border border-green-100">
+                                            <Info className="w-3.5 h-3.5" />
+                                            Requiere permisos `whatsapp_business_messaging`
+                                        </p>
                                     </div>
-                                    <p className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1.5 bg-green-50 inline-block px-3 py-1.5 rounded-lg border border-green-100">
-                                        <Info className="w-3.5 h-3.5" />
-                                        Requiere permisos `whatsapp_business_messaging`
-                                    </p>
-                                </div>
 
-                                {/* Toggle Advanced IDs */}
-                                <div className="flex items-center justify-center py-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowCredentials(!showCredentials)}
-                                        className="text-[10px] font-black uppercase tracking-widest text-[#21AC96] hover:bg-[#21AC96]/5 px-4 py-2 rounded-xl transition-all border border-[#21AC96]/20 flex items-center gap-2"
-                                    >
-                                        <Settings2 className="w-3 h-3" />
-                                        {showCredentials ? 'Ocultar' : 'Mostrar'} IDs avanzados (Phone ID / WABA)
-                                    </button>
-                                </div>
-
-                                {showCredentials && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
                                                 Phone Number ID
@@ -575,8 +573,8 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                                             />
                                         </div>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="h-px bg-gray-100"></div>
