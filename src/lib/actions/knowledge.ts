@@ -53,10 +53,54 @@ async function discoverSitemapUrls(sitemapUrl: string): Promise<string[]> {
             if (url && url.startsWith('http')) urls.push(url);
         });
 
-        return Array.from(new Set(urls)).slice(0, 30); // Max 30 pages for safety
+        return Array.from(new Set(urls));
     } catch (e) {
         console.error("[SITEMAP] Error discovering URLs:", e);
         return [];
+    }
+}
+
+/**
+ * BRUTAL SCRAPER: Level 1 - Internal Link Discovery (Subpages)
+ */
+async function discoverSubpages(baseUrl: string): Promise<string[]> {
+    try {
+        console.log(`[CRAWLER] Discovering subpages for: ${baseUrl}`);
+        const response = await fetch(baseUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36' },
+            signal: AbortSignal.timeout(10000)
+        });
+        if (!response.ok) return [baseUrl];
+
+        const html = await response.text();
+        const $ = load(html);
+        const urls = new Set<string>();
+        urls.add(baseUrl);
+
+        const domain = new URL(baseUrl).hostname;
+
+        $('a[href]').each((_, el) => {
+            const href = $(el).attr('href');
+            if (!href) return;
+
+            try {
+                const fullUrl = new URL(href, baseUrl).toString().split('#')[0].replace(/\/$/, "");
+                const urlObj = new URL(fullUrl);
+
+                // Solo mismo dominio, http/https, y evitar archivos no deseados
+                if (urlObj.hostname === domain &&
+                    urlObj.protocol.startsWith('http') &&
+                    !/\.(jpg|jpeg|png|gif|pdf|zip|docx|xlsx|css|js)$/i.test(urlObj.pathname)) {
+                    urls.add(fullUrl);
+                }
+            } catch (e) { }
+        });
+
+        console.log(`[CRAWLER] Found ${urls.size} internal candidates.`);
+        return Array.from(urls);
+    } catch (e) {
+        console.error("[CRAWLER] Error discovering subpages:", e);
+        return [baseUrl];
     }
 }
 
@@ -193,10 +237,10 @@ export async function addKnowledgeSource(agentId: string, data: {
 
                 const urlsToProcess = isSitemap
                     ? await discoverSitemapUrls(targetUrl)
-                    : [targetUrl];
+                    : (data.crawlSubpages ? await discoverSubpages(targetUrl) : [targetUrl]);
 
-                // Process up to 5 pages for Level 1 performance/safety
-                const limitedUrls = urlsToProcess.slice(0, 5);
+                // Process up to 15 pages for Level 1 (Motor Maestro)
+                const limitedUrls = urlsToProcess.slice(0, 15);
 
                 for (const url of limitedUrls) {
                     try {
