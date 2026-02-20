@@ -275,18 +275,20 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                         </button>
 
                         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-8">
-                            <div className="flex flex-col items-center">
-                                <div className="relative w-32 h-32 flex items-center justify-center">
+                            <div className="flex items-center gap-5 p-5 bg-[#21AC96]/5 rounded-[2rem] border border-[#21AC96]/10">
+                                <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
                                     <svg className="w-full h-full transform -rotate-90">
-                                        <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-gray-50" />
-                                        <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={351.8} strokeDashoffset={351.8 - (351.8 * score) / 10} className="text-[#21AC96] transition-all duration-1000 ease-out" strokeLinecap="round" />
+                                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-gray-200/50" />
+                                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={175.9} strokeDashoffset={175.9 - (175.9 * score) / 10} className="text-[#21AC96] transition-all duration-1000 ease-out" strokeLinecap="round" />
                                     </svg>
                                     <div className="absolute flex flex-col items-center">
-                                        <span className="text-3xl font-black text-gray-900 leading-none">{score}</span>
-                                        <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">/ 10</span>
+                                        <span className="text-xl font-black text-gray-900 leading-none">{score}</span>
                                     </div>
                                 </div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-6 text-center">Score de Calidad</p>
+                                <div>
+                                    <p className="text-[10px] font-black text-[#21AC96] uppercase tracking-[0.15em] mb-1">Score de Calidad</p>
+                                    <p className="text-xs text-gray-500 font-bold leading-tight">Tu agente está a nivel "{scoreLabel}"</p>
+                                </div>
                             </div>
 
                             <div className="space-y-4 pt-4 border-t border-gray-50/50">
