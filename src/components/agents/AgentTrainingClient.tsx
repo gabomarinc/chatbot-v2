@@ -315,7 +315,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                 </div>
 
                 {/* Content Area (Tabs + List) */}
-                <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm relative overflow-hidden">
+                <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm relative">
 
                     <div className="px-5 md:px-8 py-8 border-b border-gray-50">
                         <div className="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar bg-gray-50/50 p-2 rounded-[2rem] w-fit">
