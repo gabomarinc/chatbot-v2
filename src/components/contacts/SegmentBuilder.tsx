@@ -64,12 +64,11 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
     const handleExport = async () => {
         setIsLoading(true);
         try {
-            // Fetch ALL contacts matching the filter (using a high pageSize for export)
             const res = await getContacts({
                 workspaceId,
                 filters: filters,
                 page: 1,
-                pageSize: 5000 // High enough for most segments
+                pageSize: 5000
             });
 
             if (res.success === false) {
@@ -83,9 +82,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                 return;
             }
 
-            // Headers
             const headers = ['Nombre', 'Email', 'Telefono', 'Agente', 'Interacciones', 'Etiquetas', 'Fecha Captacion', 'ID Interno'];
-            // Add custom field headers based on definitions
             const relevantFields = customFields.filter(f =>
                 contacts.some(c => (c.customData as any)?.[f.key] !== undefined)
             );
@@ -117,7 +114,6 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                 csvRows.push(row.join(','));
             });
 
-            // Handle UTF-8 with BOM for Excel compatibility
             const csvContent = "\uFEFF" + csvRows.join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -139,10 +135,29 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
 
     const runQuery = async () => {
         setIsLoading(true);
+
+        // AUTO-ADD DRAFT: If the user has a field selected but forgot to click 'Add', add it for them
+        let currentFilters = [...filters];
+        if (selectedField && (filterValue || selectedOperator === 'isSet' || selectedOperator === 'isNotSet')) {
+            const draftFilter: FilterCondition = {
+                field: selectedField,
+                operator: selectedOperator,
+                value: filterValue
+            };
+
+            const exists = filters.some(f => f.field === draftFilter.field && f.operator === draftFilter.operator && f.value === draftFilter.value);
+            if (!exists) {
+                currentFilters = [...filters, draftFilter];
+                setFilters(currentFilters);
+                setFilterValue('');
+                setSelectedField('');
+            }
+        }
+
         try {
             const res = await getContacts({
                 workspaceId,
-                filters: filters,
+                filters: currentFilters,
                 page: page,
                 pageSize: pageSize
             });
@@ -161,15 +176,11 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
         }
     };
 
-    // Re-run query when page changes (only if already searched)
     useEffect(() => {
         if (hasSearched) {
             runQuery();
         }
     }, [page]);
-
-    // Reset page when filters change (handled in add/remove but good to be safe if other triggers exist)
-    // Actually better not to auto-run on filter change until user clicks 'Execute', but we should reset page UI.
 
     const getFieldLabel = (key: string) => {
         if (key === 'name') return 'Nombre Completo';
@@ -181,21 +192,13 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
         return field ? field.label : key;
     };
 
-    const getAgentName = (id: string) => {
-        const agent = agents.find(a => a.id === id);
-        return agent ? agent.name : id;
-    };
-
-    // Derived state for agent-specific logic
     const activeAgentFilter = filters.find(f => f.field === 'agentId' && f.operator === 'equals');
     const activeAgentId = activeAgentFilter ? activeAgentFilter.value : null;
 
-    // Filter available custom fields based on selected agent
     const availableCustomFields = activeAgentId
         ? customFields.filter(f => f.agentId === activeAgentId)
-        : Array.from(new Map(customFields.map(f => [f.key, f])).values()); // Deduplicate if showing all
+        : Array.from(new Map(customFields.map(f => [f.key, f])).values());
 
-    // Multi-select handlers
     const toggleSelectAll = () => {
         if (selectedContactIds.size === results.length) {
             setSelectedContactIds(new Set());
@@ -205,7 +208,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
     };
 
     const toggleSelectContact = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // Don't trigger the row click (ContactSheet)
+        e.stopPropagation();
         const newSet = new Set(selectedContactIds);
         if (newSet.has(id)) {
             newSet.delete(id);
@@ -236,7 +239,6 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                         <div className="flex flex-wrap gap-2">
                             <button
                                 onClick={() => {
-                                    // Remove agent filter if exists
                                     const newFilters = filters.filter(f => f.field !== 'agentId');
                                     setFilters(newFilters);
                                 }}
@@ -253,9 +255,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                     <button
                                         key={agent.id}
                                         onClick={() => {
-                                            // Remove existing agent filter
                                             const newFilters = filters.filter(f => f.field !== 'agentId');
-                                            // Add new one
                                             newFilters.push({ field: 'agentId', operator: 'equals', value: agent.id });
                                             setFilters(newFilters);
                                             setPage(1);
@@ -274,12 +274,42 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
 
                     {/* Active Filters (Generic) */}
                     <div className="space-y-3 mb-6">
-                        {filters.filter(f => f.field !== 'agentId').length === 0 && (
+                        {filters.filter(f => f.field !== 'agentId').length === 0 && !selectedField && (
                             <div className="text-center py-8 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
                                 <FilterIcon className="w-8 h-8 text-gray-300 mx-auto mb-2 opacity-50" />
                                 <p className="text-xs font-medium text-gray-400">No hay otros filtros activos</p>
                             </div>
                         )}
+
+                        {/* Draft Filter Visualization */}
+                        {selectedField && (
+                            <div className="bg-[#21AC96]/5 p-4 rounded-xl flex items-center justify-between border-2 border-dashed border-[#21AC96]/20 text-sm animate-pulse">
+                                <div className="flex flex-col gap-1">
+                                    <span className="font-bold text-[#21AC96] text-xs uppercase tracking-wide flex items-center gap-2">
+                                        <Plus className="w-3 h-3" /> Pendiente: {getFieldLabel(selectedField)}
+                                    </span>
+                                    <div className="flex items-center gap-2 opacity-60">
+                                        <span className="text-gray-400 text-xs lowercase">
+                                            {selectedOperator === 'equals' && 'Es igual a'}
+                                            {selectedOperator === 'contains' && 'Contiene'}
+                                            {selectedOperator === 'gt' && 'Mayor que'}
+                                            {selectedOperator === 'lt' && 'Menor que'}
+                                            {selectedOperator === 'isSet' && 'Tiene valor'}
+                                            {selectedOperator === 'isNotSet' && 'Vacío'}
+                                        </span>
+                                        {selectedOperator !== 'isSet' && selectedOperator !== 'isNotSet' && filterValue && (
+                                            <span className="text-[#21AC96] font-bold">
+                                                {`"${filterValue}"`}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="text-[10px] font-black text-[#21AC96] uppercase bg-white px-2 py-1 rounded-lg border border-[#21AC96]/10">
+                                    Borrador
+                                </div>
+                            </div>
+                        )}
+
                         {filters.filter(f => f.field !== 'agentId').map((filter, idx) => (
                             <div key={idx} className="bg-white p-4 rounded-xl flex items-center justify-between border border-gray-100 text-sm shadow-sm hover:shadow-md transition-all group">
                                 <div className="flex flex-col gap-1">
@@ -323,13 +353,8 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                     value={selectedField}
                                     onChange={e => {
                                         setSelectedField(e.target.value);
-                                        // Reset operator and value when field changes
-                                        if (e.target.value === 'agentId') {
-                                            setSelectedOperator('equals');
-                                        } else {
-                                            setSelectedOperator('equals');
-                                            setFilterValue('');
-                                        }
+                                        setSelectedOperator('equals');
+                                        setFilterValue('');
                                     }}
                                 >
                                     <option value="">Seleccionar campo...</option>
@@ -339,13 +364,9 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                         <option value="phone">Teléfono</option>
                                     </optgroup>
                                     <optgroup label="Campos Personalizados">
-                                        {availableCustomFields.length > 0 ? (
-                                            availableCustomFields.map(field => (
-                                                <option key={field.id} value={field.key}>{field.label}</option>
-                                            ))
-                                        ) : (
-                                            <option disabled>Selecciona un agente para ver sus campos</option>
-                                        )}
+                                        {availableCustomFields.map(field => (
+                                            <option key={field.id} value={field.key}>{field.label}</option>
+                                        ))}
                                     </optgroup>
                                 </select>
                                 <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none rotate-90" />
@@ -414,10 +435,15 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                         <button
                             onClick={handleAddFilter}
                             disabled={!selectedField || (!filterValue && selectedOperator !== 'isSet' && selectedOperator !== 'isNotSet')}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-white border-2 border-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 hover:border-gray-200 hover:text-gray-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4 group"
+                            className={cn(
+                                "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all mt-4 group",
+                                selectedField && (filterValue || selectedOperator === 'isSet' || selectedOperator === 'isNotSet')
+                                    ? "bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20 hover:bg-[#1E9A86] hover:-translate-y-0.5 animate-in fade-in"
+                                    : "bg-white border-2 border-gray-100 text-gray-400 hover:border-gray-200"
+                            )}
                         >
-                            <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                            Agregar Filtro
+                            <Plus className={cn("w-5 h-5 transition-transform", selectedField && "group-hover:rotate-90")} />
+                            {selectedField ? 'Confirmar Filtro' : 'Agregar Filtro'}
                         </button>
                     </div>
 
@@ -425,10 +451,21 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                         <button
                             onClick={runQuery}
                             disabled={isLoading}
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-[#21AC96] to-emerald-600 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0"
+                            className={cn(
+                                "w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black uppercase tracking-widest transition-all disabled:opacity-50 disabled:translate-y-0",
+                                selectedField
+                                    ? "bg-amber-500 text-white shadow-xl shadow-amber-500/20 hover:bg-amber-600"
+                                    : "bg-gradient-to-r from-[#21AC96] to-emerald-600 text-white shadow-xl shadow-emerald-500/20 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-0.5"
+                            )}
                         >
-                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5 fill-current" />}
-                            Ejecutar Segmentación
+                            {isLoading ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <>
+                                    {selectedField ? <Plus className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current" />}
+                                    <span>{selectedField ? 'Sumar y Ejecutar' : 'Ejecutar Segmentación'}</span>
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -509,9 +546,6 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                 <th className="px-6 py-5 font-black">Email / Teléfono</th>
                                                 <th className="px-6 py-5 font-black">Agente</th>
                                                 <th className="px-6 py-5 text-center font-black">Interacciones</th>
-                                                {availableCustomFields.slice(0, 1).map(f => ( // Reduced to 1 to make space
-                                                    <th key={f.id} className="px-6 py-5 font-black">{f.label}</th>
-                                                ))}
                                                 <th className="px-6 py-5 font-black">Contactado</th>
                                             </tr>
                                         </thead>
@@ -526,7 +560,6 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                             : "hover:bg-indigo-50/30"
                                                     )}
                                                     onClick={() => setSelectedContact(contact)}
-                                                    style={{ animationDelay: `${idx * 0.05}s` }}
                                                 >
                                                     <td className="px-6 py-5" onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex items-center justify-center">
@@ -571,17 +604,6 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                                     <td className="px-6 py-5 text-center">
                                                         <span className="text-sm font-black text-gray-900">{contact._count?.conversations || 0}</span>
                                                     </td>
-                                                    {availableCustomFields.slice(0, 1).map(f => (
-                                                        <td key={f.id} className="px-6 py-5">
-                                                            {contact.customData?.[f.key] ? (
-                                                                <span className="px-2.5 py-1 text-[11px] bg-white text-[#21AC96] rounded-lg font-bold inline-block border border-[#21AC96]/20 shadow-sm">
-                                                                    {String(contact.customData[f.key])}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-gray-300">-</span>
-                                                            )}
-                                                        </td>
-                                                    ))}
                                                     <td className="px-6 py-5 text-[11px] text-gray-400 font-bold uppercase tracking-tighter">
                                                         {format(new Date(contact.createdAt), "d MMM yyyy", { locale: es })}
                                                     </td>
@@ -591,7 +613,6 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                                     </table>
                                 </div>
 
-                                {/* Pagination Controls */}
                                 <div className="p-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/30">
                                     <p className="text-xs font-medium text-gray-500 order-2 sm:order-1">
                                         Mostrando <span className="text-gray-900 font-bold">{results.length}</span> de <span className="text-gray-900 font-bold">{totalResults}</span> resultados
@@ -670,7 +691,7 @@ export function SegmentBuilder({ workspaceId, customFields, agents }: SegmentBui
                 onClose={() => setSelectedContact(null)}
                 customFields={customFields}
                 workspaceId={workspaceId}
-                onUpdate={runQuery} // Refresh query results on update
+                onUpdate={runQuery}
             />
         </div >
     );
