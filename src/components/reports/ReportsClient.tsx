@@ -379,7 +379,7 @@ export function ReportsClient({
                                     cursor={{ fill: 'rgba(33, 172, 150, 0.05)' }}
                                 />
                                 <Funnel dataKey="value" data={funnelChartData} isAnimationActive>
-                                    <LabelList position="right" fill="#6B7280" stroke="none" dataKey="name" fontSize={11} offset={15} fontWeight="800" />
+                                    <LabelList position="inside" fill="#111827" stroke="none" dataKey="name" fontSize={10} fontWeight="900" />
                                 </Funnel>
                             </FunnelChart>
                         </ResponsiveContainer>
@@ -501,14 +501,14 @@ export function ReportsClient({
                                 <Activity className="w-6 h-6 text-[#21AC96] animate-pulse" />
                             </div>
 
-                            <div className="flex items-center gap-8 h-48">
+                            <div className="flex items-center gap-10 h-40">
                                 <div className="w-1/2 h-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RechartsPieChart>
                                             <Pie
                                                 data={channelData}
-                                                innerRadius={60}
-                                                outerRadius={80}
+                                                innerRadius={45}
+                                                outerRadius={65}
                                                 paddingAngle={8}
                                                 dataKey="value"
                                             >
