@@ -1,4 +1,5 @@
 import { SegmentBuilder } from '@/components/contacts/SegmentBuilder';
+import { CampaignEducation } from '@/components/contacts/CampaignEducation';
 import { prisma } from '@/lib/prisma';
 import { getUserWorkspace } from '@/lib/actions/dashboard';
 import { redirect } from 'next/navigation';
@@ -71,6 +72,8 @@ export default async function ProspectsBuilderPage() {
                     <p className="text-gray-500 font-medium">Crea audiencias personalizadas y filtra prospectos usando los datos recolectados por tus agentes.</p>
                 </div>
             </div>
+
+            <CampaignEducation />
 
             <SegmentBuilder workspaceId={workspace.id} customFields={uniqueFields} agents={agents} />
         </div>
