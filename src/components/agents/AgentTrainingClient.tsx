@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Globe, Upload, FileText, Video as VideoIcon, CheckCircle2, AlertCircle, Loader2, Sparkles, Plus, MoreVertical, Search, Database } from 'lucide-react';
+import { Globe, Upload, FileText, Video as VideoIcon, CheckCircle2, AlertCircle, Loader2, Sparkles, Plus, MoreVertical, Search, Database, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -29,6 +29,7 @@ interface KnowledgeBase {
 
 interface AgentTrainingClientProps {
     agentId: string;
+    agent: any;
     knowledgeBases: KnowledgeBase[];
 }
 
@@ -58,7 +59,7 @@ function getFriendlyErrorMessage(error: string | null | undefined): string {
     // return `Error técnico: ${error.substring(0, 50)}${error.length > 50 ? '...' : ''}`;
 }
 
-export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingClientProps) {
+export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTrainingClientProps) {
     const [activeTab, setActiveTab] = useState('sources');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
@@ -67,6 +68,38 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [sourceIdToDelete, setSourceIdToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Sandbox state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+
+    // Source Viewer state
+    const [selectedSource, setSelectedSource] = useState<any | null>(null);
+    const [sourceChunks, setSourceChunks] = useState<any[]>([]);
+    const [isLoadingChunks, setIsLoadingChunks] = useState(false);
+
+    // Settings state
+    const [smartRetrieval, setSmartRetrieval] = useState(agent.smartRetrieval);
+    const [temperature, setTemperature] = useState(agent.temperature || 0.3);
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+    // Calculate last update from sources or agent updatedAt
+    const allSources = knowledgeBases.flatMap(kb => kb.sources);
+
+    const lastUpdateDate = allSources.length > 0
+        ? new Date(Math.max(...allSources.map(s => new Date(s.createdAt).getTime())))
+        : new Date(agent.updatedAt);
+
+    const lastUpdateLabel = format(lastUpdateDate, "'El' d 'de' MMMM", { locale: es });
+    const isToday = format(lastUpdateDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+    const finalDateLabel = isToday ? 'Hoy' : lastUpdateLabel;
+
+    // Score helpers
+    const score = agent.trainingScore || 0;
+    const scoreLabel = score >= 8 ? 'Optimizado' : (score >= 5 ? 'Promedio' : 'Bajo');
+    const scoreColor = score >= 8 ? 'text-[#21AC96]' : (score >= 5 ? 'text-yellow-600' : 'text-red-600');
+    const scoreBg = score >= 8 ? 'bg-[#21AC96]/5' : (score >= 5 ? 'bg-yellow-50' : 'bg-red-50');
 
     const handleDeleteClick = (sourceId: string) => {
         setSourceIdToDelete(sourceId);
@@ -90,9 +123,6 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
         }
     };
 
-    // Flatten sources for easier listing
-    const allSources = knowledgeBases.flatMap(kb => kb.sources);
-
     const handleAddSource = async (data: any) => {
         setIsAdding(true);
         try {
@@ -105,6 +135,45 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
             toast.error('Error al añadir la fuente');
         } finally {
             setIsAdding(false);
+        }
+    };
+
+    const handleSimulateSearch = async () => {
+        if (!searchQuery) return;
+        setIsSearching(true);
+        try {
+            const { testRetrieval } = await import('@/lib/actions/knowledge');
+            const results = await testRetrieval(agentId, searchQuery);
+            setSearchResults(results);
+            if (results.length === 0) toast.error('No se encontró información relevante');
+        } catch (error) {
+            toast.error('Error al realizar simulación');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleViewContent = async (sourceId: string) => {
+        setIsLoadingChunks(true);
+        try {
+            const { getSourceChunks } = await import('@/lib/actions/knowledge');
+            const chunks = await getSourceChunks(sourceId);
+            setSourceChunks(chunks);
+        } catch (error) {
+            toast.error('Error al cargar contenido');
+        } finally {
+            setIsLoadingChunks(false);
+        }
+    };
+
+    const handleRemoveChunk = async (chunkId: string) => {
+        try {
+            const { deleteKnowledgeChunk } = await import('@/lib/actions/knowledge');
+            await deleteKnowledgeChunk(chunkId);
+            setSourceChunks(prev => prev.filter(c => c.id !== chunkId));
+            toast.success('Fragmento eliminado');
+        } catch (error) {
+            toast.error('Error al eliminar');
         }
     };
 
@@ -135,11 +204,14 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
                     {[
                         { label: 'Fuentes', value: allSources.length, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/5' },
-                        { label: 'Estado', value: 'Optimizado', color: 'text-blue-600', bg: 'bg-blue-50' },
-                        { label: 'Última Act.', value: 'Hoy', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        { label: 'Estado', value: scoreLabel, color: scoreColor, bg: scoreBg },
+                        { label: 'Última Act.', value: finalDateLabel, color: 'text-indigo-600', bg: 'bg-indigo-50' },
                     ].map((stat, i) => (
                         <div key={i} className={cn("p-4 md:p-6 rounded-[1.5rem] md:rounded-3xl border border-transparent shadow-sm", stat.bg, i === 2 && "col-span-2 md:col-span-1")}>
-                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{stat.label}</div>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                {stat.label}
+                                {i === 1 && <span className="ml-2 text-[8px] opacity-60">({score}/10)</span>}
+                            </div>
                             <div className={cn("text-lg md:text-2xl font-black", stat.color)}>{stat.value}</div>
                         </div>
                     ))}
@@ -147,22 +219,89 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
 
                 {/* Content Area */}
                 <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                    {/* Training Score Analysis (Additional Feature) */}
+                    {score < 10 && (
+                        <div className="bg-[#21AC96]/5 p-6 md:p-8 border-b border-[#21AC96]/10">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="p-3 bg-white rounded-2xl shadow-sm text-[#21AC96]">
+                                    <Sparkles className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-gray-900 font-black text-lg">Elite Training Analysis</h3>
+                                    <p className="text-xs text-[#21AC96] font-bold uppercase tracking-wider">Tu agente tiene un puntaje de {score}/10</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {score < 8 ? (
+                                    <div className="space-y-3">
+                                        <p className="text-sm text-gray-600 font-medium">Recomendaciones para llegar al nivel "Brutal":</p>
+                                        <ul className="space-y-2">
+                                            {allSources.length === 0 && (
+                                                <li className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-white/50 p-2 rounded-xl">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                                                    Sube al menos un PDF o sitio web oficial.
+                                                </li>
+                                            )}
+                                            {!smartRetrieval && (
+                                                <li className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-white/50 p-2 rounded-xl">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                                                    Activa la "Búsqueda Inteligente" en Ajustes.
+                                                </li>
+                                            )}
+                                            {agent.personalityPrompt.length < 300 && (
+                                                <li className="flex items-center gap-2 text-xs font-bold text-gray-500 bg-white/50 p-2 rounded-xl">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                                    Expande las instrucciones de personalidad.
+                                                </li>
+                                            )}
+                                        </ul>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white/40 p-4 rounded-2xl border border-[#21AC96]/20">
+                                        <p className="text-sm text-[#21AC96] font-extrabold flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            ¡Entrenamiento de alto rendimiento!
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-1">Tu agente está listo para manejar conversaciones complejas con máxima precisión.</p>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col justify-center items-center p-6 bg-white rounded-2xl shadow-sm border border-[#21AC96]/10">
+                                    <div className="relative w-20 h-20 flex items-center justify-center">
+                                        <svg className="w-full h-full transform -rotate-90">
+                                            <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-100" />
+                                            <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={226} strokeDashoffset={226 - (226 * score) / 10} className="text-[#21AC96]" />
+                                        </svg>
+                                        <span className="absolute text-xl font-black text-gray-900">{score}</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase mt-2">Puntaje de Calidad</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Tabs */}
                     <div className="px-5 md:px-8 pt-6 border-b border-gray-50">
                         <div className="flex gap-4 md:gap-8 overflow-x-auto no-scrollbar">
-                            {['Fuentes de Datos', 'Ajustes de Respuesta'].map((tab, i) => (
+                            {[
+                                { id: 'sources', label: 'Fuentes de Datos' },
+                                { id: 'faq', label: 'Preguntas (FAQ) ✍️' },
+                                { id: 'sandbox', label: 'Simulador (Sandbox) 🧪' },
+                                { id: 'rag', label: 'Ajustes de Respuesta' }
+                            ].map((tab) => (
                                 <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(i === 0 ? 'sources' : 'rag')}
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
                                     className={cn(
-                                        "pb-4 text-sm font-bold transition-all relative",
-                                        (i === 0 ? activeTab === 'sources' : activeTab === 'rag')
+                                        "pb-4 text-sm font-bold transition-all relative whitespace-nowrap",
+                                        activeTab === tab.id
                                             ? "text-[#21AC96]"
                                             : "text-gray-400 hover:text-gray-600"
                                     )}
                                 >
-                                    {tab}
-                                    {(i === 0 ? activeTab === 'sources' : activeTab === 'rag') && (
+                                    {tab.label}
+                                    {activeTab === tab.id && (
                                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#21AC96] rounded-full shadow-[0_-2px_8px_rgba(33,172,150,0.5)]"></div>
                                     )}
                                 </button>
@@ -172,9 +311,9 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
 
                     {activeTab === 'sources' ? (
                         <div className="p-5 md:p-8">
-                            {allSources.length > 0 ? (
+                            {allSources.filter(s => !s.displayName.startsWith('FAQ:')).length > 0 ? (
                                 <div className="space-y-4">
-                                    {allSources.map((source) => (
+                                    {allSources.filter(s => !s.displayName.startsWith('FAQ:')).map((source) => (
                                         <div
                                             key={source.id}
                                             className="group p-5 bg-gray-50/50 hover:bg-white rounded-[1.5rem] border border-transparent hover:border-[#21AC96]/20 hover:shadow-xl hover:shadow-[#21AC96]/5 transition-all flex items-center justify-between"
@@ -228,6 +367,17 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                                                     {openMenuId === source.id && (
                                                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                                             <button
+                                                                onClick={() => {
+                                                                    setSelectedSource(source);
+                                                                    setOpenMenuId(null);
+                                                                    handleViewContent(source.id);
+                                                                }}
+                                                                className="w-full text-left px-4 py-3 text-gray-600 hover:bg-gray-50 text-sm font-bold flex items-center gap-2 transition-colors border-b border-gray-50"
+                                                            >
+                                                                <Search className="w-4 h-4" />
+                                                                Ver Contenido
+                                                            </button>
+                                                            <button
                                                                 onClick={() => handleDeleteClick(source.id)}
                                                                 className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 text-sm font-bold flex items-center gap-2 transition-colors"
                                                             >
@@ -257,6 +407,153 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                                 </div>
                             )}
                         </div>
+                    ) : activeTab === 'sandbox' ? (
+                        <div className="p-5 md:p-8 space-y-8 animate-fade-in">
+                            <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 space-y-6">
+                                <div className="space-y-2">
+                                    <h3 className="text-gray-900 font-bold text-lg">Simulador de Recuperación 🧪</h3>
+                                    <p className="text-sm text-gray-500">Prueba cómo el bot busca información en tus documentos antes de responder.</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSimulateSearch()}
+                                            placeholder="Escribe una pregunta para probar..."
+                                            className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96] transition-all outline-none"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleSimulateSearch}
+                                        disabled={isSearching || !searchQuery}
+                                        className="px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-bold hover:bg-black disabled:opacity-50 transition-all active:scale-95 flex items-center gap-2"
+                                    >
+                                        {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                        Probar
+                                    </button>
+                                </div>
+                            </div>
+
+                            {searchResults.length > 0 ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between px-2">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fragmentos Recuperados ({searchResults.length})</h4>
+                                        <span className="text-[10px] font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full">Basado en tu configuración actual</span>
+                                    </div>
+                                    {searchResults.map((res, i) => (
+                                        <div key={i} className="p-5 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-[#21AC96]/20 transition-all group">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="w-6 h-6 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center text-[10px] font-black">{i + 1}</div>
+                                                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Fragmento de Conocimiento</div>
+                                            </div>
+                                            <p className="text-sm text-gray-700 leading-relaxed italic border-l-4 border-gray-100 pl-4 group-hover:border-[#21AC96]/30 transition-all">"{res.content}"</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : searchQuery && !isSearching && (
+                                <div className="py-20 flex flex-col items-center text-center opacity-50">
+                                    <AlertCircle className="w-12 h-12 text-gray-300 mb-4" />
+                                    <p className="text-sm font-bold text-gray-500">No se encontraron fragmentos relevantes para esta consulta.</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : activeTab === 'faq' ? (
+                        <div className="p-5 md:p-8 space-y-8 animate-fade-in">
+                            <div className="bg-amber-50/50 p-6 rounded-[2rem] border border-amber-100/50 space-y-6">
+                                <div className="space-y-2">
+                                    <h3 className="text-gray-900 font-extrabold text-lg flex items-center gap-2">
+                                        <MessageSquare className="w-5 h-5 text-amber-500" />
+                                        Entrenamiento Manual (Q&A)
+                                    </h3>
+                                    <p className="text-sm text-gray-500">Define respuestas directas para preguntas específicas. Estas tienen prioridad máxima sobre el resto de documentos.</p>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-400 uppercase ml-2 tracking-wider">Pregunta del Usuario</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Ej: ¿Cuál es el horario de atención?"
+                                                id="faq-q"
+                                                className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-400 uppercase ml-2 tracking-wider">Respuesta de la IA</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Ej: Atendemos de Lunes a Viernes de 8am a 5pm"
+                                                id="faq-a"
+                                                className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <label className="flex items-center gap-3 cursor-pointer p-4 bg-white/50 rounded-2xl border border-dashed border-amber-200">
+                                        <span className="text-xs font-bold text-amber-700">Estas parejas se guardan automáticamente como fragmentos de conocimiento de alta fidelidad.</span>
+                                        <button
+                                            onClick={async () => {
+                                                const q = (document.getElementById('faq-q') as HTMLInputElement).value;
+                                                const a = (document.getElementById('faq-a') as HTMLInputElement).value;
+                                                if (!q || !a) return toast.error('Ingresa pregunta y respuesta');
+                                                setIsAdding(true);
+                                                try {
+                                                    await addKnowledgeSource(agentId, {
+                                                        type: 'TEXT',
+                                                        text: `PREGUNTA MANUAL: ${q}\nRESPUESTA MANUAL CORRECTA: ${a}`,
+                                                        fileName: `FAQ: ${q.substring(0, 30)}...`
+                                                    });
+                                                    toast.success('Pregunta manual añadida');
+                                                    (document.getElementById('faq-q') as HTMLInputElement).value = '';
+                                                    (document.getElementById('faq-a') as HTMLInputElement).value = '';
+                                                    router.refresh();
+                                                } catch (e) { toast.error('Error al guardar'); }
+                                                finally { setIsAdding(false); }
+                                            }}
+                                            disabled={isAdding}
+                                            className="ml-auto px-6 py-3 bg-amber-500 text-white rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all active:scale-95 flex items-center gap-2"
+                                        >
+                                            {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                            Añadir Q&A
+                                        </button>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Tus Parejas Activas</h4>
+                                {allSources.filter(s => s.displayName.startsWith('FAQ:') || s.type === 'TEXT').length > 0 ? (
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {allSources.filter(s => s.displayName.startsWith('FAQ:') || s.type === 'TEXT').map((source) => (
+                                            <div key={source.id} className="p-5 bg-white border border-gray-100 rounded-3xl shadow-sm flex items-center justify-between group">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center">
+                                                        <MessageSquare className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-bold text-gray-900">{source.displayName}</div>
+                                                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Entrenamiento Manual</div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteClick(source.id)}
+                                                    className="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-20 text-center opacity-30 border-2 border-dashed border-gray-100 rounded-[2.5rem]">
+                                        <Sparkles className="w-10 h-10 mx-auto mb-4" />
+                                        <p className="text-sm font-bold">Aún no has definido respuestas manuales.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     ) : (
                         <div className="p-5 md:p-8 space-y-8 animate-fade-in">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -270,14 +567,54 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-sm font-bold text-gray-700">Creatividad vs Precisión</span>
-                                                <span className="text-xs font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full">Balanceado</span>
+                                                <span className="text-xs font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full">
+                                                    {temperature <= 0.2 ? 'Estricto' : temperature <= 0.5 ? 'Balanceado' : 'Creativo'}
+                                                </span>
                                             </div>
-                                            <input type="range" className="w-full accent-[#21AC96] h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="1"
+                                                step="0.1"
+                                                value={temperature}
+                                                onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                                                className="w-full accent-[#21AC96] h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                            />
                                             <div className="flex justify-between text-xs text-gray-400 font-medium">
                                                 <span>Muy Creativo</span>
                                                 <span>Estricto (Solo Docs)</span>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* Advanced RAG Toggle */}
+                                    <div className="p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/50 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                                                    <Sparkles className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-bold text-indigo-900">Búsqueda Inteligente (RAG+)</div>
+                                                    <div className="text-[10px] text-indigo-600 font-bold uppercase tracking-tight">HyDE + Re-ranking de Cohere</div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setSmartRetrieval(!smartRetrieval)}
+                                                className={cn(
+                                                    "w-12 h-6 rounded-full transition-all relative",
+                                                    smartRetrieval ? "bg-indigo-600" : "bg-gray-300"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                                                    smartRetrieval ? "left-7" : "left-1"
+                                                )}></div>
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-indigo-500/80 font-medium leading-relaxed italic">
+                                            * Utiliza IA para imaginar la respuesta ideal y re-ordenar los fragmentos con Cohere. Máxima precisión garantizada.
+                                        </p>
                                     </div>
                                 </div>
 
@@ -288,16 +625,34 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="flex items-center gap-4 p-4 rounded-2xl border border-[#21AC96] bg-[#21AC96]/5 cursor-pointer transition-all">
-                                            <div className="w-5 h-5 rounded-full border-[6px] border-[#21AC96] bg-white"></div>
+                                        <label
+                                            onClick={() => agent.transferToHuman = true}
+                                            className={cn(
+                                                "flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer",
+                                                agent.transferToHuman ? "border-[#21AC96] bg-[#21AC96]/5" : "border-gray-100 hover:border-gray-200 bg-white"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "w-5 h-5 rounded-full border bg-white flex items-center justify-center",
+                                                agent.transferToHuman ? "border-[#21AC96] border-[6px]" : "border-gray-300"
+                                            )}></div>
                                             <div>
                                                 <div className="text-sm font-bold text-gray-900">Escalar a un Humano</div>
                                                 <div className="text-xs text-gray-500">Ofrecerá contactar a soporte si no encuentra la respuesta.</div>
                                             </div>
                                         </label>
 
-                                        <label className="flex items-center gap-4 p-4 rounded-2xl border border-gray-100 hover:border-gray-200 bg-white cursor-pointer transition-all opacity-60">
-                                            <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                                        <label
+                                            onClick={() => agent.transferToHuman = false}
+                                            className={cn(
+                                                "flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer",
+                                                !agent.transferToHuman ? "border-[#21AC96] bg-[#21AC96]/5" : "border-gray-100 hover:border-gray-200 bg-white"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "w-5 h-5 rounded-full border bg-white flex items-center justify-center",
+                                                !agent.transferToHuman ? "border-[#21AC96] border-[6px]" : "border-gray-300"
+                                            )}></div>
                                             <div>
                                                 <div className="text-sm font-bold text-gray-900">Usar conocimiento general</div>
                                                 <div className="text-xs text-gray-500">Intentará responder con lo que sabe de IA (puede ser menos preciso).</div>
@@ -308,7 +663,28 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                             </div>
 
                             <div className="flex justify-end pt-4 border-t border-gray-50">
-                                <button className="px-8 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-black transition-all">
+                                <button
+                                    disabled={isSavingSettings}
+                                    onClick={async () => {
+                                        setIsSavingSettings(true);
+                                        try {
+                                            const { updateAgentSettings } = await import('@/lib/actions/agent-settings');
+                                            await updateAgentSettings(agentId, {
+                                                smartRetrieval,
+                                                temperature,
+                                                transferToHuman: agent.transferToHuman
+                                            });
+                                            toast.success('Ajustes guardados correctamente');
+                                            router.refresh();
+                                        } catch (e) {
+                                            toast.error('Error al guardar ajustes');
+                                        } finally {
+                                            setIsSavingSettings(false);
+                                        }
+                                    }}
+                                    className="px-8 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-black transition-all flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSavingSettings && <Loader2 className="w-4 h-4 animate-spin" />}
                                     Guardar Ajustes
                                 </button>
                             </div>
@@ -332,6 +708,87 @@ export function AgentTrainingClient({ agentId, knowledgeBases }: AgentTrainingCl
                 title="¿Eliminar fuente?"
                 description="Esta acción no se puede deshacer y el agente perderá este conocimiento."
             />
+
+            {/* Source Content Viewer Modal */}
+            {selectedSource && (
+                <div className={cn(
+                    "fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 transition-all duration-300",
+                    selectedSource ? "visible" : "invisible"
+                )}>
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedSource(null)} />
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl relative flex flex-col animate-in zoom-in-95 duration-300">
+                        {/* Modal Header */}
+                        <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-[#21AC96]/10 text-[#21AC96] rounded-2xl flex items-center justify-center">
+                                    <FileText className="w-6 h-6" />
+                                </div>
+                                <div className="max-w-[300px] md:max-w-md">
+                                    <h3 className="text-xl font-black text-gray-900 leading-tight truncate">{selectedSource.displayName}</h3>
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Limpieza de Conocimiento (Scraping Filter)</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedSource(null)}
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all font-black text-lg"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-gray-50/30">
+                            {isLoadingChunks ? (
+                                <div className="py-20 flex flex-col items-center gap-4">
+                                    <Loader2 className="w-10 h-10 text-[#21AC96] animate-spin" />
+                                    <p className="text-sm font-bold text-gray-400">Analizando fragmentos...</p>
+                                </div>
+                            ) : sourceChunks.length > 0 ? (
+                                <>
+                                    <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4">
+                                        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                        <p className="text-xs text-amber-900 font-medium leading-relaxed">
+                                            Aquí puedes ver exactamente qué leyó el bot de esta fuente. Si ves información irrelevante (como avisos legales, menús o texto basura), puedes eliminar el fragmento individual para que no ensucie las respuestas.
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {sourceChunks.map((chunk, i) => (
+                                            <div key={chunk.id} className="p-5 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-[#21AC96]/30 transition-all group relative">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className="text-[10px] font-black text-gray-300 uppercase italic">Bloque #{i + 1}</span>
+                                                    <button
+                                                        onClick={() => handleRemoveChunk(chunk.id)}
+                                                        className="p-2 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                        title="Eliminar este párrafo"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                                <p className="text-sm text-gray-700 leading-relaxed">"{chunk.content}"</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="py-20 text-center space-y-4">
+                                    <Database className="w-12 h-12 text-gray-200 mx-auto" />
+                                    <p className="text-sm font-bold text-gray-400">No se encontraron fragmentos procesados para esta fuente.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-6 border-t border-gray-100 flex justify-end bg-white relative z-10">
+                            <button
+                                onClick={() => setSelectedSource(null)}
+                                className="px-6 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-black transition-all active:scale-95"
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

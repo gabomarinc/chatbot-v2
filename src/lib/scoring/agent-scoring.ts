@@ -37,14 +37,16 @@ export async function calculateAgentScore(agentId: string): Promise<number> {
     // ========================================
     const allSources = agent.knowledgeBases.flatMap((kb: any) => kb.sources);
     const hasWebsite = allSources.some((s: any) => s.type === 'WEBSITE');
-    const hasPDF = allSources.some((s: any) => s.type === 'PDF');
-    const allProcessed = allSources.length > 0 && allSources.every((s: any) => s.status === 'PROCESSED');
-    const hasErrorSources = allSources.some((s: any) => s.status === 'ERROR');
+    const hasPDF = allSources.some((s: any) => s.type === 'PDF' || s.type === 'DOCUMENT' || s.fileUrl?.endsWith('.pdf'));
+    const hasManualFAQ = allSources.some((s: any) => s.displayName.startsWith('FAQ:'));
+    const allProcessed = allSources.length > 0 && allSources.every((s: any) => s.status === 'READY' || s.status === 'PROCESSED');
+    const hasErrorSources = allSources.some((s: any) => s.status === 'FAILED' || s.status === 'ERROR');
 
     if (allSources.length > 0) totalPoints += 10; // Has at least 1 source
-    if (hasWebsite) totalPoints += 10; // Has website source
+    if (hasWebsite) totalPoints += 5; // Has website source
     if (hasPDF) totalPoints += 10; // Has PDF source
-    if (allProcessed && !hasErrorSources) totalPoints += 10; // All sources processed successfully
+    if (hasManualFAQ) totalPoints += 10; // Encouraging manual Q&A
+    if (allProcessed && !hasErrorSources) totalPoints += 5; // All sources processed successfully
 
     // ========================================
     // 2. PROMPT QUALITY - Technical Only (30 points max)

@@ -345,3 +345,46 @@ export async function deleteKnowledgeSource(agentId: string, sourceId: string) {
 
     revalidatePath(`/agents/${agentId}/training`)
 }
+
+/**
+ * Advanced: Test how the agent retrieves information (Sandbox)
+ */
+export async function testRetrieval(agentId: string, query: string) {
+    const { retrieveRelevantChunks } = await import('@/lib/retrieval');
+    const chunks = await retrieveRelevantChunks(agentId, query, 5);
+
+    return chunks.map(c => ({
+        id: c.id,
+        content: c.content,
+        // Calculate a simple score for the UI if possible, or just return content
+    }));
+}
+
+/**
+ * Advanced: Get all chunks for a specific source (Scraping Filter)
+ */
+export async function getSourceChunks(sourceId: string) {
+    const workspace = await getUserWorkspace();
+    if (!workspace) throw new Error('Unauthorized');
+
+    return await prisma.documentChunk.findMany({
+        where: {
+            knowledgeSourceId: sourceId
+        },
+        orderBy: {
+            createdAt: 'asc'
+        }
+    });
+}
+
+/**
+ * Advanced: Delete a specific chunk of knowledge
+ */
+export async function deleteKnowledgeChunk(chunkId: string) {
+    const workspace = await getUserWorkspace();
+    if (!workspace) throw new Error('Unauthorized');
+
+    return await prisma.documentChunk.delete({
+        where: { id: chunkId }
+    });
+}

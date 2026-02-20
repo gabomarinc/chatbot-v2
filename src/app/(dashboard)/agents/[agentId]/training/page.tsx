@@ -34,6 +34,7 @@ export default async function AgentTrainingPage({ params }: { params: Promise<{ 
     return (
         <AgentTrainingClient
             agentId={agent.id}
+            agent={agent}
             knowledgeBases={knowledgeBases}
         />
     );
