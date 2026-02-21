@@ -22,6 +22,7 @@ model User {
   memberships  WorkspaceMember[]
   assignedConversations Conversation[]
   fcmToken     String?           // Token for Firebase Push Notifications
+  activities   ContactActivity[]
 }
 
 model GlobalConfig {
@@ -282,11 +283,28 @@ model Contact {
   
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   conversations Conversation[]
+  activities    ContactActivity[]
 
   @@index([workspaceId])
   @@index([email])
   @@index([phone])
   @@index([customData], type: Gin) // High performance filtering for JSONB
+}
+
+model ContactActivity {
+  id          String   @id @default(cuid())
+  contactId   String
+  type        String   // "NOTE", "SYSTEM", "CHAT", "AI"
+  content     String
+  metadata    Json?
+  userId      String?  // The agent who created the note
+  createdAt   DateTime @default(now())
+  
+  contact     Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user        User?   @relation(fields: [userId], references: [id])
+
+  @@index([contactId])
+  @@index([userId])
 }
 
 model CustomFieldDefinition {
