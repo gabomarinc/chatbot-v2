@@ -355,3 +355,17 @@ export async function generateContactInsights(contactId: string) {
         return { success: false, error: error.message };
     }
 }
+
+export async function getContactsByIds(ids: string[]) {
+    try {
+        const contacts = await prisma.contact.findMany({
+            where: {
+                id: { in: ids }
+            }
+        });
+        return { success: true, contacts };
+    } catch (error: any) {
+        console.error('Error fetching contacts by ids:', error);
+        return { success: false, error: error.message };
+    }
+}
