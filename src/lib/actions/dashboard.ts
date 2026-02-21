@@ -857,7 +857,18 @@ export const getProspectDetails = cache(async (conversationId: string) => {
         include: {
             agent: true,
             channel: true,
-            contact: true,
+            contact: {
+                include: {
+                    activities: {
+                        orderBy: { createdAt: 'desc' },
+                        include: {
+                            user: {
+                                select: { name: true, image: true }
+                            }
+                        }
+                    }
+                }
+            },
             messages: {
                 orderBy: { createdAt: 'desc' },
                 take: 50 // Get last 50 messages

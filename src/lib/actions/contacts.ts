@@ -2,6 +2,8 @@
 
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { auth } from '@/auth';
+import { revalidatePath } from 'next/cache';
 
 export interface FilterCondition {
     field: string; // "monthly_salary" or "city"
@@ -345,10 +347,17 @@ export async function generateContactInsights(contactId: string) {
                 summary: insights.summary,
                 leadScore: insights.leadScore,
                 aiInsights: insights.aiInsights,
-                lastContactAt: allMessages[allMessages.length - 1].createdAt
+                lastContactAt: allMessages[allMessages.length - 1].createdAt,
+                activities: {
+                    create: {
+                        type: 'AI',
+                        content: `Inteligencia AI actualizada. Lead Score: ${insights.leadScore}. Urgencia: ${insights.aiInsights.urgency}.`
+                    }
+                }
             }
         });
 
+        revalidatePath('/contacts');
         return { success: true, contact: updatedContact };
     } catch (error: any) {
         console.error('Error generating insights:', error);
@@ -366,6 +375,33 @@ export async function getContactsByIds(ids: string[]) {
         return { success: true, contacts };
     } catch (error: any) {
         console.error('Error fetching contacts by ids:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function addContactNote(contactId: string, content: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error('No autorizado');
+
+        const activity = await prisma.contactActivity.create({
+            data: {
+                contactId,
+                type: 'NOTE',
+                content,
+                userId: session.user.id
+            },
+            include: {
+                user: {
+                    select: { name: true, image: true }
+                }
+            }
+        });
+
+        revalidatePath('/contacts');
+        return { success: true, activity };
+    } catch (error: any) {
+        console.error('Error adding contact note:', error);
         return { success: false, error: error.message };
     }
 }

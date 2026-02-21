@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AIInsightsTab } from './AIInsightsTab';
+import { ActivityTimelineTab } from './ActivityTimelineTab';
 
 interface ProspectDetailsModalProps {
     isOpen: boolean;
@@ -86,6 +87,16 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                     >
                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                         Inteligencia AI
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('timeline' as any)}
+                        className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === ('timeline' as any)
+                            ? 'border-[#21AC96] text-[#21AC96]'
+                            : 'border-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <Calendar className="w-4 h-4" />
+                        Actividad
                     </button>
                     <button
                         onClick={() => setActiveTab('chat')}
@@ -236,6 +247,13 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
 
                             {activeTab === ('ai_insights' as any) && (
                                 <AIInsightsTab contactId={prospectData?.contact?.id} initialData={prospectData?.contact} />
+                            )}
+
+                            {activeTab === ('timeline' as any) && (
+                                <ActivityTimelineTab
+                                    contactId={prospectData?.contact?.id}
+                                    activities={prospectData?.contact?.activities}
+                                />
                             )}
 
                             {activeTab === 'chat' && (
