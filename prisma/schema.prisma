@@ -271,6 +271,12 @@ model Contact {
   customData    Json?    // { "salary": 2000, "city": "Panama" }
   tags          String[]
   
+  // CRM Intelligence
+  leadScore     Int?     // 1-100 rating
+  summary       String?  // AI-generated biography/summary
+  aiInsights    Json?    // { "interests": [], "problems": [], "sentiment": "happy", "urgency": "high" }
+  lastContactAt DateTime?
+  
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   

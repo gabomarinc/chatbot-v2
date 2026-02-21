@@ -3,6 +3,7 @@ import { X, User, Phone, Mail, Clock, MessageCircle, FileText, Calendar, Send, P
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AIInsightsTab } from './AIInsightsTab';
 
 interface ProspectDetailsModalProps {
     isOpen: boolean;
@@ -66,7 +67,7 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                 </div>
 
                 {/* Tabs */}
-                <div className="flex px-6 border-b border-gray-100">
+                <div className="flex px-6 border-b border-gray-100 bg-white">
                     <button
                         onClick={() => setActiveTab('resume')}
                         className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'resume'
@@ -74,7 +75,17 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                             : 'border-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
-                        Resumen
+                        Resumen Perfil
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ai_insights' as any)}
+                        className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === ('ai_insights' as any)
+                            ? 'border-[#21AC96] text-[#21AC96]'
+                            : 'border-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Inteligencia AI
                     </button>
                     <button
                         onClick={() => setActiveTab('chat')}
@@ -83,86 +94,148 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                             : 'border-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
-                        Historial de Chat
+                        Historial Chat
                     </button>
                     <button
                         onClick={() => setActiveTab('documents')}
                         className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'documents'
-                            ? 'border-[#21AC96] text-[#21AC96]'
+                            ? 'border-transparent text-gray-400 hover:text-gray-600'
                             : 'border-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
-                        Documentos
+                        Archivos
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
+                <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6 md:p-8">
                     {isLoading ? (
                         <div className="space-y-6">
-                            <Skeleton className="h-24 w-full rounded-2xl" />
+                            <Skeleton className="h-24 w-full rounded-[2rem]" />
                             <div className="grid grid-cols-2 gap-6">
-                                <Skeleton className="h-32 w-full rounded-2xl" />
-                                <Skeleton className="h-32 w-full rounded-2xl" />
+                                <Skeleton className="h-48 w-full rounded-[2rem]" />
+                                <Skeleton className="h-48 w-full rounded-[2rem]" />
                             </div>
                         </div>
                     ) : (
                         <>
                             {activeTab === 'resume' && (
                                 <div className="space-y-8 animate-fade-in">
-                                    {/* Contact Info */}
+                                    {/* Lead Score & Bio Banner */}
+                                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl">
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
+
+                                        <div className="flex flex-col md:flex-row gap-8 items-center relative z-10">
+                                            <div className="shrink-0 relative">
+                                                <svg className="w-32 h-32 transform -rotate-90">
+                                                    <circle
+                                                        cx="64"
+                                                        cy="64"
+                                                        r="58"
+                                                        stroke="currentColor"
+                                                        strokeWidth="8"
+                                                        fill="transparent"
+                                                        className="text-white/10"
+                                                    />
+                                                    <circle
+                                                        cx="64"
+                                                        cy="64"
+                                                        r="58"
+                                                        stroke="currentColor"
+                                                        strokeWidth="8"
+                                                        fill="transparent"
+                                                        strokeDasharray={364.4}
+                                                        strokeDashoffset={364.4 - (364.4 * (prospectData?.contact?.leadScore || 0)) / 100}
+                                                        className="text-amber-500 transition-all duration-1000"
+                                                        strokeLinecap="round"
+                                                    />
+                                                </svg>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <span className="text-3xl font-black">{prospectData?.contact?.leadScore || '-'}</span>
+                                                    <span className="text-[10px] uppercase font-black tracking-widest opacity-60">Lead Score</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex-1 text-center md:text-left">
+                                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-amber-500 mb-2">Resumen Ejecutivo</h3>
+                                                <p className="text-lg font-medium leading-relaxed opacity-90 italic">
+                                                    {prospectData?.contact?.summary || "No hay un resumen generado aún. Usa la pestaña Inteligencia AI para analizar a este contacto."}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                                            <h3 className="text-gray-900 font-bold mb-4 flex items-center gap-2">
-                                                <User className="w-5 h-5 text-gray-400" />
-                                                Datos de Contacto
+                                        <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-6">
+                                            <h3 className="text-gray-900 font-black flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
+                                                    <User className="w-5 h-5" />
+                                                </div>
+                                                Ficha Técnica
                                             </h3>
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                                    <Phone className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-gray-700 font-medium">{prospectData?.phone || prospectData?.externalId || '-'}</span>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl group transition-all hover:bg-gray-100">
+                                                    <Phone className="w-4 h-4 text-gray-400 group-hover:text-gray-900" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">WhatsApp / Tel</span>
+                                                        <span className="text-gray-900 font-bold">{prospectData?.contact?.phone || prospectData?.externalId || '-'}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                                    <Mail className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-gray-700 font-medium">{prospectData?.contactEmail || 'No proporcionado'}</span>
+                                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl group transition-all hover:bg-gray-100">
+                                                    <Mail className="w-4 h-4 text-gray-400 group-hover:text-gray-900" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Correo Electrónico</span>
+                                                        <span className="text-gray-900 font-bold">{prospectData?.contact?.email || 'No captado'}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                                    <Clock className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-gray-700 font-medium">
-                                                        Última vez: {prospectData?.lastMessageAt ? format(new Date(prospectData.lastMessageAt), "d MMM, HH:mm", { locale: es }) : '-'}
-                                                    </span>
+                                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl group transition-all hover:bg-gray-100">
+                                                    <Clock className="w-4 h-4 text-gray-400 group-hover:text-gray-400" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Primer Contacto</span>
+                                                        <span className="text-gray-900 font-bold">
+                                                            {format(new Date(prospectData?.createdAt), "d 'de' MMMM, yyyy", { locale: es })}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                                            <h3 className="text-gray-900 font-bold mb-4 flex items-center gap-2">
-                                                <MessageCircle className="w-5 h-5 text-gray-400" />
-                                                Resumen de Actividad
+                                        <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-6">
+                                            <h3 className="text-gray-900 font-black flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-[#21AC96]">
+                                                    <MessageCircle className="w-5 h-5" />
+                                                </div>
+                                                Comportamiento
                                             </h3>
-                                            <div className="space-y-3">
-                                                <div className="flex justify-between items-center p-3 border-b border-gray-50">
-                                                    <span className="text-gray-500 text-sm">Agente</span>
-                                                    <span className="font-bold text-gray-900">{prospectData?.agent?.name}</span>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-center p-4 border-b border-gray-50">
+                                                    <span className="text-gray-500 font-bold text-sm">Origen</span>
+                                                    <span className="px-3 py-1 bg-gray-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                                        {prospectData?.channel?.type || 'WEB'}
+                                                    </span>
                                                 </div>
-                                                <div className="flex justify-between items-center p-3 border-b border-gray-50">
-                                                    <span className="text-gray-500 text-sm">Canal</span>
-                                                    <span className="font-bold text-gray-900 capitalize">{prospectData?.channel?.type?.toLowerCase() || 'Desconocido'}</span>
+                                                <div className="flex justify-between items-center p-4 border-b border-gray-50">
+                                                    <span className="text-gray-500 font-bold text-sm">Agente Asignado</span>
+                                                    <span className="font-black text-gray-900">{prospectData?.agent?.name || 'Sistema'}</span>
                                                 </div>
-                                                <div className="flex justify-between items-center p-3 border-b border-gray-50">
-                                                    <span className="text-gray-500 text-sm">Mensajes Totales</span>
-                                                    <span className="font-bold text-[#21AC96]">{prospectData?.messages?.length || 0}</span>
+                                                <div className="flex justify-between items-center p-4 border-b border-gray-50">
+                                                    <span className="text-gray-500 font-bold text-sm">Volumen de Chat</span>
+                                                    <span className="font-black text-[#21AC96]">{prospectData?.messages?.length || 0} mensajes</span>
                                                 </div>
-                                                <div className="flex justify-between items-center p-3">
-                                                    <span className="text-gray-500 text-sm">Estado</span>
-                                                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase">
-                                                        {prospectData?.status || 'Active'}
+                                                <div className="flex justify-between items-center p-4">
+                                                    <span className="text-gray-500 font-bold text-sm">Estado de Lead</span>
+                                                    <span className="px-3 py-1 bg-emerald-100 text-[#1a8a78] rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                                        {prospectData?.status || 'Abierto'}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {activeTab === ('ai_insights' as any) && (
+                                <AIInsightsTab contactId={prospectData?.contact?.id} initialData={prospectData?.contact} />
                             )}
 
                             {activeTab === 'chat' && (

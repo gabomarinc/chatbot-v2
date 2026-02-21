@@ -234,16 +234,124 @@ export async function updateContact(contactId: string, updates: Record<string, a
     }
 }
 
-export async function getContactsByIds(ids: string[]) {
+export async function getContactDetail(contactId: string) {
     try {
-        const contacts = await prisma.contact.findMany({
-            where: {
-                id: { in: ids }
+        const contact = await prisma.contact.findUnique({
+            where: { id: contactId },
+            include: {
+                conversations: {
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                        messages: {
+                            orderBy: { createdAt: 'asc' }
+                        },
+                        agent: {
+                            select: { name: true }
+                        }
+                    }
+                }
             }
         });
-        return { success: true, contacts };
+
+        if (!contact) return { success: false, error: 'Contacto no encontrado' };
+
+        return { success: true, contact };
     } catch (error: any) {
-        console.error('Error fetching contacts by ids:', error);
+        console.error('Error fetching contact detail:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+export async function generateContactInsights(contactId: string) {
+    try {
+        const contact = await prisma.contact.findUnique({
+            where: { id: contactId },
+            include: {
+                conversations: {
+                    include: {
+                        messages: {
+                            orderBy: { createdAt: 'asc' }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!contact) throw new Error('Contacto no encontrado');
+
+        const allMessages = contact.conversations.flatMap(c => c.messages);
+        if (allMessages.length === 0) return { success: false, error: 'No hay mensajes para analizar' };
+
+        const chatContext = allMessages
+            .map(m => `${m.role === 'USER' ? 'Usuario' : 'Bot'}: ${m.content}`)
+            .join('\n');
+
+        let openaiKey = process.env.OPENAI_API_KEY;
+        let googleKey = process.env.GOOGLE_API_KEY;
+
+        if (!openaiKey || !googleKey) {
+            const configs = await prisma.globalConfig.findMany({
+                where: { key: { in: ['OPENAI_API_KEY', 'GOOGLE_API_KEY'] } }
+            });
+            if (!openaiKey) openaiKey = configs.find(c => c.key === 'OPENAI_API_KEY')?.value;
+            if (!googleKey) googleKey = configs.find(c => c.key === 'GOOGLE_API_KEY')?.value;
+        }
+
+        const prompt = `Analiza la siguiente historia de conversación de un prospecto y genera un perfil detallado en formato JSON.
+        
+        CONVERSACIÓN:
+        ${chatContext}
+        
+        Responde ÚNICAMENTE con un objeto JSON con esta estructura exacta:
+        {
+          "summary": "Un resumen biográfico corto (max 3 líneas)",
+          "leadScore": (número del 1 al 100 basado en interés y cercanía al cierre),
+          "aiInsights": {
+            "interests": ["interés 1", "interés 2"],
+            "problems": ["problema 1", "problema 2"],
+            "sentiment": "predominante (positivo, neutral, frustrado)",
+            "urgency": "nivel de urgencia (baja, media, alta)",
+            "nextBestAction": "Sugerencia de lo que el agente debería hacer a continuación"
+          }
+        }`;
+
+        let aiResponse = "";
+
+        if (openaiKey) {
+            const openai = new OpenAI({ apiKey: openaiKey });
+            const completion = await openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [{ role: 'system', content: prompt }],
+                response_format: { type: "json_object" }
+            });
+            aiResponse = completion.choices[0].message.content || "{}";
+        } else if (googleKey) {
+            const genAI = new GoogleGenerativeAI(googleKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const result = await model.generateContent(prompt);
+            aiResponse = result.response.text();
+            // Basic JSON cleaning if Gemini returns markdown
+            aiResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+        }
+
+        const insights = JSON.parse(aiResponse);
+
+        const updatedContact = await prisma.contact.update({
+            where: { id: contactId },
+            data: {
+                summary: insights.summary,
+                leadScore: insights.leadScore,
+                aiInsights: insights.aiInsights,
+                lastContactAt: allMessages[allMessages.length - 1].createdAt
+            }
+        });
+
+        return { success: true, contact: updatedContact };
+    } catch (error: any) {
+        console.error('Error generating insights:', error);
         return { success: false, error: error.message };
     }
 }
