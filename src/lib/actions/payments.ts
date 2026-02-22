@@ -31,12 +31,7 @@ function toHex(str: string): string {
     return result;
 }
 
-export async function createPaymentLink({
-    contactId,
-    amount,
-    description,
-    gateway
-}: {
+export async function createPaymentLink(data: {
     contactId: string;
     amount: number;
     description: string;
@@ -49,11 +44,32 @@ export async function createPaymentLink({
         const workspace = await getUserWorkspace();
         if (!workspace) throw new Error('Workspace no encontrado');
 
+        return await createPaymentLinkInternal({ ...data, workspaceId: workspace.id });
+    } catch (error: any) {
+        console.error('Error in createPaymentLink:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function createPaymentLinkInternal({
+    contactId,
+    workspaceId,
+    amount,
+    description,
+    gateway
+}: {
+    contactId: string;
+    workspaceId: string;
+    amount: number;
+    description: string;
+    gateway: 'PAGUELOFACIL' | 'CUANTO' | 'STRIPE';
+}) {
+    try {
         // 1. Get gateway config
         const configEntry = await prisma.paymentGatewayConfig.findUnique({
             where: {
                 workspaceId_gateway: {
-                    workspaceId: workspace.id,
+                    workspaceId,
                     gateway
                 }
             }
@@ -79,7 +95,7 @@ export async function createPaymentLink({
             params.append('CDSC', description);
 
             // Optional: Add metadata
-            const metadata = JSON.stringify({ contactId, workspaceId: workspace.id });
+            const metadata = JSON.stringify({ contactId, workspaceId });
             params.append('PF_CF', toHex(metadata));
 
             const response = await fetch(endpoint, {
@@ -97,10 +113,8 @@ export async function createPaymentLink({
                 throw new Error(result.headerStatus?.description || 'Error al generar link en PagueloFacil');
             }
         } else if (gateway === 'CUANTO') {
-            // Placeholder for next step
             throw new Error('Cuanto integration coming soon');
         } else {
-            // Placeholder for Stripe
             throw new Error('Stripe integration coming soon');
         }
 
@@ -108,7 +122,7 @@ export async function createPaymentLink({
         const transaction = await prisma.transaction.create({
             data: {
                 contactId,
-                workspaceId: workspace.id,
+                workspaceId,
                 amount,
                 description,
                 gateway,
@@ -131,7 +145,7 @@ export async function createPaymentLink({
         revalidatePath('/contacts');
         return { success: true, transaction };
     } catch (error: any) {
-        console.error('Error creating payment link:', error);
+        console.error('Error in createPaymentLinkInternal:', error);
         return { success: false, error: error.message };
     }
 }

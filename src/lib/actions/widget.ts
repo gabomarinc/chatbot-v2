@@ -414,10 +414,32 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
 
 - Map user input to the *exact* custom field keys defined above (e.g. if field is "salary", map "5000" to "salary").
 5. FINALIZACIÓN DE ATENCIÓN: Solo usa 'finalizar_atencion' cuando el usuario ya no tenga dudas y la consulta haya sido resuelta. NO la uses si hay una cita agendada hoy o pendiente, o si el usuario dijo que volvería con una consulta específica mas tarde.
+
+PAGOS Y COBROS (NUEVA CAPACIDAD):
+Tienes la capacidad de generar LINKS DE PAGO para los clientes.
+${(await prisma.paymentGatewayConfig.findMany({ where: { workspaceId: workspace.id, isActive: true } })).length > 0 ? `Pasarelas Activas: ${(await prisma.paymentGatewayConfig.findMany({ where: { workspaceId: workspace.id, isActive: true } })).map(pc => pc.gateway).join(', ')}.
+Reglas para cobrar:
+1. Identifica qué quiere comprar el cliente y por qué monto (si no está en tu contexto, pregunta amablemente).
+2. Pregunta o confirma el concepto del pago.
+3. Usa la herramienta 'generar_link_de_pago' para obtener el enlace.
+4. Entrega el enlace al cliente y dile que puede completar su pago de forma segura.` : 'No hay pasarelas de pago configuradas por ahora. Si el usuario quiere pagar, dile que un agente humano se pondrá en contacto pronto.'}
 `;
 
             // Define tools for Calendar and Image Search, and Contact Update
             const tools: any[] = [
+                {
+                    name: 'generar_link_de_pago',
+                    description: 'Genera un link de pago (Checkout) para que el cliente pueda pagar. Úsala cuando el usuario esté listo para comprar o pida un enlace para pagar.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            amount: { type: 'number', description: 'Monto total a cobrar (ej: 15.50)' },
+                            description: { type: 'string', description: 'Concepto del pago que verá el cliente (ej: Reserva de consultoría)' },
+                            gateway: { type: 'string', enum: ['PAGUELOFACIL', 'CUANTO', 'STRIPE'], description: 'Pasarela a utilizar (usa PAGUELOFACIL por defecto si hay varias)' }
+                        },
+                        required: ['amount', 'description', 'gateway']
+                    }
+                },
                 {
                     name: 'update_contact',
                     description: 'Update the contact information with collected data. Use this tool whenever the user provides their name, email, phone, or other requested info.',
@@ -805,7 +827,32 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
                         while (call) {
                             const { name, args } = call;
                             let toolResult;
-                            if (name === "update_contact") {
+                            if (name === "generar_link_de_pago") {
+                                console.log('[GEMINI] Tool generar_link_de_pago called with:', args);
+                                try {
+                                    const { createPaymentLinkInternal } = await import('@/lib/actions/payments');
+                                    const res = await createPaymentLinkInternal({
+                                        contactId: conversation.contactId!,
+                                        workspaceId: workspace.id,
+                                        amount: (args as any).amount,
+                                        description: (args as any).description,
+                                        gateway: (args as any).gateway as any
+                                    });
+
+                                    if (res.success) {
+                                        toolResult = {
+                                            success: true,
+                                            paymentUrl: res.transaction?.paymentUrl,
+                                            message: "Link de pago generado con éxito. Entrégalo al usuario."
+                                        };
+                                    } else {
+                                        toolResult = { success: false, error: res.error };
+                                    }
+                                } catch (e: any) {
+                                    console.error('[GEMINI] generar_link_de_pago error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "update_contact") {
                                 console.log('[GEMINI] Tool update_contact called with:', args);
 
                                 // HEURISTIC: Fix common LLM mistake of sending top-level keys instead of nested 'updates'
@@ -1242,7 +1289,32 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
                         const { name, arguments: argsJson } = toolCall.function;
                         const args = JSON.parse(argsJson);
                         let toolResult;
-                        if (name === "update_contact") {
+                        if (name === "generar_link_de_pago") {
+                            console.log('[OPENAI] Tool generar_link_de_pago called with:', args);
+                            try {
+                                const { createPaymentLinkInternal } = await import('@/lib/actions/payments');
+                                const res = await createPaymentLinkInternal({
+                                    contactId: conversation.contactId!,
+                                    workspaceId: workspace.id,
+                                    amount: args.amount,
+                                    description: args.description,
+                                    gateway: args.gateway as any
+                                });
+
+                                if (res.success) {
+                                    toolResult = {
+                                        success: true,
+                                        paymentUrl: res.transaction?.paymentUrl,
+                                        message: "Link de pago generado con éxito. Entrégalo al usuario."
+                                    };
+                                } else {
+                                    toolResult = { success: false, error: res.error };
+                                }
+                            } catch (e: any) {
+                                console.error('[OPENAI] generar_link_de_pago error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "update_contact") {
                             console.log('[WIDGET] Tool update_contact called with:', args);
 
                             // Helper to normalize keys to lowercase
