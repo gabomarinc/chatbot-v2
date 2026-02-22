@@ -139,7 +139,10 @@ export function Sidebar() {
                                                     {item.label}
                                                 </span>
                                                 {(item as any).badge && (
-                                                    <span className="bg-gradient-to-r from-[#21AC96] to-[#36d3bb] text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-sm tracking-tight">
+                                                    <span className={cn(
+                                                        "bg-gradient-to-r from-[#21AC96] to-[#36d3bb] text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-sm tracking-tight",
+                                                        isActive && "mr-5"
+                                                    )}>
                                                         {(item as any).badge}
                                                     </span>
                                                 )}
