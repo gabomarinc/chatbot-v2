@@ -85,12 +85,16 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
 
                         <Dialog>
                             <DialogTrigger asChild>
-                                <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-600 bg-orange-50 py-3 px-6 rounded-2xl hover:bg-orange-100 transition-all border border-orange-100">
+                                <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-600 bg-orange-50 py-3 px-6 rounded-2xl hover:bg-orange-100 transition-all border border-orange-100 outline-none focus:ring-2 focus:ring-orange-500/20">
                                     <HelpCircle className="w-4 h-4" />
                                     ¿Cómo funciona?
                                 </button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
+                            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden bg-white outline-none">
+                                <DialogHeader className="sr-only">
+                                    <DialogTitle>Instrucciones PagueloFacil</DialogTitle>
+                                    <DialogDescription>Pasos para integrar PagueloFacil</DialogDescription>
+                                </DialogHeader>
                                 <div className="bg-orange-600 p-8 text-white">
                                     <div className="flex items-center gap-3 mb-2">
                                         <Zap className="w-6 h-6 fill-white" />
@@ -180,8 +184,9 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
                         <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-[#f8d022] rounded-[2rem] flex items-center justify-center shadow-inner border border-yellow-200/50 overflow-hidden shrink-0">
+                            <div className="w-20 h-20 bg-[#f8d022] rounded-[2rem] flex items-center justify-center shadow-inner border border-yellow-200/50 overflow-hidden shrink-0 relative pt-2">
                                 <span className="text-blue-600 font-black text-3xl italic tracking-tighter">Yappy</span>
+                                <div className="absolute top-1 right-1 text-xs">🇵🇦</div>
                             </div>
                             <div>
                                 <h2 className="text-2xl font-black text-gray-900 tracking-tight">Yappy Comercial</h2>
@@ -191,14 +196,15 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
 
                         <Dialog>
                             <DialogTrigger asChild>
-                                <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-600 bg-blue-50 py-3 px-6 rounded-2xl hover:bg-blue-100 transition-all border border-blue-100">
+                                <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-600 bg-blue-50 py-3 px-6 rounded-2xl hover:bg-blue-100 transition-all border border-blue-100 outline-none focus:ring-2 focus:ring-blue-500/20">
                                     <HelpCircle className="w-4 h-4" />
                                     ¿Cómo funciona?
                                 </button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden bg-white">
-                                <DialogHeader className="p-0">
-                                    <DialogTitle className="sr-only">Instrucciones Yappy</DialogTitle>
+                            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden bg-white outline-none">
+                                <DialogHeader className="sr-only">
+                                    <DialogTitle>Instrucciones Yappy</DialogTitle>
+                                    <DialogDescription>Pasos para integrar Yappy Comercial</DialogDescription>
                                 </DialogHeader>
                                 <div className="bg-blue-600 p-8 text-white">
                                     <div className="flex items-center gap-3 mb-2">
@@ -282,6 +288,6 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
                     </p>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
