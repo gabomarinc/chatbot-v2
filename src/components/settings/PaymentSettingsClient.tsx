@@ -52,7 +52,7 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
     };
 
     return (
-        <div className="space-y-10 animate-fade-in max-w-5xl mx-auto">
+        <div className="space-y-10 animate-fade-in max-w-5xl mx-auto pb-20">
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-gray-900 rounded-2xl">
@@ -74,7 +74,7 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
                         <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-orange-50 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner border border-orange-100/50">
+                            <div className="w-20 h-20 bg-orange-50 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner border border-orange-100/50 shrink-0">
                                 🇵🇦
                             </div>
                             <div>
@@ -85,9 +85,9 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
 
                         <Dialog>
                             <DialogTrigger asChild>
-                                <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-600 bg-orange-50 py-3 px-6 rounded-2xl hover:bg-orange-100 transition-all border border-orange-100 outline-none focus:ring-2 focus:ring-orange-500/20">
-                                    <HelpCircle className="w-4 h-4" />
-                                    ¿Cómo funciona?
+                                <button type="button" className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-600 bg-orange-50 py-3 px-6 rounded-2xl hover:bg-orange-100 transition-all border border-orange-100 outline-none focus:ring-2 focus:ring-orange-500/20 active:scale-95 cursor-pointer z-10">
+                                    <HelpCircle className="w-4 h-4 pointer-events-none" />
+                                    <span className="pointer-events-none">¿Cómo funciona?</span>
                                 </button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden bg-white outline-none">
@@ -156,6 +156,7 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
                                 <p className="text-sm text-gray-400 font-bold leading-relaxed">Usa el entorno de simulación para validar el flujo del bot sin cargos reales.</p>
                             </div>
                             <button
+                                type="button"
                                 onClick={() => setPagueloFacil({ ...pagueloFacil, isSandbox: !pagueloFacil.isSandbox })}
                                 className={`w-16 h-9 rounded-full transition-all relative p-1 ${pagueloFacil.isSandbox ? 'bg-orange-500 shadow-lg shadow-orange-200' : 'bg-gray-200'}`}
                             >
@@ -164,6 +165,7 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
                         </div>
 
                         <button
+                            type="button"
                             onClick={() => handleSave('PAGUELOFACIL', pagueloFacil)}
                             disabled={isLoading === 'PAGUELOFACIL' || !pagueloFacil.cclw}
                             className="w-full h-16 bg-gray-900 text-white rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-black hover:scale-[1.01] transition-all flex items-center justify-center gap-3 shadow-2xl shadow-gray-300 disabled:opacity-50 active:scale-95"
@@ -184,21 +186,22 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
                         <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-[#f8d022] rounded-[2rem] flex items-center justify-center shadow-inner border border-yellow-200/50 overflow-hidden shrink-0 relative pt-2">
-                                <span className="text-blue-600 font-black text-3xl italic tracking-tighter">Yappy</span>
-                                <div className="absolute top-1 right-1 text-xs">🇵🇦</div>
+                            <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner border border-blue-100/50 shrink-0">
+                                🇵🇦
                             </div>
-                            <div>
-                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Yappy Comercial</h2>
+                            <div className="flex flex-col">
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                                    Yappy Comercial
+                                </h2>
                                 <p className="text-sm text-gray-400 font-bold max-w-xs">Ofrece el método de pago favorito de Panamá de forma 100% automatizada.</p>
                             </div>
                         </div>
 
                         <Dialog>
                             <DialogTrigger asChild>
-                                <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-600 bg-blue-50 py-3 px-6 rounded-2xl hover:bg-blue-100 transition-all border border-blue-100 outline-none focus:ring-2 focus:ring-blue-500/20">
-                                    <HelpCircle className="w-4 h-4" />
-                                    ¿Cómo funciona?
+                                <button type="button" className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-600 bg-blue-50 py-3 px-6 rounded-2xl hover:bg-blue-100 transition-all border border-blue-100 outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95 cursor-pointer z-10">
+                                    <HelpCircle className="w-4 h-4 pointer-events-none" />
+                                    <span className="pointer-events-none">¿Cómo funciona?</span>
                                 </button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden bg-white outline-none">
@@ -266,6 +269,7 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
 
                     <div className="mt-8">
                         <button
+                            type="button"
                             onClick={() => handleSave('YAPPY', yappy)}
                             disabled={isLoading === 'YAPPY' || !yappy.merchantId || !yappy.secretKey}
                             className="w-full h-16 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 hover:scale-[1.01] transition-all flex items-center justify-center gap-3 shadow-2xl shadow-blue-200 disabled:opacity-50 active:scale-95"
@@ -288,6 +292,6 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
                     </p>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
