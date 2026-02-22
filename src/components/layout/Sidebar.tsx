@@ -35,7 +35,7 @@ export function Sidebar() {
                 { id: 'agents', href: '/agents', label: 'Agentes', icon: Bot, color: 'purple' },
                 { id: 'team', href: '/team', label: 'Equipo', icon: Users, color: 'green' },
                 { id: 'channels', href: '/channels', label: 'Canales', icon: Radio, color: 'orange' },
-                { id: 'payments', href: '/settings/payments', label: 'Pagos', icon: CreditCard, color: 'yellow' },
+                { id: 'payments', href: '/settings/payments', label: 'Pagos', icon: CreditCard, color: 'yellow', badge: 'Nuevo' },
             ]
         },
         {
@@ -129,15 +129,20 @@ export function Sidebar() {
                                             )}
                                         >
                                             <div className="flex items-center gap-3.5 px-4 py-3">
-                                                <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20">
+                                                <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20 shrink-0">
                                                     <Icon className="w-5 h-5" />
                                                 </div>
                                                 <span className={cn(
-                                                    "text-sm font-semibold tracking-tight transition-colors",
+                                                    "text-sm font-semibold tracking-tight transition-colors flex-1",
                                                     isActive ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-900'
                                                 )}>
                                                     {item.label}
                                                 </span>
+                                                {(item as any).badge && (
+                                                    <span className="bg-gradient-to-r from-[#21AC96] to-[#36d3bb] text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-sm tracking-tight">
+                                                        {(item as any).badge}
+                                                    </span>
+                                                )}
                                             </div>
                                             {isActive && (
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#21AC96] shadow-[0_0_10px_rgba(33,172,150,0.5)] animate-bounce"></div>
