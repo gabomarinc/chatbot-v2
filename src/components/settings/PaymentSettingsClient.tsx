@@ -180,8 +180,8 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
                         <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center shadow-inner border border-blue-100/50 overflow-hidden">
-                                <img src="https://www.bgeneral.com/wp-content/uploads/2021/05/logo_yappy.png" alt="Yappy" className="w-12" />
+                            <div className="w-20 h-20 bg-[#f8d022] rounded-[2rem] flex items-center justify-center shadow-inner border border-yellow-200/50 overflow-hidden shrink-0">
+                                <span className="text-blue-600 font-black text-3xl italic tracking-tighter">Yappy</span>
                             </div>
                             <div>
                                 <h2 className="text-2xl font-black text-gray-900 tracking-tight">Yappy Comercial</h2>
@@ -196,7 +196,10 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
                                     ¿Cómo funciona?
                                 </button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
+                            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden bg-white">
+                                <DialogHeader className="p-0">
+                                    <DialogTitle className="sr-only">Instrucciones Yappy</DialogTitle>
+                                </DialogHeader>
                                 <div className="bg-blue-600 p-8 text-white">
                                     <div className="flex items-center gap-3 mb-2">
                                         <Smartphone className="w-6 h-6" />
