@@ -24,6 +24,7 @@ interface AgentSettingsFormProps {
         enableNPS: boolean;
         handoffTargets?: any; // JSON
     };
+    teamMembers: any[];
 }
 
 interface HandoffTarget {
@@ -33,7 +34,7 @@ interface HandoffTarget {
     description: string;
 }
 
-export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
+export function AgentSettingsForm({ agent, teamMembers }: AgentSettingsFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
@@ -270,55 +271,96 @@ export function AgentSettingsForm({ agent }: AgentSettingsFormProps) {
                                 </div>
                                 <div>
                                     <h3 className="text-gray-900 font-black text-sm uppercase tracking-widest">Ruteo Inteligente</h3>
-                                    <p className="text-xs text-gray-400 font-medium">Define a quién notificar según la intención del usuario</p>
+                                    <p className="text-xs text-gray-400 font-medium">Define a quién asignar según la intención del usuario</p>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
-                                {(formData.handoffTargets || []).map((target: HandoffTarget) => (
-                                    <div key={target.id} className="bg-gray-50 p-4 rounded-2xl space-y-3 relative group border border-gray-100">
-                                        <button
-                                            type="button"
-                                            onClick={() => removeHandoffTarget(target.id)}
-                                            className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                {(formData.handoffTargets || []).map((target: HandoffTarget) => {
+                                    // Identify current departments in workspace
+                                    const availableDepts = Array.from(new Set([
+                                        'SALES', 'SUPPORT', 'PERSONAL',
+                                        ...teamMembers.map(m => m.department).filter(Boolean)
+                                    ]));
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    const isCustomDept = !availableDepts.includes(target.name);
+
+                                    return (
+                                        <div key={target.id} className="bg-gray-50 p-4 rounded-2xl space-y-3 relative group border border-gray-100">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeHandoffTarget(target.id)}
+                                                className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Departamento</label>
+                                                    <div className="space-y-2">
+                                                        <select
+                                                            value={isCustomDept && target.name ? 'CUSTOM' : target.name}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (val === 'CUSTOM') {
+                                                                    updateHandoffTarget(target.id, 'name', '');
+                                                                } else {
+                                                                    updateHandoffTarget(target.id, 'name', val);
+                                                                }
+                                                            }}
+                                                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                        >
+                                                            <option value="">Seleccionar...</option>
+                                                            {availableDepts.map(dept => (
+                                                                <option key={dept} value={dept}>{dept}</option>
+                                                            ))}
+                                                            <option value="CUSTOM">+ Agregar departamento nuevo</option>
+                                                        </select>
+
+                                                        {(isCustomDept || !target.name) && (
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Nombre del nuevo departamento..."
+                                                                value={target.name}
+                                                                onChange={(e) => updateHandoffTarget(target.id, 'name', e.target.value)}
+                                                                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Responsable / Equipo</label>
+                                                    <select
+                                                        value={target.email}
+                                                        onChange={(e) => updateHandoffTarget(target.id, 'email', e.target.value)}
+                                                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                    >
+                                                        <option value="">Seleccionar responsable...</option>
+                                                        {teamMembers.map((member) => (
+                                                            <option key={member.user.id} value={member.user.email}>
+                                                                {member.user.name || member.user.email} ({member.department || 'General'})
+                                                            </option>
+                                                        ))}
+                                                        {target.email && !teamMembers.find(m => m.user.email === target.email) && (
+                                                            <option value={target.email}>{target.email}</option>
+                                                        )}
+                                                    </select>
+                                                </div>
+                                            </div>
                                             <div className="space-y-1">
-                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Nombre del Departamento</label>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Descripción para la IA</label>
                                                 <input
                                                     type="text"
-                                                    placeholder="Ej: Ventas, Soporte..."
-                                                    value={target.name}
-                                                    onChange={(e) => updateHandoffTarget(target.id, 'name', e.target.value)}
-                                                    className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Email de Destino</label>
-                                                <input
-                                                    type="email"
-                                                    placeholder="equipo@empresa.com"
-                                                    value={target.email}
-                                                    onChange={(e) => updateHandoffTarget(target.id, 'email', e.target.value)}
-                                                    className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                    placeholder="¿Cuándo debe la IA transferir a este departamento?"
+                                                    value={target.description}
+                                                    onChange={(e) => updateHandoffTarget(target.id, 'description', e.target.value)}
+                                                    className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
                                                 />
                                             </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider ml-1">Descripción para la IA</label>
-                                            <input
-                                                type="text"
-                                                placeholder="¿Cuándo debe la IA transferir a este departamento?"
-                                                value={target.description}
-                                                onChange={(e) => updateHandoffTarget(target.id, 'description', e.target.value)}
-                                                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
 
                                 <button
                                     type="button"

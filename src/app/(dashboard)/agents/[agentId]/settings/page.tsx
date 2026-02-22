@@ -1,10 +1,13 @@
-import { getAgent } from '@/lib/actions/dashboard';
+import { getAgent, getTeamMembers } from '@/lib/actions/dashboard';
 import { AgentSettingsForm } from '@/components/agents/AgentSettingsForm';
 import { redirect } from 'next/navigation';
 
 export default async function AgentSettingsPage({ params }: { params: Promise<{ agentId: string }> }) {
     const { agentId } = await params
-    const agent = await getAgent(agentId);
+    const [agent, teamMembers] = await Promise.all([
+        getAgent(agentId),
+        getTeamMembers()
+    ]);
 
     if (!agent) {
         redirect('/agents');
@@ -12,6 +15,7 @@ export default async function AgentSettingsPage({ params }: { params: Promise<{ 
 
     return (
         <AgentSettingsForm
+            teamMembers={teamMembers}
             agent={{
                 id: agent.id,
                 model: agent.model,
