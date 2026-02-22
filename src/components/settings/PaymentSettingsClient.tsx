@@ -64,17 +64,17 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
             {/* Banner de Educación Premium */}
             <div className="relative overflow-hidden bg-gray-900 rounded-[2.5rem] p-8 md:p-10 mb-10 shadow-2xl group border border-white/5">
                 {/* Background Decorations */}
-                <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-orange-500/10 rounded-full blur-[80px] group-hover:bg-orange-500/20 transition-all duration-700"></div>
-                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] group-hover:bg-blue-500/20 transition-all duration-700"></div>
+                <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-[#21AC96]/10 rounded-full blur-[80px] group-hover:bg-[#21AC96]/20 transition-all duration-700"></div>
+                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-[80px] group-hover:bg-indigo-500/20 transition-all duration-700"></div>
 
                 <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
                     <div className="flex-1 text-center lg:text-left">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500/20 to-transparent rounded-full border border-orange-500/20 text-orange-400 text-xs font-black uppercase tracking-widest mb-6 shadow-sm">
-                            <Zap className="w-4 h-4 animate-pulse fill-orange-400" />
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#21AC96]/20 to-transparent rounded-full border border-[#21AC96]/20 text-[#21AC96] text-xs font-black uppercase tracking-widest mb-6 shadow-sm">
+                            <Zap className="w-4 h-4 animate-pulse fill-[#21AC96]" />
                             Nuevo: Cobros Automáticos
                         </div>
                         <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight mb-4 leading-tight lg:max-w-3xl">
-                            ¿Sabes cómo cobrar con tus <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-yellow-400 to-blue-400">Pasarelas de Pago</span>?
+                            ¿Sabes cómo cobrar con tus <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#21AC96] to-emerald-400">Pasarelas de Pago</span>?
                         </h2>
                         <p className="text-gray-400 text-lg font-medium max-w-2xl mx-auto lg:mx-0">
                             Conecta tus cuentas de PagueloFacil o Yappy y permite que tu Chatbot cierre ventas y genere enlaces de pago al instante.
@@ -84,7 +84,7 @@ export function PaymentSettingsClient({ existingConfigs }: PaymentSettingsClient
                     <div className="shrink-0">
                         <button
                             onClick={() => setIsTutorialOpen(true)}
-                            className="group relative flex items-center gap-4 bg-white hover:bg-orange-500 text-gray-900 hover:text-white px-10 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-sm transition-all shadow-2xl hover:shadow-orange-500/40 active:scale-95"
+                            className="group relative flex items-center gap-4 bg-white hover:bg-[#21AC96] text-gray-900 hover:text-white px-10 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-sm transition-all shadow-2xl hover:shadow-[#21AC96]/40 active:scale-95"
                         >
                             <UserCheck className="w-6 h-6" />
                             Ver Guía de Integración
