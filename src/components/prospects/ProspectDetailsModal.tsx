@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, Clock, MessageCircle, FileText, Calendar, Send, Paperclip } from 'lucide-react';
+import { X, User, Phone, Mail, Clock, MessageCircle, FileText, Calendar, Send, Paperclip, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AIInsightsTab } from './AIInsightsTab';
 import { ActivityTimelineTab } from './ActivityTimelineTab';
+import { PaymentsTab } from './PaymentsTab';
 
 interface ProspectDetailsModalProps {
     isOpen: boolean;
@@ -14,7 +15,7 @@ interface ProspectDetailsModalProps {
 }
 
 export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading }: ProspectDetailsModalProps) {
-    const [activeTab, setActiveTab] = useState<'resume' | 'chat' | 'documents'>('resume');
+    const [activeTab, setActiveTab] = useState<'resume' | 'chat' | 'documents' | 'ai_insights' | 'timeline' | 'payments'>('resume');
 
     useEffect(() => {
         if (isOpen) {
@@ -97,6 +98,16 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                     >
                         <Calendar className="w-4 h-4" />
                         Actividad
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('payments' as any)}
+                        className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === ('payments' as any)
+                            ? 'border-[#21AC96] text-[#21AC96]'
+                            : 'border-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <CreditCard className="w-4 h-4" />
+                        Pagos
                     </button>
                     <button
                         onClick={() => setActiveTab('chat')}
@@ -253,6 +264,13 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                 <ActivityTimelineTab
                                     contactId={prospectData?.contact?.id}
                                     activities={prospectData?.contact?.activities}
+                                />
+                            )}
+
+                            {activeTab === ('payments' as any) && (
+                                <PaymentsTab
+                                    contactId={prospectData?.contact?.id}
+                                    transactions={prospectData?.contact?.transactions}
                                 />
                             )}
 

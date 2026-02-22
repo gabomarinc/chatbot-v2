@@ -866,6 +866,9 @@ export const getProspectDetails = cache(async (conversationId: string) => {
                                 select: { name: true, image: true }
                             }
                         }
+                    },
+                    transactions: {
+                        orderBy: { createdAt: 'desc' }
                     }
                 }
             },
