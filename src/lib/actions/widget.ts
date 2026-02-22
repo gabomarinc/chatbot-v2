@@ -443,6 +443,11 @@ Reglas para cobrar (ESTRICTO):
             // Define tools for Calendar and Image Search, and Contact Update
             const tools: any[] = [];
 
+            // Transfer instruction
+            if (channel.agent.transferToHuman) {
+                systemPrompt += `\nTRANSFERENCIA A HUMANO:\nTienes permiso para transferir esta conversación a un humano si el usuario lo solicita o si detectas una necesidad específica.\n- Departamento SALES: Ventas, cotizaciones, precios, comprar.\n- Departamento SUPPORT: Problemas técnicos, errores, ayuda con el uso.\n- Departamento PERSONAL: Consultas generales o cuando no estés seguro.\nAL LLAMAR A 'asignar_a_humano', el usuario será notificado y un agente tomará el control.\n`;
+            }
+
             if (channel.agent.jobType === 'SALES') {
                 tools.push({
                     name: 'generar_link_de_pago',
@@ -500,6 +505,22 @@ Reglas para cobrar (ESTRICTO):
                             comment: { type: 'string', description: 'Comentario opcional del usuario si lo proporciona' }
                         },
                         required: ['score']
+                    }
+                },
+                {
+                    name: 'asignar_a_humano',
+                    description: 'Transfiere la conversación a un agente humano del equipo. Úsala cuando el usuario pida hablar con una persona, cuando el bot no sepa responder algo complejo, o cuando se detecte una intención clara para un departamento (ventas, soporte).',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            departamento: {
+                                type: 'string',
+                                enum: ['SALES', 'SUPPORT', 'PERSONAL'],
+                                description: 'Departamento al que asignar: SALES para comercial/ventas, SUPPORT para soporte técnico, PERSONAL para consultas generales o si no estás seguro.'
+                            },
+                            razon: { type: 'string', description: 'Breve explicación de por qué se transfiere la conversación.' }
+                        },
+                        required: ['departamento']
                     }
                 }
             );
@@ -926,6 +947,48 @@ Reglas para cobrar (ESTRICTO):
                                     }
                                 } else {
                                     toolResult = { success: false, error: "No contact ID linked" };
+                                }
+                            } else if (name === "asignar_a_humano") {
+                                try {
+                                    const dept = (args as any).departamento;
+
+                                    // Find members in this workspace with that department
+                                    const members = await (prisma.workspaceMember as any).findMany({
+                                        where: {
+                                            workspaceId: workspace.id,
+                                            department: dept as any
+                                        },
+                                        include: {
+                                            user: true
+                                        }
+                                    });
+
+                                    if (members.length > 0) {
+                                        // Pick first member (could be improved with better load balancing)
+                                        const member = members[0];
+
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: {
+                                                assignedTo: member.userId,
+                                                status: 'OPEN'
+                                            }
+                                        });
+
+                                        toolResult = {
+                                            success: true,
+                                            message: `Conversación reasignada exitosamente a ${member.user.name || member.user.email} (${dept}).`,
+                                            assigned_to: member.user.name || member.user.email
+                                        };
+                                    } else {
+                                        toolResult = {
+                                            success: false,
+                                            error: `No hay agentes disponibles actualmente en el departamento ${dept}.`
+                                        };
+                                    }
+                                } catch (e: any) {
+                                    console.error('[GEMINI] asignar_a_humano error:', e);
+                                    toolResult = { success: false, error: e.message };
                                 }
                             } else if (name === "revisar_disponibilidad") {
                                 toolResult = calendarIntegration

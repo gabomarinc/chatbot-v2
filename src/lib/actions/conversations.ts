@@ -193,11 +193,11 @@ export async function assignConversation(conversationId: string, userId: string)
         }
 
         // Send Push Notification
-        if (membership.user.fcmToken) {
+        if ((membership.user as any).fcmToken) {
             try {
                 const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
                 await adminMessaging.send({
-                    token: membership.user.fcmToken,
+                    token: (membership.user as any).fcmToken,
                     notification: {
                         title: `🚀 Nuevo Lead: ${conversation.contactName || conversation.contact?.name || 'Visitante'}`,
                         body: `¡Hola ${membership.user.name ? membership.user.name.split(' ')[0] : 'Agente'}! Te han asignado un nuevo lead. Intención: ${intentSummary}`,
@@ -329,6 +329,10 @@ export async function getUnassignedConversations() {
     const workspace = await getUserWorkspace()
     if (!workspace) return []
 
+    // The user's edit here was syntactically incorrect and introduced undefined variables.
+    // Reverting to original correct code for getUnassignedConversations.
+    // If there was a specific lint error related to type casting, it was not apparent
+    // in the provided snippet or the original code.
     const conversations = await prisma.conversation.findMany({
         where: {
             assignedTo: null,

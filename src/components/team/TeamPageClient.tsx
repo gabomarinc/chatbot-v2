@@ -7,7 +7,7 @@ import { InviteMemberModal } from './InviteMemberModal';
 import { MaxMembersModal } from './MaxMembersModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { MemberDetailsModal } from './MemberDetailsModal';
-import { removeTeamMember, updateTeamMemberRole } from '@/lib/actions/team';
+import { removeTeamMember, updateTeamMember } from '@/lib/actions/team';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createPortal } from 'react-dom';
@@ -17,6 +17,7 @@ import { es } from 'date-fns/locale';
 interface TeamMember {
     id: string;
     role: 'OWNER' | 'MANAGER' | 'AGENT';
+    department: 'SUPPORT' | 'SALES' | 'PERSONAL' | null;
     user: {
         id: string;
         name: string | null;
@@ -109,6 +110,32 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
         }
     };
 
+    const getDepartmentLabel = (dept: string | null) => {
+        switch (dept) {
+            case 'SALES':
+                return 'Comercial';
+            case 'SUPPORT':
+                return 'Soporte';
+            case 'PERSONAL':
+                return 'General';
+            default:
+                return 'General';
+        }
+    };
+
+    const getDepartmentBadgeStyle = (dept: string | null) => {
+        switch (dept) {
+            case 'SALES':
+                return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'SUPPORT':
+                return 'bg-blue-50 text-blue-600 border-blue-100';
+            case 'PERSONAL':
+                return 'bg-slate-50 text-slate-600 border-slate-100';
+            default:
+                return 'bg-slate-50 text-slate-600 border-slate-100';
+        }
+    };
+
     const formatLastLogin = (lastLoginAt: Date | null) => {
         if (!lastLoginAt) return 'Nunca';
 
@@ -143,7 +170,6 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
         setIsDeleteModalOpen(true);
         setIsActionMenuOpen(null);
     };
-
     const handleConfirmDelete = async () => {
         if (!memberToDelete) return;
 
@@ -175,7 +201,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
     const handleUpdateRole = async (memberId: string, newRole: 'MANAGER' | 'AGENT') => {
         setIsLoading(true);
         try {
-            const result = await updateTeamMemberRole(memberId, newRole);
+            const result = await updateTeamMember(memberId, { role: newRole });
             if (result.error) {
                 alert(result.error);
             } else {
@@ -186,6 +212,26 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
             }
         } catch (error) {
             alert('Error al actualizar rol');
+        } finally {
+            setIsLoading(false);
+            setIsActionMenuOpen(null);
+        }
+    };
+
+    const handleUpdateDepartment = async (memberId: string, newDept: 'SUPPORT' | 'SALES' | 'PERSONAL') => {
+        setIsLoading(true);
+        try {
+            const result = await updateTeamMember(memberId, { department: newDept });
+            if (result.error) {
+                alert(result.error);
+            } else {
+                setMembers(members.map(m =>
+                    m.id === memberId ? { ...m, department: newDept } : m
+                ));
+                router.refresh();
+            }
+        } catch (error) {
+            alert('Error al actualizar departamento');
         } finally {
             setIsLoading(false);
             setIsActionMenuOpen(null);
@@ -271,9 +317,9 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                             <thead>
                                 <tr className="border-b border-gray-50">
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Usuario / Email</th>
-                                    <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Rol del Sistema</th>
+                                    <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Rol</th>
+                                    <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Departamento</th>
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Estado</th>
-                                    <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Último Login</th>
                                     <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Acciones</th>
                                 </tr>
                             </thead>
@@ -313,6 +359,15 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-6">
+                                                    <div className={cn(
+                                                        "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border",
+                                                        getDepartmentBadgeStyle(member.department)
+                                                    )}>
+                                                        <Users className="w-3 h-3" />
+                                                        {getDepartmentLabel(member.department)}
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6">
                                                     {status === 'active' && (
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -331,11 +386,6 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                             <span className="text-sm text-gray-600 font-bold">Desconectado</span>
                                                         </div>
                                                     )}
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <span className="text-sm text-gray-700 font-medium">
-                                                        {formatLastLogin(member.user.lastLoginAt)}
-                                                    </span>
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <div className="flex justify-end">
@@ -368,21 +418,55 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                                         {member.role !== 'OWNER' && member.role !== 'MANAGER' && (
                                                                             <button
                                                                                 onClick={() => handleUpdateRole(member.id, 'MANAGER')}
-                                                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium"
                                                                             >
-                                                                                <Edit className="w-4 h-4" />
+                                                                                <Shield className="w-4 h-4 text-purple-500" />
                                                                                 Promover a Administrador
                                                                             </button>
                                                                         )}
                                                                         {member.role === 'MANAGER' && (
                                                                             <button
                                                                                 onClick={() => handleUpdateRole(member.id, 'AGENT')}
-                                                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium"
                                                                             >
-                                                                                <Edit className="w-4 h-4" />
+                                                                                <Shield className="w-4 h-4 text-gray-400" />
                                                                                 Degradar a Agente
                                                                             </button>
                                                                         )}
+
+                                                                        <div className="h-px bg-gray-100 my-1"></div>
+                                                                        <div className="px-4 py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Departamento</div>
+
+                                                                        <button
+                                                                            onClick={() => handleUpdateDepartment(member.id, 'SALES')}
+                                                                            className={cn(
+                                                                                "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
+                                                                                member.department === 'SALES' ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
+                                                                            )}
+                                                                        >
+                                                                            <Users className="w-4 h-4" />
+                                                                            Comercial / Ventas
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleUpdateDepartment(member.id, 'SUPPORT')}
+                                                                            className={cn(
+                                                                                "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
+                                                                                member.department === 'SUPPORT' ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
+                                                                            )}
+                                                                        >
+                                                                            <Users className="w-4 h-4" />
+                                                                            Soporte Técnico
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleUpdateDepartment(member.id, 'PERSONAL')}
+                                                                            className={cn(
+                                                                                "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
+                                                                                member.department === 'PERSONAL' || !member.department ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
+                                                                            )}
+                                                                        >
+                                                                            <Users className="w-4 h-4" />
+                                                                            General / Personal
+                                                                        </button>
                                                                         {member.role !== 'OWNER' && (
                                                                             <>
                                                                                 <div className="h-px bg-gray-100 my-1"></div>

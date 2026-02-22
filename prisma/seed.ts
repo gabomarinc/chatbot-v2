@@ -26,37 +26,60 @@ async function main() {
   console.log('✅ Usuario creado:', user.email);
 
   // Crear planes de suscripción
-  const plans = await prisma.subscriptionPlan.createMany({
-    data: [
-      {
-        name: "Freshie",
-        type: "FRESHIE",
-        monthlyPrice: 135,
-        creditsPerMonth: 5000,
-        maxAgents: 2,
-        maxMembers: 2,
-      },
-      {
-        name: "Money Honey",
-        type: "MONEY_HONEY",
-        monthlyPrice: 315,
-        creditsPerMonth: 20000,
-        maxAgents: 5,
-        maxMembers: 5,
-      },
-      {
-        name: "Wolf of Wallstreet",
-        type: "WOLF_OF_WALLSTREET",
-        monthlyPrice: 575,
-        creditsPerMonth: 50000,
-        maxAgents: 10,
-        maxMembers: 12,
-      },
-    ],
-    skipDuplicates: true,
-  });
+  const planData = [
+    {
+      name: "Freshie",
+      type: "FRESHIE",
+      monthlyPrice: 135,
+      creditsPerMonth: 5000,
+      maxAgents: 2,
+      maxMembers: 4,
+    },
+    {
+      name: "Money Honey",
+      type: "MONEY_HONEY",
+      monthlyPrice: 315,
+      creditsPerMonth: 20000,
+      maxAgents: 5,
+      maxMembers: 8,
+    },
+    {
+      name: "Wolf of Wallstreet",
+      type: "WOLF_OF_WALLSTREET",
+      monthlyPrice: 575,
+      creditsPerMonth: 50000,
+      maxAgents: 10,
+      maxMembers: 16,
+    },
+  ];
 
-  console.log('✅ Planes de suscripción creados');
+  for (const plan of planData) {
+    const existingPlan = await prisma.subscriptionPlan.findFirst({
+      where: { type: plan.type as any }
+    });
+
+    if (existingPlan) {
+      await prisma.subscriptionPlan.update({
+        where: { id: existingPlan.id },
+        data: {
+          maxMembers: plan.maxMembers,
+          monthlyPrice: plan.monthlyPrice,
+          creditsPerMonth: plan.creditsPerMonth,
+          maxAgents: plan.maxAgents,
+          name: plan.name
+        },
+      });
+    } else {
+      await prisma.subscriptionPlan.create({
+        data: {
+          ...plan,
+          type: plan.type as any
+        },
+      });
+    }
+  }
+
+  console.log('✅ Planes de suscripción actualizados/creados');
 
   // Crear workspace
   let workspace = await prisma.workspace.findUnique({

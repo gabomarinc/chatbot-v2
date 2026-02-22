@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { X, Mail, User as UserIcon, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { X, Mail, User as UserIcon, AlertCircle, CheckCircle, Loader2, Shield, Plus } from 'lucide-react';
 import { inviteTeamMember } from '@/lib/actions/team';
 import { useRouter } from 'next/navigation';
 
@@ -18,6 +18,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [role, setRole] = useState<'MANAGER' | 'AGENT'>('AGENT');
+    const [department, setDepartment] = useState<'SUPPORT' | 'SALES' | 'PERSONAL'>('SUPPORT');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -54,8 +55,8 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
 
         setIsLoading(true);
         try {
-            const result = await inviteTeamMember(name.trim(), email.trim().toLowerCase(), role);
-            
+            const result = await inviteTeamMember(name.trim(), email.trim().toLowerCase(), role, department);
+
             if (result.error) {
                 setError(result.error);
             } else {
@@ -83,6 +84,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
             setName('');
             setEmail('');
             setRole('AGENT');
+            setDepartment('SUPPORT');
             setError(null);
             setSuccess(false);
             onClose();
@@ -99,7 +101,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                     <div>
                         <h2 className="text-xl font-extrabold text-gray-900">Invitar Colaborador</h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            {remainingSlots > 0 
+                            {remainingSlots > 0
                                 ? `${remainingSlots} espacio${remainingSlots > 1 ? 's' : ''} disponible${remainingSlots > 1 ? 's' : ''}`
                                 : 'Límite alcanzado'}
                         </p>
@@ -156,24 +158,23 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                     {/* Role Selection */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                            <UserIcon className="w-4 h-4 text-gray-400" />
-                            Rol
+                            <Shield className="w-4 h-4 text-gray-400" />
+                            Rol del Sistema
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 type="button"
                                 onClick={() => setRole('MANAGER')}
                                 disabled={isLoading}
-                                className={`p-4 rounded-xl border-2 transition-all ${
-                                    role === 'MANAGER'
+                                className={`p-4 rounded-xl border-2 transition-all ${role === 'MANAGER'
                                         ? 'border-[#21AC96] bg-[#21AC96]/5'
                                         : 'border-gray-200 hover:border-gray-300'
-                                } disabled:opacity-50`}
+                                    } disabled:opacity-50`}
                             >
                                 <div className="text-left">
                                     <div className="font-bold text-gray-900">Administrador</div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        Puede crear y gestionar agentes
+                                    <div className="text-[10px] text-gray-500 mt-1 leading-tight">
+                                        Puede gestionar agentes y configuración
                                     </div>
                                 </div>
                             </button>
@@ -181,18 +182,63 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                                 type="button"
                                 onClick={() => setRole('AGENT')}
                                 disabled={isLoading}
-                                className={`p-4 rounded-xl border-2 transition-all ${
-                                    role === 'AGENT'
+                                className={`p-4 rounded-xl border-2 transition-all ${role === 'AGENT'
                                         ? 'border-[#21AC96] bg-[#21AC96]/5'
                                         : 'border-gray-200 hover:border-gray-300'
-                                } disabled:opacity-50`}
+                                    } disabled:opacity-50`}
                             >
                                 <div className="text-left">
                                     <div className="font-bold text-gray-900">Agente</div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        Solo puede asumir conversaciones
+                                    <div className="text-[10px] text-gray-500 mt-1 leading-tight">
+                                        Solo para atención de conversaciones
                                     </div>
                                 </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Department Selection */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                            <Plus className="w-4 h-4 text-gray-400" />
+                            Departamento para el BOT
+                        </label>
+                        <p className="text-[11px] text-gray-400 mb-3">
+                            Esto ayuda al BOT a saber a quién asignar la conversación automáticamente según la intención del cliente.
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setDepartment('SALES')}
+                                disabled={isLoading}
+                                className={`p-3 rounded-xl border-2 transition-all text-center ${department === 'SALES'
+                                        ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
+                                        : 'border-gray-100 hover:border-gray-200 text-gray-500'
+                                    } disabled:opacity-50`}
+                            >
+                                <div className="font-bold text-xs">COMERCIAL</div>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDepartment('SUPPORT')}
+                                disabled={isLoading}
+                                className={`p-3 rounded-xl border-2 transition-all text-center ${department === 'SUPPORT'
+                                        ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
+                                        : 'border-gray-100 hover:border-gray-200 text-gray-500'
+                                    } disabled:opacity-50`}
+                            >
+                                <div className="font-bold text-xs">SOPORTE</div>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDepartment('PERSONAL')}
+                                disabled={isLoading}
+                                className={`p-3 rounded-xl border-2 transition-all text-center ${department === 'PERSONAL'
+                                        ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
+                                        : 'border-gray-100 hover:border-gray-200 text-gray-500'
+                                    } disabled:opacity-50`}
+                            >
+                                <div className="font-bold text-xs">GENERAL</div>
                             </button>
                         </div>
                     </div>

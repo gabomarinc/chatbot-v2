@@ -6,7 +6,7 @@ import { getMemberStats } from '@/lib/actions/team';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
-import { updateTeamMemberRole, removeTeamMember } from '@/lib/actions/team';
+import { updateTeamMember, removeTeamMember } from '@/lib/actions/team';
 
 interface MemberDetailsModalProps {
     isOpen: boolean;
@@ -24,6 +24,7 @@ interface MemberStats {
         name: string | null;
         email: string;
         role: 'OWNER' | 'MANAGER' | 'AGENT';
+        department: 'SUPPORT' | 'SALES' | 'PERSONAL' | null;
         joinedAt: Date;
         lastLoginAt: Date | null;
     };
@@ -95,7 +96,7 @@ export function MemberDetailsModal({
     const handleUpdateRole = async (newRole: 'MANAGER' | 'AGENT') => {
         setIsUpdatingRole(true);
         try {
-            const result = await updateTeamMemberRole(memberId, newRole);
+            const result = await updateTeamMember(memberId, { role: newRole });
             if (result.error) {
                 alert(result.error);
             } else {
@@ -165,6 +166,15 @@ export function MemberDetailsModal({
         return 'Desconectado';
     };
 
+    const getDepartmentLabel = (dept: string | null) => {
+        switch (dept) {
+            case 'SALES': return 'Comercial / Ventas';
+            case 'SUPPORT': return 'Soporte Técnico';
+            case 'PERSONAL': return 'General / Personal';
+            default: return 'General / Personal';
+        }
+    };
+
     if (!isOpen) return null;
 
     const canManage = currentUserRole === 'OWNER' || (currentUserRole === 'MANAGER' && memberRole !== 'OWNER');
@@ -212,6 +222,10 @@ export function MemberDetailsModal({
                                 <p className="text-lg font-extrabold text-gray-900">{getRoleLabel(stats.member.role)}</p>
                             </div>
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Departamento</p>
+                                <p className="text-lg font-extrabold text-[#21AC96]">{getDepartmentLabel(stats.member.department)}</p>
+                            </div>
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Estado</p>
                                 <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${getUserStatus() === 'Activo' ? 'bg-green-500 animate-pulse' : getUserStatus() === 'Pendiente' ? 'bg-amber-500' : 'bg-gray-400'}`}></div>
@@ -227,7 +241,7 @@ export function MemberDetailsModal({
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Último login</p>
                                 <p className="text-lg font-extrabold text-gray-900">
-                                    {stats.member.lastLoginAt 
+                                    {stats.member.lastLoginAt
                                         ? formatDistanceToNow(new Date(stats.member.lastLoginAt), { addSuffix: true, locale: es })
                                         : 'Nunca'
                                     }
@@ -265,7 +279,7 @@ export function MemberDetailsModal({
                                 <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100">
                                     <p className="text-xs text-purple-600 font-bold uppercase tracking-widest mb-1">Tiempo Promedio</p>
                                     <p className="text-2xl font-extrabold text-purple-900">
-                                        {stats.stats.averageResponseTimeMinutes > 0 
+                                        {stats.stats.averageResponseTimeMinutes > 0
                                             ? `${stats.stats.averageResponseTimeMinutes} min`
                                             : 'N/A'
                                         }

@@ -291,6 +291,7 @@ export async function getMemberStats(memberUserId: string) {
                 name: membership.user.name,
                 email: membership.user.email,
                 role: membership.role,
+                department: (membership as any).department,
                 joinedAt: membership.user.createdAt,
                 lastLoginAt: membership.user.lastLoginAt
             },
@@ -327,7 +328,7 @@ export async function getMemberStats(memberUserId: string) {
 }
 
 // Invite team member
-export async function inviteTeamMember(name: string, email: string, role: 'MANAGER' | 'AGENT') {
+export async function inviteTeamMember(name: string, email: string, role: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL') {
     try {
         const session = await auth()
         if (!session?.user?.id) {
@@ -398,8 +399,9 @@ export async function inviteTeamMember(name: string, email: string, role: 'MANAG
             data: {
                 userId: user.id,
                 workspaceId: workspace.id,
-                role
-            }
+                role,
+                department: department as any
+            } as any
         })
 
         // Send invitation email
@@ -502,8 +504,8 @@ export async function removeTeamMember(memberId: string) {
     }
 }
 
-// Update team member role
-export async function updateTeamMemberRole(memberId: string, newRole: 'MANAGER' | 'AGENT') {
+// Update team member (role and/or department)
+export async function updateTeamMember(memberId: string, data: { role?: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL' }) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
@@ -527,21 +529,29 @@ export async function updateTeamMemberRole(memberId: string, newRole: 'MANAGER' 
             return { error: 'Miembro no encontrado' }
         }
 
-        // Prevent changing owner role
-        if (member.role === 'OWNER') {
+        // Prevent changing owner role directly here (usually handled separately)
+        if (member.role === 'OWNER' && data.role) {
             return { error: 'No se puede cambiar el rol del propietario' }
         }
 
-        // Update role
+        // Update member
         await prisma.workspaceMember.update({
             where: { id: memberId },
-            data: { role: newRole }
+            data: {
+                ...(data.role && { role: data.role }),
+                ...(data.department && { department: data.department as any })
+            }
         })
 
         revalidatePath('/team')
         return { success: true }
     } catch (error: any) {
-        console.error('Error updating team member role:', error)
-        return { error: error.message || 'Error al actualizar rol' }
+        console.error('Error updating team member:', error)
+        return { error: error.message || 'Error al actualizar miembro' }
     }
+}
+
+// Deprecated: used for backward compatibility if needed, but we should use updateTeamMember
+export async function updateTeamMemberRole(memberId: string, newRole: 'MANAGER' | 'AGENT') {
+    return updateTeamMember(memberId, { role: newRole })
 }
