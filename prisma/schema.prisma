@@ -46,6 +46,8 @@ model Workspace {
   owner         User              @relation(fields: [ownerId], references: [id])
   members       WorkspaceMember[]
   contacts      Contact[]         // Added relation
+  paymentConfigs PaymentGatewayConfig[]
+  transactions   Transaction[]
 }
 
 model WorkspaceMember {
@@ -284,6 +286,7 @@ model Contact {
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   conversations Conversation[]
   activities    ContactActivity[]
+  transactions  Transaction[]
 
   @@index([workspaceId])
   @@index([email])
@@ -483,4 +486,40 @@ enum PlanType {
   MONEY_HONEY
   WOLF_OF_WALLSTREET
   CUSTOM
+}
+
+model PaymentGatewayConfig {
+  id          String   @id @default(cuid())
+  workspaceId String
+  gateway     String   // "PAGUELOFACIL", "CUANTO", "STRIPE"
+  config      Json     // { "apiKey": "...", "cclw": "...", "isSandbox": true }
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  @@unique([workspaceId, gateway])
+  @@index([workspaceId])
+}
+
+model Transaction {
+  id               String   @id @default(cuid())
+  contactId        String
+  workspaceId      String
+  amount           Float
+  currency         String   @default("USD")
+  description      String?
+  status           String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  gateway          String   // PAGUELOFACIL, CUANTO, STRIPE
+  gatewayReference String?  // Code or ID from gateway
+  paymentUrl       String?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  contact          Contact   @relation(fields: [contactId], references: [id])
+  workspace        Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([contactId])
+  @@index([workspaceId])
 }
