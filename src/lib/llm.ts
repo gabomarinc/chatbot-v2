@@ -557,17 +557,20 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
 
   // Knowledge base context
   if (contextChunks.length > 0) {
-    prompt += `### CONTEXTO DE CONOCIMIENTO (ACTUALIZADO)\n`;
-    prompt += `Eres un experto con acceso a documentos oficiales. Utiliza exclusivamente la siguiente información para tus respuestas técnicas, comerciales o de soporte. Si la información no es suficiente, admítelo con profesionalismo.\n\n`;
-    prompt += `--------- FUENTES DE INFORMACIÓN ---------\n`;
+    prompt += `### CONTEXTO DE CONOCIMIENTO (ESTRICTO - NO ALUCINAR)\n`;
+    prompt += `A continuación se presentan fragmentos extraídos de tus documentos oficiales. Es CRÍTICO que sigas estas reglas:\n`;
+    prompt += `1. **Solo Información Verificada**: Responde ÚNICAMENTE basándote en la información que aparece en los fragmentos de abajo. Si el usuario pregunta por algo que NO está en estos textos (como un proyecto inmobiliario, precio o característica no mencionada), DEBES responder: "Lo siento, no tengo información sobre eso actualmente" o algo similar. JAMÁS inventes datos.\n`;
+    prompt += `2. **Prohibido Inventar**: No inventes nombres de proyectos, ubicaciones, precios, números de contacto o correos electrónicos. Si no está escrito abajo, no existe para ti.\n`;
+    prompt += `3. **Prioridad Absoluta**: El conocimiento de abajo prevalece sobre cualquier cosa que creas saber por tu entrenamiento general de IA.\n\n`;
+    prompt += `--------- FRAGMENTOS DE CONOCIMIENTO ---------\n`;
     contextChunks.forEach((chunk, index) => {
       prompt += `[BLOQUE ${index + 1}]: ${chunk}\n`;
     });
-    prompt += `------------------------------------------\n\n`;
+    prompt += `----------------------------------------------\n\n`;
     prompt += `REGLAS DE ORO DE CONTESTACIÓN:\n`;
-    prompt += `1. **Prioridad Absoluta**: Si el conocimiento dice algo que contradice tu entrenamiento general, EL CONOCIMIENTO MANDA.\n`;
-    prompt += `2. **No Alucinación**: No inventes números de teléfono, correos electrónicos, precios o direcciones que no aparezcan arriba.\n`;
-    prompt += `3. **Estilo Natural**: No digas "según el bloque 1", simplemente integra la información de forma fluida y convincente.\n\n`;
+    prompt += `1. **Cero Alucinación**: Si un dato no está en los bloques, di que no lo sabes. Sé honesto.\n`;
+    prompt += `2. **Integración Fluida**: Usa la información de forma natural. No menciones "según el bloque X", simplemente habla como un experto que lo sabe.\n`;
+    prompt += `3. **Fidelidad**: Si te piden comparar proyectos y solo tienes información de 3, aclara que solo conoces esos 3 y habla de ellos. No intentes completar la lista.\n\n`;
   }
 
   // Restrictions

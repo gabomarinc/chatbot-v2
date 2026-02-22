@@ -359,16 +359,19 @@ ${hasCalendar ? '- Calendario: TIENES ACCESO a Google Calendar para revisar disp
 ${hasZoho || hasOdoo || hasHubSpot ? `- CRM: TIENES ACCESO a ${[hasZoho && 'Zoho CRM', hasOdoo && 'Odoo CRM', hasHubSpot && 'HubSpot CRM'].filter(Boolean).join(', ')}. Es OBLIGATORIO usar las herramientas de creación de registros tan pronto el usuario brinde SU NOMBRE O EMAIL.` : '- CRM: No disponible.'}
 ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
-CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG):
-${context || 'No hay fragmentos de entrenamiento específicos para esta consulta, básate en tu Identidad y Contexto Laboral.'}
+CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG - ESTRICTO):
+Usa ÚNICAMENTE la información a continuación para responder consultas técnicas, de precios o sobre proyectos.
+REGLA DE ORO: Si la respuesta no está en el siguiente texto, DEBES responder que no cuentas con esa información específica. JAMÁS INVENTES proyectos, precios, características o nombres que no aparezcan aquí.
 
-INSTRUCCIONES DE EJECUCIÓN:
-1. Tu comportamiento debe estar guiado PRIMERO por el "PROMPT DE COMPORTAMIENTO" y la "Descripción del Negocio".
-2. Posees MEMORIA de la conversación. Si el usuario ya se presentó o brindó información previamente en el historial, NO la vuelvas a pedir. Úsala para personalizar la charla.
-3. Actúa siempre como un miembro experto de ${agent.jobCompany || 'la empresa'}.
-4. Si la consulta se responde con el "Conocimiento Adicional", intégralo de forma natural.
-5. Mantén el Estilo de Comunicación (${styleDescription}) en cada palabra.
-6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente para personalizar futuras interacciones.
+${context || 'No hay fragmentos de entrenamiento específicos para esta consulta. Si el usuario pregunta por algo específico del negocio, indica que no tienes esa información y que un humano puede ayudarle.'}
+
+INSTRUCCIONES DE EJECUCIÓN (PRIORIDAD MÁXIMA):
+1. PROHIBIDA LA ALUCINACIÓN: Bajo ninguna circunstancia inventes datos, proyectos inmobiliarios, precios o direcciones. La veracidad es más importante que la ayuda.
+2. LIMITACIÓN AL CONTEXTO: Si el usuario pregunta sobre "Proyectos disponibles" y solo tienes 5 en tu conocimiento, menciona SOLO esos 5. No supongas que existen más.
+3. ADMISIÓN DE IGNORANCIA: Es preferible decir "No tengo esa información" que dar una respuesta incorrecta o inventada.
+4. Tu comportamiento debe estar guiado por el "PROMPT DE COMPORTAMIENTO" pero NUNCA por encima de la veracidad de los datos.
+5. Mantén el Estilo de Comunicación (${styleDescription}) pero sin sacrificar la precisión técnica.
+6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente.
 
 ${hasZoho ? `INSTRUCCIONES ZOHO CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_zoho_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes al final.
