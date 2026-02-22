@@ -26,7 +26,7 @@ export async function sendWidgetMessage(data: {
 
         // Only fetch from DB if env vars are missing
         if (!openaiKey || !googleKey) {
-            const configs = await (prisma as any).globalConfig.findMany({
+            const configs = await (prisma as any).config.findMany({
                 where: {
                     key: { in: ['OPENAI_API_KEY', 'GOOGLE_API_KEY'] }
                 }
@@ -37,7 +37,7 @@ export async function sendWidgetMessage(data: {
         }
 
         // 1. Validate Channel
-        const channel = await prisma.channel.findUnique({
+        const channel = (await prisma.channel.findUnique({
             where: { id: data.channelId },
             include: {
                 agent: {
@@ -49,7 +49,7 @@ export async function sendWidgetMessage(data: {
                     }
                 }
             }
-        })
+        })) as any;
 
         if (!channel) {
             throw new Error("Channel not found")
@@ -59,9 +59,10 @@ export async function sendWidgetMessage(data: {
             throw new Error("Channel is not active. Please activate the channel in the channel settings.")
         }
 
-        const workspace = channel.agent.workspace;
+        const agent = channel.agent;
+        const workspace = agent.workspace;
         const creditBalance = workspace.creditBalance;
-        const model = channel.agent.model;
+        const model = agent.model;
 
         // 2. Credit Check
         if (!creditBalance || creditBalance.balance <= 0) {
@@ -415,31 +416,35 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
 - Map user input to the *exact* custom field keys defined above (e.g. if field is "salary", map "5000" to "salary").
 5. FINALIZACIÓN DE ATENCIÓN: Solo usa 'finalizar_atencion' cuando el usuario ya no tenga dudas y la consulta haya sido resuelta. NO la uses si hay una cita agendada hoy o pendiente, o si el usuario dijo que volvería con una consulta específica mas tarde.
 
-PAGOS Y COBROS (NUEVA CAPACIDAD):
+${channel.agent.jobType === 'SALES' ? `
+PAGOS Y COBROS (CAPACIDAD DE VENTAS):
 Tienes la capacidad de generar LINKS DE PAGO para los clientes.
 ${(() => {
-                    const ws = workspace as any;
-                    const activeConfigs = ws.paymentConfigs?.filter((pc: any) => pc.isActive) || [];
-                    if (activeConfigs.length === 0) return 'No hay pasarelas de pago configuradas por ahora. Si el usuario quiere pagar, dile que un agente humano se pondrá en contacto pronto.';
+                        const ws = workspace as any;
+                        const activeConfigs = ws.paymentConfigs?.filter((pc: any) => pc.isActive) || [];
+                        if (activeConfigs.length === 0) return 'No hay pasarelas de pago configuradas por ahora. Si el usuario quiere pagar, dile que un agente humano se pondrá en contacto pronto.';
 
-                    const gateways = activeConfigs.map((pc: any) => pc.gateway);
-                    const mentions = [];
-                    if (gateways.includes('PAGUELOFACIL')) mentions.push('Tarjetas vía PagueloFacil');
-                    if (gateways.includes('YAPPY')) mentions.push('pagos vía Yappy');
+                        const gateways = activeConfigs.map((pc: any) => pc.gateway);
+                        const mentions = [];
+                        if (gateways.includes('PAGUELOFACIL')) mentions.push('Tarjetas vía PagueloFacil');
+                        if (gateways.includes('YAPPY')) mentions.push('pagos vía Yappy');
 
-                    return `Pasarelas Activas: ${gateways.join(', ')}.
+                        return `Pasarelas Activas: ${gateways.join(', ')}.
 Reglas para cobrar (ESTRICTO):
 1. NO INVENTES PRECIOS. Solo usa los precios que están en tu Base de Conocimiento (Entrenamiento RAG) o que el usuario/negocio te haya indicado explícitamente.
 2. Identifica qué quiere comprar el cliente y usa el monto EXACTO definido para ese producto o servicio.
 3. Si el usuario pregunta por un producto que no tiene precio en tu contexto, NO inventes uno; dile que un agente le confirmará el precio pronto.
 4. Usa la herramienta 'generar_link_de_pago' solo cuando el monto sea 100% seguro.
 5. Entrega el enlace al cliente y dile que puede completar su pago de forma segura${mentions.length > 0 ? ` (Aceptamos ${mentions.join(' y ')}).` : '.'}`;
-                })()}
+                    })()}
+` : ''}
 `;
 
             // Define tools for Calendar and Image Search, and Contact Update
-            const tools: any[] = [
-                {
+            const tools: any[] = [];
+
+            if (channel.agent.jobType === 'SALES') {
+                tools.push({
                     name: 'generar_link_de_pago',
                     description: 'Genera un link de pago (Checkout) para que el cliente pueda pagar. Úsala cuando el usuario esté listo para comprar o pida un enlace para pagar.',
                     parameters: {
@@ -447,11 +452,14 @@ Reglas para cobrar (ESTRICTO):
                         properties: {
                             amount: { type: 'number', description: 'Monto total a cobrar (ej: 15.50)' },
                             description: { type: 'string', description: 'Concepto del pago que verá el cliente (ej: Reserva de consultoría)' },
-                            gateway: { type: 'string', enum: ['PAGUELOFACIL', 'CUANTO', 'STRIPE'], description: 'Pasarela a utilizar (usa PAGUELOFACIL por defecto si hay varias)' }
+                            gateway: { type: 'string', enum: ['PAGUELOFACIL', 'YAPPY'], description: 'Pasarela a utilizar (usa PAGUELOFACIL por defecto si hay varias)' }
                         },
                         required: ['amount', 'description', 'gateway']
                     }
-                },
+                });
+            }
+
+            tools.push(
                 {
                     name: 'update_contact',
                     description: 'Update the contact information with collected data. Use this tool whenever the user provides their name, email, phone, or other requested info.',
@@ -494,11 +502,12 @@ Reglas para cobrar (ESTRICTO):
                         required: ['score']
                     }
                 }
-            ];
+            );
 
             // Setup Custom Fields in Tool Schema
-            if ((agent as any).customFieldDefinitions && (agent as any).customFieldDefinitions.length > 0) {
-                const updatesProps = tools[0].parameters.properties.updates.properties;
+            const updateContactTool = tools.find(t => t.name === 'update_contact');
+            if (updateContactTool && (agent as any).customFieldDefinitions && (agent as any).customFieldDefinitions.length > 0) {
+                const updatesProps = updateContactTool.parameters.properties.updates.properties;
                 (agent as any).customFieldDefinitions.forEach((field: any) => {
                     let type = 'string';
                     if (field.type === 'NUMBER') type = 'number';
