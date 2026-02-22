@@ -88,7 +88,7 @@ export function PaymentsTab({ contactId, transactions: initialTransactions }: Pa
                     </div>
                     <div>
                         <h4 className="text-amber-900 font-bold text-sm">Pasarelas no configuradas</h4>
-                        <p className="text-amber-700 text-xs">Debes configurar al menos una pasarela (Stripe, PagueloFacil o Cuanto) en los ajustes del workspace.</p>
+                        <p className="text-amber-700 text-xs">Debes configurar al menos una pasarela (PagueloFacil o Yappy Comercial) en los ajustes del workspace.</p>
                     </div>
                 </div>
             ) : (

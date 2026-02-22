@@ -35,7 +35,7 @@ export async function createPaymentLink(data: {
     contactId: string;
     amount: number;
     description: string;
-    gateway: 'PAGUELOFACIL' | 'CUANTO' | 'STRIPE';
+    gateway: 'PAGUELOFACIL' | 'YAPPY';
 }) {
     try {
         const session = await auth();
@@ -62,7 +62,7 @@ export async function createPaymentLinkInternal({
     workspaceId: string;
     amount: number;
     description: string;
-    gateway: 'PAGUELOFACIL' | 'CUANTO' | 'STRIPE';
+    gateway: 'PAGUELOFACIL' | 'YAPPY';
 }) {
     try {
         // 1. Get gateway config
@@ -112,10 +112,11 @@ export async function createPaymentLinkInternal({
             } else {
                 throw new Error(result.headerStatus?.description || 'Error al generar link en PagueloFacil');
             }
-        } else if (gateway === 'CUANTO') {
-            throw new Error('Cuanto integration coming soon');
+        } else if (gateway === 'YAPPY') {
+            // Infrastructure ready for Yappy Comercial
+            throw new Error('Yappy Comercial integration is ready for configuration. Please provide Merchant ID and Secret Key in Settings.');
         } else {
-            throw new Error('Stripe integration coming soon');
+            throw new Error('Pasarela no soportada');
         }
 
         // 2. Save transaction
@@ -150,7 +151,7 @@ export async function createPaymentLinkInternal({
     }
 }
 
-export async function savePaymentConfig(gateway: 'PAGUELOFACIL' | 'CUANTO' | 'STRIPE', config: any) {
+export async function savePaymentConfig(gateway: 'PAGUELOFACIL' | 'YAPPY', config: any) {
     try {
         const session = await auth();
         if (!session?.user?.id) throw new Error('No autorizado');

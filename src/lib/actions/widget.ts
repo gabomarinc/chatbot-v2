@@ -42,7 +42,7 @@ export async function sendWidgetMessage(data: {
             include: {
                 agent: {
                     include: {
-                        workspace: { include: { creditBalance: true } },
+                        workspace: { include: { creditBalance: true, paymentConfigs: true } },
                         integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT'] }, enabled: true } },
                         intents: { where: { enabled: true } },
                         customFieldDefinitions: true
@@ -417,13 +417,24 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
 
 PAGOS Y COBROS (NUEVA CAPACIDAD):
 Tienes la capacidad de generar LINKS DE PAGO para los clientes.
-${(await prisma.paymentGatewayConfig.findMany({ where: { workspaceId: workspace.id, isActive: true } })).length > 0 ? `Pasarelas Activas: ${(await prisma.paymentGatewayConfig.findMany({ where: { workspaceId: workspace.id, isActive: true } })).map(pc => pc.gateway).join(', ')}.
+${(() => {
+                    const ws = workspace as any;
+                    const activeConfigs = ws.paymentConfigs?.filter((pc: any) => pc.isActive) || [];
+                    if (activeConfigs.length === 0) return 'No hay pasarelas de pago configuradas por ahora. Si el usuario quiere pagar, dile que un agente humano se pondrá en contacto pronto.';
+
+                    const gateways = activeConfigs.map((pc: any) => pc.gateway);
+                    const mentions = [];
+                    if (gateways.includes('PAGUELOFACIL')) mentions.push('Tarjetas vía PagueloFacil');
+                    if (gateways.includes('YAPPY')) mentions.push('pagos vía Yappy');
+
+                    return `Pasarelas Activas: ${gateways.join(', ')}.
 Reglas para cobrar (ESTRICTO):
 1. NO INVENTES PRECIOS. Solo usa los precios que están en tu Base de Conocimiento (Entrenamiento RAG) o que el usuario/negocio te haya indicado explícitamente.
 2. Identifica qué quiere comprar el cliente y usa el monto EXACTO definido para ese producto o servicio.
 3. Si el usuario pregunta por un producto que no tiene precio en tu contexto, NO inventes uno; dile que un agente le confirmará el precio pronto.
 4. Usa la herramienta 'generar_link_de_pago' solo cuando el monto sea 100% seguro.
-5. Entrega el enlace al cliente y dile que puede completar su pago de forma segura.` : 'No hay pasarelas de pago configuradas por ahora. Si el usuario quiere pagar, dile que un agente humano se pondrá en contacto pronto.'}
+5. Entrega el enlace al cliente y dile que puede completar su pago de forma segura${mentions.length > 0 ? ` (Aceptamos ${mentions.join(' y ')}).` : '.'}`;
+                })()}
 `;
 
             // Define tools for Calendar and Image Search, and Contact Update
