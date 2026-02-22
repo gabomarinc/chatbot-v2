@@ -26,9 +26,9 @@ export function PaymentsTab({ contactId, transactions: initialTransactions }: Pa
     useEffect(() => {
         const fetchConfigs = async () => {
             const result = await getPaymentConfigs();
-            if (result.success) {
-                setConfigs(result.configs || []);
-                if (result.configs?.length > 0) {
+            if (result.success && result.configs) {
+                setConfigs(result.configs);
+                if (result.configs.length > 0) {
                     setGateway(result.configs[0].gateway);
                 }
             }
@@ -195,7 +195,7 @@ export function PaymentsTab({ contactId, transactions: initialTransactions }: Pa
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${tx.status === 'SUCCESS' ? 'bg-emerald-50 text-emerald-500' :
-                                                tx.status === 'FAILED' ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-500'
+                                            tx.status === 'FAILED' ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-500'
                                             }`}>
                                             <CreditCard className="w-6 h-6" />
                                         </div>
@@ -203,7 +203,7 @@ export function PaymentsTab({ contactId, transactions: initialTransactions }: Pa
                                             <div className="flex items-center gap-2">
                                                 <h5 className="font-black text-gray-900 text-base">${tx.amount.toFixed(2)}</h5>
                                                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${tx.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' :
-                                                        tx.status === 'FAILED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                                    tx.status === 'FAILED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                                                     }`}>
                                                     {tx.status === 'SUCCESS' ? 'Pagado' : tx.status === 'FAILED' ? 'Fallido' : 'Pendiente'}
                                                 </span>
