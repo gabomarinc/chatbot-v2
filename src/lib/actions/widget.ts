@@ -418,11 +418,12 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
 PAGOS Y COBROS (NUEVA CAPACIDAD):
 Tienes la capacidad de generar LINKS DE PAGO para los clientes.
 ${(await prisma.paymentGatewayConfig.findMany({ where: { workspaceId: workspace.id, isActive: true } })).length > 0 ? `Pasarelas Activas: ${(await prisma.paymentGatewayConfig.findMany({ where: { workspaceId: workspace.id, isActive: true } })).map(pc => pc.gateway).join(', ')}.
-Reglas para cobrar:
-1. Identifica qué quiere comprar el cliente y por qué monto (si no está en tu contexto, pregunta amablemente).
-2. Pregunta o confirma el concepto del pago.
-3. Usa la herramienta 'generar_link_de_pago' para obtener el enlace.
-4. Entrega el enlace al cliente y dile que puede completar su pago de forma segura.` : 'No hay pasarelas de pago configuradas por ahora. Si el usuario quiere pagar, dile que un agente humano se pondrá en contacto pronto.'}
+Reglas para cobrar (ESTRICTO):
+1. NO INVENTES PRECIOS. Solo usa los precios que están en tu Base de Conocimiento (Entrenamiento RAG) o que el usuario/negocio te haya indicado explícitamente.
+2. Identifica qué quiere comprar el cliente y usa el monto EXACTO definido para ese producto o servicio.
+3. Si el usuario pregunta por un producto que no tiene precio en tu contexto, NO inventes uno; dile que un agente le confirmará el precio pronto.
+4. Usa la herramienta 'generar_link_de_pago' solo cuando el monto sea 100% seguro.
+5. Entrega el enlace al cliente y dile que puede completar su pago de forma segura.` : 'No hay pasarelas de pago configuradas por ahora. Si el usuario quiere pagar, dile que un agente humano se pondrá en contacto pronto.'}
 `;
 
             // Define tools for Calendar and Image Search, and Contact Update

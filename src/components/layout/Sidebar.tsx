@@ -35,6 +35,7 @@ export function Sidebar() {
                 { id: 'agents', href: '/agents', label: 'Agentes', icon: Bot, color: 'purple' },
                 { id: 'team', href: '/team', label: 'Equipo', icon: Users, color: 'green' },
                 { id: 'channels', href: '/channels', label: 'Canales', icon: Radio, color: 'orange' },
+                { id: 'payments', href: '/settings/payments', label: 'Pagos', icon: CreditCard, color: 'yellow' },
             ]
         },
         {

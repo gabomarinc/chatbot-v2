@@ -149,3 +149,39 @@ export async function createPaymentLinkInternal({
         return { success: false, error: error.message };
     }
 }
+
+export async function savePaymentConfig(gateway: 'PAGUELOFACIL' | 'CUANTO' | 'STRIPE', config: any) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error('No autorizado');
+
+        const workspace = await getUserWorkspace();
+        if (!workspace) throw new Error('Workspace no encontrado');
+
+        const updatedConfig = await prisma.paymentGatewayConfig.upsert({
+            where: {
+                workspaceId_gateway: {
+                    workspaceId: workspace.id,
+                    gateway
+                }
+            },
+            update: {
+                config,
+                isActive: true,
+                updatedAt: new Date()
+            },
+            create: {
+                workspaceId: workspace.id,
+                gateway,
+                config,
+                isActive: true
+            }
+        });
+
+        revalidatePath('/settings');
+        return { success: true, config: updatedConfig };
+    } catch (error: any) {
+        console.error('Error saving payment config:', error);
+        return { success: false, error: error.message };
+    }
+}
