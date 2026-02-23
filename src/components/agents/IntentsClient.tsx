@@ -103,31 +103,29 @@ export function IntentsClient({ agentId, intents, customFields }: IntentsClientP
 
     if (intents.length === 0 && !isWizardOpen) {
         return (
-            <>
-                <div className="max-w-4xl space-y-6">
-                    <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-50 rounded-full mb-4">
-                            <Target className="w-8 h-8 text-purple-600" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Crear una intención</h3>
-                        <div className="text-gray-500 mb-6 max-w-2xl mx-auto space-y-2">
-                            <p className="font-medium">¿Qué son las intenciones?</p>
-                            <p>
-                                Las intenciones son acciones automáticas que tu agente puede realizar cuando detecta ciertas palabras clave en las conversaciones de los usuarios.
-                            </p>
-                            <p className="text-sm mt-3 bg-gray-50 p-3 rounded-lg inline-block">
-                                <strong>Ejemplo:</strong> Si un usuario escribe "quiero agendar una visita", tu agente puede llamar a un webhook para crear la cita.
-                            </p>
-                        </div>
-                        <button
-                            onClick={handleCreate}
-                            className="px-6 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium cursor-pointer"
-                        >
-                            Registrar primera intención
-                        </button>
+            <div className="max-w-5xl mx-auto">
+                <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm py-20 px-6 flex flex-col items-center text-center">
+                    <div className="inline-flex items-center justify-center w-[72px] h-[72px] bg-[#f9ecff] rounded-full mb-6 text-[#9a38ff]">
+                        <Target className="w-8 h-8 stroke-[2.5]" />
                     </div>
+                    <h3 className="text-[22px] font-bold text-gray-900 mb-4">Crear una intención</h3>
+                    <div className="text-gray-500 mb-10 max-w-[600px] mx-auto space-y-4">
+                        <p className="font-semibold text-gray-700 text-[15px]">¿Qué son las intenciones?</p>
+                        <p className="text-[14px]">
+                            Las intenciones son acciones automáticas que tu agente puede realizar cuando detecta ciertas palabras clave en las conversaciones de los usuarios.
+                        </p>
+                        <div className="text-[13px] mt-6 bg-gray-50/80 p-5 rounded-2xl border border-gray-100 text-gray-500 inline-block pointer-events-none w-full">
+                            <strong className="text-gray-700 font-bold">Ejemplo:</strong> Si un usuario escribe "quiero agendar una visita", tu agente puede llamar a un webhook para crear la cita.
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleCreate}
+                        className="px-8 py-3 bg-[#a133ff] text-white rounded-full hover:bg-[#8612e6] transition-colors font-bold text-sm cursor-pointer shadow-lg shadow-[#a133ff]/20 active:scale-95"
+                    >
+                        Registrar primera intención
+                    </button>
                 </div>
-            </>
+            </div>
         )
     }
 
@@ -742,14 +740,14 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
             <div className="px-6 sm:px-10 py-6 border-t border-gray-100 flex items-center justify-end gap-3">
                 <button
                     onClick={onClose}
-                    className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm"
+                    className="px-6 py-2.5 rounded-full text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm border border-gray-200"
                 >
                     Cancelar
                 </button>
                 {currentStep > 0 && (
                     <button
                         onClick={handlePrevious}
-                        className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm"
+                        className="px-6 py-2.5 rounded-full text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm border border-gray-200"
                     >
                         Atrás
                     </button>
@@ -758,7 +756,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                     <button
                         onClick={handleNext}
                         disabled={!canProceed()}
-                        className="px-6 py-2.5 rounded-xl bg-[#21AC96] text-white font-bold hover:bg-[#1b8c7a] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-2.5 rounded-full bg-[#96d5c5] text-white font-bold hover:bg-[#82cbbb] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Continuar
                     </button>
@@ -766,9 +764,9 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting || !canProceed()}
-                        className="px-6 py-2.5 rounded-xl bg-[#21AC96] text-white font-bold hover:bg-[#1b8c7a] transition-colors text-sm disabled:opacity-50"
+                        className="px-6 py-2.5 rounded-full bg-[#96d5c5] text-white font-bold hover:bg-[#82cbbb] transition-colors text-sm disabled:opacity-50"
                     >
-                        {isSubmitting ? 'Guardando...' : 'Salvar'}
+                        {isSubmitting ? 'Guardando...' : 'Guardar'}
                     </button>
                 )}
             </div>
