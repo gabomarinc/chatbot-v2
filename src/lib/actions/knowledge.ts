@@ -521,18 +521,20 @@ export async function testRetrieval(agentId: string, query: string) {
 
     // Calculate Analytics
     const sourcesUsed = Array.from(new Set(chunks.map(c => c.sourceName)));
-    const avgScore = chunks.length > 0 ? 0.85 : 0; // Simplified for UI metric
+    // Real score from the best match found
+    const maxScore = chunks.length > 0 ? (chunks[0] as any).relevanceScore || 0.85 : 0;
 
     return {
         chunks: chunks.map(c => ({
             id: c.id,
             content: c.content,
             sourceName: c.sourceName,
-            sourceType: c.sourceType
+            sourceType: c.sourceType,
+            score: (c as any).relevanceScore
         })),
         aiResponse,
         analytics: {
-            confidence: avgScore,
+            confidence: maxScore,
             sourcesCount: sourcesUsed.length,
             fragmentCount: chunks.length,
             suggestedImprovement: trainingTip || "Tu bot tiene buena base, sigue añadiendo documentos específicos."

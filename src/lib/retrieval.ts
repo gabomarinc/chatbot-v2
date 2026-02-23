@@ -60,10 +60,16 @@ Respuesta experta (concisa y técnica):`;
 export async function retrieveRelevantChunks(
   agentId: string,
   query: string,
-  limit: number = 10
+  limit: number = 15 // Increased default depth
 ): Promise<DocumentChunk[]> {
   try {
-    console.log(`[RETRIEVAL] Starting Ensemble Retrieval for agent: ${agentId}`);
+    // Advanced Query Expansion: Handle common abbreviations like PP
+    let searchContext = query;
+    if (query.toLowerCase().includes('panama pacifico') || query.toLowerCase().includes('panamá pacífico')) {
+      searchContext += " PP proyectos precios metraje";
+    }
+
+    console.log(`[RETRIEVAL] Searching for: ${searchContext}`);
 
     // 1. Parallel Generation & Fetching
     const hypotheticalAnswerPromise = generateHypotheticalAnswer(query);
@@ -86,9 +92,9 @@ export async function retrieveRelevantChunks(
 
     if (chunks.length === 0) return [];
 
-    // 2. Dual Search: Embed Original Query and HyDE Context
+    // 2. Dual Search: Embed Original Expanded Query and HyDE Context
     const [queryEmbed, hydeEmbed] = await Promise.all([
-      generateEmbedding(query),
+      generateEmbedding(searchContext),
       generateEmbedding(hypotheticalAnswer)
     ]);
 
@@ -134,11 +140,16 @@ export async function retrieveRelevantChunks(
           model: 'rerank-multilingual-v3.0'
         });
 
-        // Calibrated Relevance Threshold: 0.1 (Balance between precision and recall)
-        // Lowered to include technical/tabular data
-        return rerank.results
-          .filter(res => res.relevanceScore > 0.1)
-          .map(res => topCandidates[res.index]);
+        // Minimal Threshold: 0.01 (Trust the LLM to filter context)
+        // This ensures the bot actually SEES all data from PDFs even if poorly matched
+        const results = rerank.results
+          .filter(res => res.relevanceScore > 0.01)
+          .map(res => ({
+            ...topCandidates[res.index],
+            relevanceScore: res.relevanceScore
+          }));
+
+        return results as any;
       } catch (e) {
         console.warn('[RETRIEVAL] Rerank failed, fallback to ensemble top:', e);
       }
