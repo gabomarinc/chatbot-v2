@@ -24,7 +24,10 @@ async function generateHypotheticalAnswer(query: string): Promise<string> {
       if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value;
     }
 
-    const prompt = `Responde a la siguiente pregunta de un usuario de forma técnica y detallada, como si fueras un experto escribiendo un manual oficial. No digas "Hola" ni "Aquí tienes", ve directo al grano.\n\nPregunta: ${query}\n\nRespuesta hipotética:`;
+    const prompt = `Actúa como un experto técnico. Genera una respuesta hipotética, detallada y factual a la siguiente pregunta. 
+Enfócate en terminología específica y datos que probablemente aparecerían en un manual o catálogo oficial.
+Pregunta: ${query}
+Respuesta experta (concisa y técnica):`;
 
     if (openaiKey) {
       const { OpenAI } = await import('openai');
@@ -50,7 +53,7 @@ async function generateHypotheticalAnswer(query: string): Promise<string> {
 }
 
 /**
- * Retrieve relevant chunks for a query using Vector Search + HyDE + Cohere Re-ranking
+ * Retrieve relevant chunks for a query using Weighted Ensemble: Original Query + HyDE + Re-ranking
  */
 export async function retrieveRelevantChunks(
   agentId: string,
@@ -58,91 +61,77 @@ export async function retrieveRelevantChunks(
   limit: number = 5
 ): Promise<DocumentChunk[]> {
   try {
-    console.log(`[RETRIEVAL] Starting advanced retrieval (HyDE + Vector + Rerank) for agent: ${agentId}`);
+    console.log(`[RETRIEVAL] Starting Ensemble Retrieval for agent: ${agentId}`);
 
-    // 1. Generate hypothetical answer (HyDE)
-    const hypotheticalAnswer = await generateHypotheticalAnswer(query);
-    console.log('[RETRIEVAL] HyDE Answer generated. Length:', hypotheticalAnswer.length);
-
-    // 2. Generate embedding for the enriched context
-    // We combine the original query + hypothetical answer to capture both the user intent and technical terminology
-    const searchContext = `Pregunta: ${query}\nContexto: ${hypotheticalAnswer}`;
-    const queryEmbedding = await generateEmbedding(searchContext);
-
-    // 3. Fetch all ready chunks for this agent
-    // Optimization: Directly query document chunks with relation filtering
-    const chunks = await prisma.documentChunk.findMany({
+    // 1. Parallel Generation & Fetching
+    const hypotheticalAnswerPromise = generateHypotheticalAnswer(query);
+    const chunksPromise = prisma.documentChunk.findMany({
       where: {
         knowledgeSource: {
-          knowledgeBase: {
-            agentId
-          },
+          knowledgeBase: { agentId },
           status: 'READY'
         }
       }
     });
 
-    if (chunks.length === 0) {
-      console.log('[RETRIEVAL] No knowledge found for this agent');
-      return [];
-    }
+    const [hypotheticalAnswer, chunks] = await Promise.all([
+      hypotheticalAnswerPromise,
+      chunksPromise
+    ]);
 
-    console.log(`[RETRIEVAL] Found ${chunks.length} base chunks. Calculating similarity...`);
+    if (chunks.length === 0) return [];
 
-    // 3. Calculate Vector Similarity (Cosine Similarity)
+    // 2. Dual Search: Embed Original Query and HyDE Context
+    const [queryEmbed, hydeEmbed] = await Promise.all([
+      generateEmbedding(query),
+      generateEmbedding(hypotheticalAnswer)
+    ]);
+
+    // 3. Weighted Ensemble Scoring
+    // We give 70% weight to original query (precision) and 30% to HyDE (semantic expansion)
     const scoredChunks = chunks.map((chunk) => {
       const chunkEmbedding = chunk.embedding as number[];
-      const similarity = cosineSimilarity(queryEmbedding, chunkEmbedding);
+      const querySim = cosineSimilarity(queryEmbed, chunkEmbedding);
+      const hydeSim = cosineSimilarity(hydeEmbed, chunkEmbedding);
+
+      const combinedScore = (querySim * 0.7) + (hydeSim * 0.3);
+
       return {
         chunk: {
           id: chunk.id,
           content: chunk.content,
           embedding: chunkEmbedding
         },
-        score: similarity
+        score: combinedScore
       };
     });
 
-    // 4. Sort and take top candidates for re-ranking
-    // We take more than the limit (e.g., 20) to give Cohere enough context
+    // 4. Sort and take top 20 for potential Re-ranking
     scoredChunks.sort((a, b) => b.score - a.score);
     const topCandidates = scoredChunks.slice(0, 20).map(sc => sc.chunk);
 
-    // 5. Advanced Phase: Cohere Re-ranking
+    // 5. Cohere Re-ranking (Final Polish)
     let cohereKey = process.env.COHERE_API_KEY;
     if (!cohereKey) {
-      const config = await prisma.globalConfig.findFirst({
-        where: { key: 'COHERE_API_KEY' }
-      });
+      const config = await prisma.globalConfig.findFirst({ where: { key: 'COHERE_API_KEY' } });
       cohereKey = config?.value;
     }
 
     if (cohereKey && topCandidates.length > 0) {
       try {
-        console.log('[RETRIEVAL] Phase 2: Cohere Re-ranking enabled');
-        const cohere = new CohereClient({
-          token: cohereKey,
-        });
-
+        const cohere = new CohereClient({ token: cohereKey });
         const rerank = await cohere.rerank({
           query: query,
           documents: topCandidates.map(c => c.content),
           topN: limit,
           model: 'rerank-multilingual-v3.0'
         });
-
-        console.log('[RETRIEVAL] Re-ranking complete.');
-
-        // Map rerank results back to our chunk objects
         return rerank.results.map(res => topCandidates[res.index]);
-      } catch (cohereError) {
-        console.error('[RETRIEVAL] Cohere Rerank error (falling back to vector search):', cohereError);
-        // Fallback to top vector search results if Cohere fails
-        return topCandidates.slice(0, limit);
+      } catch (e) {
+        console.warn('[RETRIEVAL] Rerank failed, fallback to ensemble top:', e);
       }
     }
 
-    console.log('[RETRIEVAL] Returning top vector similarity results (no re-ranking)');
     return topCandidates.slice(0, limit);
   } catch (error) {
     console.error('[RETRIEVAL] Critical error:', error);

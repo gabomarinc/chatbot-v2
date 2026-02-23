@@ -27,12 +27,23 @@ turndownService.use(gfm)
 function convertToMarkdown(html: string): string {
     const $ = load(html);
 
-    // Remove noise: scripts, styles, navs, footers, sidebars, ads
-    $('script, style, noscript, iframe, nav, footer, header, svg, aside, .ads, .sidebar, #footer, #header').remove();
+    // Remove noise: scripts, styles, navs, footers, sidebars, ads, menus, etc.
+    $('script, style, noscript, iframe, nav, footer, header, svg, aside, .ads, .sidebar, #footer, #header, .menu, .navigation, .nav, .breadcrumb').remove();
 
     // Extract main content if possible (heuristic)
-    const mainContent = $('main, article, #content, .content, .main').first();
+    const mainContent = $('main, article, #content, .content, .main, .post-content').first();
     const htmlToConvert = mainContent.length > 0 ? mainContent.html() : $('body').html();
+
+    // Custom Rules: Clean images (distractive for RAG) and clean long URLs
+    turndownService.addRule('remove-images', { filter: 'img', replacement: () => '' });
+    turndownService.addRule('clean-links', {
+        filter: 'a',
+        replacement: (content, node: any) => {
+            const href = node.getAttribute('href');
+            if (!href || href.startsWith('#') || href.length > 50) return content;
+            return `[${content}](${href})`;
+        }
+    });
 
     return turndownService.turndown(htmlToConvert || '');
 }
@@ -111,27 +122,29 @@ async function discoverSubpages(baseUrl: string): Promise<string[]> {
  */
 function chunkText(text: string, size: number = 1000, overlap: number = 200): string[] {
     const chunks: string[] = [];
-    let start = 0;
 
-    // Normalize whitespace
-    const cleanText = text.replace(/\s+/g, ' ').trim();
+    // Initial cleanup: keep meaningful newlines but collapse excess horizontal space
+    const cleanText = text
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 
     if (cleanText.length <= size) return [cleanText];
 
+    let start = 0;
     while (start < cleanText.length) {
         let end = start + size;
 
-        // Try to find a good breaking point in the "lookback" range (last 15% of chunk)
         if (end < cleanText.length) {
-            const lookbackSize = 150;
-            const lookbackRange = cleanText.slice(Math.max(0, end - lookbackSize), end + 50);
+            const lookbackSize = 200;
+            const segment = cleanText.slice(Math.max(0, end - lookbackSize), end + 50);
 
-            // Prefer periods, then newlines, then spaces
-            const lastPeriod = lookbackRange.lastIndexOf('.');
-            const lastNewline = lookbackRange.lastIndexOf('\n');
-            const lastSpace = lookbackRange.lastIndexOf(' ');
+            // Priorities: Double newline (paragraph), Newline (list/header), Period
+            const dNewline = segment.lastIndexOf('\n\n');
+            const sNewline = segment.lastIndexOf('\n');
+            const period = segment.lastIndexOf('. ');
 
-            let bestBreak = lastPeriod !== -1 ? lastPeriod : (lastNewline !== -1 ? lastNewline : lastSpace);
+            let bestBreak = dNewline !== -1 ? dNewline + 1 : (sNewline !== -1 ? sNewline : (period !== -1 ? period : segment.lastIndexOf(' ')));
 
             if (bestBreak !== -1) {
                 end = Math.max(0, end - lookbackSize) + bestBreak + 1;
@@ -144,8 +157,6 @@ function chunkText(text: string, size: number = 1000, overlap: number = 200): st
         }
 
         start = end - overlap;
-
-        // Safety checks
         if (start < 0) start = 0;
         if (end >= cleanText.length) break;
         if (start >= cleanText.length - overlap) break;
