@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Target, Plus, Webhook, Zap, FileText, Trash2, Edit, ToggleLeft, ToggleRight, TestTube, Info, ChevronRight, ChevronLeft, CheckCircle2, GripVertical, PlusCircle } from 'lucide-react'
+import { Target, Plus, Webhook, Zap, FileText, Trash2, ToggleLeft, ToggleRight, ChevronDown, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Tooltip } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 interface CustomField {
@@ -56,402 +55,292 @@ export function IntentsClient({ agentId, intents, customFields }: IntentsClientP
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ enabled: !currentState })
             })
-
-            if (!response.ok) throw new Error('Failed to toggle intent')
-
+            if (!response.ok) throw new Error()
             toast.success(currentState ? 'Intención desactivada' : 'Intención activada')
             router.refresh()
-        } catch (error) {
+        } catch {
             toast.error('Error al cambiar estado')
         }
     }
 
     const handleDelete = async (intentId: string) => {
         if (!confirm('¿Estás seguro de eliminar esta intención?')) return
-
         try {
-            const response = await fetch(`/api/agents/${agentId}/intents/${intentId}`, {
-                method: 'DELETE'
-            })
-
-            if (!response.ok) throw new Error('Failed to delete intent')
-
+            const response = await fetch(`/api/agents/${agentId}/intents/${intentId}`, { method: 'DELETE' })
+            if (!response.ok) throw new Error()
             toast.success('Intención eliminada')
             router.refresh()
-        } catch (error) {
+        } catch {
             toast.error('Error al eliminar')
         }
     }
 
-    const getActionIcon = (actionType: string) => {
+    const getActionBadge = (actionType: string) => {
         switch (actionType) {
-            case 'WEBHOOK': return <Webhook className="w-4 h-4" />
-            case 'INTERNAL': return <Zap className="w-4 h-4" />
-            case 'FORM': return <FileText className="w-4 h-4" />
-            default: return <Target className="w-4 h-4" />
+            case 'WEBHOOK': return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-600"><Webhook className="w-3 h-3" />Webhook</span>
+            case 'INTERNAL': return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#21AC96]/10 text-[#21AC96]"><Zap className="w-3 h-3" />Interno</span>
+            case 'FORM': return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-600"><FileText className="w-3 h-3" />Formulario</span>
+            default: return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500"><Target className="w-3 h-3" />Otro</span>
         }
     }
 
-    const getActionColor = (actionType: string) => {
-        switch (actionType) {
-            case 'WEBHOOK': return 'bg-blue-50 text-blue-600'
-            case 'INTERNAL': return 'bg-purple-50 text-purple-600'
-            case 'FORM': return 'bg-green-50 text-green-600'
-            default: return 'bg-gray-50 text-gray-600'
-        }
-    }
-
+    // ── Empty state ──────────────────────────────────────────────────────────
     if (intents.length === 0 && !isWizardOpen) {
         return (
-            <div className="max-w-5xl mx-auto">
-                <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm py-20 px-6 flex flex-col items-center text-center">
-                    <div className="inline-flex items-center justify-center w-[72px] h-[72px] bg-[#f9ecff] rounded-full mb-6 text-[#9a38ff]">
-                        <Target className="w-8 h-8 stroke-[2.5]" />
-                    </div>
-                    <h3 className="text-[22px] font-bold text-gray-900 mb-4">Crear una intención</h3>
-                    <div className="text-gray-500 mb-10 max-w-[600px] mx-auto space-y-4">
-                        <p className="font-semibold text-gray-700 text-[15px]">¿Qué son las intenciones?</p>
-                        <p className="text-[14px]">
-                            Las intenciones son acciones automáticas que tu agente puede realizar cuando detecta ciertas palabras clave en las conversaciones de los usuarios.
-                        </p>
-                        <div className="text-[13px] mt-6 bg-gray-50/80 p-5 rounded-2xl border border-gray-100 text-gray-500 inline-block pointer-events-none w-full">
-                            <strong className="text-gray-700 font-bold">Ejemplo:</strong> Si un usuario escribe "quiero agendar una visita", tu agente puede llamar a un webhook para crear la cita.
-                        </div>
+            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm py-24 px-6 flex flex-col items-center text-center">
+                <div className="inline-flex items-center justify-center w-[72px] h-[72px] bg-[#21AC96]/10 rounded-[1.25rem] mb-6 text-[#21AC96]">
+                    <Target className="w-9 h-9" />
+                </div>
+                <h3 className="text-[20px] font-black text-gray-900 mb-3">Crear una intención</h3>
+                <p className="text-[13px] font-semibold text-gray-500 mb-2">¿Qué son las intenciones?</p>
+                <p className="text-[13px] text-gray-400 max-w-[480px] mb-6 leading-relaxed">
+                    Las intenciones son acciones automáticas que tu agente puede realizar cuando detecta ciertas palabras clave en las conversaciones de los usuarios.
+                </p>
+                <div className="text-[12px] bg-gray-50 px-5 py-4 rounded-2xl border border-gray-100 text-gray-500 max-w-[520px] mb-10">
+                    <strong className="text-gray-700">Ejemplo:</strong> Si un usuario escribe "quiero agendar una visita", tu agente puede llamar a un webhook para crear la cita.
+                </div>
+                <button
+                    onClick={handleCreate}
+                    className="flex items-center gap-2 px-8 py-3.5 bg-[#21AC96] text-white rounded-2xl hover:bg-[#1b8c7a] transition-all font-bold text-sm cursor-pointer shadow-lg shadow-[#21AC96]/20 active:scale-95"
+                >
+                    <Plus className="w-4 h-4" />
+                    Registrar primera intención
+                </button>
+            </div>
+        )
+    }
+
+    // ── List view ────────────────────────────────────────────────────────────
+    if (!isWizardOpen) {
+        return (
+            <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-[18px] font-black text-gray-900">Intenciones</h2>
+                        <p className="text-[13px] text-gray-400 mt-0.5">Gestiona las acciones automáticas de tu agente</p>
                     </div>
                     <button
                         onClick={handleCreate}
-                        className="px-8 py-3 bg-[#a133ff] text-white rounded-full hover:bg-[#8612e6] transition-colors font-bold text-sm cursor-pointer shadow-lg shadow-[#a133ff]/20 active:scale-95"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#21AC96] text-white rounded-2xl hover:bg-[#1b8c7a] transition-all font-bold text-sm cursor-pointer shadow-md shadow-[#21AC96]/20 active:scale-95"
                     >
-                        Registrar primera intención
+                        <Plus className="w-4 h-4" />
+                        Nueva intención
                     </button>
+                </div>
+
+                {/* Cards */}
+                <div className="space-y-3">
+                    {intents.map((intent) => (
+                        <div
+                            key={intent.id}
+                            className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-5 hover:border-[#21AC96]/30 hover:shadow-md transition-all group cursor-pointer"
+                            onClick={() => handleEdit(intent)}
+                        >
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                                        <h3 className="text-[15px] font-black text-gray-900">{intent.name}</h3>
+                                        {getActionBadge(intent.actionType)}
+                                        {!intent.enabled && (
+                                            <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-full text-xs font-bold">
+                                                DESACTIVADA
+                                            </span>
+                                        )}
+                                    </div>
+                                    {intent.description && (
+                                        <p className="text-[13px] text-gray-400 leading-relaxed truncate">{intent.description}</p>
+                                    )}
+                                    <div className="flex items-center gap-4 text-[11px] text-gray-300 mt-2 font-medium">
+                                        <span>Activaciones: {intent.triggerCount}</span>
+                                        {intent.lastTriggered && (
+                                            <span>Última: {new Date(intent.lastTriggered).toLocaleDateString('es-ES')}</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        onClick={() => handleToggle(intent.id, intent.enabled)}
+                                        className="p-2 hover:bg-gray-50 rounded-xl transition-colors"
+                                        title={intent.enabled ? 'Desactivar' : 'Activar'}
+                                    >
+                                        {intent.enabled
+                                            ? <ToggleRight className="w-5 h-5 text-[#21AC96]" />
+                                            : <ToggleLeft className="w-5 h-5 text-gray-300" />
+                                        }
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(intent.id)}
+                                        className="p-2 hover:bg-red-50 rounded-xl transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4 text-red-400" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
         )
     }
 
+    // ── Wizard ───────────────────────────────────────────────────────────────
     return (
-        <>
-            {!isWizardOpen && (
-                <div className="max-w-4xl space-y-6">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Intenciones</h2>
-                            <p className="text-gray-500">Gestiona las acciones automáticas de tu agente</p>
-                        </div>
-                        <button
-                            onClick={handleCreate}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-[#21AC96] text-white rounded-xl hover:bg-[#1b8c7a] transition-colors font-medium cursor-pointer"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Nueva Intención
-                        </button>
-                    </div>
-
-                    {/* Intents List */}
-                    <div className="space-y-3">
-                        {intents.map((intent) => (
-                            <div
-                                key={intent.id}
-                                className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-[#21AC96] hover:shadow-md transition-all group"
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1 cursor-pointer" onClick={() => handleEdit(intent)}>
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-lg font-bold text-gray-900">{intent.name}</h3>
-                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${getActionColor(intent.actionType)}`}>
-                                                {getActionIcon(intent.actionType)}
-                                                {intent.actionType}
-                                            </div>
-                                            {!intent.enabled && (
-                                                <span className="px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-bold">
-                                                    DESACTIVADA
-                                                </span>
-                                            )}
-                                        </div>
-                                        {intent.description && (
-                                            <p className="text-sm text-gray-500 mb-3">{intent.description}</p>
-                                        )}
-                                        <div className="flex items-center gap-4 text-xs text-gray-400">
-                                            <span>Activaciones: {intent.triggerCount}</span>
-                                            {intent.lastTriggered && (
-                                                <span>Última: {new Date(intent.lastTriggered).toLocaleDateString()}</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => handleToggle(intent.id, intent.enabled)}
-                                            className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
-                                            title={intent.enabled ? 'Desactivar' : 'Activar'}
-                                        >
-                                            {intent.enabled ? (
-                                                <ToggleRight className="w-5 h-5 text-green-600" />
-                                            ) : (
-                                                <ToggleLeft className="w-5 h-5 text-gray-400" />
-                                            )}
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(intent.id)}
-                                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 className="w-5 h-5 text-red-600" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {isWizardOpen && (
-                <IntentWizard
-                    agentId={agentId}
-                    intent={editingIntent}
-                    customFields={customFields}
-                    onClose={() => setIsWizardOpen(false)}
-                />
-            )}
-        </>
+        <IntentWizard
+            agentId={agentId}
+            intent={editingIntent}
+            customFields={customFields}
+            onClose={() => { setIsWizardOpen(false); router.refresh() }}
+        />
     )
 }
 
-function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: string; intent: Intent | null; customFields: CustomField[]; onClose: () => void }) {
+// ────────────────────────────────────────────────────────────────────────────
+// IntentWizard
+// ────────────────────────────────────────────────────────────────────────────
+function IntentWizard({ agentId, intent, customFields, onClose }: {
+    agentId: string
+    intent: Intent | null
+    customFields: CustomField[]
+    onClose: () => void
+}) {
+    const router = useRouter()
     const [currentStep, setCurrentStep] = useState(0)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const instructionsTextareaRef = useRef<HTMLTextAreaElement>(null)
+    const [showVariablesMenu, setShowVariablesMenu] = useState(false)
 
-    // Parse existing payloadJson safely
-    let defaultPayload = {
-        collectedFields: [] as any[],
-        instructions: '',
-        outputMapping: [] as any[]
-    };
+    const steps = [
+        { title: 'Detalles generales' },
+        { title: 'Configurar acción' },
+        { title: 'Datos de salida' },
+    ]
 
+    // Parse existing payloadJson
+    let defaultPayload = { collectedFields: [] as any[], instructions: '', outputMapping: [] as any[] }
     if (intent?.payloadJson) {
-        try {
-            defaultPayload = { ...defaultPayload, ...(intent.payloadJson as any) };
-        } catch (e) { }
+        try { defaultPayload = { ...defaultPayload, ...(intent.payloadJson as any) } } catch { }
     }
 
     const [formData, setFormData] = useState({
         name: intent?.name || '',
         description: intent?.description || '',
-        trigger: intent?.trigger || '', // Not heavily used in UI now but kept for compatibility
+        trigger: intent?.trigger || '',
         actionType: intent?.actionType || 'INTERNAL',
         actionUrl: intent?.actionUrl || '',
         enabled: intent?.enabled ?? true,
         payloadJson: defaultPayload
     })
 
-    // Auto-complete variables feature state
-    const [showVariablesMenu, setShowVariablesMenu] = useState(false);
-    const [variableMenuPos, setVariableMenuPos] = useState({ top: 0, left: 0 });
-    const instructionsTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const router = useRouter()
-
-    const steps = [
-        { title: 'Detalles generales' },
-        { title: 'Configurar acción' },
-        { title: 'Datos de Salida' }
-    ]
-
-    const handleNext = () => {
-        if (currentStep < steps.length - 1) {
-            setCurrentStep(currentStep + 1)
-        }
+    const canProceed = () => {
+        if (currentStep === 0) return formData.name.trim().length > 0
+        return true
     }
 
-    const handlePrevious = () => {
-        if (currentStep > 0) {
-            setCurrentStep(currentStep - 1)
-        }
-    }
+    const handleNext = () => { if (canProceed()) setCurrentStep(s => s + 1) }
+    const handlePrevious = () => setCurrentStep(s => s - 1)
 
     const handleSubmit = async () => {
         setIsSubmitting(true)
-
         try {
+            const method = intent ? 'PUT' : 'POST'
             const url = intent
                 ? `/api/agents/${agentId}/intents/${intent.id}`
                 : `/api/agents/${agentId}/intents`
 
-            const response = await fetch(url, {
-                method: intent ? 'PUT' : 'POST',
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             })
-
-            if (!response.ok) throw new Error('Failed to save intent')
-
+            if (!res.ok) throw new Error()
             toast.success(intent ? 'Intención actualizada' : 'Intención creada')
-            router.refresh()
             onClose()
-        } catch (error) {
+        } catch {
             toast.error('Error al guardar')
         } finally {
             setIsSubmitting(false)
         }
     }
 
-    const canProceed = () => {
-        switch (currentStep) {
-            case 0: return formData.name.trim() !== ''
-            case 1:
-                // We want to at least have instructions, and optionally collected fields
-                return formData.payloadJson.instructions.trim() !== ''
-            case 2:
-                return true
-            default: return false
-        }
+    // ── Collected fields helpers
+    const addCollectedField = () => setFormData(prev => ({
+        ...prev,
+        payloadJson: { ...prev.payloadJson, collectedFields: [...prev.payloadJson.collectedFields, { name: '', description: '', type: 'Texto' }] }
+    }))
+    const updateCollectedField = (idx: number, key: string, value: string) => setFormData(prev => {
+        const fields = [...prev.payloadJson.collectedFields]
+        fields[idx] = { ...fields[idx], [key]: value }
+        return { ...prev, payloadJson: { ...prev.payloadJson, collectedFields: fields } }
+    })
+    const removeCollectedField = (idx: number) => setFormData(prev => ({
+        ...prev,
+        payloadJson: { ...prev.payloadJson, collectedFields: prev.payloadJson.collectedFields.filter((_: any, i: number) => i !== idx) }
+    }))
+
+    // ── Output mapping helpers
+    const addOutputMapping = () => setFormData(prev => ({
+        ...prev,
+        payloadJson: { ...prev.payloadJson, outputMapping: [...prev.payloadJson.outputMapping, { customFieldId: '', valueSource: '' }] }
+    }))
+    const updateOutputMapping = (idx: number, key: string, value: string) => setFormData(prev => {
+        const maps = [...prev.payloadJson.outputMapping]
+        maps[idx] = { ...maps[idx], [key]: value }
+        return { ...prev, payloadJson: { ...prev.payloadJson, outputMapping: maps } }
+    })
+    const removeOutputMapping = (idx: number) => setFormData(prev => ({
+        ...prev,
+        payloadJson: { ...prev.payloadJson, outputMapping: prev.payloadJson.outputMapping.filter((_: any, i: number) => i !== idx) }
+    }))
+
+    // ── Variable insertion
+    const insertVariable = (name: string) => {
+        const ta = instructionsTextareaRef.current
+        if (!ta) return
+        const start = ta.selectionStart, end = ta.selectionEnd
+        let prefix = formData.payloadJson.instructions.substring(0, start)
+        if (prefix.endsWith('{{')) prefix = prefix.slice(0, -2)
+        else if (prefix.endsWith('@')) prefix = prefix.slice(0, -1)
+        const newText = prefix + `{{${name}}}` + formData.payloadJson.instructions.substring(end)
+        setFormData(prev => ({ ...prev, payloadJson: { ...prev.payloadJson, instructions: newText } }))
+        setShowVariablesMenu(false)
+        setTimeout(() => { ta.focus(); const c = prefix.length + name.length + 4; ta.setSelectionRange(c, c) }, 10)
     }
 
-    // Handlers for dynamic lists
-    const addCollectedField = () => {
-        setFormData(prev => ({
-            ...prev,
-            payloadJson: {
-                ...prev.payloadJson,
-                collectedFields: [
-                    ...prev.payloadJson.collectedFields,
-                    { name: '', description: '', type: 'Texto' }
-                ]
-            }
-        }))
-    }
-
-    const updateCollectedField = (index: number, key: string, value: string) => {
-        setFormData(prev => {
-            const newFields = [...prev.payloadJson.collectedFields];
-            newFields[index] = { ...newFields[index], [key]: value };
-            return {
-                ...prev,
-                payloadJson: { ...prev.payloadJson, collectedFields: newFields }
-            }
-        })
-    }
-
-    const removeCollectedField = (index: number) => {
-        setFormData(prev => {
-            const newFields = prev.payloadJson.collectedFields.filter((_, i) => i !== index);
-            return {
-                ...prev,
-                payloadJson: { ...prev.payloadJson, collectedFields: newFields }
-            }
-        })
-    }
-
-    const addOutputMapping = () => {
-        setFormData(prev => ({
-            ...prev,
-            payloadJson: {
-                ...prev.payloadJson,
-                outputMapping: [
-                    ...prev.payloadJson.outputMapping,
-                    { customFieldId: '', valueSource: '' }
-                ]
-            }
-        }))
-    }
-
-    const updateOutputMapping = (index: number, key: string, value: string) => {
-        setFormData(prev => {
-            const newMappings = [...prev.payloadJson.outputMapping];
-            newMappings[index] = { ...newMappings[index], [key]: value };
-            return {
-                ...prev,
-                payloadJson: { ...prev.payloadJson, outputMapping: newMappings }
-            }
-        })
-    }
-
-    const removeOutputMapping = (index: number) => {
-        setFormData(prev => {
-            const newMappings = prev.payloadJson.outputMapping.filter((_, i) => i !== index);
-            return {
-                ...prev,
-                payloadJson: { ...prev.payloadJson, outputMapping: newMappings }
-            }
-        })
-    }
-
-    const insertVariable = (variableName: string) => {
-        const textarea = instructionsTextareaRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = formData.payloadJson.instructions;
-
-        let prefix = text.substring(0, start);
-        // Clean up the `{{` or `@` they might have been typing
-        if (prefix.endsWith('{{')) prefix = prefix.substring(0, prefix.length - 2);
-        else if (prefix.endsWith('@')) prefix = prefix.substring(0, prefix.length - 1);
-
-        const newText = prefix + `{{${variableName}}}` + text.substring(end);
-
-        setFormData(prev => ({
-            ...prev,
-            payloadJson: { ...prev.payloadJson, instructions: newText }
-        }));
-
-        setShowVariablesMenu(false);
-        // Refocus textarea after short timeout logic can be skipped for brevity, but let's keep it simple.
-        setTimeout(() => {
-            textarea.focus();
-            const newCaret = prefix.length + variableName.length + 4;
-            textarea.setSelectionRange(newCaret, newCaret);
-        }, 10);
-    }
-
-    // Keyboard listener for textarea to open autocomplete
     const handleTextareaKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        const textarea = e.currentTarget;
-        const val = textarea.value;
-        const cursor = textarea.selectionEnd;
-        const prevChars = val.substring(Math.max(0, cursor - 2), cursor);
-        const prevChar = val.substring(Math.max(0, cursor - 1), cursor);
+        const val = e.currentTarget.value, cursor = e.currentTarget.selectionEnd
+        const prev2 = val.substring(Math.max(0, cursor - 2), cursor)
+        const prev1 = val.substring(Math.max(0, cursor - 1), cursor)
+        if (prev2 === '{{' || prev1 === '@') setShowVariablesMenu(true)
+        else if (e.key === 'Escape') setShowVariablesMenu(false)
+    }
 
-        if (prevChars === '{{' || prevChar === '@') {
-            // Calculate a rough position
-            // (Using standard coordinates without an external library is quite rough, we'll just float it near the input for simplicity or stick it below)
-            setVariableMenuPos({ top: textarea.offsetTop + textarea.offsetHeight + 5, left: textarea.offsetLeft });
-            setShowVariablesMenu(true);
-        } else if (e.key === 'Escape') {
-            setShowVariablesMenu(false);
-        }
-    };
-
-    const renderStepContent = () => {
+    // ── Step render
+    const renderStep = () => {
         switch (currentStep) {
             case 0:
                 return (
-                    <div className="space-y-6 pt-4">
+                    <div className="space-y-6">
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <label className="block text-[15px] font-bold text-gray-800">Nombre de la intención</label>
-                            </div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de la intención</label>
                             <input
                                 type="text"
-                                required
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#21AC96]"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96] transition-all"
                                 placeholder="Ej: Perfil laboral"
                             />
                         </div>
-
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <label className="block text-[15px] font-bold text-gray-800">Cuándo usar esta intención (opcional)</label>
-                                <span className="text-xs text-gray-400 font-medium">{formData.description.length}/512</span>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-bold text-gray-700">Cuándo usar esta intención <span className="font-normal text-gray-400">(opcional)</span></label>
+                                <span className="text-xs text-gray-300">{formData.description.length}/512</span>
                             </div>
                             <textarea
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value.substring(0, 512) })}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#21AC96] min-h-[120px] resize-none"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96] transition-all min-h-[120px] resize-none"
                                 placeholder="Ej: Pregunta cual es el perfil laboral del prospecto una vez ya tengas su ingreso."
                             />
                         </div>
@@ -460,140 +349,111 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
             case 1:
                 return (
                     <div className="space-y-8">
+                        {/* Collected fields */}
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <label className="block text-sm font-bold text-gray-700">Recopilar datos del cliente (opcional)</label>
-                            </div>
-
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Recopilar datos del cliente <span className="font-normal text-gray-400">(opcional)</span></label>
+                            <p className="text-xs text-gray-400 mb-4">Indica qué información debe pedirle el agente al usuario durante esta intención.</p>
                             <div className="space-y-3">
-                                {formData.payloadJson.collectedFields.map((field, idx) => (
-                                    <div key={idx} className="flex flex-col sm:flex-row items-center gap-3">
-                                        <div className="p-2 text-gray-300">
-                                            <GripVertical className="w-4 h-4" />
-                                        </div>
+                                {formData.payloadJson.collectedFields.map((field: any, idx: number) => (
+                                    <div key={idx} className="flex items-center gap-2">
+                                        <GripVertical className="w-4 h-4 text-gray-200 shrink-0" />
                                         <input
                                             type="text"
                                             value={field.name}
                                             onChange={(e) => updateCollectedField(idx, 'name', e.target.value)}
-                                            placeholder="Ej: Ingreso salarial"
-                                            className="w-full sm:w-[35%] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] text-sm"
+                                            placeholder="Nombre del campo"
+                                            className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96]"
                                         />
                                         <input
                                             type="text"
                                             value={field.description}
                                             onChange={(e) => updateCollectedField(idx, 'description', e.target.value)}
-                                            placeholder="Ej: para saber lo que gana la persona"
-                                            className="w-full sm:w-[40%] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] text-sm"
+                                            placeholder="Descripción (opcional)"
+                                            className="flex-[1.5] px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96]"
                                         />
-                                        <select
-                                            value={field.type}
-                                            onChange={(e) => updateCollectedField(idx, 'type', e.target.value)}
-                                            className="w-full sm:w-[25%] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] bg-white text-sm"
-                                        >
-                                            <option value="Texto">Texto</option>
-                                            <option value="Número">Número</option>
-                                            <option value="Booleano">Sí/No</option>
-                                            <option value="Fecha">Fecha</option>
-                                        </select>
-                                        <button onClick={() => removeCollectedField(idx)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                        <div className="relative">
+                                            <select
+                                                value={field.type}
+                                                onChange={(e) => updateCollectedField(idx, 'type', e.target.value)}
+                                                className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96] bg-white appearance-none pr-7"
+                                            >
+                                                <option>Texto</option>
+                                                <option>Número</option>
+                                                <option value="Booleano">Sí/No</option>
+                                                <option>Fecha</option>
+                                            </select>
+                                            <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                        </div>
+                                        <button onClick={() => removeCollectedField(idx)} className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors shrink-0">
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                 ))}
                             </div>
-
-                            <button
-                                onClick={addCollectedField}
-                                className="mt-3 flex items-center gap-2 text-sm text-[#21AC96] font-bold hover:text-[#198d7a]"
-                            >
+                            <button onClick={addCollectedField} className="mt-3 flex items-center gap-1.5 text-sm text-[#21AC96] font-bold hover:text-[#198d7a] transition-colors">
                                 <Plus className="w-4 h-4" />
                                 Agregar campo
                             </button>
                         </div>
 
+                        {/* Instructions */}
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <label className="block text-sm font-bold text-gray-700">Acción que debe realizarse:</label>
-                            </div>
-                            <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#21AC96] relative">
-                                <div className="flex items-start">
-                                    <div className="p-3 border-r border-gray-200 bg-gray-50 flex items-center gap-2 text-sm text-gray-600 font-medium w-32 shrink-0">
-                                        Instruciones
-                                    </div>
-                                    <textarea
-                                        ref={instructionsTextareaRef}
-                                        value={formData.payloadJson.instructions}
-                                        onChange={(e) => {
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                payloadJson: { ...prev.payloadJson, instructions: e.target.value }
-                                            }))
-                                            // Make sure we auto-hide if they deleted "@"
-                                            if (!e.target.value.includes('@') && !e.target.value.includes('{{')) {
-                                                setShowVariablesMenu(false);
-                                            }
-                                        }}
-                                        onKeyUp={handleTextareaKeyUp}
-                                        placeholder="Ej: Solicita el {{Ingreso salarial}} del prospecto una vez ya tengas su zona de interes."
-                                        className="w-full p-3 resize-none focus:outline-none min-h-[100px] text-sm"
-                                    />
-                                </div>
-                                <div className="absolute bottom-2 right-3 text-xs text-gray-400 font-medium">
-                                    {formData.payloadJson.instructions.length}/512
-                                </div>
-                                <div className="absolute top-2 right-3 text-xs text-blue-500 font-medium cursor-help" title="Usa {{ o @ para insertar variables">
-                                    💡 ¡Tip! Escribe @ para variables
-                                </div>
-
-                                {/* Mention Dropdown */}
-                                {showVariablesMenu && (
-                                    <div
-                                        className="absolute z-10 w-64 bg-white border border-gray-200 shadow-xl rounded-xl py-2 max-h-60 overflow-y-auto"
-                                        style={{ top: '40px', left: '130px' }} // fixed basic position to stay inside textarea relative box
-                                    >
-                                        <div className="px-3 pb-1 text-xs font-bold text-gray-400">Campos de la intención</div>
-                                        {formData.payloadJson.collectedFields.length === 0 && (
-                                            <div className="px-3 py-1 text-xs text-gray-500">No hay campos aún</div>
-                                        )}
-                                        {formData.payloadJson.collectedFields.map((field: any, i: number) => (
-                                            <div
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Instrucciones del agente</label>
+                            <p className="text-xs text-gray-400 mb-3">Escribe <code className="bg-gray-100 px-1 rounded text-[11px]">@</code> o <code className="bg-gray-100 px-1 rounded text-[11px]">{'{{'}</code> para insertar variables de los campos de arriba.</p>
+                            <div className="relative">
+                                <textarea
+                                    ref={instructionsTextareaRef}
+                                    value={formData.payloadJson.instructions}
+                                    onChange={(e) => {
+                                        setFormData(prev => ({ ...prev, payloadJson: { ...prev.payloadJson, instructions: e.target.value } }))
+                                        if (!e.target.value.includes('@') && !e.target.value.includes('{{')) setShowVariablesMenu(false)
+                                    }}
+                                    onKeyUp={handleTextareaKeyUp}
+                                    placeholder="Ej: Solicita el {{Ingreso salarial}} del prospecto una vez ya tengas su zona de interés."
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96] transition-all min-h-[110px] resize-none"
+                                />
+                                {showVariablesMenu && formData.payloadJson.collectedFields.length > 0 && (
+                                    <div className="absolute z-20 top-full mt-1 left-0 w-64 bg-white border border-gray-100 shadow-xl rounded-2xl py-2 max-h-52 overflow-y-auto">
+                                        <div className="px-3 pb-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">Variables</div>
+                                        {formData.payloadJson.collectedFields.map((f: any, i: number) => (
+                                            <button
                                                 key={i}
-                                                onClick={() => insertVariable(field.name || `variable_${i}`)}
-                                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer flex justify-between items-center"
+                                                type="button"
+                                                onClick={() => insertVariable(f.name || `variable_${i}`)}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#21AC96]/5 flex justify-between items-center"
                                             >
-                                                <span>{field.name || `[Sin nombre]`}</span>
-                                                <span className="text-[10px] text-gray-400">{field.type}</span>
-                                            </div>
+                                                <span className="font-medium">{f.name || '[Sin nombre]'}</span>
+                                                <span className="text-[10px] text-gray-400 bg-gray-50 px-2 rounded-full">{f.type}</span>
+                                            </button>
                                         ))}
                                     </div>
                                 )}
                             </div>
                         </div>
 
+                        {/* Execution type */}
                         <div>
-                            {/* Optional Webhook configuration (default to hidden inside an accordion or basic toggle) */}
-                            <div className="flex items-center gap-2 mb-2">
-                                <label className="text-sm font-bold text-gray-700">Tipo de ejecución</label>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm mt-2">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={formData.actionType === 'INTERNAL'}
-                                        onChange={() => setFormData({ ...formData, actionType: 'INTERNAL', actionUrl: '' })}
-                                        className="w-4 h-4 text-[#21AC96]"
-                                    />
-                                    <span>Asistente Autonómo (Interno)</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        checked={formData.actionType === 'WEBHOOK'}
-                                        onChange={() => setFormData({ ...formData, actionType: 'WEBHOOK' })}
-                                        className="w-4 h-4 text-[#21AC96]"
-                                    />
-                                    <span>Llamar a un Webhook API</span>
-                                </label>
+                            <label className="block text-sm font-bold text-gray-700 mb-3">Tipo de ejecución</label>
+                            <div className="flex flex-wrap gap-3">
+                                {[
+                                    { value: 'INTERNAL', label: 'Asistente Autónomo', icon: <Zap className="w-4 h-4" /> },
+                                    { value: 'WEBHOOK', label: 'Llamar a un Webhook', icon: <Webhook className="w-4 h-4" /> },
+                                ].map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, actionType: opt.value, actionUrl: opt.value !== 'WEBHOOK' ? '' : formData.actionUrl })}
+                                        className={cn(
+                                            'flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-sm font-bold transition-all',
+                                            formData.actionType === opt.value
+                                                ? 'bg-[#21AC96]/10 border-[#21AC96]/30 text-[#21AC96]'
+                                                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                                        )}
+                                    >
+                                        {opt.icon}
+                                        {opt.label}
+                                    </button>
+                                ))}
                             </div>
                             {formData.actionType === 'WEBHOOK' && (
                                 <div className="mt-4">
@@ -601,10 +461,10 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                                         type="url"
                                         value={formData.actionUrl || ''}
                                         onChange={(e) => setFormData({ ...formData, actionUrl: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96]"
                                         placeholder="https://tu-api.com/webhook"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">Este endpoint será disparado cuando se cumpla esta intención.</p>
+                                    <p className="text-xs text-gray-400 mt-1.5">Este endpoint será llamado cuando se cumpla la intención.</p>
                                 </div>
                             )}
                         </div>
@@ -612,82 +472,68 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                 )
             case 2:
                 return (
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <label className="block text-sm font-bold text-gray-700">Persistir variables en el contacto (opcional)</label>
-                            </div>
-
-                            <div className="space-y-4">
-                                {formData.payloadJson.outputMapping.map((mapping, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 w-full">
-                                        <div className="w-1/2">
-                                            <p className="text-xs font-semibold text-gray-500 mb-1">Guardar en el campo:</p>
-                                            <div className="relative">
-                                                <select
-                                                    value={mapping.customFieldId}
-                                                    onChange={(e) => updateOutputMapping(idx, 'customFieldId', e.target.value)}
-                                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] text-sm appearance-none bg-white"
-                                                >
-                                                    <option value="">Selecciona un campo</option>
-                                                    {customFields.map(cf => (
-                                                        <option key={cf.id} value={cf.id}>{cf.label}</option>
-                                                    ))}
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                                    <ChevronRight className="w-4 h-4 rotate-90" />
-                                                </div>
-                                            </div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Persistir variables en el contacto <span className="font-normal text-gray-400">(opcional)</span></label>
+                            <p className="text-xs text-gray-400 mb-4">Asocia los valores recopilados a tus campos personalizados del contacto.</p>
+                            <div className="space-y-3">
+                                {formData.payloadJson.outputMapping.map((mapping: any, idx: number) => (
+                                    <div key={idx} className="flex items-center gap-3">
+                                        <div className="flex-1 relative">
+                                            <select
+                                                value={mapping.customFieldId}
+                                                onChange={(e) => updateOutputMapping(idx, 'customFieldId', e.target.value)}
+                                                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96] bg-white appearance-none pr-7"
+                                            >
+                                                <option value="">Guardar en campo...</option>
+                                                {customFields.map(cf => (
+                                                    <option key={cf.id} value={cf.id}>{cf.label}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                                         </div>
-                                        <div className="w-1/2 relative">
-                                            <p className="text-xs font-semibold text-gray-500 mb-1">El valor:</p>
-                                            <div className="flex items-center gap-2">
-                                                <select
-                                                    value={mapping.valueSource}
-                                                    onChange={(e) => updateOutputMapping(idx, 'valueSource', e.target.value)}
-                                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] text-sm appearance-none bg-white"
-                                                >
-                                                    <option value="">¿De dónde sacamos el valor?</option>
-                                                    {formData.payloadJson.collectedFields.map((field: any, fieldIdx: number) => (
-                                                        <option key={fieldIdx} value={field.name}>Variable: {`{{${field.name}}}`}</option>
-                                                    ))}
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-9 flex items-center px-2 mt-[20px] text-gray-500">
-                                                    <ChevronRight className="w-4 h-4 rotate-90" />
-                                                </div>
-                                                <button onClick={() => removeOutputMapping(idx)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors Shrink-0 mt-4 border border-transparent">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
+                                        <div className="flex-1 relative">
+                                            <select
+                                                value={mapping.valueSource}
+                                                onChange={(e) => updateOutputMapping(idx, 'valueSource', e.target.value)}
+                                                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/40 focus:border-[#21AC96] bg-white appearance-none pr-7"
+                                            >
+                                                <option value="">Valor desde variable...</option>
+                                                {formData.payloadJson.collectedFields.map((f: any, i: number) => (
+                                                    <option key={i} value={f.name}>{`{{${f.name || `variable_${i}`}}}`}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                                         </div>
+                                        <button onClick={() => removeOutputMapping(idx)} className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors shrink-0">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
-
-                            <button
-                                onClick={addOutputMapping}
-                                className="mt-4 flex items-center gap-2 text-sm text-[#21AC96] font-bold hover:text-[#198d7a]"
-                            >
+                            <button onClick={addOutputMapping} className="mt-3 flex items-center gap-1.5 text-sm text-[#21AC96] font-bold hover:text-[#198d7a] transition-colors">
                                 <Plus className="w-4 h-4" />
-                                Agregar variable
+                                Agregar mapeo
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200 mt-8">
-                            <input
-                                type="checkbox"
-                                id="enabled"
-                                checked={formData.enabled}
-                                onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                                className="w-4 h-4 text-[#21AC96] rounded focus:ring-[#21AC96] accent-[#21AC96]"
-                            />
-                            <div className="flex-1">
-                                <label htmlFor="enabled" className="text-sm font-medium text-gray-700 cursor-pointer">
-                                    Activar intención inmediatamente
-                                </label>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Si está activada, el agente comenzará a detectar e intentar completar esta intención de inmediato.
-                                </p>
+                        {/* Enable toggle */}
+                        <div
+                            className={cn(
+                                'flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all',
+                                formData.enabled ? 'bg-[#21AC96]/5 border-[#21AC96]/20' : 'bg-gray-50 border-gray-100'
+                            )}
+                            onClick={() => setFormData({ ...formData, enabled: !formData.enabled })}
+                        >
+                            <div className={cn(
+                                'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all',
+                                formData.enabled ? 'bg-[#21AC96] border-[#21AC96]' : 'border-gray-300'
+                            )}>
+                                {formData.enabled && <div className="w-2 h-2 bg-white rounded-full" />}
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-gray-800">Activar intención inmediatamente</p>
+                                <p className="text-xs text-gray-400 mt-0.5">Si está activada, el agente comenzará a detectar esta intención de inmediato.</p>
                             </div>
                         </div>
                     </div>
@@ -698,56 +544,56 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
     }
 
     return (
-        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm max-w-4xl mx-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            {/* Header / Steps Navigation */}
-            <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">{intent ? 'Editar intención' : 'Crear intención'}</h2>
+        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+            {/* Header */}
+            <div className="px-8 py-7 border-b border-gray-100">
+                <h2 className="text-[18px] font-black text-gray-900">{intent ? 'Editar intención' : 'Nueva intención'}</h2>
+                <p className="text-[13px] text-gray-400 mt-0.5">Configura cómo debe actuar el agente cuando detecte esta intención</p>
             </div>
 
-            <div className="px-6 sm:px-10 py-6 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 border-b border-gray-100">
+            {/* Step indicators */}
+            <div className="px-8 py-5 flex items-center gap-0 border-b border-gray-100">
                 {steps.map((step, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                        <div className="flex flex-col items-center">
+                    <div key={index} className="flex items-center">
+                        <div className="flex items-center gap-2.5">
                             <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-2 transition-all duration-300",
-                                index === currentStep ? "bg-[#b18dfa] text-white" :
-                                    index < currentStep ? "bg-gray-200 text-gray-500" : "bg-gray-200 text-gray-400"
+                                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all duration-200',
+                                index === currentStep ? 'bg-[#21AC96] text-white' :
+                                    index < currentStep ? 'bg-[#21AC96]/20 text-[#21AC96]' : 'bg-gray-100 text-gray-400'
                             )}>
                                 {index + 1}
                             </div>
                             <span className={cn(
-                                "text-[13px] font-medium hidden sm:block",
-                                index === currentStep ? "text-[#b18dfa]" : "text-gray-500"
+                                'text-[13px] font-bold transition-all duration-200',
+                                index === currentStep ? 'text-gray-900' : 'text-gray-400'
                             )}>
                                 {step.title}
                             </span>
                         </div>
                         {index < steps.length - 1 && (
-                            <div className="w-12 md:w-20 h-px bg-gray-200 mb-6 hidden md:block"></div>
+                            <div className="w-10 md:w-16 h-px bg-gray-100 mx-4" />
                         )}
                     </div>
                 ))}
             </div>
 
-            <div className="p-6 sm:p-10 min-h-[400px]">
-                {/* Form Content Wrapper */}
-                <div className="max-w-3xl mx-auto border border-gray-100 rounded-2xl p-6 shadow-sm">
-                    {renderStepContent()}
-                </div>
+            {/* Form body */}
+            <div className="px-8 py-8 min-h-[360px]">
+                {renderStep()}
             </div>
 
             {/* Footer */}
-            <div className="px-6 sm:px-10 py-6 border-t border-gray-100 flex items-center justify-end gap-3">
+            <div className="px-8 py-5 border-t border-gray-100 flex items-center justify-end gap-3">
                 <button
                     onClick={onClose}
-                    className="px-6 py-2.5 rounded-full text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm border border-gray-200"
+                    className="px-5 py-2.5 rounded-2xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
                 >
                     Cancelar
                 </button>
                 {currentStep > 0 && (
                     <button
                         onClick={handlePrevious}
-                        className="px-6 py-2.5 rounded-full text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm border border-gray-200"
+                        className="px-5 py-2.5 rounded-2xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
                     >
                         Atrás
                     </button>
@@ -756,7 +602,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                     <button
                         onClick={handleNext}
                         disabled={!canProceed()}
-                        className="px-6 py-2.5 rounded-full bg-[#96d5c5] text-white font-bold hover:bg-[#82cbbb] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-5 py-2.5 rounded-2xl bg-[#21AC96] text-white font-bold text-sm hover:bg-[#1b8c7a] transition-all shadow-md shadow-[#21AC96]/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Continuar
                     </button>
@@ -764,7 +610,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting || !canProceed()}
-                        className="px-6 py-2.5 rounded-full bg-[#96d5c5] text-white font-bold hover:bg-[#82cbbb] transition-colors text-sm disabled:opacity-50"
+                        className="px-5 py-2.5 rounded-2xl bg-[#21AC96] text-white font-bold text-sm hover:bg-[#1b8c7a] transition-all shadow-md shadow-[#21AC96]/20 active:scale-95 disabled:opacity-50"
                     >
                         {isSubmitting ? 'Guardando...' : 'Guardar'}
                     </button>
