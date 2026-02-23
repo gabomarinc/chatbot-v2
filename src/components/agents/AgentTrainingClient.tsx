@@ -499,8 +499,10 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                         <div className="p-5 md:p-8 space-y-8 animate-fade-in">
                             <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 space-y-6">
                                 <div className="space-y-2">
-                                    <h3 className="text-gray-900 font-bold text-lg">Simulador de Recuperación 🧪</h3>
-                                    <p className="text-sm text-gray-500">Prueba cómo el bot busca información en tus documentos antes de responder.</p>
+                                    <h3 className="text-gray-900 font-extrabold text-xl flex items-center gap-2">
+                                        Radar de Conocimiento 📡
+                                    </h3>
+                                    <p className="text-sm text-gray-500 font-medium">Observa en tiempo real qué documentos consulta tu bot para responder. Esto te ayuda a saber qué información le falta.</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <div className="relative flex-1">
@@ -528,8 +530,11 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                             {searchResults.length > 0 ? (
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between px-2">
-                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fragmentos Recuperados ({searchResults.length})</h4>
-                                        <span className="text-[10px] font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full border border-[#21AC96]/10">Motor de Búsqueda Activo</span>
+                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-[#21AC96] animate-pulse" />
+                                            Lo que tu bot leyó para responder ({searchResults.length})
+                                        </h4>
+                                        <span className="text-[10px] font-black text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full border border-[#21AC96]/10 uppercase tracking-widest">Motor RAG Activo</span>
                                     </div>
                                     <div className="grid grid-cols-1 gap-6">
                                         {searchResults.map((res, i) => {
@@ -568,10 +573,38 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                         })}
                                     </div>
                                 </div>
-                            ) : searchQuery && !isSearching && (
-                                <div className="py-20 flex flex-col items-center text-center opacity-50">
-                                    <AlertCircle className="w-12 h-12 text-gray-300 mb-4" />
-                                    <p className="text-sm font-bold text-gray-500">No se encontraron fragmentos relevantes para esta consulta.</p>
+                            ) : (
+                                <div className="py-12 px-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="p-6 bg-white border border-gray-100 rounded-3xl space-y-3">
+                                            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                                                <Search className="w-5 h-5" />
+                                            </div>
+                                            <h5 className="font-bold text-gray-900 text-sm">1. Tu Pregunta</h5>
+                                            <p className="text-xs text-gray-500 leading-relaxed">Cuando un cliente pregunta algo, el bot analiza la intención y busca en tus archivos.</p>
+                                        </div>
+                                        <div className="p-6 bg-white border border-gray-100 rounded-3xl space-y-3">
+                                            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                                                <Database className="w-5 h-5" />
+                                            </div>
+                                            <h5 className="font-bold text-gray-900 text-sm">2. Extracción</h5>
+                                            <p className="text-xs text-gray-500 leading-relaxed">El bot "escanea" tus PDFs y Webs para encontrar los fragmentos más relevantes.</p>
+                                        </div>
+                                        <div className="p-6 bg-white border border-gray-100 rounded-3xl space-y-3">
+                                            <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+                                                <Sparkles className="w-5 h-5" />
+                                            </div>
+                                            <h5 className="font-bold text-gray-900 text-sm">3. Respuesta</h5>
+                                            <p className="text-xs text-gray-500 leading-relaxed">Finalmente, usa esos fragmentos para redactar una respuesta 100% verídica.</p>
+                                        </div>
+                                    </div>
+
+                                    {!isSearching && searchQuery && (
+                                        <div className="mt-12 text-center opacity-50">
+                                            <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                                            <p className="text-sm font-bold text-gray-500">¿No encontraste lo que buscabas? Intenta pulir tu pregunta o revisa la calidad de tus documentos.</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
