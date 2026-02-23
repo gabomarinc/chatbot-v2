@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useRef, useEffect } from 'react'
 import { Target, Plus, Webhook, Zap, FileText, Trash2, Edit, ToggleLeft, ToggleRight, TestTube, Info, ChevronRight, ChevronLeft, CheckCircle2, GripVertical, PlusCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -243,7 +245,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
         enabled: intent?.enabled ?? true,
         payloadJson: defaultPayload
     })
-    
+
     // Auto-complete variables feature state
     const [showVariablesMenu, setShowVariablesMenu] = useState(false);
     const [variableMenuPos, setVariableMenuPos] = useState({ top: 0, left: 0 });
@@ -299,10 +301,10 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
     const canProceed = () => {
         switch (currentStep) {
             case 0: return formData.name.trim() !== ''
-            case 1: 
+            case 1:
                 // We want to at least have instructions, and optionally collected fields
                 return formData.payloadJson.instructions.trim() !== ''
-            case 2: 
+            case 2:
                 return true
             default: return false
         }
@@ -384,28 +386,28 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         const text = formData.payloadJson.instructions;
-        
+
         let prefix = text.substring(0, start);
         // Clean up the `{{` or `@` they might have been typing
         if (prefix.endsWith('{{')) prefix = prefix.substring(0, prefix.length - 2);
         else if (prefix.endsWith('@')) prefix = prefix.substring(0, prefix.length - 1);
 
         const newText = prefix + `{{${variableName}}}` + text.substring(end);
-        
+
         setFormData(prev => ({
             ...prev,
             payloadJson: { ...prev.payloadJson, instructions: newText }
         }));
-        
+
         setShowVariablesMenu(false);
         // Refocus textarea after short timeout logic can be skipped for brevity, but let's keep it simple.
         setTimeout(() => {
-             textarea.focus();
-             const newCaret = prefix.length + variableName.length + 4;
-             textarea.setSelectionRange(newCaret, newCaret);
+            textarea.focus();
+            const newCaret = prefix.length + variableName.length + 4;
+            textarea.setSelectionRange(newCaret, newCaret);
         }, 10);
     }
-    
+
     // Keyboard listener for textarea to open autocomplete
     const handleTextareaKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         const textarea = e.currentTarget;
@@ -413,7 +415,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
         const cursor = textarea.selectionEnd;
         const prevChars = val.substring(Math.max(0, cursor - 2), cursor);
         const prevChar = val.substring(Math.max(0, cursor - 1), cursor);
-        
+
         if (prevChars === '{{' || prevChar === '@') {
             // Calculate a rough position
             // (Using standard coordinates without an external library is quite rough, we'll just float it near the input for simplicity or stick it below)
@@ -464,7 +466,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                             <div className="flex items-center justify-between mb-3">
                                 <label className="block text-sm font-bold text-gray-700">Recopilar datos del cliente (opcional)</label>
                             </div>
-                            
+
                             <div className="space-y-3">
                                 {formData.payloadJson.collectedFields.map((field, idx) => (
                                     <div key={idx} className="flex flex-col sm:flex-row items-center gap-3">
@@ -501,7 +503,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                                     </div>
                                 ))}
                             </div>
-                            
+
                             <button
                                 onClick={addCollectedField}
                                 className="mt-3 flex items-center gap-2 text-sm text-[#21AC96] font-bold hover:text-[#198d7a]"
@@ -544,10 +546,10 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                                 <div className="absolute top-2 right-3 text-xs text-blue-500 font-medium cursor-help" title="Usa {{ o @ para insertar variables">
                                     💡 ¡Tip! Escribe @ para variables
                                 </div>
-                                
+
                                 {/* Mention Dropdown */}
                                 {showVariablesMenu && (
-                                    <div 
+                                    <div
                                         className="absolute z-10 w-64 bg-white border border-gray-200 shadow-xl rounded-xl py-2 max-h-60 overflow-y-auto"
                                         style={{ top: '40px', left: '130px' }} // fixed basic position to stay inside textarea relative box
                                     >
@@ -556,8 +558,8 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                                             <div className="px-3 py-1 text-xs text-gray-500">No hay campos aún</div>
                                         )}
                                         {formData.payloadJson.collectedFields.map((field: any, i: number) => (
-                                            <div 
-                                                key={i} 
+                                            <div
+                                                key={i}
                                                 onClick={() => insertVariable(field.name || `variable_${i}`)}
                                                 className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer flex justify-between items-center"
                                             >
@@ -577,20 +579,20 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                             </div>
                             <div className="flex items-center gap-4 text-sm mt-2">
                                 <label className="flex items-center gap-2 cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        checked={formData.actionType === 'INTERNAL'} 
-                                        onChange={() => setFormData({...formData, actionType: 'INTERNAL', actionUrl: ''})}
-                                        className="w-4 h-4 text-[#21AC96]" 
+                                    <input
+                                        type="radio"
+                                        checked={formData.actionType === 'INTERNAL'}
+                                        onChange={() => setFormData({ ...formData, actionType: 'INTERNAL', actionUrl: '' })}
+                                        className="w-4 h-4 text-[#21AC96]"
                                     />
                                     <span>Asistente Autonómo (Interno)</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        checked={formData.actionType === 'WEBHOOK'} 
-                                        onChange={() => setFormData({...formData, actionType: 'WEBHOOK'})}
-                                        className="w-4 h-4 text-[#21AC96]" 
+                                    <input
+                                        type="radio"
+                                        checked={formData.actionType === 'WEBHOOK'}
+                                        onChange={() => setFormData({ ...formData, actionType: 'WEBHOOK' })}
+                                        className="w-4 h-4 text-[#21AC96]"
                                     />
                                     <span>Llamar a un Webhook API</span>
                                 </label>
@@ -617,7 +619,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                             <div className="flex items-center justify-between mb-3">
                                 <label className="block text-sm font-bold text-gray-700">Persistir variables en el contacto (opcional)</label>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 {formData.payloadJson.outputMapping.map((mapping, idx) => (
                                     <div key={idx} className="flex items-center gap-3 w-full">
@@ -653,7 +655,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                                                     ))}
                                                 </select>
                                                 <div className="pointer-events-none absolute inset-y-0 right-9 flex items-center px-2 mt-[20px] text-gray-500">
-                                                     <ChevronRight className="w-4 h-4 rotate-90" />
+                                                    <ChevronRight className="w-4 h-4 rotate-90" />
                                                 </div>
                                                 <button onClick={() => removeOutputMapping(idx)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors Shrink-0 mt-4 border border-transparent">
                                                     <Trash2 className="w-4 h-4" />
@@ -703,15 +705,15 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
             <div className="px-6 py-6 sm:px-10 sm:py-8 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">{intent ? 'Editar intención' : 'Crear intención'}</h2>
             </div>
-            
+
             <div className="px-6 sm:px-10 py-6 bg-gray-50/50 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 border-b border-gray-100">
                 {steps.map((step, index) => (
                     <div key={index} className="flex items-center gap-3">
                         <div className="flex flex-col items-center">
                             <div className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-2 transition-all duration-300",
-                                index === currentStep ? "bg-[#b18dfa] text-white" : 
-                                index < currentStep ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-500"
+                                index === currentStep ? "bg-[#b18dfa] text-white" :
+                                    index < currentStep ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-500"
                             )}>
                                 {index + 1}
                             </div>
@@ -745,12 +747,12 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                     Cancelar
                 </button>
                 {currentStep > 0 && (
-                     <button
+                    <button
                         onClick={handlePrevious}
                         className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm"
-                     >
+                    >
                         Atrás
-                     </button>
+                    </button>
                 )}
                 {currentStep < steps.length - 1 ? (
                     <button
