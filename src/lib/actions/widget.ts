@@ -546,7 +546,7 @@ Reglas para cobrar (ESTRICTO):
                     parameters: {
                         type: 'object',
                         properties: {
-                            horas: { type: 'number', description: 'Dentro de cuántas horas se debe enviar el mensaje (ej: 24 para mañana, 2 para un par de horas).' },
+                            horas: { type: 'number', description: 'Dentro de cuántas horas se debe enviar el mensaje. DEBES elegir una de las opciones permitidas, sin pasarte de 24 horas por políticas de WhatsApp.', enum: [1, 4, 8, 10, 12, 23.99] },
                             motivo: { type: 'string', description: 'Instrucciones para el futuro tú sobre por qué revisar esto y de qué hablar con el usuario (ej: "Preguntarle si ya encontró su recibo de pago para continuar la compra").' }
                         },
                         required: ['horas', 'motivo']
