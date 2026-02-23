@@ -589,7 +589,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                         </div>
                     ) : (
                         <div className="p-5 md:p-8 space-y-8 animate-fade-in">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="max-w-xl">
                                 <div className="space-y-6">
                                     <div>
                                         <h3 className="text-gray-900 font-bold text-lg mb-2">Comportamiento de Respuesta</h3>
@@ -620,49 +620,6 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <h3 className="text-gray-900 font-bold text-lg mb-2">Si no encuentra respuesta...</h3>
-                                        <p className="text-sm text-gray-500">¿Qué debe hacer el agente si la información no está en tus archivos?</p>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <label
-                                            onClick={() => agent.transferToHuman = true}
-                                            className={cn(
-                                                "flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer",
-                                                agent.transferToHuman ? "border-[#21AC96] bg-[#21AC96]/5" : "border-gray-100 hover:border-gray-200 bg-white"
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "w-5 h-5 rounded-full border bg-white flex items-center justify-center",
-                                                agent.transferToHuman ? "border-[#21AC96] border-[6px]" : "border-gray-300"
-                                            )}></div>
-                                            <div>
-                                                <div className="text-sm font-bold text-gray-900">Escalar a un Humano</div>
-                                                <div className="text-xs text-gray-500">Ofrecerá contactar a soporte si no encuentra la respuesta.</div>
-                                            </div>
-                                        </label>
-
-                                        <label
-                                            onClick={() => agent.transferToHuman = false}
-                                            className={cn(
-                                                "flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer",
-                                                !agent.transferToHuman ? "border-[#21AC96] bg-[#21AC96]/5" : "border-gray-100 hover:border-gray-200 bg-white"
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "w-5 h-5 rounded-full border bg-white flex items-center justify-center",
-                                                !agent.transferToHuman ? "border-[#21AC96] border-[6px]" : "border-gray-300"
-                                            )}></div>
-                                            <div>
-                                                <div className="text-sm font-bold text-gray-900">Usar conocimiento general</div>
-                                                <div className="text-xs text-gray-500">Intentará responder con lo que sabe de IA (puede ser menos preciso).</div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
                             </div>
 
                             <div className="flex justify-end pt-4 border-t border-gray-50">
@@ -674,8 +631,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                             const { updateAgentSettings } = await import('@/lib/actions/agent-settings');
                                             await updateAgentSettings(agentId, {
                                                 smartRetrieval,
-                                                temperature,
-                                                transferToHuman: agent.transferToHuman
+                                                temperature
                                             });
                                             toast.success('Ajustes guardados correctamente');
                                             router.refresh();
