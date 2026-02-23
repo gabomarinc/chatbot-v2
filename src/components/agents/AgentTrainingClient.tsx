@@ -619,36 +619,6 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Advanced RAG Toggle */}
-                                    <div className="p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/50 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-                                                    <Sparkles className="w-5 h-5" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm font-bold text-indigo-900">Búsqueda Inteligente (RAG+)</div>
-                                                    <div className="text-[10px] text-indigo-600 font-bold uppercase tracking-tight">HyDE + Re-ranking de Cohere</div>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => setSmartRetrieval(!smartRetrieval)}
-                                                className={cn(
-                                                    "w-12 h-6 rounded-full transition-all relative",
-                                                    smartRetrieval ? "bg-indigo-600" : "bg-gray-300"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
-                                                    smartRetrieval ? "left-7" : "left-1"
-                                                )}></div>
-                                            </button>
-                                        </div>
-                                        <p className="text-[10px] text-indigo-500/80 font-medium leading-relaxed italic">
-                                            * Utiliza IA para imaginar la respuesta ideal y re-ordenar los fragmentos con Cohere. Máxima precisión garantizada.
-                                        </p>
-                                    </div>
                                 </div>
 
                                 <div className="space-y-6">
