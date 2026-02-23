@@ -430,10 +430,10 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
         switch (currentStep) {
             case 0:
                 return (
-                    <div className="space-y-6">
+                    <div className="space-y-6 pt-4">
                         <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-sm font-bold text-gray-700">Nombre de la intención</label>
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="block text-[15px] font-bold text-gray-800">Nombre de la intención</label>
                             </div>
                             <input
                                 type="text"
@@ -446,8 +446,8 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                         </div>
 
                         <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-sm font-bold text-gray-700">Cuándo usar esta intención (opcional)</label>
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="block text-[15px] font-bold text-gray-800">Cuándo usar esta intención (opcional)</label>
                                 <span className="text-xs text-gray-400 font-medium">{formData.description.length}/512</span>
                             </div>
                             <textarea
