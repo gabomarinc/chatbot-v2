@@ -19,6 +19,8 @@ interface KnowledgeSource {
     status: string;
     errorMessage?: string | null;
     createdAt: Date;
+    contentScore?: number | null;
+    contentAudit?: any;
 }
 
 interface KnowledgeBase {
@@ -249,6 +251,14 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                                     <p className="text-sm text-gray-700 font-bold leading-relaxed">{s}</p>
                                                 </div>
                                             ))
+                                        ) : score < 10 ? (
+                                            <div className="bg-white/40 p-10 rounded-3xl border border-amber-200/50 text-center">
+                                                <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 mx-auto mb-6 shadow-sm">
+                                                    <AlertCircle className="w-8 h-8" />
+                                                </div>
+                                                <p className="text-lg text-amber-600 font-extrabold">Entrenamiento en Progreso</p>
+                                                <p className="text-sm text-gray-500 mt-2 font-medium max-w-xs mx-auto">Tu agente aún tiene espacio para mejorar. Sigue añadiendo fuentes claras y detalladas para alcanzar el nivel Maestro.</p>
+                                            </div>
                                         ) : (
                                             <div className="bg-white/40 p-8 rounded-3xl border border-[#21AC96]/20 text-center">
                                                 <div className="w-12 h-12 bg-[#21AC96]/10 rounded-2xl flex items-center justify-center text-[#21AC96] mx-auto mb-4">
@@ -371,6 +381,31 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4">
+                                                {source.status === 'READY' && source.contentScore !== null && (
+                                                    <Tooltip content={
+                                                        source.contentScore! < 9 ? (
+                                                            <div className="space-y-2">
+                                                                <p className="font-bold text-red-400">Problemas detectados:</p>
+                                                                {(source.contentAudit as any[])?.map((f, i) => (
+                                                                    <div key={i} className="text-[10px] leading-tight border-b border-white/10 pb-1">
+                                                                        • {f.message} <br />
+                                                                        <span className="text-gray-400">Sugerencia: {f.suggestion}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : "Excelente calidad de información"
+                                                    }>
+                                                        <div className={cn(
+                                                            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5 cursor-help",
+                                                            source.contentScore! >= 8 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                                                (source.contentScore! >= 5 ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-red-50 text-red-600 border-red-100")
+                                                        )}>
+                                                            <Sparkles className="w-3 h-3" />
+                                                            {source.contentScore}/10 Calidad
+                                                        </div>
+                                                    </Tooltip>
+                                                )}
+
                                                 {source.status === 'READY' ? (
                                                     <div className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-green-100 flex items-center gap-1.5">
                                                         <CheckCircle2 className="w-3 h-3" />

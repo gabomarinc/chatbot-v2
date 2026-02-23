@@ -42,11 +42,20 @@ export async function calculateAgentScore(agentId: string): Promise<number> {
     const allProcessed = allSources.length > 0 && allSources.every((s: any) => s.status === 'READY' || s.status === 'PROCESSED');
     const hasErrorSources = allSources.some((s: any) => s.status === 'FAILED' || s.status === 'ERROR');
 
-    if (allSources.length > 0) totalPoints += 10; // Has at least 1 source
+    if (allSources.length > 0) totalPoints += 5; // Has at least 1 source
     if (hasWebsite) totalPoints += 5; // Has website source
-    if (hasPDF) totalPoints += 10; // Has PDF source
-    if (hasManualFAQ) totalPoints += 10; // Encouraging manual Q&A
+    if (hasPDF) totalPoints += 5; // Has PDF source
+    if (hasManualFAQ) totalPoints += 5; // Encouraging manual Q&A
     if (allProcessed && !hasErrorSources) totalPoints += 5; // All sources processed successfully
+
+    // Quality Score (15 points max)
+    const sourcesWithScore = allSources.filter((s: any) => s.contentScore !== null);
+    if (sourcesWithScore.length > 0) {
+        const avgContentScore = sourcesWithScore.reduce((acc: number, s: any) => acc + (s.contentScore || 10), 0) / sourcesWithScore.length;
+        totalPoints += (avgContentScore * 1.5); // avg 10 * 1.5 = 15 points
+    } else if (allSources.length > 0) {
+        totalPoints += 10; // Neutral score if no audit yet
+    }
 
     // ========================================
     // 2. PROMPT QUALITY - Technical Only (30 points max)
@@ -115,7 +124,16 @@ export async function getScoreBreakdown(agentId: string) {
     const hasTools = agent.transferToHuman || agent.allowReminders || agent.smartRetrieval;
     const hasCustomFields = agent.customFieldDefinitions.length > 0;
 
+    // Audit findings
+    const auditFindings = allSources
+        .filter((s: any) => s.contentAudit)
+        .flatMap((s: any) => {
+            const findings = (s.contentAudit as any[]) || [];
+            return findings.map(f => ({ ...f, sourceName: s.displayName }));
+        });
+
     return {
+        auditFindings,
         knowledge: {
             points: (allSources.length > 0 ? 10 : 0) + (hasWebsite ? 10 : 0) + (hasPDF ? 10 : 0) + (allProcessed ? 10 : 0),
             maxPoints: 40,
@@ -194,6 +212,14 @@ export async function getScoreImprovements(agentId: string) {
     }
     if (!breakdown.configuration.details.hasCustomFields) {
         suggestions.push('Define campos personalizados para capturar información específica para mejorar +1 punto');
+    }
+
+    // Audit Suggestion (Highest Priority)
+    if (breakdown.auditFindings && breakdown.auditFindings.length > 0) {
+        // Take top 3 audit findings
+        breakdown.auditFindings.slice(0, 3).forEach((finding: any) => {
+            suggestions.unshift(`${finding.sourceName}: ${finding.message} (${finding.suggestion})`);
+        });
     }
 
     return suggestions;

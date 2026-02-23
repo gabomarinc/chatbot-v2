@@ -989,13 +989,14 @@ Reglas para cobrar (ESTRICTO):
                                             where: { id: conversation.id },
                                             data: {
                                                 assignedTo: member.userId,
-                                                status: 'OPEN'
+                                                status: 'OPEN',
+                                                isPaused: true // PAUSE the bot so it won't interfere
                                             }
                                         });
 
                                         toolResult = {
                                             success: true,
-                                            message: `Conversación reasignada exitosamente a ${member.user.name || member.user.email} (${dept}).`,
+                                            message: `Conversación reasignada exitosamente a ${member.user.name || member.user.email} (${dept}). El bot se ha pausado.`,
                                             assigned_to: member.user.name || member.user.email
                                         };
                                     } else {
@@ -1023,9 +1024,15 @@ Reglas para cobrar (ESTRICTO):
                                                 `[Ruteo Inteligente: ${customTarget.name}] ${(args as any).razon || 'El bot ha solicitado transferencia.'}`
                                             );
 
+                                            // Mark as PENDING or PAUSE so bot stops responding
+                                            await prisma.conversation.update({
+                                                where: { id: conversation.id },
+                                                data: { isPaused: true, status: 'PENDING' }
+                                            });
+
                                             toolResult = {
                                                 success: true,
-                                                message: `Se ha enviado una notificación al equipo de ${customTarget.name} (${customTarget.email}). Un agente te contactará pronto.`
+                                                message: `Se ha enviado una notificación al equipo de ${customTarget.name} (${customTarget.email}). Un agente te contactará pronto. El bot se ha pausado.`
                                             };
                                         } else {
                                             toolResult = {
@@ -1564,6 +1571,85 @@ Reglas para cobrar (ESTRICTO):
                             } else {
                                 await logDebugWidget('No contactId linked', {});
                                 toolResult = { success: false, error: "No contact ID linked" };
+                            }
+                        } else if (name === "asignar_a_humano") {
+                            try {
+                                const dept = args.departamento;
+
+                                // Find members in this workspace with that department
+                                const members = await (prisma.workspaceMember as any).findMany({
+                                    where: {
+                                        workspaceId: workspace.id,
+                                        department: dept as any
+                                    },
+                                    include: {
+                                        user: true
+                                    }
+                                });
+
+                                if (members.length > 0) {
+                                    // Pick first member (could be improved with better load balancing)
+                                    const member = members[0];
+
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: {
+                                            assignedTo: member.userId,
+                                            status: 'OPEN',
+                                            isPaused: true
+                                        }
+                                    });
+
+                                    toolResult = {
+                                        success: true,
+                                        message: `Conversación reasignada exitosamente a ${member.user.name || member.user.email} (${dept}). Bot pausado.`,
+                                        assigned_to: member.user.name || member.user.email
+                                    };
+                                } else {
+                                    // FALLBACK: If no member found, check if it's a custom handoff target from "Ruteo Inteligente"
+                                    const handoffTargets = (agent as any).handoffTargets;
+                                    const customTarget = Array.isArray(handoffTargets)
+                                        ? handoffTargets.find((t: any) => t.name.toLowerCase() === dept.toLowerCase())
+                                        : null;
+
+                                    if (customTarget) {
+                                        // Send email notification (Legacy "Ruteo Inteligente" behavior)
+                                        const { sendHandoffEmail } = await import('@/lib/email');
+                                        const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+                                        const link = `${appUrl}/chat?id=${conversation.id}`;
+
+                                        await sendHandoffEmail(
+                                            customTarget.email,
+                                            agent.name,
+                                            workspace.name,
+                                            link,
+                                            {
+                                                name: conversation.contactName || 'Visitante',
+                                                email: conversation.contactEmail || undefined
+                                            },
+                                            `[Ruteo Inteligente: ${customTarget.name}] ${args.razon || 'El bot ha solicitado transferencia.'}`
+                                        );
+
+                                        // Mark as PENDING and PAUSE bot
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: { isPaused: true, status: 'PENDING' }
+                                        });
+
+                                        toolResult = {
+                                            success: true,
+                                            message: `Se ha enviado una notificación al equipo de ${customTarget.name} (${customTarget.email}). Un agente te contactará pronto. Bot pausado.`
+                                        };
+                                    } else {
+                                        toolResult = {
+                                            success: false,
+                                            error: `No hay agentes disponibles ni destinos de ruteo configurados para "${dept}".`
+                                        };
+                                    }
+                                }
+                            } catch (e: any) {
+                                console.error('[OPENAI] asignar_a_humano error:', e);
+                                toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "revisar_disponibilidad") {
                             toolResult = calendarIntegration

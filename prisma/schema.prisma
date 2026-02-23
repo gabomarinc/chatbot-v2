@@ -118,6 +118,8 @@ model KnowledgeSource {
   fileUrl         String?
   status          KnowledgeStatus
   errorMessage    String?
+  contentScore    Int?                // AI-calculated quality score of the content (1-10)
+  contentAudit    Json?               // AI-identified issues: [{ type: 'AMBIGUITY' | 'MISSING_DATA' | 'FORMATTING', message, suggestion }]
   updateInterval  UpdateInterval      @default(NEVER)
   crawlSubpages   Boolean             @default(false)
   createdAt       DateTime            @default(now())

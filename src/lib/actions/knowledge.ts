@@ -7,6 +7,7 @@ import { load } from 'cheerio'
 import { generateEmbedding } from '@/lib/ai'
 import * as XLSX from 'xlsx'
 import TurndownService from 'turndown'
+import { auditKnowledgeContent } from '@/lib/scoring/content-audit'
 // @ts-ignore
 import { gfm } from 'turndown-plugin-gfm'
 
@@ -222,9 +223,15 @@ export async function addKnowledgeSource(agentId: string, data: {
                     })
                 }
 
+                const audit = await auditKnowledgeContent(data.text);
+
                 await prisma.knowledgeSource.update({
                     where: { id: source.id },
-                    data: { status: 'READY' }
+                    data: {
+                        status: 'READY',
+                        contentScore: audit.score,
+                        contentAudit: audit.findings as any
+                    }
                 })
             }
             // Handle WEBSITE type (Robust Scraping Level 1)
@@ -297,9 +304,15 @@ export async function addKnowledgeSource(agentId: string, data: {
                         })
                     }
 
+                    const audit = await auditKnowledgeContent(markdownContent);
+
                     await prisma.knowledgeSource.update({
                         where: { id: source.id },
-                        data: { status: 'READY' }
+                        data: {
+                            status: 'READY',
+                            contentScore: audit.score,
+                            contentAudit: audit.findings as any
+                        }
                     })
                 }
             }
@@ -384,9 +397,15 @@ export async function addKnowledgeSource(agentId: string, data: {
                         })
                     }
 
+                    const audit = await auditKnowledgeContent(text);
+
                     await prisma.knowledgeSource.update({
                         where: { id: source.id },
-                        data: { status: 'READY' }
+                        data: {
+                            status: 'READY',
+                            contentScore: audit.score,
+                            contentAudit: audit.findings as any
+                        }
                     })
                 }
             }
