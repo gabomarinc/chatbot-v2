@@ -224,3 +224,91 @@ export async function getScoreImprovements(agentId: string) {
 
     return suggestions;
 }
+
+/**
+ * Perform a global strategic audit of the agent's training state
+ */
+export async function getGlobalAgentAudit(agentId: string) {
+    const agent = await prisma.agent.findUnique({
+        where: { id: agentId },
+        include: {
+            knowledgeBases: {
+                include: {
+                    sources: {
+                        where: { status: 'READY' }
+                    }
+                }
+            }
+        }
+    });
+
+    if (!agent) throw new Error('Agent not found');
+
+    const allSources = agent.knowledgeBases.flatMap((kb: any) => kb.sources);
+    if (allSources.length === 0) {
+        return {
+            summary: "Tu agente aún no tiene conocimientos. Comienza subiendo un PDF o vinculando tu sitio web.",
+            tips: ["Sube un PDF con tus servicios principales.", "Vincula tu sitio web oficial."]
+        };
+    }
+
+    // Extract a sample of content from sources for context
+    const chunks = await prisma.documentChunk.findMany({
+        where: { knowledgeSourceId: { in: allSources.map(s => s.id) } },
+        take: 10,
+        select: { content: true }
+    });
+
+    const contextSample = chunks.map(c => c.content).join('\n\n').substring(0, 5000);
+
+    // Resolve API Keys
+    let openaiKey = process.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+        const config = await prisma.globalConfig.findFirst({ where: { key: 'OPENAI_API_KEY' } });
+        openaiKey = config?.value;
+    }
+
+    if (!openaiKey) return { summary: "Audit not available (No API Key)", tips: [] };
+
+    const { OpenAI } = await import('openai');
+    const openai = new OpenAI({ apiKey: openaiKey });
+
+    const systemPrompt = `Eres un estratega experto en IA Conversacional para empresas. 
+Tu misión es auditar el estado actual del entrenamiento de un bot y dar recomendaciones estratégicas.
+
+PERFIL DEL AGENTE:
+- Nombre: ${agent.name}
+- Empresa: ${agent.jobCompany || 'No especificada'}
+- Objetivo: ${agent.jobType === 'SALES' ? 'Ventas' : 'Soporte'}
+- Qué hace: ${agent.jobDescription}
+
+CONTENIDO ACTUAL (Muestra):
+${contextSample}
+
+Responde en formato JSON:
+{
+  "summary": "Un resumen ejecutivo de 2 líneas sobre qué tan preparado está el bot.",
+  "tips": [
+    "Tip 1: Que sea directo y accionable (máximo 15 palabras)",
+    "Tip 2...",
+    "Tip 3..."
+  ]
+}`;
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "system", content: systemPrompt }],
+            response_format: { type: "json_object" }
+        });
+
+        const result = JSON.parse(response.choices[0].message.content || '{}');
+        return {
+            summary: result.summary || "Análisis completado.",
+            tips: result.tips || []
+        };
+    } catch (e) {
+        console.error("Global Audit Error:", e);
+        return { summary: "Error al generar auditoría.", tips: [] };
+    }
+}

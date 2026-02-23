@@ -99,20 +99,24 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
     const [isSavingSettings, setIsSavingSettings] = useState(false);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(true);
+    const [globalAudit, setGlobalAudit] = useState<{ summary: string, tips: string[] } | null>(null);
+    const [isLoadingAudit, setIsLoadingAudit] = useState(true);
 
     useEffect(() => {
-        const fetchSuggestions = async () => {
+        const fetchAudit = async () => {
             try {
-                const { getScoreImprovements } = await import('@/lib/scoring/agent-scoring');
-                const data = await getScoreImprovements(agentId);
-                setSuggestions(data);
+                const { getGlobalAgentAudit } = await import('@/lib/scoring/agent-scoring');
+                const data = await getGlobalAgentAudit(agentId);
+                setGlobalAudit(data);
+                setSuggestions(data.tips);
             } catch (e) {
-                console.error("Error fetching suggestions:", e);
+                console.error("Error fetching audit:", e);
             } finally {
+                setIsLoadingAudit(false);
                 setIsLoadingSuggestions(false);
             }
         };
-        fetchSuggestions();
+        fetchAudit();
     }, [agentId]);
 
     // Calculate last update from sources or agent updatedAt
@@ -229,61 +233,49 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                             </div>
                         </div>
 
-                        {/* Elite Training Analysis (Additional Feature) */}
+                        {/* Radar de Entrenamiento (Strategic Focus) */}
                         <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
                             <div className="bg-[#21AC96]/5 p-6 md:p-10">
-                                <div className="flex items-center gap-4 mb-8">
+                                <div className="flex items-center gap-4 mb-6">
                                     <div className="p-3 bg-white rounded-2xl shadow-sm text-[#21AC96]">
-                                        <Sparkles className="w-6 h-6" />
+                                        <BrainCircuit className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h3 className="text-gray-900 font-black text-xl leading-none">Elite Training Analysis</h3>
-                                        <p className="text-[10px] text-[#21AC96] font-bold uppercase tracking-[0.2em] mt-2">Nivel de Optimización: {scoreLabel}</p>
+                                        <h3 className="text-gray-900 font-black text-xl leading-none">Radar de Entrenamiento</h3>
+                                        <p className="text-[10px] text-[#21AC96] font-bold uppercase tracking-[0.2em] mt-2">Estado: {scoreLabel}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-[1px] flex-1 bg-[#21AC96]/20" />
-                                        <p className="text-[10px] font-black text-[#21AC96] uppercase tracking-[0.2em] whitespace-nowrap">Hoja de Ruta al Éxito</p>
-                                        <div className="h-[1px] flex-1 bg-[#21AC96]/20" />
-                                    </div>
-                                    <h4 className="text-gray-900 font-extrabold text-2xl leading-tight">Recomendaciones para llegar al nivel "Maestro":</h4>
+                                    {isLoadingAudit ? (
+                                        <div className="space-y-4">
+                                            <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded" />
+                                            <div className="h-4 w-1/2 bg-gray-200 animate-pulse rounded" />
+                                        </div>
+                                    ) : (
+                                        <div className="bg-white/40 p-6 rounded-3xl border border-[#21AC96]/10">
+                                            <p className="text-gray-700 font-bold text-lg leading-relaxed italic">
+                                                “{globalAudit?.summary}”
+                                            </p>
+                                        </div>
+                                    )}
 
-                                    <div className="space-y-3 mt-6">
-                                        {isLoadingSuggestions ? (
-                                            Array(3).fill(0).map((_, i) => (
-                                                <div key={i} className="flex items-center gap-3 p-4 bg-white/40 rounded-2xl animate-pulse">
-                                                    <div className="w-2 h-2 rounded-full bg-gray-200" />
-                                                    <div className="h-3 w-40 bg-gray-200 rounded" />
-                                                </div>
-                                            ))
-                                        ) : suggestions.length > 0 ? (
-                                            suggestions.map((s, idx) => (
-                                                <div key={idx} className="flex items-start gap-4 p-5 bg-white/60 hover:bg-white rounded-3xl border border-transparent hover:border-[#21AC96]/20 transition-all group shadow-sm hover:shadow-md hover:shadow-[#21AC96]/5">
-                                                    <div className="w-6 h-6 rounded-full bg-[#21AC96]/10 text-[#21AC96] flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#21AC96] group-hover:text-white transition-colors">
-                                                        <Plus className="w-4 h-4" />
+                                    <div className="space-y-3">
+                                        <h4 className="text-gray-900 font-extrabold text-sm uppercase tracking-wider mb-4">Tips de Entrenamiento Recomendados:</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {isLoadingAudit ? (
+                                                Array(4).fill(0).map((_, i) => (
+                                                    <div key={i} className="h-16 bg-white/40 animate-pulse rounded-2xl" />
+                                                ))
+                                            ) : globalAudit?.tips.map((s, idx) => (
+                                                <div key={idx} className="flex items-center gap-4 p-4 bg-white/80 hover:bg-white rounded-[1.5rem] border border-transparent hover:border-[#21AC96]/20 transition-all group shadow-sm">
+                                                    <div className="w-8 h-8 rounded-xl bg-[#21AC96]/10 text-[#21AC96] flex items-center justify-center shrink-0">
+                                                        <Lightbulb className="w-4 h-4" />
                                                     </div>
-                                                    <p className="text-sm text-gray-700 font-bold leading-relaxed">{s}</p>
+                                                    <p className="text-sm text-gray-700 font-bold leading-tight">{s}</p>
                                                 </div>
-                                            ))
-                                        ) : score < 10 ? (
-                                            <div className="bg-white/40 p-10 rounded-3xl border border-amber-200/50 text-center">
-                                                <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 mx-auto mb-6 shadow-sm">
-                                                    <AlertCircle className="w-8 h-8" />
-                                                </div>
-                                                <p className="text-lg text-amber-600 font-extrabold">Entrenamiento en Progreso</p>
-                                                <p className="text-sm text-gray-500 mt-2 font-medium max-w-xs mx-auto">Tu agente aún tiene espacio para mejorar. Sigue añadiendo fuentes claras y detalladas para alcanzar el nivel Maestro.</p>
-                                            </div>
-                                        ) : (
-                                            <div className="bg-white/40 p-8 rounded-3xl border border-[#21AC96]/20 text-center">
-                                                <div className="w-12 h-12 bg-[#21AC96]/10 rounded-2xl flex items-center justify-center text-[#21AC96] mx-auto mb-4">
-                                                    <CheckCircle2 className="w-6 h-6" />
-                                                </div>
-                                                <p className="text-base text-[#21AC96] font-black">¡Entrenamiento Maestro Alcanzado!</p>
-                                                <p className="text-xs text-gray-600 mt-2 font-medium">Tu agente ha alcanzado el nivel máximo de optimización.</p>
-                                            </div>
-                                        )}
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -348,7 +340,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                             {[
                                 { id: 'sources', label: 'Fuentes de Datos' },
                                 { id: 'faq', label: 'Preguntas (FAQ) ✍️' },
-                                { id: 'sandbox', label: 'Simulador (Sandbox) 🧪' },
+                                { id: 'sandbox', label: 'Entrenamiento Inteligente 🧠' },
                                 { id: 'rag', label: 'Ajustes de Respuesta' }
                             ].map((tab) => (
                                 <button
@@ -507,9 +499,9 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                             <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 space-y-6">
                                 <div className="space-y-2">
                                     <h3 className="text-gray-900 font-extrabold text-xl flex items-center gap-2">
-                                        Radar de Conocimiento 📡
+                                        Análisis Proactivo de Entrenamiento 🧠
                                     </h3>
-                                    <p className="text-sm text-gray-500 font-medium">Observa en tiempo real qué documentos consulta tu bot para responder. Esto te ayuda a saber qué información le falta.</p>
+                                    <p className="text-sm text-gray-500 font-medium">Prueba cómo responde tu bot y obtén recomendaciones inmediatas de qué información añadir.</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <div className="relative flex-1">
@@ -600,9 +592,9 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                             <Lightbulb className="w-8 h-8 text-indigo-600" />
                                         </div>
                                         <div className="space-y-1">
-                                            <h5 className="text-xs font-black text-indigo-600 uppercase tracking-widest">Insight de Entrenamiento</h5>
+                                            <h5 className="text-xs font-black text-indigo-600 uppercase tracking-widest">Recomendación Estratégica</h5>
                                             <p className="text-gray-900 font-semibold text-lg leading-tight">
-                                                {analytics?.suggestedImprovement}
+                                                {globalAudit?.summary || analytics?.suggestedImprovement}
                                             </p>
                                         </div>
                                     </div>

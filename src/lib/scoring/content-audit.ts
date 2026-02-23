@@ -13,7 +13,7 @@ export interface AuditResult {
     findings: AuditFinding[];
 }
 
-export async function auditKnowledgeContent(text: string): Promise<AuditResult> {
+export async function auditKnowledgeContent(text: string, agent: any): Promise<AuditResult> {
     try {
         // Limit text size for audit to avoid token limits
         const auditText = text.substring(0, 10000);
@@ -32,23 +32,25 @@ export async function auditKnowledgeContent(text: string): Promise<AuditResult> 
             if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value;
         }
 
-        const systemPrompt = `Eres un auditor experto en calidad de datos para Chatbots de IA (RAG). 
-Tu misión es analizar el texto proporcionado y encontrar fallas que podrían causar que una IA alucine o dé información incorrecta.
+        const systemPrompt = `Eres un estratega experto en entrenamiento de IA. Tu misión es analizar la información cargada por el usuario y compararla con el perfil del Agente para dar recomendaciones de mejora (Tips de Entrenamiento).
 
-Analiza específicamente:
-1. PRECIOS AMBIGUOS: Si salen montos ($) pero no dice si es mensual, anual, precio total, mantenimiento, etc.
-2. CATEGORÍAS VAGAS: Si habla de "unidades" o "propiedades" pero no distingue claramente entre Casa, Apartamento, Terreno, etc.
-3. DATOS FALTANTES: Información clave que falta (ej: no hay teléfonos de contacto, no hay fechas de entrega).
-4. CONTRADICCIONES: Datos que chocan entre sí.
+PERFIL DEL AGENTE:
+- Nombre: ${agent.name}
+- Empresa: ${agent.jobCompany || 'No especificada'}
+- Objetivo: ${agent.jobType === 'SALES' ? 'Vender y convertir' : 'Soporte y ayuda'}
+- Descripción Negocio: ${agent.jobDescription || 'No especificada'}
+
+Tu tarea es dar recomendaciones ACTIONABLES y PROFESIONALES. No seas genérico.
+Ejemplo: Si el bot es de Bienes Raíces y el PDF solo tiene precios, recomienda subir un PDF con amenidades y fotos de las zonas.
 
 FORMATO DE RESPUESTA (JSON estricto):
 {
-  "score": número del 1 al 10 (10 es perfecto, 1 es basura),
+  "score": número del 1 al 10 (10 es perfecto),
   "findings": [
     {
-      "type": "AMBIGUITY" | "MISSING_DATA" | "FORMATTING" | "CONTRADICTION",
-      "message": "Descripción corta del problema",
-      "suggestion": "Cómo el usuario puede arreglar su documento para que sea perfecto"
+      "type": "AMBIGUITY" | "MISSING_DATA" | "STRATEGIC_TIP",
+      "message": "Título corto de la recomendación",
+      "suggestion": "Instrucción clara al usuario de qué subir o qué ajustar"
     }
   ]
 }`;

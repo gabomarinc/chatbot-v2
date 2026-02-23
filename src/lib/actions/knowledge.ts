@@ -234,7 +234,7 @@ export async function addKnowledgeSource(agentId: string, data: {
                     })
                 }
 
-                const audit = await auditKnowledgeContent(data.text);
+                const audit = await auditKnowledgeContent(data.text, agent);
 
                 await prisma.knowledgeSource.update({
                     where: { id: source.id },
@@ -315,7 +315,7 @@ export async function addKnowledgeSource(agentId: string, data: {
                         })
                     }
 
-                    const audit = await auditKnowledgeContent(markdownContent);
+                    const audit = await auditKnowledgeContent(markdownContent, agent);
 
                     await prisma.knowledgeSource.update({
                         where: { id: source.id },
@@ -408,7 +408,7 @@ export async function addKnowledgeSource(agentId: string, data: {
                         })
                     }
 
-                    const audit = await auditKnowledgeContent(text);
+                    const audit = await auditKnowledgeContent(text, agent);
 
                     await prisma.knowledgeSource.update({
                         where: { id: source.id },
