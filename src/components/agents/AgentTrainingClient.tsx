@@ -84,6 +84,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [aiResponse, setAiResponse] = useState<string>('');
 
     // Source Viewer state
     const [selectedSource, setSelectedSource] = useState<any | null>(null);
@@ -169,11 +170,13 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
     const handleSimulateSearch = async () => {
         if (!searchQuery) return;
         setIsSearching(true);
+        setAiResponse('');
         try {
             const { testRetrieval } = await import('@/lib/actions/knowledge');
-            const results = await testRetrieval(agentId, searchQuery);
-            setSearchResults(results);
-            if (results.length === 0) toast.error('No se encontró información relevante');
+            const { chunks, aiResponse: response } = await testRetrieval(agentId, searchQuery);
+            setSearchResults(chunks);
+            setAiResponse(response);
+            if (chunks.length === 0) toast.error('No se encontró información relevante');
         } catch (error) {
             toast.error('Error al realizar simulación');
         } finally {
@@ -529,10 +532,26 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
 
                             {searchResults.length > 0 ? (
                                 <div className="space-y-6">
-                                    <div className="flex items-center justify-between px-2">
+                                    {aiResponse && (
+                                        <div className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-xl shadow-indigo-200 border border-indigo-500 animate-in fade-in slide-in-from-top-4 duration-500">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                                                    <Sparkles className="w-6 h-6 text-white" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-white font-black text-xs uppercase tracking-[0.2em] opacity-80">Respuesta Final del Bot</span>
+                                                    <span className="text-white/60 text-[10px] font-bold">Basada exclusivamente en tus documentos</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-white text-lg font-semibold leading-relaxed">
+                                                {aiResponse}
+                                            </p>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center justify-between px-2 pt-4">
                                         <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-[#21AC96] animate-pulse" />
-                                            Lo que tu bot leyó para responder ({searchResults.length})
+                                            Lógica de Pensamiento: Lo que leyó ({searchResults.length})
                                         </h4>
                                         <span className="text-[10px] font-black text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full border border-[#21AC96]/10 uppercase tracking-widest">Motor RAG Activo</span>
                                     </div>

@@ -60,3 +60,48 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
     if (magA === 0 || magB === 0) return 0;
     return dotProduct / (magA * magB);
 }
+/**
+ * Generates a simple text response using available AI providers.
+ */
+export async function generateSimpleSafeResponse(prompt: string, systemPrompt?: string): Promise<string> {
+    let openaiKey = process.env.OPENAI_API_KEY;
+    let googleKey = process.env.GOOGLE_API_KEY;
+
+    if (!openaiKey || !googleKey) {
+        const configs = await prisma.globalConfig.findMany({
+            where: { key: { in: ['OPENAI_API_KEY', 'GOOGLE_API_KEY'] } }
+        });
+        if (!openaiKey) openaiKey = configs.find((c: any) => c.key === 'OPENAI_API_KEY')?.value;
+        if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value;
+    }
+
+    if (openaiKey) {
+        try {
+            const openai = new OpenAI({ apiKey: openaiKey });
+            const completion = await openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [
+                    ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+                    { role: 'user' as const, content: prompt }
+                ],
+                temperature: 0.3
+            });
+            return completion.choices[0].message.content || '';
+        } catch (e) {
+            console.error('Simple OpenAI Error:', e);
+        }
+    }
+
+    if (googleKey) {
+        try {
+            const genAI = new GoogleGenerativeAI(googleKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const result = await model.generateContent(systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt);
+            return result.response.text();
+        } catch (e) {
+            console.error('Simple Gemini Error:', e);
+        }
+    }
+
+    throw new Error('No AI provider available for simple response');
+}

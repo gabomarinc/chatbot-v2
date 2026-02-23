@@ -480,14 +480,34 @@ export async function deleteKnowledgeSource(agentId: string, sourceId: string) {
  */
 export async function testRetrieval(agentId: string, query: string) {
     const { retrieveRelevantChunks } = await import('@/lib/retrieval');
+    const { generateSimpleSafeResponse } = await import('@/lib/ai');
+
+    // 1. Get Fragments
     const chunks = await retrieveRelevantChunks(agentId, query, 5);
 
-    return chunks.map(c => ({
-        id: c.id,
-        content: c.content,
-        sourceName: c.sourceName,
-        sourceType: c.sourceType
-    }));
+    // 2. Generate Final Response based on those fragments
+    let aiResponse = "";
+    if (chunks.length > 0) {
+        const context = chunks.map(c => c.content).join('\n\n---\n\n');
+        const systemPrompt = "Eres un asistente virtual experto. Responde a la pregunta del usuario utilizando UNICAMENTE la información del contexto proporcionado. Si la información no está en el contexto, indícalo amablemente de forma breve. Mantén un tono profesional y servicial.";
+        const prompt = `CONTEXTO:\n${context}\n\nPREGUNTA: ${query}`;
+
+        try {
+            aiResponse = await generateSimpleSafeResponse(prompt, systemPrompt);
+        } catch (e) {
+            aiResponse = "Error al generar respuesta de IA.";
+        }
+    }
+
+    return {
+        chunks: chunks.map(c => ({
+            id: c.id,
+            content: c.content,
+            sourceName: c.sourceName,
+            sourceType: c.sourceType
+        })),
+        aiResponse
+    };
 }
 
 /**
