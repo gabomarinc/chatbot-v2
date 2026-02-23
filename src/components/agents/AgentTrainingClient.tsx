@@ -536,7 +536,25 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
 
                             {searchResults.length > 0 ? (
                                 <div className="space-y-8">
-                                    {/* Dashboard Header - Metrics */}
+                                    {/* 1. Resultado de Simulación */}
+                                    {aiResponse && (
+                                        <div className="bg-gray-900 p-8 rounded-[2.5rem] shadow-2xl shadow-gray-200 border border-gray-800 animate-in fade-in slide-in-from-top-4 duration-500">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10">
+                                                    <Sparkles className="w-5 h-5 text-[#21AC96]" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-white font-black text-[10px] uppercase tracking-[0.2em]">Resultado de Simulación</span>
+                                                    <span className="text-gray-500 text-[10px] font-bold">Cómo responderá el bot en el chat real</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-gray-100 text-lg font-medium leading-relaxed">
+                                                {aiResponse}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* 2. Dashboard Header - Numeros */}
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-2">
                                         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center space-y-2">
                                             <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
@@ -576,7 +594,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                         </div>
                                     </div>
 
-                                    {/* Intelligence Insight Card */}
+                                    {/* 3. Intelligence Insight Card */}
                                     <div className="bg-gradient-to-br from-indigo-50 to-white p-6 rounded-[2.5rem] border border-indigo-100 shadow-sm flex items-center gap-6">
                                         <div className="w-16 h-16 bg-white rounded-[2rem] shadow-xl shadow-indigo-200/20 flex flex-shrink-0 items-center justify-center border border-indigo-50">
                                             <Lightbulb className="w-8 h-8 text-indigo-600" />
@@ -588,24 +606,6 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                             </p>
                                         </div>
                                     </div>
-
-                                    {/* Final Response Display */}
-                                    {aiResponse && (
-                                        <div className="bg-gray-900 p-8 rounded-[2.5rem] shadow-2xl shadow-gray-200 border border-gray-800 animate-in fade-in slide-in-from-top-4 duration-500">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10">
-                                                    <Sparkles className="w-5 h-5 text-[#21AC96]" />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-white font-black text-[10px] uppercase tracking-[0.2em]">Resultado de Simulación</span>
-                                                    <span className="text-gray-500 text-[10px] font-bold">Cómo responderá el bot en el chat real</span>
-                                                </div>
-                                            </div>
-                                            <p className="text-gray-100 text-lg font-medium leading-relaxed">
-                                                {aiResponse}
-                                            </p>
-                                        </div>
-                                    )}
 
                                     {/* Actionable Feedback Footer */}
                                     <div className="pt-4 space-y-4">
@@ -901,7 +901,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
 
 
 
