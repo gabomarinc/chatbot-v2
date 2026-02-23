@@ -383,25 +383,37 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                             <div className="flex items-center gap-4">
                                                 {source.status === 'READY' && source.contentScore !== null && (
                                                     <Tooltip content={
-                                                        source.contentScore! < 9 ? (
+                                                        source.contentScore! >= 9 ? (
+                                                            <div className="text-emerald-400 font-bold flex items-center gap-2">
+                                                                <CheckCircle2 className="w-3 h-3" />
+                                                                Excelente calidad de información
+                                                            </div>
+                                                        ) : (
                                                             <div className="space-y-2">
-                                                                <p className="font-bold text-red-400">Problemas detectados:</p>
+                                                                <p className={cn(
+                                                                    "font-bold",
+                                                                    source.contentScore! >= 7 ? "text-blue-400" : "text-amber-400"
+                                                                )}>
+                                                                    {source.contentScore! >= 7 ? "Optimización recomendada:" : "Problemas detectados:"}
+                                                                </p>
                                                                 {(source.contentAudit as any[])?.map((f, i) => (
                                                                     <div key={i} className="text-[10px] leading-tight border-b border-white/10 pb-1">
                                                                         • {f.message} <br />
-                                                                        <span className="text-gray-400">Sugerencia: {f.suggestion}</span>
+                                                                        <span className="text-gray-400">Acción: {f.suggestion}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
-                                                        ) : "Excelente calidad de información"
+                                                        )
                                                     }>
                                                         <div className={cn(
-                                                            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5 cursor-help",
-                                                            source.contentScore! >= 8 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                                                (source.contentScore! >= 5 ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-red-50 text-red-600 border-red-100")
+                                                            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5 cursor-help transition-all",
+                                                            source.contentScore! >= 9 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                                                source.contentScore! >= 7 ? "bg-blue-50 text-blue-600 border-blue-100" :
+                                                                    source.contentScore! >= 5 ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                                                        "bg-red-50 text-red-600 border-red-100"
                                                         )}>
-                                                            <Sparkles className="w-3 h-3" />
-                                                            {source.contentScore}/10 Calidad
+                                                            <Sparkles className="w-3 h-3 shrink-0" />
+                                                            <span className="whitespace-nowrap">{source.contentScore}/10 Calidad</span>
                                                         </div>
                                                     </Tooltip>
                                                 )}

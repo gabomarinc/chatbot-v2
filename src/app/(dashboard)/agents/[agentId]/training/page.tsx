@@ -22,8 +22,10 @@ export default async function AgentTrainingPage({ params }: { params: Promise<{ 
                 displayName: source.url || source.fileUrl || 'Documento de Texto',
                 sourceUrl: source.url || source.fileUrl,
                 status: source.status,
-                errorMessage: source.errorMessage || null, // Ensure explicit null
-                createdAt: source.createdAt
+                errorMessage: source.errorMessage || null,
+                createdAt: source.createdAt,
+                contentScore: source.contentScore,
+                contentAudit: source.contentAudit
             }))
         }));
     } catch (error) {
