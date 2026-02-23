@@ -101,6 +101,7 @@ model Agent {
   customFieldDefinitions CustomFieldDefinition[] // Added relation
   integrationEvents   IntegrationEvent[]
   pendingQuestions    PendingQuestion[]
+  scheduledFollowUps  ScheduledFollowUp[]
 }
 
 model PendingQuestion {
@@ -116,6 +117,27 @@ model PendingQuestion {
   agent          Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId])
+}
+
+model ScheduledFollowUp {
+  id             String   @id @default(cuid())
+  agentId        String
+  conversationId String
+  channelId      String?
+  scheduledFor   DateTime
+  reason         String   @db.Text
+  status         String   @default("PENDING") // PENDING, COMPLETED, CANCELLED, FAILED
+  resultMessage  String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  channel        Channel?     @relation(fields: [channelId], references: [id])
+
+  @@index([agentId])
+  @@index([conversationId])
+  @@index([status, scheduledFor])
 }
 
 model KnowledgeBase {
@@ -162,6 +184,7 @@ model Channel {
   isActive      Boolean        @default(false)
   agent         Agent          @relation(fields: [agentId], references: [id])
   conversations Conversation[]
+  scheduledFollowUps ScheduledFollowUp[]
 }
 
 model Conversation {
@@ -186,6 +209,7 @@ model Conversation {
   contact       Contact?           @relation(fields: [contactId], references: [id]) 
   assignedUser  User?              @relation(fields: [assignedTo], references: [id])
   messages      Message[]
+  scheduledFollowUps ScheduledFollowUp[]
 }
 
 model Message {

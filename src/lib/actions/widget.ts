@@ -539,6 +539,18 @@ Reglas para cobrar (ESTRICTO):
                         },
                         required: ['pregunta']
                     }
+                },
+                {
+                    name: 'programar_seguimiento',
+                    description: 'Programa que envíes un mensaje de seguimiento proactivo a este usuario en el futuro. Úsalo SIEMPRE que un usuario diga "te aviso mañana", "luego te mando X", o cuando quede una acción pendiente de su parte para incentivar la venta.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            horas: { type: 'number', description: 'Dentro de cuántas horas se debe enviar el mensaje (ej: 24 para mañana, 2 para un par de horas).' },
+                            motivo: { type: 'string', description: 'Instrucciones para el futuro tú sobre por qué revisar esto y de qué hablar con el usuario (ej: "Preguntarle si ya encontró su recibo de pago para continuar la compra").' }
+                        },
+                        required: ['horas', 'motivo']
+                    }
                 }
             );
 
@@ -1059,6 +1071,28 @@ Reglas para cobrar (ESTRICTO):
                                     toolResult = { success: true, message: "Pregunta enviada a la lista de espera exitosamente." };
                                 } catch (e: any) {
                                     console.error('[GEMINI] log_pending_question error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "programar_seguimiento") {
+                                try {
+                                    const horas = (args as any).horas || 24;
+                                    const motivo = (args as any).motivo || 'Seguimiento automatizado';
+                                    const scheduledDate = new Date();
+                                    scheduledDate.setHours(scheduledDate.getHours() + horas);
+
+                                    await (prisma as any).scheduledFollowUp.create({
+                                        data: {
+                                            agentId: agent.id,
+                                            conversationId: conversation.id,
+                                            channelId: channel.id,
+                                            scheduledFor: scheduledDate,
+                                            reason: motivo,
+                                            status: 'PENDING'
+                                        }
+                                    });
+                                    toolResult = { success: true, message: `Seguimiento programado con éxito para dentro de ${horas} horas.` };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] programar_seguimiento error:', e);
                                     toolResult = { success: false, error: e.message };
                                 }
                             } else if (name === "revisar_disponibilidad") {
@@ -1683,6 +1717,28 @@ Reglas para cobrar (ESTRICTO):
                                 toolResult = { success: true, message: "Pregunta enviada a la lista de espera exitosamente." };
                             } catch (e: any) {
                                 console.error('[OPENAI] log_pending_question error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "programar_seguimiento") {
+                            try {
+                                const horas = args.horas || 24;
+                                const motivo = args.motivo || 'Seguimiento automatizado';
+                                const scheduledDate = new Date();
+                                scheduledDate.setHours(scheduledDate.getHours() + horas);
+
+                                await (prisma as any).scheduledFollowUp.create({
+                                    data: {
+                                        agentId: agent.id,
+                                        conversationId: conversation.id,
+                                        channelId: channel.id,
+                                        scheduledFor: scheduledDate,
+                                        reason: motivo,
+                                        status: 'PENDING'
+                                    }
+                                });
+                                toolResult = { success: true, message: `Seguimiento programado con éxito para dentro de ${horas} horas.` };
+                            } catch (e: any) {
+                                console.error('[OPENAI] programar_seguimiento error:', e);
                                 toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "revisar_disponibilidad") {
