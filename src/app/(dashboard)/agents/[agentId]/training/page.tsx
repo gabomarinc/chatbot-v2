@@ -10,6 +10,15 @@ export default async function AgentTrainingPage({ params }: { params: Promise<{ 
         redirect('/agents');
     }
 
+    try {
+        const { calculateAgentScore } = await import('@/lib/scoring/agent-scoring');
+        const calculatedScore = await calculateAgentScore(agentId);
+        // Overwrite the agent score
+        (agent as any).trainingScore = calculatedScore;
+    } catch (e) {
+        console.error("Failed to calculate agent score on load:", e);
+    }
+
     // Map database knowledge bases to client format
     let knowledgeBases: any[] = [];
     try {

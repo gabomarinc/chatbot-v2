@@ -134,7 +134,7 @@ function AgentCard({ agent }: { agent: Agent }) {
                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-2 shadow-sm">
                                 <Zap className="w-4 h-4 text-orange-500" />
                             </div>
-                            <span className="text-base sm:text-lg text-gray-900 font-extrabold">{agent.trainingScore ?? 0}</span>
+                            <span className="text-base sm:text-lg text-gray-900 font-extrabold">{agent.trainingScore ?? 0}/10</span>
                             <span className="text-[8px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">Puntos</span>
                         </div>
                     </div>
@@ -378,7 +378,7 @@ function AgentListItem({ agent }: { agent: Agent }) {
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Chats</span>
                     </div>
                     <div className="text-center">
-                        <span className="block text-xl font-black text-gray-900">0</span>
+                        <span className="block text-xl font-black text-gray-900">{agent.trainingScore ?? 0}/10</span>
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Puntos</span>
                     </div>
                 </div>

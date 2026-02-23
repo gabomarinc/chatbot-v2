@@ -300,7 +300,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                         <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={175.9} strokeDashoffset={175.9 - (175.9 * score) / 10} className="text-[#21AC96] transition-all duration-1000 ease-out" strokeLinecap="round" />
                                     </svg>
                                     <div className="absolute flex flex-col items-center">
-                                        <span className="text-xl font-black text-gray-900 leading-none">{score}</span>
+                                        <span className="text-xl font-black text-gray-900 leading-none">{score}<span className="text-sm font-bold text-gray-400">/10</span></span>
                                     </div>
                                 </div>
                                 <div>

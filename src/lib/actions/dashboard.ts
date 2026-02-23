@@ -468,6 +468,14 @@ export async function createAgent(data: any) {
         // } catch (revalError) {
         //     console.error('[DASHBOARD] Revalidation warning (ignored):', revalError);
         // }
+
+        try {
+            const { calculateAgentScore } = await import('@/lib/scoring/agent-scoring');
+            await calculateAgentScore(agent.id);
+        } catch (e) {
+            console.error('[DASHBOARD] calculateAgentScore failed on creation:', e);
+        }
+
         return agent
     } catch (e) {
         console.error('[DASHBOARD] createAgent failed:', e);
@@ -479,7 +487,7 @@ export async function getAgents() {
     const workspace = await getUserWorkspace()
     if (!workspace) return []
 
-    return prisma.agent.findMany({
+    const agents = await prisma.agent.findMany({
         where: { workspaceId: workspace.id },
         select: {
             id: true,
@@ -495,7 +503,20 @@ export async function getAgents() {
             }
         },
         orderBy: { createdAt: 'desc' }
-    })
+    });
+
+    for (const agent of agents) {
+        if (!agent.trainingScore) {
+            try {
+                const { calculateAgentScore } = await import('@/lib/scoring/agent-scoring');
+                agent.trainingScore = await calculateAgentScore(agent.id);
+            } catch (e) {
+                console.error('[DASHBOARD] calculateAgentScore lazy loading failed:', e);
+            }
+        }
+    }
+
+    return agents;
 }
 
 export async function updateAgent(agentId: string, data: any) {
