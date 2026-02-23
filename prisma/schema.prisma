@@ -100,6 +100,22 @@ model Agent {
   media              AgentMedia[]
   customFieldDefinitions CustomFieldDefinition[] // Added relation
   integrationEvents   IntegrationEvent[]
+  pendingQuestions    PendingQuestion[]
+}
+
+model PendingQuestion {
+  id             String   @id @default(cuid())
+  agentId        String
+  question       String
+  answer         String?
+  visitorId      String?
+  conversationId String?
+  status         String   @default("PENDING") // PENDING, ANSWERED, IGNORED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  agent          Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
 }
 
 model KnowledgeBase {

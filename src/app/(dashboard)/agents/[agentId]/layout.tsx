@@ -28,6 +28,7 @@ export default async function AgentLayout({
         { id: 'profile', label: 'Perfil', icon: '👤', href: `/agents/${agentId}/profile` },
         { id: 'job', label: 'Trabajo', icon: '💼', href: `/agents/${agentId}/job` },
         { id: 'training', label: 'Entrenamientos', icon: '📚', href: `/agents/${agentId}/training` },
+        { id: 'pending-questions', label: 'Por Responder', icon: '❓', href: `/agents/${agentId}/pending-questions` },
         { id: 'intents', label: 'Intenciones', icon: '🎯', href: `/agents/${agentId}/intents` },
         { id: 'media', label: 'Imágenes', icon: '🖼️', href: `/agents/${agentId}/media` },
         { id: 'integrations', label: 'Integraciones', icon: '🔌', href: `/agents/${agentId}/integrations` },

@@ -348,15 +348,15 @@ CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG - ESTRICTO):
 Usa la información a continuación para responder. 
 IMPORTANTE: En tus documentos, "PP" se refiere a "Panamá Pacífico". Tenlo en cuenta para cruzar información.
 
-REGLAS: 
-1. Si el dato está aquí, dalo con precisión y cita la fuente (ej: "Según [Fuente]...").
-2. Si la información es insuficiente, di lo que sepas basándote únicamente en estos textos y aclara qué falta.
-3. JAMÁS INVENTES datos.
+REGLAS Y USO DEL CONTEXTO:
+1. FLUIDEZ Y COMPRENSIÓN: Eres inteligente. Lee el contexto de entrenamiento proporcionado y úsalo para responder de forma natural, sin sonar como un robot que solo lee un documento. Si te preguntan por propiedades, opciones o características, búscalas en el texto y preséntalas de la mejor manera.
+2. CERO ALUCINACIONES (CRÍTICO): NUNCA inventes precios, nombres de propiedades, características, direcciones, cifras o promociones. Toda cifra o dato verificable que compartas DEBE provenir de la información de arriba.
+3. PREGUNTAS QUEDAN PENDIENTES: Si, y solo si, el usuario te pide un dato concreto o exige información que definitivamente NO ESTÁ en el contexto (ej. un precio de una casa específica que no está en el PDF), dile educadamente que, como su asistente, no tienes ese dato de memoria ahora mismo y lo enviarás al equipo interno para informarle luego. SOLO en ese caso, usa OBLIGATORIAMENTE la herramienta 'log_pending_question' para guardar la duda del usuario en el panel.
 
-${context || 'No hay fragmentos de entrenamiento específicos para esta consulta. Indica que no tienes información oficial y redirige a un humano.'}
+${context || 'No hay información de entrenamiento específica para esta consulta. Si el usuario hace una pregunta sobre información oficial que no tienes, indícale educadamente que debes registrar su consulta y usa LA HERRAMIENTA log_pending_question.'}
 
 INSTRUCCIONES DE EJECUCIÓN (PRIORIDAD MÁXIMA):
-1. VERACIDAD: No inventes nada.
+1. VERACIDAD: No inventes nada. Usa 'log_pending_question' si no sabes algo.
 2. LIMITACIÓN: Solo usa el contexto de arriba.
 3. ESTILO: Mantén un tono ${styleDescription} y profesional.
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente.
@@ -527,6 +527,17 @@ Reglas para cobrar (ESTRICTO):
                             razon: { type: 'string', description: 'Breve explicación de por qué se transfiere la conversación.' }
                         },
                         required: ['departamento']
+                    }
+                },
+                {
+                    name: 'log_pending_question',
+                    description: 'Manda una pregunta que el bot no sabe responder a una lista de espera para que un humano la responda más tarde. Úsala cuando no encuentres la información en el contexto de entrenamiento y el usuario parezca querer una respuesta oficial.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            pregunta: { type: 'string', description: 'La pregunta específica del usuario que no se pudo responder.' }
+                        },
+                        required: ['pregunta']
                     }
                 }
             );
@@ -1031,6 +1042,23 @@ Reglas para cobrar (ESTRICTO):
                                     }
                                 } catch (e: any) {
                                     console.error('[GEMINI] asignar_a_humano error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "log_pending_question") {
+                                try {
+                                    const question = (args as any).pregunta;
+                                    await (prisma as any).pendingQuestion.create({
+                                        data: {
+                                            agentId: agent.id,
+                                            question: question,
+                                            visitorId: data.visitorId,
+                                            conversationId: conversation.id,
+                                            status: 'PENDING'
+                                        }
+                                    });
+                                    toolResult = { success: true, message: "Pregunta enviada a la lista de espera exitosamente." };
+                                } catch (e: any) {
+                                    console.error('[GEMINI] log_pending_question error:', e);
                                     toolResult = { success: false, error: e.message };
                                 }
                             } else if (name === "revisar_disponibilidad") {
@@ -1637,6 +1665,24 @@ Reglas para cobrar (ESTRICTO):
                                 }
                             } catch (e: any) {
                                 console.error('[OPENAI] asignar_a_humano error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "log_pending_question") {
+                            try {
+                                const question = args.pregunta;
+                                // Cast to any to bypass type check before schema update
+                                await (prisma as any).pendingQuestion.create({
+                                    data: {
+                                        agentId: agent.id,
+                                        question: question,
+                                        visitorId: data.visitorId,
+                                        conversationId: conversation.id,
+                                        status: 'PENDING'
+                                    }
+                                });
+                                toolResult = { success: true, message: "Pregunta enviada a la lista de espera exitosamente." };
+                            } catch (e: any) {
+                                console.error('[OPENAI] log_pending_question error:', e);
                                 toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "revisar_disponibilidad") {
