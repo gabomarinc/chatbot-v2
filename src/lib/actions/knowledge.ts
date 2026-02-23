@@ -482,15 +482,15 @@ export async function testRetrieval(agentId: string, query: string) {
     const { retrieveRelevantChunks } = await import('@/lib/retrieval');
     const { generateSimpleSafeResponse } = await import('@/lib/ai');
 
-    // 1. Get Fragments
-    const chunks = await retrieveRelevantChunks(agentId, query, 5);
+    // 1. Get Fragments (Increased to 10 for depth)
+    const chunks = await retrieveRelevantChunks(agentId, query, 10);
 
     // 2. Generate Final Response based on those fragments
     let aiResponse = "";
     if (chunks.length > 0) {
-        const context = chunks.map(c => c.content).join('\n\n---\n\n');
-        const systemPrompt = "Eres un asistente virtual experto. Responde a la pregunta del usuario utilizando UNICAMENTE la información del contexto proporcionado. Si la información no está en el contexto, indícalo amablemente de forma breve. Mantén un tono profesional y servicial.";
-        const prompt = `CONTEXTO:\n${context}\n\nPREGUNTA: ${query}`;
+        const context = chunks.map(c => `[Fuente: ${c.sourceName}]: ${c.content}`).join('\n\n---\n\n');
+        const systemPrompt = "Eres un asistente virtual experto. Tu misión es responder la pregunta del usuario basándote EN LOS FRAGMENTOS proporcionados. Si los fragmentos contienen listas de propiedades, precios o detalles técnicos, inclúyelos TODOS. Si la información no es suficiente para dar una respuesta completa, di lo que sepas y sugiere contactar a un experto. JAMÁS inventes datos que no estén en los fragmentos.";
+        const prompt = `CONTEXTO:\n${context}\n\nPREGUNTA DEL USUARIO: ${query}\n\nRESPUESTA FINAL:`;
 
         try {
             aiResponse = await generateSimpleSafeResponse(prompt, systemPrompt);

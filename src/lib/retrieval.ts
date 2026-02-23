@@ -60,7 +60,7 @@ Respuesta experta (concisa y técnica):`;
 export async function retrieveRelevantChunks(
   agentId: string,
   query: string,
-  limit: number = 5
+  limit: number = 10
 ): Promise<DocumentChunk[]> {
   try {
     console.log(`[RETRIEVAL] Starting Ensemble Retrieval for agent: ${agentId}`);
@@ -113,9 +113,9 @@ export async function retrieveRelevantChunks(
       };
     });
 
-    // 4. Sort and take top 20 for potential Re-ranking
+    // 4. Sort and take top 50 for potential Re-ranking (Increased for precision)
     scoredChunks.sort((a, b) => b.score - a.score);
-    const topCandidates = scoredChunks.slice(0, 20).map(sc => sc.chunk);
+    const topCandidates = scoredChunks.slice(0, 50).map(sc => sc.chunk);
 
     // 5. Cohere Re-ranking (Final Polish)
     let cohereKey = process.env.COHERE_API_KEY;
