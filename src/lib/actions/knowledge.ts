@@ -490,17 +490,21 @@ export async function testRetrieval(agentId: string, query: string) {
     let trainingTip = "";
 
     if (chunks.length > 0) {
-        const context = chunks.map(c => `[Fuente: ${c.sourceName}]: ${c.content}`).join('\n\n---\n\n');
+        const context = chunks.map(c => `[FUENTE: ${c.sourceName}]: ${c.content}`).join('\n\n---\n\n');
 
-        // Final Response Prompt
-        const systemPrompt = "Eres un asistente virtual experto. Tu misión es responder la pregunta del usuario basándote EN LOS FRAGMENTOS proporcionados. Si los fragmentos contienen listas de propiedades, precios o detalles técnicos, inclúyelos TODOS. Si la información no es suficiente para dar una respuesta completa, di lo que sepas y sugiere contactar a un experto. JAMÁS inventes datos que no estén en los fragmentos.";
-        const prompt = `CONTEXTO:\n${context}\n\nPREGUNTA DEL USUARIO: ${query}\n\nRESPUESTA FINAL:`;
+        // Final Response Prompt (Strict Anti-Hallucination)
+        const systemPrompt = `Eres un asistente virtual experto y RIGUROSO. Tu misión es responder la pregunta del usuario basándote EXCLUSIVAMENTE en los fragmentos proporcionados.
+        REGLAS CRÍTICAS:
+        1. Si un dato (precio, proyecto, persona) no está en los textos, DEBES decir que no tienes esa información.
+        2. Cita siempre la fuente al dar datos técnicos (ej: "Basado en [Fuente], el precio es...").
+        3. No inventes nada. No asumas nada. Si hay dudas, pide contactar a un experto.
+        4. No menciones el término "fragmento" al usuario, usa "mis documentos" o solo responde.`;
+
+        const prompt = `CONTEXTO OFICIAL:\n${context}\n\nPREGUNTA DEL USUARIO: ${query}\n\nRESPUESTA FINAL:`;
 
         // Diagnostic/Training Tip Prompt
-        const diagnosticPrompt = `Actúa como un auditor de entrenamiento de IA. Analiza los fragmentos recuperados para la pregunta: "${query}". 
-        Identifica qué falta para que la respuesta sea perfecta. 
-        Responde en una sola frase breve y directa (máximo 15 palabras) con una recomendación de entrenamiento. 
-        Ejemplo: "Añade un PDF con la lista de precios de Parterre para completar la respuesta."`;
+        const diagnosticPrompt = `Actúa como un auditor de entrenamiento de IA. Analiza qué información falta para responder perfectamente a: "${query}". 
+        Sé directo y accionable. Ej: "Sube un archivo con los precios actualizados de Parterre" o "Aclara los beneficios fiscales en el sitio web".`;
 
         try {
             const [resp, tip] = await Promise.all([

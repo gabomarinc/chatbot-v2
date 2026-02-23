@@ -92,7 +92,8 @@ export async function generateAgentReply(
   let contextChunks: string[] = [];
   if (agent.smartRetrieval) {
     const chunks = await retrieveRelevantChunks(agentId, userMessage);
-    contextChunks = chunks.map((chunk) => chunk.content);
+    // Mandatory Contextual Anchoring: Prepend source name to each content chunk
+    contextChunks = chunks.map((chunk) => `[FUENTE: ${chunk.sourceName}]: ${chunk.content}`);
   }
 
   // Altaplaza Integration Check
@@ -559,9 +560,10 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
   if (contextChunks.length > 0) {
     prompt += `### CONTEXTO DE CONOCIMIENTO (ESTRICTO - NO ALUCINAR)\n`;
     prompt += `A continuación se presentan fragmentos extraídos de tus documentos oficiales. Es CRÍTICO que sigas estas reglas:\n`;
-    prompt += `1. **Solo Información Verificada**: Responde ÚNICAMENTE basándote en la información que aparece en los fragmentos de abajo. Si el usuario pregunta por algo que NO está en estos textos (como un proyecto inmobiliario, precio o característica no mencionada), DEBES responder: "Lo siento, no tengo información sobre eso actualmente" o algo similar. JAMÁS inventes datos.\n`;
-    prompt += `2. **Prohibido Inventar**: No inventes nombres de proyectos, ubicaciones, precios, números de contacto o correos electrónicos. Si no está escrito abajo, no existe para ti.\n`;
-    prompt += `3. **Prioridad Absoluta**: El conocimiento de abajo prevalece sobre cualquier cosa que creas saber por tu entrenamiento general de IA.\n\n`;
+    prompt += `1. **Solo Información Verificada**: Responde ÚNICAMENTE basándote en la información que aparece en los fragmentos de abajo. Si no está en el texto, NO existe.\n`;
+    prompt += `2. **Citación Requerida**: Siempre que proporciones un precio, metraje o dato específico, menciona la fuente. Ej: "Según el catálogo de [Nombre de Fuente], el precio es..."\n`;
+    prompt += `3. **Prohibido Inventar**: Bajo ninguna circunstancia inventes nombres, proyectos, precios o correos. Es mejor decir "Consultando mis documentos, no encuentro esa información específica" que dar un dato erróneo.\n`;
+    prompt += `4. **Prioridad Absoluta**: Ignora cualquier conocimiento externo que contradiga o complete estos fragmentos.\n\n`;
     prompt += `--------- FRAGMENTOS DE CONOCIMIENTO ---------\n`;
     contextChunks.forEach((chunk, index) => {
       prompt += `[BLOQUE ${index + 1}]: ${chunk}\n`;
@@ -569,8 +571,7 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
     prompt += `----------------------------------------------\n\n`;
     prompt += `REGLAS DE ORO DE CONTESTACIÓN:\n`;
     prompt += `1. **Cero Alucinación**: Si un dato no está en los bloques, di que no lo sabes. Sé honesto.\n`;
-    prompt += `2. **Integración Fluida**: Usa la información de forma natural. No menciones "según el bloque X", simplemente habla como un experto que lo sabe.\n`;
-    prompt += `3. **Fidelidad**: Si te piden comparar proyectos y solo tienes información de 3, aclara que solo conoces esos 3 y habla de ellos. No intentes completar la lista.\n\n`;
+    prompt += `2. **Fidelidad**: Mantén la precisión técnica por encima de la creatividad.\n\n`;
   }
 
   // Restrictions

@@ -133,12 +133,18 @@ export async function retrieveRelevantChunks(
           topN: limit,
           model: 'rerank-multilingual-v3.0'
         });
-        return rerank.results.map(res => topCandidates[res.index]);
+
+        // Strict Relevance Threshold: Only return chunks with score > 0.35
+        // This prevents hallucinations on irrelevant data
+        return rerank.results
+          .filter(res => res.relevanceScore > 0.35)
+          .map(res => topCandidates[res.index]);
       } catch (e) {
         console.warn('[RETRIEVAL] Rerank failed, fallback to ensemble top:', e);
       }
     }
 
+    // Fallback for ensemble without reranking (less strict)
     return topCandidates.slice(0, limit);
   } catch (error) {
     console.error('[RETRIEVAL] Critical error:', error);
