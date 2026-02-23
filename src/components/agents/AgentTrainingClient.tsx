@@ -614,8 +614,8 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                                 className="w-full accent-[#21AC96] h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                                             />
                                             <div className="flex justify-between text-xs text-gray-400 font-medium">
-                                                <span>Muy Creativo</span>
                                                 <span>Estricto (Solo Docs)</span>
+                                                <span>Muy Creativo</span>
                                             </div>
                                         </div>
                                     </div>
