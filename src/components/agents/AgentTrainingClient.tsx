@@ -57,8 +57,17 @@ function getFriendlyErrorMessage(error: string | null | undefined): string {
     if (e.includes('429')) return "Demasiadas peticiones. Intenta más tarde.";
     if (e.includes('unauthorized') || e.includes('401')) return "Se requiere autenticación para ver esto.";
 
-    return `Error: ${error}`; // Temporary debug: show raw error
-    // return `Error técnico: ${error.substring(0, 50)}${error.length > 50 ? '...' : ''}`;
+    return `Error: ${error}`;
+}
+
+function cleanMarkdown(text: string): string {
+    return text
+        .replace(/!\[.*?\]\(.*?\)/g, '') // Strip images
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Strip links, keep text
+        .replace(/[#*`_~]/g, '') // Strip markdown chars
+        .replace(/---/g, '') // Strip horizontal rules
+        .replace(/\n+/g, ' ') // Collapse newlines
+        .trim();
 }
 
 export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTrainingClientProps) {
@@ -517,20 +526,47 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                             </div>
 
                             {searchResults.length > 0 ? (
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     <div className="flex items-center justify-between px-2">
                                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fragmentos Recuperados ({searchResults.length})</h4>
-                                        <span className="text-[10px] font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full">Basado en tu configuración actual</span>
+                                        <span className="text-[10px] font-bold text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full border border-[#21AC96]/10">Motor de Búsqueda Activo</span>
                                     </div>
-                                    {searchResults.map((res, i) => (
-                                        <div key={i} className="p-5 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-[#21AC96]/20 transition-all group">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="w-6 h-6 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center text-[10px] font-black">{i + 1}</div>
-                                                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Fragmento de Conocimiento</div>
-                                            </div>
-                                            <p className="text-sm text-gray-700 leading-relaxed italic border-l-4 border-gray-100 pl-4 group-hover:border-[#21AC96]/30 transition-all">"{res.content}"</p>
-                                        </div>
-                                    ))}
+                                    <div className="grid grid-cols-1 gap-6">
+                                        {searchResults.map((res, i) => {
+                                            const cleanedContent = cleanMarkdown(res.content);
+                                            return (
+                                                <div key={i} className="bg-white border border-gray-100 rounded-[2.5rem] shadow-sm hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/5 transition-all group overflow-hidden flex flex-col">
+                                                    <div className="p-6 md:p-8 space-y-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xs font-black shadow-inner">
+                                                                    {i + 1}
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.15em]">Fragmento de Conocimiento</span>
+                                                                    <span className="text-[10px] text-gray-400 font-bold max-w-[200px] truncate">{res.sourceName || 'Fuente Desconocida'}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="px-3 py-1 bg-gray-50 text-gray-400 rounded-full text-[9px] font-black uppercase tracking-tighter flex items-center gap-1.5 border border-gray-100/50">
+                                                                {res.sourceType === 'WEBSITE' ? <Globe className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                                                                {res.sourceType || 'DOC'}
+                                                            </div>
+                                                        </div>
+                                                        <div className="relative">
+                                                            <div className="absolute -left-4 top-0 bottom-0 w-1 bg-indigo-500/10 rounded-full h-full group-hover:bg-indigo-500/30 transition-colors" />
+                                                            <p className="text-sm md:text-base text-gray-700 leading-relaxed font-medium pl-4">
+                                                                {cleanedContent.split(new RegExp(`(${searchQuery.split(' ').join('|')})`, 'gi')).map((part, index) =>
+                                                                    part.toLowerCase() === searchQuery.toLowerCase() || searchQuery.toLowerCase().includes(part.toLowerCase()) && part.length > 3 ? (
+                                                                        <span key={index} className="bg-yellow-100 text-yellow-900 px-0.5 rounded-sm font-bold">{part}</span>
+                                                                    ) : part
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             ) : searchQuery && !isSearching && (
                                 <div className="py-20 flex flex-col items-center text-center opacity-50">

@@ -6,6 +6,8 @@ export interface DocumentChunk {
   id: string;
   content: string;
   embedding: number[];
+  sourceName?: string;
+  sourceType?: string;
 }
 
 /**
@@ -71,6 +73,9 @@ export async function retrieveRelevantChunks(
           knowledgeBase: { agentId },
           status: 'READY'
         }
+      },
+      include: {
+        knowledgeSource: true
       }
     });
 
@@ -100,7 +105,9 @@ export async function retrieveRelevantChunks(
         chunk: {
           id: chunk.id,
           content: chunk.content,
-          embedding: chunkEmbedding
+          embedding: chunkEmbedding,
+          sourceName: chunk.knowledgeSource.url || chunk.knowledgeSource.fileUrl || 'Texto Manual',
+          sourceType: chunk.knowledgeSource.type
         },
         score: combinedScore
       };

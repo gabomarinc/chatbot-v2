@@ -485,7 +485,8 @@ export async function testRetrieval(agentId: string, query: string) {
     return chunks.map(c => ({
         id: c.id,
         content: c.content,
-        // Calculate a simple score for the UI if possible, or just return content
+        sourceName: c.sourceName,
+        sourceType: c.sourceType
     }));
 }
 
