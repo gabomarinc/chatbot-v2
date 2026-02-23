@@ -345,7 +345,9 @@ ${hasZoho || hasOdoo || hasHubSpot ? `- CRM: TIENES ACCESO a ${[hasZoho && 'Zoho
 ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePrompts}\nIMPORTANTE: Cuando una de estas situaciones ocurra, DEBES usar la herramienta buscar_imagen con los términos apropiados para encontrar y enviar la imagen correspondiente.` : ''}
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG - ESTRICTO):
-Usa la información a continuación para responder.
+Usa la información a continuación para responder. 
+IMPORTANTE: En tus documentos, "PP" se refiere a "Panamá Pacífico". Tenlo en cuenta para cruzar información.
+
 REGLAS: 
 1. Si el dato está aquí, dalo con precisión y cita la fuente (ej: "Según [Fuente]...").
 2. Si la información es insuficiente, di lo que sepas basándote únicamente en estos textos y aclara qué falta.

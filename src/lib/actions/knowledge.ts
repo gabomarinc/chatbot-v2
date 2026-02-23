@@ -497,8 +497,9 @@ export async function testRetrieval(agentId: string, query: string) {
         REGLAS:
         1. Fidelidad: Si el dato está en los textos, dalo con confianza.
         2. Citación: Menciona la fuente al dar datos técnicos (ej: "Según [Fuente]...").
-        3. Honestidad Proactiva: Si la información en los textos es parcial, di lo que sepas y menciona qué detalles específicos faltan para una respuesta completa.
-        4. No inventes nada que no esté escrito.`;
+        3. Abreviaturas: Nota que "PP" en los documentos significa "Panamá Pacífico".
+        4. Honestidad Proactiva: Si la información en los textos es parcial, di lo que sepas y menciona qué detalles específicos faltan para una respuesta completa.
+        5. No inventes nada que no esté escrito.`;
 
         const prompt = `CONTEXTO OFICIAL:\n${context}\n\nPREGUNTA DEL USUARIO: ${query}\n\nRESPUESTA FINAL:`;
 

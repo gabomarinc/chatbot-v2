@@ -26,8 +26,8 @@ async function generateHypotheticalAnswer(query: string): Promise<string> {
       if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value;
     }
 
-    const prompt = `Actúa como un experto técnico. Genera una respuesta hipotética, detallada y factual a la siguiente pregunta. 
-Enfócate en terminología específica y datos que probablemente aparecerían en un manual o catálogo oficial.
+    const prompt = `Actúa como un experto inmobiliario. Genera una respuesta hipotética, detallada y factual a la siguiente pregunta. 
+Enfócate en terminología específica (ej: 'PP' como abreviatura de Panamá Pacífico) y datos que probablemente aparecerían en un catálogo oficial.
 Pregunta: ${query}
 Respuesta experta (concisa y técnica):`;
 
@@ -113,9 +113,9 @@ export async function retrieveRelevantChunks(
       };
     });
 
-    // 4. Sort and take top 50 for potential Re-ranking (Increased for precision)
+    // 4. Sort and take top 100 for potential Re-ranking (Increased for precision)
     scoredChunks.sort((a, b) => b.score - a.score);
-    const topCandidates = scoredChunks.slice(0, 50).map(sc => sc.chunk);
+    const topCandidates = scoredChunks.slice(0, 100).map(sc => sc.chunk);
 
     // 5. Cohere Re-ranking (Final Polish)
     let cohereKey = process.env.COHERE_API_KEY;
@@ -134,10 +134,10 @@ export async function retrieveRelevantChunks(
           model: 'rerank-multilingual-v3.0'
         });
 
-        // Calibrated Relevance Threshold: 0.18 (Balance between precision and recall)
-        // 0.35 was too strict for broad queries.
+        // Calibrated Relevance Threshold: 0.1 (Balance between precision and recall)
+        // Lowered to include technical/tabular data
         return rerank.results
-          .filter(res => res.relevanceScore > 0.18)
+          .filter(res => res.relevanceScore > 0.1)
           .map(res => topCandidates[res.index]);
       } catch (e) {
         console.warn('[RETRIEVAL] Rerank failed, fallback to ensemble top:', e);
