@@ -7,6 +7,7 @@ import { Message } from '@prisma/client';
 import { generateEmbedding, cosineSimilarity } from '@/lib/ai';
 import { listAvailableSlots, createCalendarEvent } from '@/lib/google';
 import { searchAgentMedia } from '@/lib/actions/agent-media';
+import { retrieveRelevantChunks } from '@/lib/retrieval';
 
 export async function sendWidgetMessage(data: {
     channelId: string;
@@ -271,31 +272,15 @@ export async function sendWidgetMessage(data: {
                 console.log('[MODEL SELECTION] Using agent model:', modelUsedForLogging);
             }
 
-            // 5.1 Retrieve Context (RAG) - Optional, don't fail if it errors
+            // 5.1 Retrieve Context (RAG) - Enhanced with Anchoring & Thresholding
             let context = "";
             try {
-                if (openaiKey) {
-                    const queryVector = await generateEmbedding(data.content);
-                    const chunks = await prisma.documentChunk.findMany({
-                        where: {
-                            knowledgeSource: {
-                                knowledgeBase: { agentId: channel.agentId },
-                                status: 'READY'
-                            }
-                        }
-                    });
+                // Use the shared retrieval logic (Ensemble + Re-ranker + Threshold)
+                const chunks = await retrieveRelevantChunks(channel.agentId, data.content, 10);
 
-                    // Calculate similarity and sort
-                    const sortedChunks = chunks
-                        .map(chunk => ({
-                            content: chunk.content,
-                            similarity: cosineSimilarity(queryVector, chunk.embedding as number[])
-                        }))
-                        .filter(c => c.similarity > 0.4) // Threshold
-                        .sort((a, b) => b.similarity - a.similarity)
-                        .slice(0, 5); // Top 5 chunks
-
-                    context = sortedChunks.map(c => c.content).join("\n\n");
+                if (chunks.length > 0) {
+                    // Mandatory Contextual Anchoring formatting
+                    context = chunks.map(c => `[FUENTE: ${c.sourceName}]: ${c.content}`).join("\n\n---\n\n");
                 }
             } catch (ragError) {
                 console.error("RAG Retrieval Error (non-critical, continuing):", ragError);
@@ -361,16 +346,18 @@ ${imagePrompts ? `\nINSTRUCCIONES ESPECÍFICAS PARA ENVIAR IMÁGENES:\n${imagePr
 
 CONOCIMIENTO ADICIONAL (ENTRENAMIENTO RAG - ESTRICTO):
 Usa ÚNICAMENTE la información a continuación para responder consultas técnicas, de precios o sobre proyectos.
-REGLA DE ORO: Si la respuesta no está en el siguiente texto, DEBES responder que no cuentas con esa información específica. JAMÁS INVENTES proyectos, precios, características o nombres que no aparezcan aquí.
+REGLA DE ORO DE VERACIDAD: 
+1. Si la respuesta no está en el siguiente texto, DEBES responder que no cuentas con esa información oficial. 
+2. CITACIÓN OBLIGATORIA: Al dar un precio, característica o dato técnico, menciona la fuente (ej: "Según el catálogo de [Fuente]...").
+3. JAMÁS INVENTES proyectos, precios o características. Es mejor admitir ignorancia que dar datos falsos.
 
-${context || 'No hay fragmentos de entrenamiento específicos para esta consulta. Si el usuario pregunta por algo específico del negocio, indica que no tienes esa información y que un humano puede ayudarle.'}
+${context || 'No hay fragmentos de entrenamiento específicos para esta consulta. Si el usuario pregunta por algo específico del negocio, indica que no tienes esa información y que un humano puede ayudarle pronto.'}
 
 INSTRUCCIONES DE EJECUCIÓN (PRIORIDAD MÁXIMA):
-1. PROHIBIDA LA ALUCINACIÓN: Bajo ninguna circunstancia inventes datos, proyectos inmobiliarios, precios o direcciones. La veracidad es más importante que la ayuda.
-2. LIMITACIÓN AL CONTEXTO: Si el usuario pregunta sobre "Proyectos disponibles" y solo tienes 5 en tu conocimiento, menciona SOLO esos 5. No supongas que existen más.
-3. ADMISIÓN DE IGNORANCIA: Es preferible decir "No tengo esa información" que dar una respuesta incorrecta o inventada.
-4. Tu comportamiento debe estar guiado por el "PROMPT DE COMPORTAMIENTO" pero NUNCA por encima de la veracidad de los datos.
-5. Mantén el Estilo de Comunicación (${styleDescription}) pero sin sacrificar la precisión técnica.
+1. PROHIBIDA LA ALUCINACIÓN: No inventes nada. La veracidad es tu prioridad absoluta.
+2. LIMITACIÓN AL CONTEXTO: Solo habla de lo que aparece en el CONOCIMIENTO ADICIONAL arriba.
+3. ADMISIÓN DE IGNORANCIA: Di "No tengo esa información oficial" si el dato no está arriba.
+4. Mantén el Estilo de Comunicación (${styleDescription}) con precisión técnica.
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente.
 
 ${hasZoho ? `INSTRUCCIONES ZOHO CRM:
