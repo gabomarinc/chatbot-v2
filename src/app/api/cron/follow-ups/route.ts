@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         console.log('[CRON] Starting proactive follow-up processor...');
 
         // 2. Fetch all Due Follow-Ups
-        const pendingFollowUps = await prisma.scheduledFollowUp.findMany({
+        const pendingFollowUps = await (prisma as any).scheduledFollowUp.findMany({
             where: {
                 status: 'PENDING',
                 scheduledFor: { lte: new Date() }
@@ -142,23 +142,49 @@ REGLAS:
                     }
                 });
 
-                // Update Conversation Time
-                await prisma.conversation.update({
+                const currentCount = (conversation as any).followUpCount || 0;
+                const newCount = currentCount + 1;
+                const isMaxReached = newCount >= 2;
+
+                // Update Conversation Time & Count
+                await (prisma as any).conversation.update({
                     where: { id: conversation.id },
-                    data: { lastMessageAt: new Date(), status: 'OPEN' }
+                    data: {
+                        lastMessageAt: new Date(),
+                        status: isMaxReached ? 'CLOSED' : 'OPEN',
+                        followUpCount: newCount
+                    }
                 });
 
                 // E. Mark Follow-up as Completed
-                await prisma.scheduledFollowUp.update({
+                await (prisma as any).scheduledFollowUp.update({
                     where: { id: followup.id },
                     data: { status: 'COMPLETED', resultMessage: generatedText }
                 });
+
+                // Automatically schedule the next one if max is not reached
+                if (!isMaxReached) {
+                    const horas = (agent as any).followUpTimer || 23.99;
+                    const nextDate = new Date();
+                    nextDate.setHours(nextDate.getHours() + horas);
+
+                    await (prisma as any).scheduledFollowUp.create({
+                        data: {
+                            agentId: agent.id,
+                            conversationId: conversation.id,
+                            channelId: channel.id,
+                            scheduledFor: nextDate,
+                            reason: `Segundo intento automatizado para contactar al cliente. Motivo original: ${reason}`,
+                            status: 'PENDING'
+                        }
+                    });
+                }
 
                 processedCount++;
                 console.log(`[CRON] Successfully processed follow-up ${followup.id} to ${conversation.externalId}`);
             } catch (error: any) {
                 console.error(`[CRON] Error processing follow-up ${followup.id}:`, error);
-                await prisma.scheduledFollowUp.update({
+                await (prisma as any).scheduledFollowUp.update({
                     where: { id: followup.id },
                     data: { status: 'FAILED', resultMessage: error.message }
                 });

@@ -200,6 +200,19 @@ export async function sendWidgetMessage(data: {
 
         console.log('[WIDGET] User message saved, ID:', userMsg.id, 'metadata:', JSON.stringify(userMsg.metadata));
 
+        // When a user proactively replies, cancel any pending follow-ups and reset the followUpCount
+        await (prisma as any).scheduledFollowUp.updateMany({
+            where: { conversationId: conversation.id, status: 'PENDING' },
+            data: { status: 'CANCELLED' }
+        });
+
+        if ((conversation as any).followUpCount > 0) {
+            await (prisma as any).conversation.update({
+                where: { id: conversation.id },
+                data: { followUpCount: 0 }
+            });
+        }
+
         // 4.5. Check for Intent Detection
         const { detectIntent, executeIntent } = await import('./intent-actions');
         const detectedIntent = await detectIntent(data.content, channel.agent.intents);
@@ -539,20 +552,22 @@ Reglas para cobrar (ESTRICTO):
                         },
                         required: ['pregunta']
                     }
-                },
-                {
+                }
+            );
+
+            if ((agent as any).proactiveFollowUps) {
+                tools.push({
                     name: 'programar_seguimiento',
                     description: 'Programa que envíes un mensaje de seguimiento proactivo a este usuario en el futuro. Úsalo SIEMPRE que un usuario diga "te aviso mañana", "luego te mando X", o cuando quede una acción pendiente de su parte para incentivar la venta.',
                     parameters: {
                         type: 'object',
                         properties: {
-                            horas: { type: 'number', description: 'Dentro de cuántas horas se debe enviar el mensaje. DEBES elegir una de las opciones permitidas, sin pasarte de 24 horas por políticas de WhatsApp.', enum: [1, 4, 8, 10, 12, 23.99] },
                             motivo: { type: 'string', description: 'Instrucciones para el futuro tú sobre por qué revisar esto y de qué hablar con el usuario (ej: "Preguntarle si ya encontró su recibo de pago para continuar la compra").' }
                         },
-                        required: ['horas', 'motivo']
+                        required: ['motivo']
                     }
-                }
-            );
+                });
+            }
 
             // Setup Custom Fields in Tool Schema
             const updateContactTool = tools.find(t => t.name === 'update_contact');
@@ -1075,7 +1090,7 @@ Reglas para cobrar (ESTRICTO):
                                 }
                             } else if (name === "programar_seguimiento") {
                                 try {
-                                    const horas = (args as any).horas || 24;
+                                    const horas = (agent as any).followUpTimer || 23.99;
                                     const motivo = (args as any).motivo || 'Seguimiento automatizado';
                                     const scheduledDate = new Date();
                                     scheduledDate.setHours(scheduledDate.getHours() + horas);
@@ -1721,7 +1736,7 @@ Reglas para cobrar (ESTRICTO):
                             }
                         } else if (name === "programar_seguimiento") {
                             try {
-                                const horas = args.horas || 24;
+                                const horas = (agent as any).followUpTimer || 23.99;
                                 const motivo = args.motivo || 'Seguimiento automatizado';
                                 const scheduledDate = new Date();
                                 scheduledDate.setHours(scheduledDate.getHours() + horas);

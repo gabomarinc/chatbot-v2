@@ -83,6 +83,8 @@ model Agent {
   allowReminders     Boolean            @default(false)
   smartRetrieval     Boolean            @default(false)
   transferToHuman    Boolean            @default(true)
+  proactiveFollowUps Boolean            @default(false)
+  followUpTimer      Float              @default(23.99)
   handoffTargets     Json?              // List of targets: [{ id, name, email, description }]
   trainingScore      Int?               // 1-10 quality score based on knowledge, prompt, and config
   trainingScoreUpdatedAt DateTime?       // Last time score was calculated
@@ -197,6 +199,7 @@ model Conversation {
   contactEmail  String?
   status        ConversationStatus @default(OPEN)
   lastMessageAt DateTime?
+  followUpCount Int                @default(0)
   assignedTo    String?            // User ID who is assigned to this conversation
   assignedAt    DateTime?          // When the conversation was assigned
   isPaused      Boolean            @default(false) // Whether the bot is paused for human takeover

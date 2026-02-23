@@ -20,6 +20,8 @@ interface AgentSettingsFormProps {
         allowReminders: boolean;
         smartRetrieval: boolean;
         transferToHuman: boolean;
+        proactiveFollowUps?: boolean;
+        followUpTimer?: number;
         responseDelay?: number;
         enableNPS: boolean;
         handoffTargets?: any; // JSON
@@ -125,6 +127,7 @@ export function AgentSettingsForm({ agent, teamMembers }: AgentSettingsFormProps
             items: [
                 { id: 'restrictTopics', label: 'Restringir temas', desc: 'Solo responder sobre el negocio' },
                 { id: 'allowReminders', label: 'Permitir recordatorios', desc: 'Agendar eventos con el usuario' },
+                { id: 'proactiveFollowUps', label: 'Seguimientos Proactivos', desc: 'El bot enviará recordatorios automáticos' },
                 { id: 'transferToHuman', label: 'Transferir a humano', desc: 'Permitir escalar a un chat real' },
                 { id: 'enableNPS', label: 'Encuesta NPS', desc: 'Activa la encuesta de satisfacción al cerrar' },
             ]
@@ -260,6 +263,39 @@ export function AgentSettingsForm({ agent, teamMembers }: AgentSettingsFormProps
                             </div>
                         </div>
                     ))}
+
+                    {/* Follow Ups Section */}
+                    {formData.proactiveFollowUps && (
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-[#3B82F6]/10 rounded-xl flex items-center justify-center text-[#3B82F6]">
+                                    <MessageSquare className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-gray-900 font-black text-sm uppercase tracking-widest">Motor de Seguimiento</h3>
+                                    <p className="text-xs text-gray-400 font-medium">Límite de 24h por políticas de plataformas sociales</p>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700 ml-1">Frecuencia de Seguimiento Automático</label>
+                                    <select
+                                        value={formData.followUpTimer || 23.99}
+                                        onChange={(e) => setFormData({ ...formData, followUpTimer: parseFloat(e.target.value) })}
+                                        className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:bg-white focus:border-[#21AC96] transition-all font-medium appearance-none cursor-pointer"
+                                    >
+                                        <option value={1}>1 Hora</option>
+                                        <option value={4}>4 Horas</option>
+                                        <option value={8}>8 Horas</option>
+                                        <option value={10}>10 Horas</option>
+                                        <option value={12}>12 Horas</option>
+                                        <option value={23.99}>24 Horas (Límite Seguro)</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 px-1 mt-2 font-medium">El bot cerrará la conversación permanentemente después de enviar 2 recordatorios máximos si el usuario no responde.</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Handoff Targets Section */}
                     {formData.transferToHuman && (
