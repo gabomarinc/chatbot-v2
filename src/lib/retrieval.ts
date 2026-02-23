@@ -134,10 +134,10 @@ export async function retrieveRelevantChunks(
           model: 'rerank-multilingual-v3.0'
         });
 
-        // Strict Relevance Threshold: Only return chunks with score > 0.35
-        // This prevents hallucinations on irrelevant data
+        // Calibrated Relevance Threshold: 0.18 (Balance between precision and recall)
+        // 0.35 was too strict for broad queries.
         return rerank.results
-          .filter(res => res.relevanceScore > 0.35)
+          .filter(res => res.relevanceScore > 0.18)
           .map(res => topCandidates[res.index]);
       } catch (e) {
         console.warn('[RETRIEVAL] Rerank failed, fallback to ensemble top:', e);

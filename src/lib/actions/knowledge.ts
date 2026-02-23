@@ -492,13 +492,13 @@ export async function testRetrieval(agentId: string, query: string) {
     if (chunks.length > 0) {
         const context = chunks.map(c => `[FUENTE: ${c.sourceName}]: ${c.content}`).join('\n\n---\n\n');
 
-        // Final Response Prompt (Strict Anti-Hallucination)
-        const systemPrompt = `Eres un asistente virtual experto y RIGUROSO. Tu misión es responder la pregunta del usuario basándote EXCLUSIVAMENTE en los fragmentos proporcionados.
-        REGLAS CRÍTICAS:
-        1. Si un dato (precio, proyecto, persona) no está en los textos, DEBES decir que no tienes esa información.
-        2. Cita siempre la fuente al dar datos técnicos (ej: "Basado en [Fuente], el precio es...").
-        3. No inventes nada. No asumas nada. Si hay dudas, pide contactar a un experto.
-        4. No menciones el término "fragmento" al usuario, usa "mis documentos" o solo responde.`;
+        // Final Response Prompt (Rigorous but Helpful)
+        const systemPrompt = `Eres un asistente virtual experto. Tu misión es responder la pregunta del usuario basándote en los fragmentos proporcionados.
+        REGLAS:
+        1. Fidelidad: Si el dato está en los textos, dalo con confianza.
+        2. Citación: Menciona la fuente al dar datos técnicos (ej: "Según [Fuente]...").
+        3. Honestidad Proactiva: Si la información en los textos es parcial, di lo que sepas y menciona qué detalles específicos faltan para una respuesta completa.
+        4. No inventes nada que no esté escrito.`;
 
         const prompt = `CONTEXTO OFICIAL:\n${context}\n\nPREGUNTA DEL USUARIO: ${query}\n\nRESPUESTA FINAL:`;
 
