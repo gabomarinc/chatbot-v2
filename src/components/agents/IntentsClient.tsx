@@ -702,18 +702,18 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
     return (
         <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm max-w-4xl mx-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Header / Steps Navigation */}
-            <div className="px-6 py-6 sm:px-10 sm:py-8 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">{intent ? 'Editar intención' : 'Crear intención'}</h2>
             </div>
 
-            <div className="px-6 sm:px-10 py-6 bg-gray-50/50 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 border-b border-gray-100">
+            <div className="px-6 sm:px-10 py-6 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 border-b border-gray-100">
                 {steps.map((step, index) => (
                     <div key={index} className="flex items-center gap-3">
                         <div className="flex flex-col items-center">
                             <div className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-2 transition-all duration-300",
                                 index === currentStep ? "bg-[#b18dfa] text-white" :
-                                    index < currentStep ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-500"
+                                    index < currentStep ? "bg-gray-200 text-gray-500" : "bg-gray-200 text-gray-400"
                             )}>
                                 {index + 1}
                             </div>
@@ -725,7 +725,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
                             </span>
                         </div>
                         {index < steps.length - 1 && (
-                            <div className="w-12 md:w-20 h-px bg-gray-300 mb-6 hidden md:block"></div>
+                            <div className="w-12 md:w-20 h-px bg-gray-200 mb-6 hidden md:block"></div>
                         )}
                     </div>
                 ))}
@@ -739,7 +739,7 @@ function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: str
             </div>
 
             {/* Footer */}
-            <div className="px-6 sm:px-10 py-6 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50/50">
+            <div className="px-6 sm:px-10 py-6 border-t border-gray-100 flex items-center justify-end gap-3">
                 <button
                     onClick={onClose}
                     className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm"
