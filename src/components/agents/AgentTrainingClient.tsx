@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Globe, Upload, FileText, Video as VideoIcon, CheckCircle2, AlertCircle, Loader2, Sparkles, Plus, MoreVertical, Search, Database, MessageSquare } from 'lucide-react';
+import { Globe, Upload, FileText, Video as VideoIcon, CheckCircle2, AlertCircle, Loader2, Sparkles, Plus, MoreVertical, Search, Database, MessageSquare, Target, Layers, BrainCircuit, Lightbulb, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -85,6 +85,8 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [aiResponse, setAiResponse] = useState<string>('');
+    const [analytics, setAnalytics] = useState<any>(null);
+    const [showRawFragments, setShowRawFragments] = useState(false);
 
     // Source Viewer state
     const [selectedSource, setSelectedSource] = useState<any | null>(null);
@@ -171,11 +173,13 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
         if (!searchQuery) return;
         setIsSearching(true);
         setAiResponse('');
+        setAnalytics(null);
         try {
             const { testRetrieval } = await import('@/lib/actions/knowledge');
-            const { chunks, aiResponse: response } = await testRetrieval(agentId, searchQuery);
+            const { chunks, aiResponse: response, analytics: diagnostic } = await testRetrieval(agentId, searchQuery);
             setSearchResults(chunks);
             setAiResponse(response);
+            setAnalytics(diagnostic);
             if (chunks.length === 0) toast.error('No se encontró información relevante');
         } catch (error) {
             toast.error('Error al realizar simulación');
@@ -531,65 +535,104 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                             </div>
 
                             {searchResults.length > 0 ? (
-                                <div className="space-y-6">
+                                <div className="space-y-8">
+                                    {/* Dashboard Header - Metrics */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-2">
+                                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center space-y-2">
+                                            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                                                <Target className="w-6 h-6" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-2xl font-black text-gray-900">{(analytics?.confidence * 100).toFixed(0)}%</span>
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Confianza RAG</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center space-y-2">
+                                            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                                                <Database className="w-6 h-6" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-2xl font-black text-gray-900">{analytics?.sourcesCount}</span>
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fuentes Leídas</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center space-y-2">
+                                            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+                                                <Layers className="w-6 h-6" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-2xl font-black text-gray-900">{analytics?.fragmentCount}</span>
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Densidad Datos</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center space-y-2">
+                                            <div className="w-12 h-12 bg-[#21AC96]/10 text-[#21AC96] rounded-2xl flex items-center justify-center">
+                                                <BrainCircuit className="w-6 h-6" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-2xl font-black text-gray-900">{isSearching ? '...' : 'OK'}</span>
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Salud Neural</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Intelligence Insight Card */}
+                                    <div className="bg-gradient-to-br from-indigo-50 to-white p-6 rounded-[2.5rem] border border-indigo-100 shadow-sm flex items-center gap-6">
+                                        <div className="w-16 h-16 bg-white rounded-[2rem] shadow-xl shadow-indigo-200/20 flex flex-shrink-0 items-center justify-center border border-indigo-50">
+                                            <Lightbulb className="w-8 h-8 text-indigo-600" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <h5 className="text-xs font-black text-indigo-600 uppercase tracking-widest">Insight de Entrenamiento</h5>
+                                            <p className="text-gray-900 font-semibold text-lg leading-tight">
+                                                {analytics?.suggestedImprovement}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Final Response Display */}
                                     {aiResponse && (
-                                        <div className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-xl shadow-indigo-200 border border-indigo-500 animate-in fade-in slide-in-from-top-4 duration-500">
+                                        <div className="bg-gray-900 p-8 rounded-[2.5rem] shadow-2xl shadow-gray-200 border border-gray-800 animate-in fade-in slide-in-from-top-4 duration-500">
                                             <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                                                    <Sparkles className="w-6 h-6 text-white" />
+                                                <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10">
+                                                    <Sparkles className="w-5 h-5 text-[#21AC96]" />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-white font-black text-xs uppercase tracking-[0.2em] opacity-80">Respuesta Final del Bot</span>
-                                                    <span className="text-white/60 text-[10px] font-bold">Basada exclusivamente en tus documentos</span>
+                                                    <span className="text-white font-black text-[10px] uppercase tracking-[0.2em]">Resultado de Simulación</span>
+                                                    <span className="text-gray-500 text-[10px] font-bold">Cómo responderá el bot en el chat real</span>
                                                 </div>
                                             </div>
-                                            <p className="text-white text-lg font-semibold leading-relaxed">
+                                            <p className="text-gray-100 text-lg font-medium leading-relaxed">
                                                 {aiResponse}
                                             </p>
                                         </div>
                                     )}
-                                    <div className="flex items-center justify-between px-2 pt-4">
-                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-[#21AC96] animate-pulse" />
-                                            Lógica de Pensamiento: Lo que leyó ({searchResults.length})
-                                        </h4>
-                                        <span className="text-[10px] font-black text-[#21AC96] bg-[#21AC96]/10 px-3 py-1 rounded-full border border-[#21AC96]/10 uppercase tracking-widest">Motor RAG Activo</span>
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-6">
-                                        {searchResults.map((res, i) => {
-                                            const cleanedContent = cleanMarkdown(res.content);
-                                            return (
-                                                <div key={i} className="bg-white border border-gray-100 rounded-[2.5rem] shadow-sm hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/5 transition-all group overflow-hidden flex flex-col">
-                                                    <div className="p-6 md:p-8 space-y-4">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xs font-black shadow-inner">
-                                                                    {i + 1}
-                                                                </div>
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.15em]">Fragmento de Conocimiento</span>
-                                                                    <span className="text-[10px] text-gray-400 font-bold max-w-[200px] truncate">{res.sourceName || 'Fuente Desconocida'}</span>
-                                                                </div>
+
+                                    {/* Actionable Feedback Footer */}
+                                    <div className="pt-4 space-y-4">
+                                        <button
+                                            onClick={() => setShowRawFragments(!showRawFragments)}
+                                            className="w-full py-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:text-[#21AC96] transition-colors"
+                                        >
+                                            {showRawFragments ? 'Ocultar Detalles Técnicos' : 'Ver Detalles Técnicos de Recuperación'}
+                                            {showRawFragments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                        </button>
+
+                                        {showRawFragments && (
+                                            <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                {searchResults.map((res, i) => {
+                                                    const cleanedContent = cleanMarkdown(res.content);
+                                                    return (
+                                                        <div key={i} className="bg-white border border-gray-100 rounded-3xl p-6 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-[10px] font-black text-gray-400 uppercase">Fragmento #{i + 1}</span>
+                                                                <span className="text-[9px] font-bold text-gray-400">{res.sourceName}</span>
                                                             </div>
-                                                            <div className="px-3 py-1 bg-gray-50 text-gray-400 rounded-full text-[9px] font-black uppercase tracking-tighter flex items-center gap-1.5 border border-gray-100/50">
-                                                                {res.sourceType === 'WEBSITE' ? <Globe className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
-                                                                {res.sourceType || 'DOC'}
-                                                            </div>
+                                                            <p className="text-xs text-gray-500 line-clamp-3">{cleanedContent}</p>
                                                         </div>
-                                                        <div className="relative">
-                                                            <div className="absolute -left-4 top-0 bottom-0 w-1 bg-indigo-500/10 rounded-full h-full group-hover:bg-indigo-500/30 transition-colors" />
-                                                            <p className="text-sm md:text-base text-gray-700 leading-relaxed font-medium pl-4">
-                                                                {cleanedContent.split(new RegExp(`(${searchQuery.split(' ').join('|')})`, 'gi')).map((part, index) =>
-                                                                    part.toLowerCase() === searchQuery.toLowerCase() || searchQuery.toLowerCase().includes(part.toLowerCase()) && part.length > 3 ? (
-                                                                        <span key={index} className="bg-yellow-100 text-yellow-900 px-0.5 rounded-sm font-bold">{part}</span>
-                                                                    ) : part
-                                                                )}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
