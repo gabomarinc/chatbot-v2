@@ -59,17 +59,18 @@ export async function POST(
         }
 
         const body = await request.json()
-        const { name, description, trigger, actionType, actionUrl, enabled } = body
+        const { name, description, trigger, actionType, actionUrl, enabled, payloadJson } = body
 
         const intent = await prisma.intent.create({
             data: {
                 agentId: agent.id,
                 name,
                 description: description || null,
-                trigger,
-                actionType: actionType || 'WEBHOOK',
+                trigger: trigger || 'LLM', // fallback if empty
+                actionType: actionType || 'INTERNAL',
                 actionUrl: actionUrl || null,
-                enabled: enabled ?? true
+                enabled: enabled ?? true,
+                payloadJson: payloadJson || null
             }
         })
 

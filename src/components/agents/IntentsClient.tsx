@@ -1,11 +1,16 @@
-'use client'
-
-import { useState } from 'react'
-import { Target, Plus, Webhook, Zap, FileText, Trash2, Edit, ToggleLeft, ToggleRight, TestTube, Info, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Target, Plus, Webhook, Zap, FileText, Trash2, Edit, ToggleLeft, ToggleRight, TestTube, Info, ChevronRight, ChevronLeft, CheckCircle2, GripVertical, PlusCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Tooltip } from '@/components/ui/tooltip'
-import { TagsInput } from '@/components/ui/tags-input'
+import { cn } from '@/lib/utils'
+
+interface CustomField {
+    id: string
+    key: string
+    label: string
+    type: string
+}
 
 interface Intent {
     id: string
@@ -15,6 +20,7 @@ interface Intent {
     enabled: boolean
     actionType: string
     actionUrl: string | null
+    payloadJson: any
     triggerCount: number
     lastTriggered: Date | null
     createdAt: Date
@@ -23,21 +29,22 @@ interface Intent {
 interface IntentsClientProps {
     agentId: string
     intents: Intent[]
+    customFields: CustomField[]
 }
 
-export function IntentsClient({ agentId, intents }: IntentsClientProps) {
-    const [isModalOpen, setIsModalOpen] = useState(false)
+export function IntentsClient({ agentId, intents, customFields }: IntentsClientProps) {
+    const [isWizardOpen, setIsWizardOpen] = useState(false)
     const [editingIntent, setEditingIntent] = useState<Intent | null>(null)
     const router = useRouter()
 
     const handleCreate = () => {
         setEditingIntent(null)
-        setIsModalOpen(true)
+        setIsWizardOpen(true)
     }
 
     const handleEdit = (intent: Intent) => {
         setEditingIntent(intent)
-        setIsModalOpen(true)
+        setIsWizardOpen(true)
     }
 
     const handleToggle = async (intentId: string, currentState: boolean) => {
@@ -92,7 +99,7 @@ export function IntentsClient({ agentId, intents }: IntentsClientProps) {
         }
     }
 
-    if (intents.length === 0) {
+    if (intents.length === 0 && !isWizardOpen) {
         return (
             <>
                 <div className="max-w-4xl space-y-6">
@@ -118,153 +125,137 @@ export function IntentsClient({ agentId, intents }: IntentsClientProps) {
                         </button>
                     </div>
                 </div>
-
-                {isModalOpen && (
-                    <IntentWizard
-                        agentId={agentId}
-                        intent={editingIntent}
-                        onClose={() => setIsModalOpen(false)}
-                    />
-                )}
             </>
         )
     }
 
     return (
         <>
-            <div className="max-w-4xl space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Intenciones</h2>
-                        <p className="text-gray-500">Gestiona las acciones automáticas de tu agente</p>
-                    </div>
-                    <button
-                        onClick={handleCreate}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium"
-                    >
-                        <Plus className="w-5 h-5" />
-                        Nueva Intención
-                    </button>
-                </div>
-
-                {/* Intents List */}
-                <div className="space-y-3">
-                    {intents.map((intent) => (
-                        <div
-                            key={intent.id}
-                            className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all"
+            {!isWizardOpen && (
+                <div className="max-w-4xl space-y-6">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900">Intenciones</h2>
+                            <p className="text-gray-500">Gestiona las acciones automáticas de tu agente</p>
+                        </div>
+                        <button
+                            onClick={handleCreate}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-[#21AC96] text-white rounded-xl hover:bg-[#1b8c7a] transition-colors font-medium cursor-pointer"
                         >
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <h3 className="text-lg font-bold text-gray-900">{intent.name}</h3>
-                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${getActionColor(intent.actionType)}`}>
-                                            {getActionIcon(intent.actionType)}
-                                            {intent.actionType}
-                                        </div>
-                                        {!intent.enabled && (
-                                            <span className="px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-bold">
-                                                DESACTIVADA
-                                            </span>
-                                        )}
-                                    </div>
-                                    {intent.description && (
-                                        <p className="text-sm text-gray-600 mb-3">{intent.description}</p>
-                                    )}
-                                    <div className="flex items-center gap-4 text-xs text-gray-400">
-                                        <span>Trigger: <code className="bg-gray-50 px-2 py-0.5 rounded text-purple-600">{intent.trigger}</code></span>
-                                        <span>Activaciones: {intent.triggerCount}</span>
-                                        {intent.lastTriggered && (
-                                            <span>Última: {new Date(intent.lastTriggered).toLocaleDateString()}</span>
-                                        )}
-                                    </div>
-                                </div>
+                            <Plus className="w-5 h-5" />
+                            Nueva Intención
+                        </button>
+                    </div>
 
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => handleToggle(intent.id, intent.enabled)}
-                                        className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
-                                        title={intent.enabled ? 'Desactivar' : 'Activar'}
-                                    >
-                                        {intent.enabled ? (
-                                            <ToggleRight className="w-5 h-5 text-green-600" />
-                                        ) : (
-                                            <ToggleLeft className="w-5 h-5 text-gray-400" />
+                    {/* Intents List */}
+                    <div className="space-y-3">
+                        {intents.map((intent) => (
+                            <div
+                                key={intent.id}
+                                className="bg-white rounded-2xl p-5 border border-gray-100 hover:border-[#21AC96] hover:shadow-md transition-all group"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1 cursor-pointer" onClick={() => handleEdit(intent)}>
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="text-lg font-bold text-gray-900">{intent.name}</h3>
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${getActionColor(intent.actionType)}`}>
+                                                {getActionIcon(intent.actionType)}
+                                                {intent.actionType}
+                                            </div>
+                                            {!intent.enabled && (
+                                                <span className="px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-bold">
+                                                    DESACTIVADA
+                                                </span>
+                                            )}
+                                        </div>
+                                        {intent.description && (
+                                            <p className="text-sm text-gray-500 mb-3">{intent.description}</p>
                                         )}
-                                    </button>
-                                    <button
-                                        onClick={() => handleEdit(intent)}
-                                        className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
-                                    >
-                                        <Edit className="w-5 h-5 text-gray-600" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(intent.id)}
-                                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                                    >
-                                        <Trash2 className="w-5 h-5 text-red-600" />
-                                    </button>
+                                        <div className="flex items-center gap-4 text-xs text-gray-400">
+                                            <span>Activaciones: {intent.triggerCount}</span>
+                                            {intent.lastTriggered && (
+                                                <span>Última: {new Date(intent.lastTriggered).toLocaleDateString()}</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleToggle(intent.id, intent.enabled)}
+                                            className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                            title={intent.enabled ? 'Desactivar' : 'Activar'}
+                                        >
+                                            {intent.enabled ? (
+                                                <ToggleRight className="w-5 h-5 text-green-600" />
+                                            ) : (
+                                                <ToggleLeft className="w-5 h-5 text-gray-400" />
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(intent.id)}
+                                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                        >
+                                            <Trash2 className="w-5 h-5 text-red-600" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {isModalOpen && (
-                editingIntent ? (
-                    <IntentModal
-                        agentId={agentId}
-                        intent={editingIntent}
-                        onClose={() => setIsModalOpen(false)}
-                    />
-                ) : (
-                    <IntentWizard
-                        agentId={agentId}
-                        intent={null}
-                        onClose={() => setIsModalOpen(false)}
-                    />
-                )
+            {isWizardOpen && (
+                <IntentWizard
+                    agentId={agentId}
+                    intent={editingIntent}
+                    customFields={customFields}
+                    onClose={() => setIsWizardOpen(false)}
+                />
             )}
         </>
     )
 }
 
-function IntentWizard({ agentId, intent, onClose }: { agentId: string; intent: Intent | null; onClose: () => void }) {
+function IntentWizard({ agentId, intent, customFields, onClose }: { agentId: string; intent: Intent | null; customFields: CustomField[]; onClose: () => void }) {
     const [currentStep, setCurrentStep] = useState(0)
+
+    // Parse existing payloadJson safely
+    let defaultPayload = {
+        collectedFields: [] as any[],
+        instructions: '',
+        outputMapping: [] as any[]
+    };
+
+    if (intent?.payloadJson) {
+        try {
+            defaultPayload = { ...defaultPayload, ...(intent.payloadJson as any) };
+        } catch (e) { }
+    }
+
     const [formData, setFormData] = useState({
         name: intent?.name || '',
         description: intent?.description || '',
-        trigger: intent?.trigger || '',
-        actionType: intent?.actionType || 'WEBHOOK',
+        trigger: intent?.trigger || '', // Not heavily used in UI now but kept for compatibility
+        actionType: intent?.actionType || 'INTERNAL',
         actionUrl: intent?.actionUrl || '',
-        enabled: intent?.enabled ?? true
+        enabled: intent?.enabled ?? true,
+        payloadJson: defaultPayload
     })
+    
+    // Auto-complete variables feature state
+    const [showVariablesMenu, setShowVariablesMenu] = useState(false);
+    const [variableMenuPos, setVariableMenuPos] = useState({ top: 0, left: 0 });
+    const instructionsTextareaRef = useRef<HTMLTextAreaElement>(null);
+
     const [isSubmitting, setIsSubmitting] = useState(false)
     const router = useRouter()
 
     const steps = [
-        {
-            title: '¿Qué son las intenciones?',
-            description: 'Aprende cómo funcionan las intenciones en tu agente'
-        },
-        {
-            title: 'Nombre y Descripción',
-            description: 'Dale un nombre claro a tu intención'
-        },
-        {
-            title: 'Palabras Clave (Triggers)',
-            description: 'Define qué palabras activarán esta intención'
-        },
-        {
-            title: 'Tipo de Acción',
-            description: 'Elige qué debe hacer tu agente cuando detecte esta intención'
-        },
-        {
-            title: 'Configuración Final',
-            description: 'Revisa y activa tu intención'
-        }
+        { title: 'Detalles generales' },
+        { title: 'Configurar acción' },
+        { title: 'Datos de Salida' }
     ]
 
     const handleNext = () => {
@@ -279,8 +270,7 @@ function IntentWizard({ agentId, intent, onClose }: { agentId: string; intent: I
         }
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleSubmit = async () => {
         setIsSubmitting(true)
 
         try {
@@ -308,90 +298,315 @@ function IntentWizard({ agentId, intent, onClose }: { agentId: string; intent: I
 
     const canProceed = () => {
         switch (currentStep) {
-            case 0: return true
-            case 1: return formData.name.trim() !== ''
-            case 2: {
-                // Verificar que haya al menos un tag
-                const tags = formData.trigger.split('|').filter(t => t.trim() !== '')
-                return tags.length > 0
-            }
-            case 3: return formData.actionType !== '' && (formData.actionType !== 'WEBHOOK' || formData.actionUrl.trim() !== '')
-            case 4: return true
+            case 0: return formData.name.trim() !== ''
+            case 1: 
+                // We want to at least have instructions, and optionally collected fields
+                return formData.payloadJson.instructions.trim() !== ''
+            case 2: 
+                return true
             default: return false
         }
     }
+
+    // Handlers for dynamic lists
+    const addCollectedField = () => {
+        setFormData(prev => ({
+            ...prev,
+            payloadJson: {
+                ...prev.payloadJson,
+                collectedFields: [
+                    ...prev.payloadJson.collectedFields,
+                    { name: '', description: '', type: 'Texto' }
+                ]
+            }
+        }))
+    }
+
+    const updateCollectedField = (index: number, key: string, value: string) => {
+        setFormData(prev => {
+            const newFields = [...prev.payloadJson.collectedFields];
+            newFields[index] = { ...newFields[index], [key]: value };
+            return {
+                ...prev,
+                payloadJson: { ...prev.payloadJson, collectedFields: newFields }
+            }
+        })
+    }
+
+    const removeCollectedField = (index: number) => {
+        setFormData(prev => {
+            const newFields = prev.payloadJson.collectedFields.filter((_, i) => i !== index);
+            return {
+                ...prev,
+                payloadJson: { ...prev.payloadJson, collectedFields: newFields }
+            }
+        })
+    }
+
+    const addOutputMapping = () => {
+        setFormData(prev => ({
+            ...prev,
+            payloadJson: {
+                ...prev.payloadJson,
+                outputMapping: [
+                    ...prev.payloadJson.outputMapping,
+                    { customFieldId: '', valueSource: '' }
+                ]
+            }
+        }))
+    }
+
+    const updateOutputMapping = (index: number, key: string, value: string) => {
+        setFormData(prev => {
+            const newMappings = [...prev.payloadJson.outputMapping];
+            newMappings[index] = { ...newMappings[index], [key]: value };
+            return {
+                ...prev,
+                payloadJson: { ...prev.payloadJson, outputMapping: newMappings }
+            }
+        })
+    }
+
+    const removeOutputMapping = (index: number) => {
+        setFormData(prev => {
+            const newMappings = prev.payloadJson.outputMapping.filter((_, i) => i !== index);
+            return {
+                ...prev,
+                payloadJson: { ...prev.payloadJson, outputMapping: newMappings }
+            }
+        })
+    }
+
+    const insertVariable = (variableName: string) => {
+        const textarea = instructionsTextareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = formData.payloadJson.instructions;
+        
+        let prefix = text.substring(0, start);
+        // Clean up the `{{` or `@` they might have been typing
+        if (prefix.endsWith('{{')) prefix = prefix.substring(0, prefix.length - 2);
+        else if (prefix.endsWith('@')) prefix = prefix.substring(0, prefix.length - 1);
+
+        const newText = prefix + `{{${variableName}}}` + text.substring(end);
+        
+        setFormData(prev => ({
+            ...prev,
+            payloadJson: { ...prev.payloadJson, instructions: newText }
+        }));
+        
+        setShowVariablesMenu(false);
+        // Refocus textarea after short timeout logic can be skipped for brevity, but let's keep it simple.
+        setTimeout(() => {
+             textarea.focus();
+             const newCaret = prefix.length + variableName.length + 4;
+             textarea.setSelectionRange(newCaret, newCaret);
+        }, 10);
+    }
+    
+    // Keyboard listener for textarea to open autocomplete
+    const handleTextareaKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        const textarea = e.currentTarget;
+        const val = textarea.value;
+        const cursor = textarea.selectionEnd;
+        const prevChars = val.substring(Math.max(0, cursor - 2), cursor);
+        const prevChar = val.substring(Math.max(0, cursor - 1), cursor);
+        
+        if (prevChars === '{{' || prevChar === '@') {
+            // Calculate a rough position
+            // (Using standard coordinates without an external library is quite rough, we'll just float it near the input for simplicity or stick it below)
+            setVariableMenuPos({ top: textarea.offsetTop + textarea.offsetHeight + 5, left: textarea.offsetLeft });
+            setShowVariablesMenu(true);
+        } else if (e.key === 'Escape') {
+            setShowVariablesMenu(false);
+        }
+    };
 
     const renderStepContent = () => {
         switch (currentStep) {
             case 0:
                 return (
                     <div className="space-y-6">
-                        <div className="bg-purple-50 rounded-2xl p-6 border border-purple-100">
-                            <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <Target className="w-5 h-5 text-purple-600" />
-                                ¿Qué son las intenciones?
-                            </h3>
-                            <p className="text-gray-700 mb-4">
-                                Las intenciones son como "botones de acción" que tu agente puede activar automáticamente cuando detecta ciertas palabras o frases en las conversaciones.
-                            </p>
-                            <div className="bg-white rounded-xl p-4 border border-purple-200">
-                                <p className="text-sm font-semibold text-gray-900 mb-2">Ejemplo práctico:</p>
-                                <p className="text-sm text-gray-700">
-                                    Si un usuario escribe <strong>"quiero agendar una visita"</strong>, tu agente puede:
-                                </p>
-                                <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1">
-                                    <li>Detectar las palabras clave: <code className="bg-gray-100 px-1 rounded">agendar|visita|cita</code></li>
-                                    <li>Activar la intención "Agendar Visita"</li>
-                                    <li>Llamar a un webhook para crear la cita en tu sistema</li>
-                                    <li>Confirmar al usuario que la cita fue agendada</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100">
-                            <h4 className="text-md font-bold text-gray-900 mb-2">¿Cuándo usar intenciones?</h4>
-                            <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                                <li>Para automatizar acciones repetitivas (agendar citas, enviar información, etc.)</li>
-                                <li>Para integrar tu chatbot con sistemas externos (CRM, calendarios, etc.)</li>
-                                <li>Para mejorar la experiencia del usuario con respuestas rápidas y acciones inmediatas</li>
-                            </ul>
-                        </div>
-                    </div>
-                )
-            case 1:
-                return (
-                    <div className="space-y-6">
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <label className="block text-sm font-bold text-gray-700">Nombre de la Intención</label>
-                                <Tooltip content="Un nombre descriptivo que te ayude a identificar fácilmente esta intención. Ejemplo: 'Agendar Visita', 'Solicitar Información', 'Contactar Vendedor'">
-                                    <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                                </Tooltip>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-bold text-gray-700">Nombre de la intención</label>
                             </div>
                             <input
                                 type="text"
                                 required
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                placeholder="Ej: Agendar Visita"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#21AC96]"
+                                placeholder="Ej: Perfil laboral"
                             />
-                            <p className="text-xs text-gray-500 mt-1">Usa un nombre claro y descriptivo</p>
                         </div>
 
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <label className="block text-sm font-bold text-gray-700">Descripción (opcional)</label>
-                                <Tooltip content="Una descripción breve que explique qué hace esta intención. Esto te ayudará a recordar su propósito más adelante.">
-                                    <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                                </Tooltip>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-bold text-gray-700">Cuándo usar esta intención (opcional)</label>
+                                <span className="text-xs text-gray-400 font-medium">{formData.description.length}/512</span>
                             </div>
                             <textarea
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                rows={3}
-                                placeholder="Ej: Esta intención permite a los usuarios agendar visitas a propiedades disponibles"
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value.substring(0, 512) })}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#21AC96] min-h-[120px] resize-none"
+                                placeholder="Ej: Pregunta cual es el perfil laboral del prospecto una vez ya tengas su ingreso."
                             />
+                        </div>
+                    </div>
+                )
+            case 1:
+                return (
+                    <div className="space-y-8">
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="block text-sm font-bold text-gray-700">Recopilar datos del cliente (opcional)</label>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {formData.payloadJson.collectedFields.map((field, idx) => (
+                                    <div key={idx} className="flex flex-col sm:flex-row items-center gap-3">
+                                        <div className="p-2 text-gray-300">
+                                            <GripVertical className="w-4 h-4" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={field.name}
+                                            onChange={(e) => updateCollectedField(idx, 'name', e.target.value)}
+                                            placeholder="Ej: Ingreso salarial"
+                                            className="w-full sm:w-[35%] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] text-sm"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={field.description}
+                                            onChange={(e) => updateCollectedField(idx, 'description', e.target.value)}
+                                            placeholder="Ej: para saber lo que gana la persona"
+                                            className="w-full sm:w-[40%] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] text-sm"
+                                        />
+                                        <select
+                                            value={field.type}
+                                            onChange={(e) => updateCollectedField(idx, 'type', e.target.value)}
+                                            className="w-full sm:w-[25%] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] bg-white text-sm"
+                                        >
+                                            <option value="Texto">Texto</option>
+                                            <option value="Número">Número</option>
+                                            <option value="Booleano">Sí/No</option>
+                                            <option value="Fecha">Fecha</option>
+                                        </select>
+                                        <button onClick={() => removeCollectedField(idx)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <button
+                                onClick={addCollectedField}
+                                className="mt-3 flex items-center gap-2 text-sm text-[#21AC96] font-bold hover:text-[#198d7a]"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Agregar campo
+                            </button>
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="block text-sm font-bold text-gray-700">Acción que debe realizarse:</label>
+                            </div>
+                            <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#21AC96] relative">
+                                <div className="flex items-start">
+                                    <div className="p-3 border-r border-gray-200 bg-gray-50 flex items-center gap-2 text-sm text-gray-600 font-medium w-32 shrink-0">
+                                        Instruciones
+                                    </div>
+                                    <textarea
+                                        ref={instructionsTextareaRef}
+                                        value={formData.payloadJson.instructions}
+                                        onChange={(e) => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                payloadJson: { ...prev.payloadJson, instructions: e.target.value }
+                                            }))
+                                            // Make sure we auto-hide if they deleted "@"
+                                            if (!e.target.value.includes('@') && !e.target.value.includes('{{')) {
+                                                setShowVariablesMenu(false);
+                                            }
+                                        }}
+                                        onKeyUp={handleTextareaKeyUp}
+                                        placeholder="Ej: Solicita el {{Ingreso salarial}} del prospecto una vez ya tengas su zona de interes."
+                                        className="w-full p-3 resize-none focus:outline-none min-h-[100px] text-sm"
+                                    />
+                                </div>
+                                <div className="absolute bottom-2 right-3 text-xs text-gray-400 font-medium">
+                                    {formData.payloadJson.instructions.length}/512
+                                </div>
+                                <div className="absolute top-2 right-3 text-xs text-blue-500 font-medium cursor-help" title="Usa {{ o @ para insertar variables">
+                                    💡 ¡Tip! Escribe @ para variables
+                                </div>
+                                
+                                {/* Mention Dropdown */}
+                                {showVariablesMenu && (
+                                    <div 
+                                        className="absolute z-10 w-64 bg-white border border-gray-200 shadow-xl rounded-xl py-2 max-h-60 overflow-y-auto"
+                                        style={{ top: '40px', left: '130px' }} // fixed basic position to stay inside textarea relative box
+                                    >
+                                        <div className="px-3 pb-1 text-xs font-bold text-gray-400">Campos de la intención</div>
+                                        {formData.payloadJson.collectedFields.length === 0 && (
+                                            <div className="px-3 py-1 text-xs text-gray-500">No hay campos aún</div>
+                                        )}
+                                        {formData.payloadJson.collectedFields.map((field: any, i: number) => (
+                                            <div 
+                                                key={i} 
+                                                onClick={() => insertVariable(field.name || `variable_${i}`)}
+                                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer flex justify-between items-center"
+                                            >
+                                                <span>{field.name || `[Sin nombre]`}</span>
+                                                <span className="text-[10px] text-gray-400">{field.type}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            {/* Optional Webhook configuration (default to hidden inside an accordion or basic toggle) */}
+                            <div className="flex items-center gap-2 mb-2">
+                                <label className="text-sm font-bold text-gray-700">Tipo de ejecución</label>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm mt-2">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input 
+                                        type="radio" 
+                                        checked={formData.actionType === 'INTERNAL'} 
+                                        onChange={() => setFormData({...formData, actionType: 'INTERNAL', actionUrl: ''})}
+                                        className="w-4 h-4 text-[#21AC96]" 
+                                    />
+                                    <span>Asistente Autonómo (Interno)</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input 
+                                        type="radio" 
+                                        checked={formData.actionType === 'WEBHOOK'} 
+                                        onChange={() => setFormData({...formData, actionType: 'WEBHOOK'})}
+                                        className="w-4 h-4 text-[#21AC96]" 
+                                    />
+                                    <span>Llamar a un Webhook API</span>
+                                </label>
+                            </div>
+                            {formData.actionType === 'WEBHOOK' && (
+                                <div className="mt-4">
+                                    <input
+                                        type="url"
+                                        value={formData.actionUrl || ''}
+                                        onChange={(e) => setFormData({ ...formData, actionUrl: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                                        placeholder="https://tu-api.com/webhook"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Este endpoint será disparado cuando se cumpla esta intención.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )
@@ -399,143 +614,79 @@ function IntentWizard({ agentId, intent, onClose }: { agentId: string; intent: I
                 return (
                     <div className="space-y-6">
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <label className="block text-sm font-bold text-gray-700">Palabras Clave (Triggers)</label>
-                                <Tooltip content="Estas son las palabras o frases que activarán esta intención. Escribe cada palabra y presiona Enter para agregarla. El agente buscará cualquiera de estas palabras en los mensajes de los usuarios.">
-                                    <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                                </Tooltip>
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="block text-sm font-bold text-gray-700">Persistir variables en el contacto (opcional)</label>
                             </div>
-                            <TagsInput
-                                value={formData.trigger}
-                                onChange={(value) => setFormData({ ...formData, trigger: value })}
-                                placeholder="Escribe una palabra clave y presiona Enter"
-                            />
-                            <p className="text-xs text-gray-500 mt-2">Presiona Enter o escribe una coma (,) para agregar cada palabra clave</p>
-                            <div className="bg-gray-50 rounded-xl p-4 mt-3 border border-gray-200">
-                                <p className="text-xs font-semibold text-gray-700 mb-2">💡 Consejo:</p>
-                                <p className="text-xs text-gray-600">
-                                    Incluye variaciones de las palabras. Por ejemplo, si quieres detectar "agendar", también agrega: <strong>agendar</strong>, <strong>agenda</strong>, <strong>cita</strong>, <strong>reservar</strong>
-                                </p>
+                            
+                            <div className="space-y-4">
+                                {formData.payloadJson.outputMapping.map((mapping, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 w-full">
+                                        <div className="w-1/2">
+                                            <p className="text-xs font-semibold text-gray-500 mb-1">Guardar en el campo:</p>
+                                            <div className="relative">
+                                                <select
+                                                    value={mapping.customFieldId}
+                                                    onChange={(e) => updateOutputMapping(idx, 'customFieldId', e.target.value)}
+                                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] text-sm appearance-none bg-white"
+                                                >
+                                                    <option value="">Selecciona un campo</option>
+                                                    {customFields.map(cf => (
+                                                        <option key={cf.id} value={cf.id}>{cf.label}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                                    <ChevronRight className="w-4 h-4 rotate-90" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="w-1/2 relative">
+                                            <p className="text-xs font-semibold text-gray-500 mb-1">El valor:</p>
+                                            <div className="flex items-center gap-2">
+                                                <select
+                                                    value={mapping.valueSource}
+                                                    onChange={(e) => updateOutputMapping(idx, 'valueSource', e.target.value)}
+                                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#21AC96] text-sm appearance-none bg-white"
+                                                >
+                                                    <option value="">¿De dónde sacamos el valor?</option>
+                                                    {formData.payloadJson.collectedFields.map((field: any, fieldIdx: number) => (
+                                                        <option key={fieldIdx} value={field.name}>Variable: {`{{${field.name}}}`}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-9 flex items-center px-2 mt-[20px] text-gray-500">
+                                                     <ChevronRight className="w-4 h-4 rotate-90" />
+                                                </div>
+                                                <button onClick={() => removeOutputMapping(idx)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors Shrink-0 mt-4 border border-transparent">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
-                    </div>
-                )
-            case 3:
-                return (
-                    <div className="space-y-6">
-                        <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <label className="block text-sm font-bold text-gray-700">Tipo de Acción</label>
-                                <Tooltip content="Elige qué debe hacer tu agente cuando detecte esta intención. Puede llamar a un webhook externo, ejecutar una acción interna, o mostrar un formulario.">
-                                    <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                                </Tooltip>
-                            </div>
-                            <select
-                                value={formData.actionType}
-                                onChange={(e) => setFormData({ ...formData, actionType: e.target.value })}
-                                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+
+                            <button
+                                onClick={addOutputMapping}
+                                className="mt-4 flex items-center gap-2 text-sm text-[#21AC96] font-bold hover:text-[#198d7a]"
                             >
-                                <option value="WEBHOOK">Webhook (llamar URL externa)</option>
-                                <option value="INTERNAL">Acción Interna</option>
-                                <option value="FORM">Formulario</option>
-                            </select>
-                            <div className="mt-3 space-y-2">
-                                <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-                                    <p className="text-xs font-semibold text-gray-900 mb-1">🔗 Webhook:</p>
-                                    <p className="text-xs text-gray-700">Llama a una URL externa (tu API, CRM, sistema de calendario, etc.) cuando se detecte la intención.</p>
-                                </div>
-                                <div className="bg-purple-50 rounded-xl p-3 border border-purple-200">
-                                    <p className="text-xs font-semibold text-gray-900 mb-1">⚡ Acción Interna:</p>
-                                    <p className="text-xs text-gray-700">Ejecuta una acción dentro del sistema del agente (guardar datos, enviar notificación, etc.)</p>
-                                </div>
-                                <div className="bg-green-50 rounded-xl p-3 border border-green-200">
-                                    <p className="text-xs font-semibold text-gray-900 mb-1">📝 Formulario:</p>
-                                    <p className="text-xs text-gray-700">Muestra un formulario al usuario para recopilar información adicional.</p>
-                                </div>
-                            </div>
+                                <Plus className="w-4 h-4" />
+                                Agregar variable
+                            </button>
                         </div>
 
-                        {formData.actionType === 'WEBHOOK' && (
-                            <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <label className="block text-sm font-bold text-gray-700">Webhook URL</label>
-                                    <Tooltip content="La URL completa de tu API o servicio externo que será llamada cuando se active esta intención. Debe ser una URL válida que acepte peticiones HTTP POST.">
-                                        <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                                    </Tooltip>
-                                </div>
-                                <input
-                                    type="url"
-                                    required
-                                    value={formData.actionUrl}
-                                    onChange={(e) => setFormData({ ...formData, actionUrl: e.target.value })}
-                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                    placeholder="https://api.example.com/webhook"
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Asegúrate de que la URL sea accesible y acepte peticiones POST</p>
-                            </div>
-                        )}
-                    </div>
-                )
-            case 4:
-                return (
-                    <div className="space-y-6">
-                        <div className="bg-green-50 rounded-2xl p-6 border border-green-200">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                Resumen de tu Intención
-                            </h3>
-                            <div className="space-y-3 text-sm">
-                                <div>
-                                    <span className="font-semibold text-gray-700">Nombre:</span>
-                                    <span className="ml-2 text-gray-900">{formData.name || 'No definido'}</span>
-                                </div>
-                                {formData.description && (
-                                    <div>
-                                        <span className="font-semibold text-gray-700">Descripción:</span>
-                                        <span className="ml-2 text-gray-900">{formData.description}</span>
-                                    </div>
-                                )}
-                                <div>
-                                    <span className="font-semibold text-gray-700">Palabras clave:</span>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {formData.trigger ? (
-                                            formData.trigger.split('|').filter(t => t.trim()).map((tag, idx) => (
-                                                <span key={idx} className="inline-flex items-center px-2.5 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-medium">
-                                                    {tag}
-                                                </span>
-                                            ))
-                                        ) : (
-                                            <span className="text-gray-400 text-sm">No definido</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div>
-                                    <span className="font-semibold text-gray-700">Tipo de acción:</span>
-                                    <span className="ml-2 text-gray-900">{formData.actionType}</span>
-                                </div>
-                                {formData.actionType === 'WEBHOOK' && formData.actionUrl && (
-                                    <div>
-                                        <span className="font-semibold text-gray-700">Webhook URL:</span>
-                                        <span className="ml-2 text-gray-900 break-all">{formData.actionUrl}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200 mt-8">
                             <input
                                 type="checkbox"
                                 id="enabled"
                                 checked={formData.enabled}
                                 onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                                className="w-4 h-4 text-[#21AC96] rounded focus:ring-[#21AC96] accent-[#21AC96]"
                             />
                             <div className="flex-1">
                                 <label htmlFor="enabled" className="text-sm font-medium text-gray-700 cursor-pointer">
                                     Activar intención inmediatamente
                                 </label>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Si está activada, el agente comenzará a detectar esta intención de inmediato. Puedes desactivarla más tarde si lo necesitas.
+                                    Si está activada, el agente comenzará a detectar e intentar completar esta intención de inmediato.
                                 </p>
                             </div>
                         </div>
@@ -547,256 +698,77 @@ function IntentWizard({ agentId, intent, onClose }: { agentId: string; intent: I
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                {/* Progress Bar */}
-                <div className="mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-2xl font-bold">Crear Nueva Intención</h2>
-                        <span className="text-sm text-gray-500">Paso {currentStep + 1} de {steps.length}</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                            className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                        />
-                    </div>
-                    <div className="flex items-center justify-between mt-4">
-                        {steps.map((step, index) => (
-                            <div
-                                key={index}
-                                className={`flex-1 text-center ${index <= currentStep ? 'text-purple-600' : 'text-gray-400'}`}
-                            >
-                                <div className={`w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center ${index < currentStep ? 'bg-purple-600 text-white' :
-                                    index === currentStep ? 'bg-purple-100 text-purple-600 border-2 border-purple-600' :
-                                        'bg-gray-100 text-gray-400'
-                                    }`}>
-                                    {index < currentStep ? <CheckCircle2 className="w-5 h-5" /> : index + 1}
-                                </div>
-                                <p className="text-xs font-medium hidden sm:block">{step.title}</p>
+        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm max-w-4xl mx-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header / Steps Navigation */}
+            <div className="px-6 py-6 sm:px-10 sm:py-8 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">{intent ? 'Editar intención' : 'Crear intención'}</h2>
+            </div>
+            
+            <div className="px-6 sm:px-10 py-6 bg-gray-50/50 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 border-b border-gray-100">
+                {steps.map((step, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                        <div className="flex flex-col items-center">
+                            <div className={cn(
+                                "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-2 transition-all duration-300",
+                                index === currentStep ? "bg-[#b18dfa] text-white" : 
+                                index < currentStep ? "bg-gray-800 text-white" : "bg-gray-200 text-gray-500"
+                            )}>
+                                {index + 1}
                             </div>
-                        ))}
+                            <span className={cn(
+                                "text-[13px] font-medium hidden sm:block",
+                                index === currentStep ? "text-[#b18dfa]" : "text-gray-500"
+                            )}>
+                                {step.title}
+                            </span>
+                        </div>
+                        {index < steps.length - 1 && (
+                            <div className="w-12 md:w-20 h-px bg-gray-300 mb-6 hidden md:block"></div>
+                        )}
                     </div>
-                </div>
+                ))}
+            </div>
 
-                {/* Step Content */}
-                <div className="mb-6 min-h-[300px]">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{steps[currentStep].title}</h3>
-                    <p className="text-sm text-gray-500 mb-6">{steps[currentStep].description}</p>
+            <div className="p-6 sm:p-10 min-h-[400px]">
+                {/* Form Content Wrapper */}
+                <div className="max-w-3xl mx-auto border border-gray-100 rounded-2xl p-6 shadow-sm">
                     {renderStepContent()}
                 </div>
-
-                {/* Navigation Buttons */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
-                    {currentStep > 0 && (
-                        <button
-                            type="button"
-                            onClick={handlePrevious}
-                            className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                            Anterior
-                        </button>
-                    )}
-                    <div className="flex-1" />
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                    >
-                        Cancelar
-                    </button>
-                    {currentStep < steps.length - 1 ? (
-                        <button
-                            type="button"
-                            onClick={handleNext}
-                            disabled={!canProceed()}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Siguiente
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={isSubmitting || !canProceed()}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
-                        >
-                            {isSubmitting ? 'Guardando...' : 'Crear Intención'}
-                        </button>
-                    )}
-                </div>
             </div>
-        </div>
-    )
-}
 
-function IntentModal({ agentId, intent, onClose }: { agentId: string; intent: Intent | null; onClose: () => void }) {
-    const [formData, setFormData] = useState({
-        name: intent?.name || '',
-        description: intent?.description || '',
-        trigger: intent?.trigger || '',
-        actionType: intent?.actionType || 'WEBHOOK',
-        actionUrl: intent?.actionUrl || '',
-        enabled: intent?.enabled ?? true
-    })
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const router = useRouter()
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsSubmitting(true)
-
-        try {
-            const url = intent
-                ? `/api/agents/${agentId}/intents/${intent.id}`
-                : `/api/agents/${agentId}/intents`
-
-            const response = await fetch(url, {
-                method: intent ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            })
-
-            if (!response.ok) throw new Error('Failed to save intent')
-
-            toast.success(intent ? 'Intención actualizada' : 'Intención creada')
-            router.refresh()
-            onClose()
-        } catch (error) {
-            toast.error('Error al guardar')
-        } finally {
-            setIsSubmitting(false)
-        }
-    }
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <h2 className="text-2xl font-bold mb-6">{intent ? 'Editar' : 'Nueva'} Intención</h2>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <label className="block text-sm font-bold text-gray-700">Nombre</label>
-                            <Tooltip content="Un nombre descriptivo que te ayude a identificar fácilmente esta intención. Ejemplo: 'Agendar Visita', 'Solicitar Información', 'Contactar Vendedor'">
-                                <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                            </Tooltip>
-                        </div>
-                        <input
-                            type="text"
-                            required
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Ej: Agendar Visita"
-                        />
-                    </div>
-
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <label className="block text-sm font-bold text-gray-700">Descripción (opcional)</label>
-                            <Tooltip content="Una descripción breve que explique qué hace esta intención. Esto te ayudará a recordar su propósito más adelante.">
-                                <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                            </Tooltip>
-                        </div>
-                        <textarea
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            rows={2}
-                            placeholder="Describe qué hace esta intención"
-                        />
-                    </div>
-
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <label className="block text-sm font-bold text-gray-700">Trigger (palabras clave)</label>
-                            <Tooltip content="Estas son las palabras o frases que activarán esta intención. Escribe cada palabra y presiona Enter para agregarla. El agente buscará cualquiera de estas palabras en los mensajes de los usuarios.">
-                                <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                            </Tooltip>
-                        </div>
-                        <TagsInput
-                            value={formData.trigger}
-                            onChange={(value) => setFormData({ ...formData, trigger: value })}
-                            placeholder="Escribe una palabra clave y presiona Enter"
-                        />
-                        <p className="text-xs text-gray-500 mt-2">Presiona Enter o escribe una coma (,) para agregar cada palabra clave</p>
-                    </div>
-
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <label className="block text-sm font-bold text-gray-700">Tipo de Acción</label>
-                            <Tooltip content="Elige qué debe hacer tu agente cuando detecte esta intención. Puede llamar a un webhook externo, ejecutar una acción interna, o mostrar un formulario.">
-                                <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                            </Tooltip>
-                        </div>
-                        <select
-                            value={formData.actionType}
-                            onChange={(e) => setFormData({ ...formData, actionType: e.target.value })}
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        >
-                            <option value="WEBHOOK">Webhook (llamar URL externa)</option>
-                            <option value="INTERNAL">Acción Interna</option>
-                            <option value="FORM">Formulario</option>
-                        </select>
-                    </div>
-
-                    {formData.actionType === 'WEBHOOK' && (
-                        <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <label className="block text-sm font-bold text-gray-700">Webhook URL</label>
-                                <Tooltip content="La URL completa de tu API o servicio externo que será llamada cuando se active esta intención. Debe ser una URL válida que acepte peticiones HTTP POST.">
-                                    <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                                </Tooltip>
-                            </div>
-                            <input
-                                type="url"
-                                required
-                                value={formData.actionUrl}
-                                onChange={(e) => setFormData({ ...formData, actionUrl: e.target.value })}
-                                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                placeholder="https://api.example.com/webhook"
-                            />
-                        </div>
-                    )}
-
-                    <div className="flex items-center gap-3">
-                        <input
-                            type="checkbox"
-                            id="enabled"
-                            checked={formData.enabled}
-                            onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                            className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                        />
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="enabled" className="text-sm font-medium text-gray-700">
-                                Activar intención inmediatamente
-                            </label>
-                            <Tooltip content="Si está activada, el agente comenzará a detectar esta intención de inmediato. Puedes desactivarla más tarde si lo necesitas.">
-                                <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                            </Tooltip>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
-                        >
-                            {isSubmitting ? 'Guardando...' : intent ? 'Actualizar' : 'Crear'}
-                        </button>
-                    </div>
-                </form>
+            {/* Footer */}
+            <div className="px-6 sm:px-10 py-6 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50/50">
+                <button
+                    onClick={onClose}
+                    className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm"
+                >
+                    Cancelar
+                </button>
+                {currentStep > 0 && (
+                     <button
+                        onClick={handlePrevious}
+                        className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-sm"
+                     >
+                        Atrás
+                     </button>
+                )}
+                {currentStep < steps.length - 1 ? (
+                    <button
+                        onClick={handleNext}
+                        disabled={!canProceed()}
+                        className="px-6 py-2.5 rounded-xl bg-[#21AC96] text-white font-bold hover:bg-[#1b8c7a] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Continuar
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || !canProceed()}
+                        className="px-6 py-2.5 rounded-xl bg-[#21AC96] text-white font-bold hover:bg-[#1b8c7a] transition-colors text-sm disabled:opacity-50"
+                    >
+                        {isSubmitting ? 'Guardando...' : 'Salvar'}
+                    </button>
+                )}
             </div>
         </div>
     )

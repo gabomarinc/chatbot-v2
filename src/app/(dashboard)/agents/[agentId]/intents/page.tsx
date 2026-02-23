@@ -10,6 +10,9 @@ export default async function AgentIntentsPage({ params }: { params: Promise<{ a
         include: {
             intents: {
                 orderBy: { createdAt: 'desc' }
+            },
+            customFieldDefinitions: {
+                orderBy: { createdAt: 'desc' }
             }
         }
     })
@@ -26,5 +29,11 @@ export default async function AgentIntentsPage({ params }: { params: Promise<{ a
         lastTriggered: intent.lastTriggered
     }))
 
-    return <IntentsClient agentId={agent.id} intents={serializedIntents} />
+    const serializedCustomFields = agent.customFieldDefinitions.map(field => ({
+        ...field,
+        createdAt: field.createdAt,
+        updatedAt: field.updatedAt
+    }))
+
+    return <IntentsClient agentId={agent.id} intents={serializedIntents} customFields={serializedCustomFields} />
 }
