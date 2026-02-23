@@ -17,7 +17,6 @@ interface AgentSettingsFormProps {
         signMessages: boolean;
         restrictTopics: boolean;
         splitLongMessages: boolean;
-        allowReminders: boolean;
         smartRetrieval: boolean;
         transferToHuman: boolean;
         proactiveFollowUps?: boolean;
@@ -126,7 +125,6 @@ export function AgentSettingsForm({ agent, teamMembers }: AgentSettingsFormProps
             icon: Zap,
             items: [
                 { id: 'restrictTopics', label: 'Restringir temas', desc: 'Solo responder sobre el negocio' },
-                { id: 'allowReminders', label: 'Permitir recordatorios', desc: 'Agendar eventos con el usuario' },
                 { id: 'proactiveFollowUps', label: 'Seguimientos Proactivos', desc: 'El bot enviará recordatorios automáticos' },
                 { id: 'transferToHuman', label: 'Transferir a humano', desc: 'Permitir escalar a un chat real' },
                 { id: 'enableNPS', label: 'Encuesta NPS', desc: 'Activa la encuesta de satisfacción al cerrar' },

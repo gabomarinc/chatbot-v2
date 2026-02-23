@@ -71,7 +71,7 @@ export async function calculateAgentScore(agentId: string): Promise<number> {
     // 3. CONFIGURATION (30 points max)
     // ========================================
     const isPremiumModel = agent.model.includes('gpt-4') || agent.model.includes('gemini');
-    const hasTools = agent.transferToHuman || agent.allowReminders || agent.smartRetrieval;
+    const hasTools = agent.transferToHuman || agent.smartRetrieval;
     const hasCustomFields = agent.customFieldDefinitions.length > 0;
 
     if (isPremiumModel) totalPoints += 10; // Using premium model
@@ -121,7 +121,7 @@ export async function getScoreBreakdown(agentId: string) {
     const promptLength = agent.personalityPrompt?.length || 0;
     const hasJobDescription = !!agent.jobDescription && agent.jobDescription.length > 20;
     const isPremiumModel = agent.model.includes('gpt-4') || agent.model.includes('gemini');
-    const hasTools = agent.transferToHuman || agent.allowReminders || agent.smartRetrieval;
+    const hasTools = agent.transferToHuman || agent.smartRetrieval;
     const hasCustomFields = agent.customFieldDefinitions.length > 0;
 
     // Audit findings

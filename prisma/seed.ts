@@ -177,7 +177,6 @@ async function main() {
       signMessages: true,
       restrictTopics: false,
       splitLongMessages: true,
-      allowReminders: false,
       smartRetrieval: true,
       transferToHuman: true,
     },

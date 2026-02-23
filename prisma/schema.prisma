@@ -80,7 +80,6 @@ model Agent {
   signMessages       Boolean            @default(true)
   restrictTopics     Boolean            @default(false)
   splitLongMessages  Boolean            @default(true)
-  allowReminders     Boolean            @default(false)
   smartRetrieval     Boolean            @default(false)
   transferToHuman    Boolean            @default(true)
   proactiveFollowUps Boolean            @default(false)

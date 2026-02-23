@@ -25,7 +25,6 @@ export default async function AgentSettingsPage({ params }: { params: Promise<{ 
                 signMessages: agent.signMessages,
                 restrictTopics: agent.restrictTopics,
                 splitLongMessages: agent.splitLongMessages,
-                allowReminders: agent.allowReminders,
                 smartRetrieval: agent.smartRetrieval,
                 transferToHuman: agent.transferToHuman,
                 responseDelay: agent.responseDelay,
