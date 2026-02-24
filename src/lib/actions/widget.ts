@@ -1032,7 +1032,7 @@ Reglas para cobrar (ESTRICTO):
                                             data: {
                                                 assignedTo: member.userId,
                                                 status: 'OPEN',
-                                                isPaused: true // PAUSE the bot so it won't interfere
+                                                isPaused: false // KEEP the bot active until human manually assumes control
                                             }
                                         });
 
@@ -1729,7 +1729,7 @@ Reglas para cobrar (ESTRICTO):
                                         data: {
                                             assignedTo: member.userId,
                                             status: 'OPEN',
-                                            isPaused: true
+                                            isPaused: false // KEEP the bot active until human manually assumes control
                                         }
                                     });
 
