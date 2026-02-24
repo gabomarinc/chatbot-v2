@@ -5,6 +5,20 @@ import { getUserWorkspace } from '@/lib/actions/dashboard'
 import { revalidatePath } from 'next/cache'
 import { DEFAULT_COLUMNS } from '@/lib/constants/prospect-pipeline'
 
+/* ─── Get last conversationId for a contact (for modal) ──────────────── */
+export async function getContactConversationId(contactId: string): Promise<string | null> {
+    try {
+        const conv = await prisma.conversation.findFirst({
+            where: { contactId },
+            orderBy: { lastMessageAt: 'desc' },
+            select: { id: true }
+        })
+        return conv?.id ?? null
+    } catch {
+        return null
+    }
+}
+
 /* ─── Fetch pipeline data ─────────────────────────────────────────────── */
 export async function getProspectPipelineData(agentId?: string) {
     try {
