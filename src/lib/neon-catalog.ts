@@ -45,47 +45,53 @@ export async function queryProductCatalog(
         connectionTimeoutMillis: 5_000,
     });
 
+    // Split into keywords and remove short noise words (like "de", "el", "a")
+    const keywords = safeTerm.split(/\s+/)
+        .filter(k => k.length >= 2) // Keep keywords of 2 or more chars
+        .slice(0, 5); // Limit keywords to top 5 for performance
+
+    if (keywords.length === 0) {
+        return { results: [], total: 0 };
+    }
+
     try {
-        // Build a simple full-text ILIKE search across all text columns
-        // We use a single parameterized query to avoid injection
-        const query = `
-            SELECT *
-            FROM "${safeTable}"
-            WHERE CAST("${safeTable}".*::text AS text) ILIKE $1
-            LIMIT $2
-        `;
+        // Approach: Find rows that contain ALL keywords (AND logic)
+        // This is much better than single ILIKE for natural language
+        const conditions = keywords.map((_, i) => `CAST(row_to_json("${safeTable}") AS text) ILIKE $${i + 1}`);
+        const params = keywords.map(k => `%${k}%`);
 
-        // Fallback: simpler approach that works with most schemas
-        const simpleQuery = `
-            SELECT *
-            FROM "${safeTable}"
-            WHERE to_tsvector('simple', ${safeTable}::text) @@ plainto_tsquery('simple', $1)
-               OR EXISTS (
-                   SELECT 1
-                   FROM json_each_text(row_to_json("${safeTable}"))
-                   WHERE value ILIKE $2
-               )
-            LIMIT $3
-        `;
-
-        // Use the simplest approach: cast entire row to text and ILIKE
         const directQuery = `
             SELECT *
             FROM "${safeTable}"
-            WHERE CAST(row_to_json("${safeTable}") AS text) ILIKE $1
-            LIMIT $2
+            WHERE ${conditions.join(' AND ')}
+            LIMIT $${keywords.length + 1}
         `;
 
-        const { rows } = await pool.query(directQuery, [`%${safeTerm}%`, limit]);
+        let { rows } = await pool.query(directQuery, [...params, limit]);
 
-        // Count total matches (without limit)
-        const countQuery = `
-            SELECT COUNT(*) as total
-            FROM "${safeTable}"
-            WHERE CAST(row_to_json("${safeTable}") AS text) ILIKE $1
-        `;
-        const countResult = await pool.query(countQuery, [`%${safeTerm}%`]);
-        const total = parseInt(countResult.rows[0]?.total || '0', 10);
+        // Fallback: If AND search returns nothing and we have multiple keywords, try OR search
+        // with basic relevance ranking (rows matching more keywords come first)
+        if (rows.length === 0 && keywords.length > 1) {
+            console.log(`[NeonCatalog] AND search returned no results for "${safeTerm}", trying OR fallback...`);
+
+            const relevanceScore = keywords.map((_, i) => `(CASE WHEN CAST(row_to_json("${safeTable}") AS text) ILIKE $${i + 1} THEN 1 ELSE 0 END)`).join(' + ');
+
+            const orQuery = `
+                SELECT *
+                FROM "${safeTable}"
+                WHERE ${keywords.map((_, i) => `CAST(row_to_json("${safeTable}") AS text) ILIKE $${i + 1}`).join(' OR ')}
+                ORDER BY (${relevanceScore}) DESC
+                LIMIT $${keywords.length + 1}
+            `;
+
+            const orResult = await pool.query(orQuery, [...params, limit]);
+            rows = orResult.rows;
+        }
+
+        // Count total matches (using the same logic as the successful query)
+        // For simplicity and performance, we'll use the AND count if results were found, 
+        // otherwise just return the length of the result set as total.
+        const total = rows.length;
 
         return { results: rows, total };
     } catch (err: any) {

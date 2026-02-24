@@ -234,7 +234,10 @@ export async function generateAgentReply(
         parameters: {
           type: 'object',
           properties: {
-            searchTerm: { type: 'string', description: 'The product or category to search for.' }
+            searchTerm: {
+              type: 'string',
+              description: 'The product or category to search for. PRO TIP: Use only relevant keywords (e.g. "espatula gypsum 6") instead of full sentences or quantities for better results.'
+            }
           },
           required: ['searchTerm']
         }
