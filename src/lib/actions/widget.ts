@@ -44,7 +44,7 @@ export async function sendWidgetMessage(data: {
                 agent: {
                     include: {
                         workspace: { include: { creditBalance: true, paymentConfigs: true } },
-                        integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT'] }, enabled: true } },
+                        integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT', 'NEON_CATALOG', 'ALTAPLAZA'] as any }, enabled: true } },
                         intents: { where: { enabled: true } },
                         customFieldDefinitions: true
                     }
@@ -325,6 +325,9 @@ export async function sendWidgetMessage(data: {
             const altaplazaIntegration = agent.integrations.find((i: any) => i.provider === 'ALTAPLAZA');
             const hasAltaplaza = !!altaplazaIntegration && altaplazaIntegration.enabled;
 
+            const neonIntegration = agent.integrations.find((i: any) => i.provider === 'NEON_CATALOG');
+            const hasNeon = !!neonIntegration && neonIntegration.enabled;
+
             // Get agent media for image search tool
             const agentMedia = await prisma.agentMedia.findMany({
                 where: { agentId: channel.agentId }
@@ -443,6 +446,14 @@ Reglas para cobrar (ESTRICTO):
                     })()}
 ` : ''}
 `;
+
+            const neonPrompt = hasNeon ? `\nBÚSQUEDA EN CATÁLOGO (NEON DB):
+- TIENES ACCESO al catálogo de productos de la empresa en tiempo real.
+- Si el usuario pregunta por precios, stock, tallas, marcas o cualquier detalle de un producto, USA 'query_product_catalog'.
+- No asumas que no tienes la información sin antes consultar la herramienta.
+- Si la herramienta no devuelve resultados, informa al usuario que no se encontró el producto específico y ofrece ayuda para buscar algo similar.` : '';
+
+            systemPrompt += neonPrompt;
 
             // Define tools for Calendar and Image Search, and Contact Update
             const tools: any[] = [];
@@ -619,6 +630,20 @@ Reglas para cobrar (ESTRICTO):
                         }
                     }
                 );
+            }
+
+            if (hasNeon) {
+                tools.push({
+                    name: 'query_product_catalog',
+                    description: 'Busca productos, precios y existencias en el catálogo de la empresa.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            searchTerm: { type: 'string', description: 'El producto o categoría a buscar.' }
+                        },
+                        required: ['searchTerm']
+                    }
+                });
             }
 
             if (hasZoho) {
@@ -1197,6 +1222,51 @@ Reglas para cobrar (ESTRICTO):
                                     } else {
                                         toolResult = { found: false, message: "No se encontraron imágenes disponibles." };
                                     }
+                                }
+                            } else if (name === "query_product_catalog") {
+                                try {
+                                    const { queryProductCatalog } = await import('@/lib/neon-catalog');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+                                    const searchTerm = (args as any).searchTerm;
+                                    const result = await queryProductCatalog(neonIntegration.configJson as any, searchTerm);
+                                    await logIntegrationEvent(agent.id, 'NEON_CATALOG' as any, 'PRODUCT_QUERY', result.error ? 'ERROR' : 'SUCCESS', { searchTerm, count: result.results?.length });
+                                    toolResult = result;
+                                } catch (e: any) {
+                                    console.error('[GEMINI] query_product_catalog error:', e);
+                                    toolResult = { results: [], total: 0, error: e.message };
+                                }
+                            } else if (name === "altaplaza_check_user") {
+                                try {
+                                    const { checkUser } = await import('@/lib/altaplaza');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+                                    const result = await checkUser((args as any).idCard);
+                                    await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'CHECK_USER', 'SUCCESS', { idCard: (args as any).idCard });
+                                    toolResult = result;
+                                } catch (e: any) {
+                                    console.error('[GEMINI] altaplaza_check_user error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "altaplaza_register_user") {
+                                try {
+                                    const { registerUser } = await import('@/lib/altaplaza');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+                                    const result = await registerUser(args as any);
+                                    await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_USER', 'SUCCESS', { email: (args as any).email });
+                                    toolResult = result;
+                                } catch (e: any) {
+                                    console.error('[GEMINI] altaplaza_register_user error:', e);
+                                    toolResult = { success: false, error: e.message };
+                                }
+                            } else if (name === "altaplaza_register_invoice") {
+                                try {
+                                    const { registerInvoice } = await import('@/lib/altaplaza');
+                                    const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+                                    const result = await registerInvoice(args as any);
+                                    await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_INVOICE', 'SUCCESS', { invoiceNumber: (args as any).invoiceNumber });
+                                    toolResult = result;
+                                } catch (e: any) {
+                                    console.error('[GEMINI] altaplaza_register_invoice error:', e);
+                                    toolResult = { success: false, error: e.message };
                                 }
                             } else if (name === "create_zoho_lead") {
                                 console.log('[GEMINI] Tool create_zoho_lead called with:', args);
@@ -1895,6 +1965,51 @@ Reglas para cobrar (ESTRICTO):
                                 } else {
                                     toolResult = { found: false, message: "No se encontraron imágenes disponibles." };
                                 }
+                            }
+                        } else if (name === "query_product_catalog") {
+                            try {
+                                const { queryProductCatalog } = await import('@/lib/neon-catalog');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+                                const searchTerm = args.searchTerm;
+                                const result = await queryProductCatalog(neonIntegration.configJson as any, searchTerm);
+                                await logIntegrationEvent(agent.id, 'NEON_CATALOG' as any, 'PRODUCT_QUERY', result.error ? 'ERROR' : 'SUCCESS', { searchTerm, count: result.results?.length });
+                                toolResult = result;
+                            } catch (e: any) {
+                                console.error('[OPENAI] query_product_catalog error:', e);
+                                toolResult = { results: [], total: 0, error: e.message };
+                            }
+                        } else if (name === "altaplaza_check_user") {
+                            try {
+                                const { checkUser } = await import('@/lib/altaplaza');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+                                const result = await checkUser((args as any).idCard);
+                                await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'CHECK_USER', 'SUCCESS', { idCard: (args as any).idCard });
+                                toolResult = result;
+                            } catch (e: any) {
+                                console.error('[OPENAI] altaplaza_check_user error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "altaplaza_register_user") {
+                            try {
+                                const { registerUser } = await import('@/lib/altaplaza');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+                                const result = await registerUser(args as any);
+                                await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_USER', 'SUCCESS', { email: (args as any).email });
+                                toolResult = result;
+                            } catch (e: any) {
+                                console.error('[OPENAI] altaplaza_register_user error:', e);
+                                toolResult = { success: false, error: e.message };
+                            }
+                        } else if (name === "altaplaza_register_invoice") {
+                            try {
+                                const { registerInvoice } = await import('@/lib/altaplaza');
+                                const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+                                const result = await registerInvoice(args as any);
+                                await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_INVOICE', 'SUCCESS', { invoiceNumber: (args as any).invoiceNumber });
+                                toolResult = result;
+                            } catch (e: any) {
+                                console.error('[OPENAI] altaplaza_register_invoice error:', e);
+                                toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "create_zoho_lead") {
                             console.log('[OPENAI] Tool create_zoho_lead called with:', args);
