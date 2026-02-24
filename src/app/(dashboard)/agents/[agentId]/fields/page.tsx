@@ -5,9 +5,6 @@ export default async function FieldsPage({ params }: { params: Promise<{ agentId
     const { agentId } = await params;
     const fields = await getCustomFields(agentId);
 
-    return (
-        <div className="max-w-4xl">
-            <FieldsManager agentId={agentId} initialFields={fields} />
-        </div>
-    );
+    return <FieldsManager agentId={agentId} initialFields={fields} />;
+
 }
