@@ -7,7 +7,7 @@ import { getChatMessages, getConversations } from '@/lib/actions/dashboard';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AssignConversationModal } from './AssignConversationModal';
-import { assumeConversation, delegateToBot, closeConversation } from '@/lib/actions/conversations';
+import { assumeConversation, delegateToBot, closeConversation, pauseBot, unpauseBot } from '@/lib/actions/conversations';
 import { sendManualMessage } from '@/lib/actions/chat';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -626,45 +626,73 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                 {/* Control Buttons */}
                                 <div className="space-y-2">
                                     {!activeConversation.isPaused ? (
-                                        <button
-                                            onClick={async () => {
-                                                if (!selectedConvId || isProcessing || !currentUserId) return;
-                                                setIsProcessing(true);
-                                                try {
-                                                    const result = await assumeConversation(selectedConvId);
-                                                    if (result.error) {
-                                                        alert(result.error);
-                                                    } else {
-                                                        updateConversationAssignment(selectedConvId, currentUserId, true);
-                                                        router.refresh();
+                                        activeConversation.assignedTo === currentUserId ? (
+                                            <button
+                                                onClick={async () => {
+                                                    if (!selectedConvId || isProcessing) return;
+                                                    setIsProcessing(true);
+                                                    try {
+                                                        const result = await pauseBot(selectedConvId);
+                                                        if (result.error) {
+                                                            alert(result.error);
+                                                        } else {
+                                                            updateConversationAssignment(selectedConvId, currentUserId ?? null, true);
+                                                            router.refresh();
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('Error pausing bot:', error);
+                                                    } finally {
+                                                        setIsProcessing(false);
                                                     }
-                                                } catch (error) {
-                                                    console.error('Error assuming control:', error);
-                                                } finally {
-                                                    setIsProcessing(false);
-                                                }
-                                            }}
-                                            disabled={isProcessing}
-                                            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#1E9A86] text-white rounded-xl hover:bg-[#158571] transition-all font-bold text-xs shadow-lg shadow-[#1E9A86]/20 disabled:opacity-50"
-                                        >
-                                            <Hand className="w-4 h-4" />
-                                            {isProcessing ? 'Procesando...' : 'Asumir Control'}
-                                        </button>
+                                                }}
+                                                disabled={isProcessing}
+                                                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-all font-bold text-xs shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                                            >
+                                                <Bot className="w-4 h-4" />
+                                                {isProcessing ? 'Procesando...' : 'Pausar Bot'}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={async () => {
+                                                    if (!selectedConvId || isProcessing || !currentUserId) return;
+                                                    setIsProcessing(true);
+                                                    try {
+                                                        const result = await assumeConversation(selectedConvId);
+                                                        if (result.error) {
+                                                            alert(result.error);
+                                                        } else {
+                                                            // Assume conversation now keeps isPaused: false
+                                                            updateConversationAssignment(selectedConvId, currentUserId ?? null, false);
+                                                            router.refresh();
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('Error assuming control:', error);
+                                                    } finally {
+                                                        setIsProcessing(false);
+                                                    }
+                                                }}
+                                                disabled={isProcessing}
+                                                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#1E9A86] text-white rounded-xl hover:bg-[#158571] transition-all font-bold text-xs shadow-lg shadow-[#1E9A86]/20 disabled:opacity-50"
+                                            >
+                                                <Hand className="w-4 h-4" />
+                                                {isProcessing ? 'Procesando...' : 'Asumir Control'}
+                                            </button>
+                                        )
                                     ) : (
                                         <button
                                             onClick={async () => {
                                                 if (!selectedConvId || isProcessing) return;
                                                 setIsProcessing(true);
                                                 try {
-                                                    const result = await delegateToBot(selectedConvId);
+                                                    const result = await unpauseBot(selectedConvId);
                                                     if (result.error) {
                                                         alert(result.error);
                                                     } else {
-                                                        updateConversationAssignment(selectedConvId, activeConversation.assignedTo || null, false);
+                                                        updateConversationAssignment(selectedConvId, activeConversation.assignedTo ?? null, false);
                                                         router.refresh();
                                                     }
                                                 } catch (error) {
-                                                    console.error('Error delegating to bot:', error);
+                                                    console.error('Error unpausing bot:', error);
                                                 } finally {
                                                     setIsProcessing(false);
                                                 }

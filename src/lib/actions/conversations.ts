@@ -132,6 +132,19 @@ export async function assignConversation(conversationId: string, userId: string)
             }
         })
 
+        // RE-FETCH conversation to ensure we have any contact info updated recently
+        const refreshedConv = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: { agent: true, contact: true, messages: { orderBy: { createdAt: 'desc' }, take: 20 } }
+        });
+
+        if (refreshedConv) {
+            // Update local object for notifications
+            (conversation as any).contactName = refreshedConv.contactName;
+            (conversation as any).contactEmail = refreshedConv.contactEmail;
+            (conversation as any).contact = refreshedConv.contact;
+        }
+
         // Generate Summary and Send Email
         const intentSummary = await summarizeIntent([...conversation.messages].reverse());
 
@@ -370,7 +383,7 @@ export async function assumeConversation(conversationId: string) {
             data: {
                 assignedTo: session.user.id,
                 assignedAt: new Date(),
-                isPaused: true
+                isPaused: false // Keep bot active even when taking control manually
             }
         })
 
@@ -380,6 +393,53 @@ export async function assumeConversation(conversationId: string) {
     } catch (error: any) {
         console.error('Error assuming conversation:', error)
         return { error: error.message || 'Error al asumir conversación' }
+    }
+}
+
+/**
+ * Pause bot - Human takes manual control
+ */
+export async function pauseBot(conversationId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) return { error: 'No autorizado' }
+
+        const workspace = await getUserWorkspace()
+        if (!workspace) return { error: 'Workspace no encontrado' }
+
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { isPaused: true }
+        })
+
+        revalidatePath('/dashboard')
+        revalidatePath('/chat')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error pausing bot:', error)
+        return { error: error.message || 'Error al pausar bot' }
+    }
+}
+
+/**
+ * Unpause bot - Resumes AI but keeps assignment
+ */
+export async function unpauseBot(conversationId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) return { error: 'No autorizado' }
+
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { isPaused: false }
+        })
+
+        revalidatePath('/dashboard')
+        revalidatePath('/chat')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error unpausing bot:', error)
+        return { error: error.message || 'Error al re-activar bot' }
     }
 }
 
