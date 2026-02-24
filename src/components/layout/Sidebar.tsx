@@ -212,39 +212,44 @@ export function Sidebar() {
                     </div>
                 )}
 
-                {/* Tutorial Redirect Modal */}
-                {showTourModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
-                        <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowTourModal(false)}></div>
-                        <div className="bg-white rounded-[40px] w-full max-w-sm relative z-[101] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100">
-                            <div className="p-8 text-center">
-                                <div className="w-16 h-16 bg-[#21AC96]/10 rounded-3xl flex items-center justify-center text-[#21AC96] mx-auto mb-6">
-                                    <Bot className="w-8 h-8" />
-                                </div>
-                                <h3 className="text-gray-900 font-black text-xl mb-3">Tutorial del Agente</h3>
-                                <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">
-                                    Para ver el tutorial interactivo, necesitas estar dentro del perfil de uno de tus agentes.
-                                </p>
-                                <div className="space-y-3">
-                                    <Link
-                                        href="/agents"
-                                        onClick={() => setShowTourModal(false)}
-                                        className="w-full bg-[#21AC96] text-white rounded-2xl py-4 font-bold hover:bg-[#1a8a78] transition-all flex items-center justify-center gap-2"
-                                    >
-                                        Ir a Agentes <ArrowRight className="w-4 h-4" />
-                                    </Link>
-                                    <button
-                                        onClick={() => setShowTourModal(false)}
-                                        className="w-full bg-gray-50 text-gray-500 rounded-2xl py-4 font-bold hover:bg-gray-100 transition-all"
-                                    >
-                                        Cerrar
-                                    </button>
-                                </div>
+
+            </div>
+
+            {/* Tutorial Redirect Modal — outside sidebar so it covers full screen */}
+            {showTourModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-200">
+                    <div
+                        className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+                        onClick={() => setShowTourModal(false)}
+                    />
+                    <div className="bg-white rounded-[40px] w-full max-w-sm relative z-[201] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100">
+                        <div className="p-8 text-center">
+                            <div className="w-16 h-16 bg-[#21AC96]/10 rounded-3xl flex items-center justify-center text-[#21AC96] mx-auto mb-6">
+                                <Bot className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-gray-900 font-black text-xl mb-3">Tutorial del Agente</h3>
+                            <p className="text-gray-500 text-sm font-medium leading-relaxed mb-8">
+                                Para ver el tutorial interactivo, necesitas estar dentro del perfil de uno de tus agentes.
+                            </p>
+                            <div className="space-y-3">
+                                <Link
+                                    href="/agents"
+                                    onClick={() => setShowTourModal(false)}
+                                    className="w-full bg-[#21AC96] text-white rounded-2xl py-4 font-bold hover:bg-[#1a8a78] transition-all flex items-center justify-center gap-2"
+                                >
+                                    Ir a Agentes <ArrowRight className="w-4 h-4" />
+                                </Link>
+                                <button
+                                    onClick={() => setShowTourModal(false)}
+                                    className="w-full bg-gray-50 text-gray-500 rounded-2xl py-4 font-bold hover:bg-gray-100 transition-all"
+                                >
+                                    Cerrar
+                                </button>
                             </div>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </>
     );
 }
