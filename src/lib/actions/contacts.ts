@@ -302,11 +302,26 @@ export async function generateContactInsights(contactId: string) {
             if (!googleKey) googleKey = configs.find(c => c.key === 'GOOGLE_API_KEY')?.value;
         }
 
+        // Fetch custom field definitions for the workspace to guide extraction
+        const agents = await prisma.agent.findMany({
+            where: { workspaceId: contact.workspaceId },
+            include: { customFieldDefinitions: true }
+        });
+        const allFields = agents.flatMap(a => a.customFieldDefinitions);
+        const fieldsDescription = allFields.map(f => `- ${f.label} (ID: "${f.key}"): ${f.description || ''} ${f.type === 'SELECT' ? `[Opciones: ${f.options.join(', ')}]` : ''}`).join('\n');
+
         const prompt = `Analiza la siguiente historia de conversación de un prospecto y genera un perfil detallado en formato JSON.
         
         CONVERSACIÓN:
         ${chatContext}
         
+        CAMPOS PERSONALIZADOS A EXTRAER (Si se mencionan):
+        ${fieldsDescription}
+
+        IMPORTANTE: 
+        1. Si el usuario proporcionó su Nombre, Email o Teléfono, inclúyelos en el objeto JSON con las llaves "name", "email", "phone".
+        2. Para los campos personalizados, extrae los valores más precisos.
+
         Responde ÚNICAMENTE con un objeto JSON con esta estructura exacta:
         {
           "summary": "Un resumen biográfico corto (max 3 líneas)",
@@ -317,7 +332,9 @@ export async function generateContactInsights(contactId: string) {
             "sentiment": "predominante (positivo, neutral, frustrado)",
             "urgency": "nivel de urgencia (baja, media, alta)",
             "nextBestAction": "Sugerencia de lo que el agente debería hacer a continuación"
-          }
+          },
+          "standardFields": { "name": "...", "email": "...", "phone": "..." },
+          "customData": { "id_del_campo": "valor_extraido", ... }
         }`;
 
         let aiResponse = "";
@@ -341,12 +358,24 @@ export async function generateContactInsights(contactId: string) {
 
         const insights = JSON.parse(aiResponse);
 
+        // Merge existing customData with newly extracted one
+        const currentCustomData = (contact.customData as Record<string, any>) || {};
+        const newCustomData = { ...currentCustomData, ...(insights.customData || {}) };
+
+        // Prepare standard fields update (only if they have values)
+        const standardUpdates: any = {};
+        if (insights.standardFields?.name) standardUpdates.name = insights.standardFields.name;
+        if (insights.standardFields?.email) standardUpdates.email = insights.standardFields.email;
+        if (insights.standardFields?.phone) standardUpdates.phone = insights.standardFields.phone;
+
         const updatedContact = await prisma.contact.update({
             where: { id: contactId },
             data: {
                 summary: insights.summary,
                 leadScore: insights.leadScore,
                 aiInsights: insights.aiInsights,
+                customData: newCustomData,
+                ...standardUpdates,
                 lastContactAt: allMessages[allMessages.length - 1].createdAt,
                 activities: {
                     create: {

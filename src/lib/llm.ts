@@ -128,13 +128,18 @@ export async function generateAgentReply(
       type: 'function',
       function: {
         name: 'update_contact',
-        description: 'Update the contact information with collected data.',
+        description: `Update the contact information with collected data. 
+          AVAILABLE CUSTOM FIELDS:
+          ${agent.customFieldDefinitions?.map((f: any) => `- "${f.key}": ${f.label}`).join('\n          ') || 'None'}
+          
+          CRITICAL: Call this tool as soon as you identify any of these pieces of information. 
+          If you are also calling another tool (like catalog search), you can and should call both in the same response.`,
         parameters: {
           type: 'object',
           properties: {
             updates: {
               type: 'object',
-              description: 'Key-value pairs of data to update. Keys can be standard fields ("name", "email", "phone") or defined custom fields.',
+              description: 'Key-value pairs of data to update. Use the exact keys provided in the description above.',
               additionalProperties: true
             }
           },
@@ -658,7 +663,8 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
       }
       prompt += fieldDesc + '\n';
     });
-    prompt += '\nCuando el usuario te proporcione esta información, USA LA HERRAMIENTA "update_contact" para guardarla.\n';
+    prompt += '\nCuando el usuario te proporcione esta información (o si la deduces claramente de su pedido), USA LA HERRAMIENTA "update_contact" INMEDIATAMENTE para guardarla.\n';
+    prompt += '*** IMPORTANTE: No esperes a que el usuario termine de hablar. Si el usuario dice "Quiero techos", guarda "Techos" en el campo de categoria_de_producto al mismo tiempo que buscas en el catálogo. ***\n';
     prompt += 'Para campos con Opciones válidas, DEBES ajustar la respuesta del usuario a una de las opciones exactas si es posible, o pedir clarificación.\n';
     prompt += 'No seas intrusivo. Pregunta por estos datos de manera natural durante la conversación.\n\n';
   }
