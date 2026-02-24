@@ -29,12 +29,13 @@ interface Prospect {
     tags: string[]
     leadScore: number | null
     summary: string | null
-    lastMessage: string | null
-    lastMessageAt: Date | string
+    aiInsights: Record<string, any> | null
+    intent: string | null
+    channelType: string | null
     agentId: string | null
     agentName: string | null
-    channelType?: string | null
     createdAt: Date | string
+    activities: { id: string; type: string; content: string; createdAt: Date | string; userName: string | null }[]
 }
 
 interface Agent {
@@ -130,12 +131,12 @@ function ProspectCard({
                 )}
             </div>
 
-            {/* Last message */}
-            {prospect.lastMessage && (
+            {/* Intent / first message */}
+            {prospect.intent && (
                 <div className="bg-gray-50 rounded-xl px-2.5 py-2 border border-gray-100 mb-3">
                     <div className="flex items-start gap-1.5">
                         <MessageSquare className="w-2.5 h-2.5 text-gray-300 shrink-0 mt-0.5" />
-                        <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">{prospect.lastMessage}</p>
+                        <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">{prospect.intent}</p>
                     </div>
                 </div>
             )}

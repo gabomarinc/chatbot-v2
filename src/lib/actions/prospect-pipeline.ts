@@ -46,20 +46,30 @@ export async function getProspectPipelineData(agentId?: string) {
         // Build contact query
         const contactWhere: any = { workspaceId: workspace.id }
 
-        // Fetch contacts with conversations, agent info, custom fields
+        // Fetch contacts with conversations, agent info, channel, first message (intent), activities
         const contacts = await prisma.contact.findMany({
             where: contactWhere,
             include: {
-                conversations: {
+                activities: {
                     orderBy: { createdAt: 'desc' },
+                    take: 10,
+                    include: {
+                        user: { select: { name: true, image: true } }
+                    }
+                },
+                conversations: {
+                    orderBy: { lastMessageAt: 'desc' },
                     take: 1,
                     include: {
                         agent: {
                             select: { id: true, name: true, avatarUrl: true }
                         },
+                        channel: {
+                            select: { type: true }
+                        },
                         messages: {
                             where: { role: 'USER' },
-                            orderBy: { createdAt: 'desc' },
+                            orderBy: { createdAt: 'asc' },
                             take: 1,
                             select: { content: true, createdAt: true }
                         }
@@ -77,25 +87,35 @@ export async function getProspectPipelineData(agentId?: string) {
         // Map to a clean prospect shape
         const prospects = filtered.map(c => {
             const lastConv = c.conversations[0]
-            const lastMessage = lastConv?.messages[0]
+            const firstUserMsg = lastConv?.messages[0]   // first USER msg = intent
             const agent = lastConv?.agent
+            const channelType = lastConv?.channel?.type ?? null
+            const aiInsights = c.aiInsights as Record<string, any> | null
 
             return {
                 id: c.id,
                 name: c.name || 'Sin nombre',
                 email: c.email,
                 phone: c.phone,
-                prospectStatus: c.prospectStatus || 'Nuevo',
+                prospectStatus: (c as any).prospectStatus || 'Nuevo',
                 customData: c.customData as Record<string, any> || {},
                 tags: c.tags,
                 leadScore: c.leadScore,
                 summary: c.summary,
-                lastMessage: lastMessage?.content || null,
-                lastMessageAt: lastMessage?.createdAt || c.createdAt,
+                aiInsights,
+                // First user message = the user's original intent
+                intent: firstUserMsg?.content || null,
+                channelType,
                 agentId: agent?.id || null,
                 agentName: agent?.name || null,
                 createdAt: c.createdAt,
-                messagesCount: c.conversations.reduce((acc, conv) => acc + 0, 0)
+                activities: c.activities.map(a => ({
+                    id: a.id,
+                    type: a.type,
+                    content: a.content,
+                    createdAt: a.createdAt,
+                    userName: a.user?.name || null
+                }))
             }
         })
 
