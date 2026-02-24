@@ -289,7 +289,23 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                                             : 'bg-white border border-gray-100 text-gray-700 rounded-tl-none shadow-sm'
                                                             }`}
                                                     >
-                                                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                                                        {(() => {
+                                                            const renderContent = (content: string) => {
+                                                                // 1. Handle markdown links: [text](url)
+                                                                let html = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80 transition-opacity">$1</a>');
+
+                                                                // 2. Handle raw URLs: http...
+                                                                const urlRegex = /(?<!href=")(?<!src=")(https?:\/\/[^\s<]+)/g;
+                                                                html = html.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80 transition-opacity">$1</a>');
+
+                                                                // 3. Handle bold text: **text**
+                                                                html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold">$1</strong>');
+
+                                                                return <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: html }} />;
+                                                            };
+
+                                                            return renderContent(msg.content);
+                                                        })()}
                                                         <div className={`text-[10px] mt-2 font-medium ${msg.role === 'USER' ? 'text-white/70' : 'text-gray-400'
                                                             }`}>
                                                             {format(new Date(msg.createdAt), "HH:mm")}

@@ -507,11 +507,21 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                                         const hasMetadata = metadataObj?.type;
 
                                                         if (msg.content) {
-                                                            return (
-                                                                <div className={hasMetadata ? 'mt-2' : ''}>
-                                                                    {msg.content}
-                                                                </div>
-                                                            );
+                                                            const renderContent = (content: string) => {
+                                                                // 1. Handle markdown links: [text](url)
+                                                                let html = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80 transition-opacity">$1</a>');
+
+                                                                // 2. Handle raw URLs: http...
+                                                                const urlRegex = /(?<!href=")(?<!src=")(https?:\/\/[^\s<]+)/g;
+                                                                html = html.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80 transition-opacity">$1</a>');
+
+                                                                // 3. Handle bold text: **text**
+                                                                html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold">$1</strong>');
+
+                                                                return <div className={cn("leading-relaxed whitespace-pre-wrap", hasMetadata ? 'mt-2' : '')} dangerouslySetInnerHTML={{ __html: html }} />;
+                                                            };
+
+                                                            return renderContent(msg.content);
                                                         }
                                                         return null;
                                                     })()}

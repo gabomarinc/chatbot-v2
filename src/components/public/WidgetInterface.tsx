@@ -402,7 +402,30 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                                     }
                                     return null;
                                 })()}
-                                <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                                {(() => {
+                                    const renderContent = (content: string) => {
+                                        // 1. Handle markdown links: [text](url)
+                                        let html = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80 transition-opacity">$1</a>');
+
+                                        // 2. Handle raw URLs: http...
+                                        // But avoid double-wrapping links that were already handled by markdown link regex
+                                        // A simple way is to match URLs that are NOT preceded by quote or paren or already inside an <a> tag
+                                        // Actually, let's just use a simpler approach: handle markdown first, then find remaining URLs.
+
+                                        // For now, let's keep it simple as requested: make URLs clickable.
+                                        // We'll use a safer regex for raw URLs
+                                        const urlRegex = /(?<!href=")(?<!src=")(https?:\/\/[^\s<]+)/g;
+                                        html = html.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80 transition-opacity">$1</a>');
+
+                                        // 3. Handle bold text: **text**
+                                        html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold">$1</strong>');
+
+                                        // 4. Handle line breaks
+                                        return <div className="leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: html }} />;
+                                    };
+
+                                    return renderContent(msg.content);
+                                })()}
                                 <span className={cn(
                                     "text-[10px] block mt-1 font-medium opacity-70",
                                     isUser ? "text-right text-gray-400" : "text-left text-white/80"

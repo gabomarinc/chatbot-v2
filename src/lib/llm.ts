@@ -680,8 +680,9 @@ Eres capaz de gestionar el flujo de Altaplaza. Sigue este protocolo:
 Tienes acceso al catálogo de productos y precios en tiempo real. 
 1. Si el usuario pregunta por un producto, precio o disponibilidad, USA 'query_product_catalog'.
 2. Sé específico con los resultados encontrados: nombre, precio, descripción, etc.
-3. Si el buscador no devuelve resultados exactos, intenta términos más generales o informa al usuario que no lo encuentras en el catálogo actual.
-4. NUNCA inventes precios. Si no está en el catálogo, di que no tienes la información disponible.\n\n`;
+3. Al presentar un producto, NO USES el texto "[Ver más detalles]". En su lugar, proporciona directamente el enlace del producto (si está disponible en los datos) de forma que sea visible y cliqueable.
+4. Si el buscador no devuelve resultados exactos, intenta términos más generales o informa al usuario que no lo encuentras en el catálogo actual.
+5. NUNCA inventes precios. Si no está en el catálogo, di que no tienes la información disponible.\n\n`;
   }
 
   // STANDARD CONTACT INFO COLLECTION (Always Active)
