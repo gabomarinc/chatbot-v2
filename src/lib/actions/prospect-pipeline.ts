@@ -3,13 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { getUserWorkspace } from '@/lib/actions/dashboard'
 import { revalidatePath } from 'next/cache'
-
-/* ─── Default columns ─────────────────────────────────────────────────── */
-export const DEFAULT_COLUMNS = [
-    { name: 'Nuevo', color: '#21AC96', order: 0, isDefault: true },
-    { name: 'En Proceso', color: '#3B82F6', order: 1, isDefault: true },
-    { name: 'Flujo Terminado', color: '#8B5CF6', order: 2, isDefault: true },
-]
+import { DEFAULT_COLUMNS } from '@/lib/constants/prospect-pipeline'
 
 /* ─── Fetch pipeline data ─────────────────────────────────────────────── */
 export async function getProspectPipelineData(agentId?: string) {
