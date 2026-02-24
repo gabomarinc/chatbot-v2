@@ -131,12 +131,14 @@ function ProspectCard({
                 )}
             </div>
 
-            {/* Intent / first message */}
-            {prospect.intent && (
+            {/* Intent / Summary */}
+            {(prospect.summary || prospect.intent) && (
                 <div className="bg-gray-50 rounded-xl px-2.5 py-2 border border-gray-100 mb-3">
                     <div className="flex items-start gap-1.5">
                         <MessageSquare className="w-2.5 h-2.5 text-gray-300 shrink-0 mt-0.5" />
-                        <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">{prospect.intent}</p>
+                        <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">
+                            {prospect.summary || prospect.intent}
+                        </p>
                     </div>
                 </div>
             )}
