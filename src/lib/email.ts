@@ -226,5 +226,87 @@ Ir a la conversación: ${conversationLink}
     }
 }
 
+export async function sendAssignmentEmail(
+    email: string,
+    agentName: string,
+    workspaceName: string,
+    userName: string,
+    conversationLink: string,
+    visitorDetails: {
+        name: string;
+        email: string;
+        phone: string;
+    },
+    intentSummary: string
+) {
+    try {
+        const resend = getResendClient();
+
+        const subject = `📌 Chat Asignado: ${visitorDetails.name || 'Visitante'}`;
+
+        const htmlContent = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #f0f0f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <div style="background: linear-gradient(135deg, #21AC96 0%, #1a8a78 100%); padding: 30px; color: white; text-align: center;">
+                    <h2 style="margin: 0; font-size: 24px;">Nueva Asignación</h2>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">${workspaceName}</p>
+                </div>
+                <div style="padding: 30px; background: white;">
+                    <p style="font-size: 16px; color: #333;">Hola <b>${userName}</b>,</p>
+                    <p style="font-size: 16px; color: #555;">Se te ha asignado una conversación que requiere tu atención.</p>
+                    
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 25px 0; border-left: 4px solid #21AC96;">
+                        <h4 style="margin: 0 0 10px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Resumen de Intención (IA)</h4>
+                        <p style="margin: 0; font-size: 16px; color: #1e293b; line-height: 1.5;">"${intentSummary}"</p>
+                    </div>
+
+                    <div style="margin-bottom: 30px; background: #fff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px;">
+                        <h4 style="margin: 0 0 15px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Detalles del Contacto</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b; font-size: 14px; width: 80px;">Nombre:</td>
+                                <td style="padding: 5px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${visitorDetails.name}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b; font-size: 14px;">Email:</td>
+                                <td style="padding: 5px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${visitorDetails.email}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 5px 0; color: #64748b; font-size: 14px;">Teléfono:</td>
+                                <td style="padding: 5px 0; color: #1e293b; font-size: 14px; font-weight: 600;">${visitorDetails.phone}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <a href="${conversationLink}" style="display: inline-block; background: #21AC96; color: white; padding: 16px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(33, 172, 150, 0.2);">
+                            Abrir Conversación
+                        </a>
+                    </div>
+                </div>
+                <div style="background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #f0f0f0;">
+                    <p style="margin: 0; font-size: 12px; color: #94a3b8;">Este es un mensaje automático de la plataforma de Chatbot (${agentName}).</p>
+                </div>
+            </div>
+        `;
+
+        const { data, error } = await resend.emails.send({
+            from: FROM_EMAIL,
+            to: email,
+            subject,
+            html: htmlContent,
+        });
+
+        if (error) {
+            console.error('Resend error:', error);
+            throw error;
+        }
+
+        return { success: true, messageId: data?.id };
+    } catch (error) {
+        console.error('Error sending assignment email:', error);
+        return { success: false, error };
+    }
+}
+
 
 

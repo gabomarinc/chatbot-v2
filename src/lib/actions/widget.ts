@@ -1020,6 +1020,29 @@ Reglas para cobrar (ESTRICTO):
                                             }
                                         });
 
+                                        // Send Assignment Email
+                                        try {
+                                            const { sendAssignmentEmail } = await import('@/lib/email');
+                                            const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+                                            const link = `${appUrl}/chat?id=${conversation.id}`;
+
+                                            await sendAssignmentEmail(
+                                                member.user.email,
+                                                agent.name,
+                                                workspace.name,
+                                                member.user.name || member.user.email,
+                                                link,
+                                                {
+                                                    name: conversation.contactName || 'Visitante',
+                                                    email: conversation.contactEmail || 'No proporcionado',
+                                                    phone: (conversation as any).contact?.phone || 'No proporcionado'
+                                                },
+                                                (args as any).razon || `El bot ha asignado esta conversación al departamento de ${dept}.`
+                                            );
+                                        } catch (emailErr) {
+                                            console.error('[GEMINI] Error sending assignment email:', emailErr);
+                                        }
+
                                         toolResult = {
                                             success: true,
                                             message: `Conversación reasignada exitosamente a ${member.user.name || member.user.email} (${dept}). El bot se ha pausado.`,
@@ -1664,6 +1687,29 @@ Reglas para cobrar (ESTRICTO):
                                             isPaused: true
                                         }
                                     });
+
+                                    // Send Assignment Email
+                                    try {
+                                        const { sendAssignmentEmail } = await import('@/lib/email');
+                                        const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+                                        const link = `${appUrl}/chat?id=${conversation.id}`;
+
+                                        await sendAssignmentEmail(
+                                            member.user.email,
+                                            agent.name,
+                                            workspace.name,
+                                            member.user.name || member.user.email,
+                                            link,
+                                            {
+                                                name: conversation.contactName || 'Visitante',
+                                                email: conversation.contactEmail || 'No proporcionado',
+                                                phone: (conversation as any).contact?.phone || 'No proporcionado'
+                                            },
+                                            args.razon || `El bot ha asignado esta conversación al departamento de ${dept}.`
+                                        );
+                                    } catch (emailErr) {
+                                        console.error('[OPENAI] Error sending assignment email:', emailErr);
+                                    }
 
                                     toolResult = {
                                         success: true,
