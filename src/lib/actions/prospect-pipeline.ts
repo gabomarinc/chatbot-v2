@@ -138,7 +138,7 @@ export async function updateProspectStatus(contactId: string, newStatus: string,
         })
 
         // Log the status change as a SYSTEM activity
-        await prisma.contactActivity.create({
+        const activity = await prisma.contactActivity.create({
             data: {
                 contactId,
                 type: 'SYSTEM',
@@ -150,7 +150,16 @@ export async function updateProspectStatus(contactId: string, newStatus: string,
         })
 
         revalidatePath('/prospects')
-        return { success: true }
+        return {
+            success: true,
+            activity: {
+                id: activity.id,
+                type: activity.type,
+                content: activity.content,
+                createdAt: activity.createdAt,
+                userName: null
+            }
+        }
     } catch (error) {
         console.error('[updateProspectStatus]', error)
         return { success: false }

@@ -365,6 +365,15 @@ export function ProspectsKanbanBoard({ initialColumns, initialProspects, agents,
             setProspects(prev => prev.map(p => p.id === draggingId ? { ...p, prospectStatus: prospect.prospectStatus } : p))
             toast.error('Error al mover el prospecto')
         } else {
+            // Inject the new SYSTEM activity so the modal reflects it instantly
+            if ((res as any).activity) {
+                const newActivity = (res as any).activity
+                setProspects(prev => prev.map(p =>
+                    p.id === draggingId
+                        ? { ...p, activities: [newActivity, ...p.activities] }
+                        : p
+                ))
+            }
             toast.success(`"${prospect.name}" → ${targetColumn}`)
         }
     }, [draggingId, prospects])
