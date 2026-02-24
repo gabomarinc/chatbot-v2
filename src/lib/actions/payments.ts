@@ -5,6 +5,90 @@ import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { getUserWorkspace } from './workspace';
 
+export async function getPaymentDashboardStats() {
+    try {
+        const workspace = await getUserWorkspace();
+        if (!workspace) return { success: false, error: 'Workspace no encontrado' };
+
+        const workspaceId = workspace.id;
+
+        // All transactions for this workspace
+        const transactions = await prisma.transaction.findMany({
+            where: { workspaceId },
+            orderBy: { createdAt: 'desc' },
+            take: 200, // cap for performance
+            select: {
+                id: true,
+                amount: true,
+                status: true,
+                gateway: true,
+                paymentUrl: true,
+                description: true,
+                createdAt: true,
+                contact: { select: { name: true, phone: true } }
+            }
+        });
+
+        const totalLinks = transactions.length;
+        const pending = transactions.filter(t => t.status === 'PENDING').length;
+        const successful = transactions.filter(t => t.status === 'SUCCESS').length;
+        const failed = transactions.filter(t => t.status === 'FAILED').length;
+        const totalAmountGenerated = transactions.reduce((sum, t) => sum + t.amount, 0);
+        const totalAmountCollected = transactions
+            .filter(t => t.status === 'SUCCESS')
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        // Gateway breakdown
+        const pagueloFacilCount = transactions.filter(t => t.gateway === 'PAGUELOFACIL').length;
+        const yappyCount = transactions.filter(t => t.gateway === 'YAPPY').length;
+
+        // Last 7 days activity
+        const last7Days: { date: string; count: number; amount: number }[] = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            const dayTx = transactions.filter(t => t.createdAt.toISOString().split('T')[0] === dateStr);
+            last7Days.push({
+                date: dateStr,
+                count: dayTx.length,
+                amount: dayTx.reduce((s, t) => s + t.amount, 0)
+            });
+        }
+
+        // Recent transactions (last 10)
+        const recentTransactions = transactions.slice(0, 10).map(t => ({
+            id: t.id,
+            amount: t.amount,
+            status: t.status,
+            gateway: t.gateway,
+            description: t.description,
+            contactName: t.contact?.name || t.contact?.phone || 'Sin nombre',
+            createdAt: t.createdAt.toISOString(),
+            paymentUrl: t.paymentUrl
+        }));
+
+        return {
+            success: true,
+            stats: {
+                totalLinks,
+                pending,
+                successful,
+                failed,
+                totalAmountGenerated,
+                totalAmountCollected,
+                pagueloFacilCount,
+                yappyCount,
+                last7Days,
+                recentTransactions
+            }
+        };
+    } catch (error: any) {
+        console.error('Error fetching payment dashboard stats:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 export async function getPaymentConfigs() {
     try {
         const workspace = await getUserWorkspace();
