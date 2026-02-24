@@ -5,20 +5,16 @@ import {
     CreditCard, Save, Loader2, ShieldCheck, HelpCircle, Info, Zap,
     Building2, UserCheck, Smartphone, LayoutDashboard, Settings2,
     Link2, TrendingUp, DollarSign, Clock, CheckCircle2, XCircle,
-    ChevronRight, ExternalLink, BarChart3, Wallet
+    ExternalLink, BarChart3, Wallet, Lock
 } from 'lucide-react';
 import { savePaymentConfig } from '@/lib/actions/payments';
 import { toast } from 'sonner';
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 
-/* ─── Types ─────────────────────────────────────────────────────────── */
+/* ─── Types ──────────────────────────────────────────────────────────── */
 interface RecentTransaction {
     id: string;
     amount: number;
@@ -54,7 +50,9 @@ interface PaymentSettingsClientProps {
     dashboardStats: DashboardStats | null;
 }
 
-/* ─── Helpers ────────────────────────────────────────────────────────── */
+/* ─── Helpers ─────────────────────────────────────────────────────────── */
+const GREEN = '#21AC96';
+
 function fmt(n: number) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
 }
@@ -80,26 +78,28 @@ function StatusBadge({ status }: { status: string }) {
     );
 }
 
-/* ─── Mini Bar Chart ─────────────────────────────────────────────────── */
-function MiniBarChart({ days }: { days: DayStats[] }) {
+/* ─── Mini Bar Chart ──────────────────────────────────────────────────── */
+function MiniBarChart({ days, faded = false }: { days: DayStats[]; faded?: boolean }) {
     const maxCount = Math.max(...days.map(d => d.count), 1);
     const dayLabels = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     return (
         <div className="flex items-end gap-2 h-28 w-full">
-            {days.map((d, i) => {
+            {days.map((d) => {
                 const pct = (d.count / maxCount) * 100;
                 const label = dayLabels[new Date(d.date + 'T12:00:00').getDay()];
                 return (
                     <div key={d.date} className="flex-1 flex flex-col items-center gap-1.5 group relative">
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-black px-2.5 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                            {d.count} link{d.count !== 1 ? 's' : ''} · {fmt(d.amount)}
-                        </div>
-                        <div className="w-full rounded-t-xl transition-all duration-500"
+                        {!faded && (
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-black px-2.5 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                {d.count} link{d.count !== 1 ? 's' : ''} · {fmt(d.amount)}
+                            </div>
+                        )}
+                        <div
+                            className="w-full rounded-t-xl transition-all duration-500"
                             style={{
                                 height: `${Math.max(pct, 4)}%`,
                                 background: d.count > 0
-                                    ? 'linear-gradient(to top, #21AC96, #34d8c0)'
+                                    ? `linear-gradient(to top, ${GREEN}, #34d8c0)`
                                     : '#f3f4f6'
                             }}
                         />
@@ -111,36 +111,271 @@ function MiniBarChart({ days }: { days: DayStats[] }) {
     );
 }
 
-/* ─── Main Component ─────────────────────────────────────────────────── */
+/* ─── Fake data for blur skeleton ─────────────────────────────────────── */
+const FAKE_STATS: DashboardStats = {
+    totalLinks: 48,
+    pending: 12,
+    successful: 31,
+    failed: 5,
+    totalAmountGenerated: 6840,
+    totalAmountCollected: 4230,
+    pagueloFacilCount: 29,
+    yappyCount: 19,
+    last7Days: [
+        { date: '2026-02-18', count: 4, amount: 520 },
+        { date: '2026-02-19', count: 7, amount: 890 },
+        { date: '2026-02-20', count: 3, amount: 340 },
+        { date: '2026-02-21', count: 9, amount: 1200 },
+        { date: '2026-02-22', count: 6, amount: 750 },
+        { date: '2026-02-23', count: 11, amount: 1480 },
+        { date: '2026-02-24', count: 8, amount: 1060 },
+    ],
+    recentTransactions: [
+        { id: '1', amount: 250, status: 'SUCCESS', gateway: 'YAPPY', description: 'Pago servicio premium', contactName: 'Carlos Méndez', createdAt: new Date().toISOString(), paymentUrl: null },
+        { id: '2', amount: 120, status: 'PENDING', gateway: 'PAGUELOFACIL', description: 'Reserva confirmada', contactName: 'Ana Torres', createdAt: new Date().toISOString(), paymentUrl: null },
+        { id: '3', amount: 480, status: 'SUCCESS', gateway: 'PAGUELOFACIL', description: 'Contrato mensual', contactName: 'Luis Rodríguez', createdAt: new Date().toISOString(), paymentUrl: null },
+        { id: '4', amount: 95, status: 'FAILED', gateway: 'YAPPY', description: 'Anticipo proyecto', contactName: 'María Castillo', createdAt: new Date().toISOString(), paymentUrl: null },
+        { id: '5', amount: 340, status: 'PENDING', gateway: 'PAGUELOFACIL', description: 'Consultoría Q1', contactName: 'Andrés Vargas', createdAt: new Date().toISOString(), paymentUrl: null },
+    ],
+};
+
+/* ─── DashboardContent (reusable, can be blurred) ─────────────────────── */
+function DashboardContent({ stats, faded = false }: { stats: DashboardStats; faded?: boolean }) {
+    const conversionRate = stats.totalLinks > 0
+        ? ((stats.successful / stats.totalLinks) * 100).toFixed(1)
+        : '0.0';
+
+    return (
+        <div className="space-y-8">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total Links */}
+                <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-lg shadow-gray-100/50 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <div className="w-11 h-11 rounded-[1rem] flex items-center justify-center" style={{ background: `${GREEN}18` }}>
+                            <Link2 className="w-5 h-5" style={{ color: GREEN }} />
+                        </div>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Links</span>
+                    </div>
+                    <div>
+                        <p className="text-4xl font-black text-gray-900 tracking-tight">{stats.totalLinks}</p>
+                        <p className="text-xs font-bold text-gray-400 mt-1">Links generados en total</p>
+                    </div>
+                </div>
+
+                {/* Collected */}
+                <div className="bg-gray-900 rounded-[2rem] p-6 border border-gray-800 shadow-lg shadow-gray-900/20 flex flex-col gap-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10" style={{ background: `${GREEN}20` }} />
+                    <div className="flex items-center justify-between relative z-10">
+                        <div className="w-11 h-11 rounded-[1rem] flex items-center justify-center" style={{ background: `${GREEN}30` }}>
+                            <DollarSign className="w-5 h-5" style={{ color: GREEN }} />
+                        </div>
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Cobrado</span>
+                    </div>
+                    <div className="relative z-10">
+                        <p className="text-3xl font-black text-white tracking-tight">{fmt(stats.totalAmountCollected)}</p>
+                        <p className="text-xs font-bold text-gray-400 mt-1">Monto efectivamente cobrado</p>
+                    </div>
+                </div>
+
+                {/* Conversion */}
+                <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-lg shadow-gray-100/50 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <div className="w-11 h-11 rounded-[1rem] bg-emerald-50 flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                        </div>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Conversión</span>
+                    </div>
+                    <div>
+                        <p className="text-4xl font-black text-gray-900 tracking-tight">{conversionRate}%</p>
+                        <p className="text-xs font-bold text-gray-400 mt-1">Links pagados vs enviados</p>
+                    </div>
+                </div>
+
+                {/* Pending */}
+                <div className="bg-white rounded-[2rem] p-6 border border-amber-100 shadow-lg shadow-amber-50/50 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <div className="w-11 h-11 rounded-[1rem] bg-amber-50 flex items-center justify-center">
+                            <Clock className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Pendiente</span>
+                    </div>
+                    <div>
+                        <p className="text-4xl font-black text-gray-900 tracking-tight">{stats.pending}</p>
+                        <p className="text-xs font-bold text-gray-400 mt-1">Links aún sin pagar</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Chart + Gateway */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white rounded-[2rem] p-8 border border-gray-100 shadow-lg shadow-gray-100/50">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-gray-900 font-black text-lg tracking-tight">Actividad de los últimos 7 días</h3>
+                            <p className="text-xs font-bold text-gray-400 mt-0.5">Links de pago generados por día</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-[1rem] flex items-center justify-center" style={{ background: `${GREEN}18` }}>
+                            <BarChart3 className="w-5 h-5" style={{ color: GREEN }} />
+                        </div>
+                    </div>
+                    <MiniBarChart days={stats.last7Days} faded={faded} />
+                </div>
+
+                <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-lg shadow-gray-100/50 flex flex-col gap-6">
+                    <div>
+                        <h3 className="text-gray-900 font-black text-lg tracking-tight">Por Pasarela</h3>
+                        <p className="text-xs font-bold text-gray-400 mt-0.5">Distribución de cobros</p>
+                    </div>
+
+                    {/* PagueloFacil */}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-[0.75rem] bg-orange-50 flex items-center justify-center text-lg">🇵🇦</div>
+                                <div>
+                                    <p className="text-sm font-black text-gray-900 leading-none">PagueloFacil</p>
+                                    <p className="text-[11px] font-bold text-gray-400">Tarjetas</p>
+                                </div>
+                            </div>
+                            <span className="text-sm font-black text-gray-900">{stats.pagueloFacilCount}</span>
+                        </div>
+                        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full rounded-full transition-all duration-700"
+                                style={{
+                                    width: `${stats.totalLinks > 0 ? (stats.pagueloFacilCount / stats.totalLinks) * 100 : 0}%`,
+                                    background: 'linear-gradient(to right, #fb923c, #fdba74)'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Yappy */}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-[0.75rem] bg-blue-50 flex items-center justify-center text-lg">🇵🇦</div>
+                                <div>
+                                    <p className="text-sm font-black text-gray-900 leading-none">Yappy</p>
+                                    <p className="text-[11px] font-bold text-gray-400">Móvil</p>
+                                </div>
+                            </div>
+                            <span className="text-sm font-black text-gray-900">{stats.yappyCount}</span>
+                        </div>
+                        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full rounded-full transition-all duration-700"
+                                style={{
+                                    width: `${stats.totalLinks > 0 ? (stats.yappyCount / stats.totalLinks) * 100 : 0}%`,
+                                    background: 'linear-gradient(to right, #3b82f6, #93c5fd)'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-4 space-y-2">
+                        <div className="flex justify-between">
+                            <span className="text-xs font-bold text-gray-400">Exitosos</span>
+                            <span className="text-xs font-black text-emerald-600">{stats.successful}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-xs font-bold text-gray-400">Fallidos</span>
+                            <span className="text-xs font-black text-red-500">{stats.failed}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-xs font-bold text-gray-400">Monto generado</span>
+                            <span className="text-xs font-black text-gray-900">{fmt(stats.totalAmountGenerated)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Recent Transactions Table */}
+            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-lg shadow-gray-100/50 overflow-hidden">
+                <div className="flex items-center justify-between px-8 py-6 border-b border-gray-50">
+                    <div>
+                        <h3 className="text-gray-900 font-black text-lg tracking-tight">Transacciones Recientes</h3>
+                        <p className="text-xs font-bold text-gray-400 mt-0.5">Últimos 10 links de pago generados</p>
+                    </div>
+                    <Wallet className="w-5 h-5 text-gray-300" />
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b border-gray-50">
+                                <th className="text-left px-8 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Contacto</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Descripción</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Pasarela</th>
+                                <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Monto</th>
+                                <th className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Estado</th>
+                                <th className="text-right px-8 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {stats.recentTransactions.map((tx, i) => (
+                                <tr key={tx.id} className={`border-b border-gray-50/80 hover:bg-gray-50/50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/20'}`}>
+                                    <td className="px-8 py-4">
+                                        <p className="text-sm font-black text-gray-900">{tx.contactName}</p>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <p className="text-sm font-bold text-gray-500 max-w-[180px] truncate">{tx.description || '—'}</p>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${tx.gateway === 'YAPPY'
+                                                ? 'bg-blue-50 text-blue-600 border-blue-100'
+                                                : 'bg-orange-50 text-orange-600 border-orange-100'
+                                            }`}>
+                                            {tx.gateway === 'PAGUELOFACIL' ? 'PagueloFacil' : tx.gateway}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-4 text-right">
+                                        <p className="text-sm font-black text-gray-900">{fmt(tx.amount)}</p>
+                                    </td>
+                                    <td className="px-4 py-4 text-center">
+                                        <StatusBadge status={tx.status} />
+                                    </td>
+                                    <td className="px-8 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <span className="text-xs font-bold text-gray-400">{fmtDate(tx.createdAt)}</span>
+                                            {tx.paymentUrl && !faded && (
+                                                <a href={tx.paymentUrl} target="_blank" rel="noopener noreferrer"
+                                                    className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center transition-all group"
+                                                    style={{ ['--hover-bg' as any]: GREEN }}
+                                                >
+                                                    <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+                                                </a>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Main Component ──────────────────────────────────────────────────── */
 export function PaymentSettingsClient({ existingConfigs, dashboardStats }: PaymentSettingsClientProps) {
     const [activeTab, setActiveTab] = useState<'dashboard' | 'config'>('dashboard');
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
-    // PagueloFacil State
     const pfConfig = existingConfigs.find(c => c.gateway === 'PAGUELOFACIL')?.config || {};
-    const [pagueloFacil, setPagueloFacil] = useState({
-        cclw: pfConfig.cclw || '',
-        isSandbox: pfConfig.isSandbox ?? true
-    });
+    const [pagueloFacil, setPagueloFacil] = useState({ cclw: pfConfig.cclw || '', isSandbox: pfConfig.isSandbox ?? true });
 
-    // Yappy State
     const yappyConfig = existingConfigs.find(c => c.gateway === 'YAPPY')?.config || {};
-    const [yappy, setYappy] = useState({
-        merchantId: yappyConfig.merchantId || '',
-        secretKey: yappyConfig.secretKey || '',
-        isSandbox: yappyConfig.isSandbox ?? true
-    });
+    const [yappy, setYappy] = useState({ merchantId: yappyConfig.merchantId || '', secretKey: yappyConfig.secretKey || '', isSandbox: yappyConfig.isSandbox ?? true });
 
     const handleSave = async (gateway: 'PAGUELOFACIL' | 'YAPPY', config: any) => {
         setIsLoading(gateway);
         try {
             const res = await savePaymentConfig(gateway, config);
-            if (res.success) {
-                toast.success(`Configuración de ${gateway} guardada con éxito`);
-            } else {
-                toast.error(res.error || 'Error al guardar');
-            }
+            if (res.success) toast.success(`Configuración de ${gateway} guardada con éxito`);
+            else toast.error(res.error || 'Error al guardar');
         } catch {
             toast.error('Ocurrío un error inesperado');
         } finally {
@@ -148,15 +383,13 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
         }
     };
 
-    const stats = dashboardStats;
-    const conversionRate = stats && stats.totalLinks > 0
-        ? ((stats.successful / stats.totalLinks) * 100).toFixed(1)
-        : '0.0';
+    const hasData = dashboardStats && dashboardStats.totalLinks > 0;
+    const displayStats = hasData ? dashboardStats : FAKE_STATS;
 
     return (
         <div className="max-w-[1600px] mx-auto animate-fade-in p-6 pb-20">
 
-            {/* ── Header + Toggle ─────────────────────────────────────── */}
+            {/* ── Header + Toggle ────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 <div>
                     <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight mb-2">Pasarelas de Pago</h1>
@@ -167,28 +400,26 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                     </p>
                 </div>
 
-                {/* Toggle pill */}
+                {/* Toggle pill — active = green */}
                 <div className="flex items-center gap-4 bg-white border border-gray-100 shadow-md shadow-gray-100/60 rounded-[2rem] px-2 py-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-3 select-none">
-                        Vista
-                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-3 select-none">Vista</span>
                     <div className="flex gap-1">
                         <button
                             onClick={() => setActiveTab('dashboard')}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-[1.5rem] text-sm font-black transition-all duration-200 ${activeTab === 'dashboard'
-                                    ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/20'
-                                    : 'text-gray-500 hover:text-gray-900'
-                                }`}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-[1.5rem] text-sm font-black transition-all duration-200"
+                            style={activeTab === 'dashboard'
+                                ? { background: GREEN, color: '#fff', boxShadow: `0 4px 14px ${GREEN}40` }
+                                : { color: '#9ca3af' }}
                         >
                             <LayoutDashboard className="w-4 h-4" />
                             Dashboard
                         </button>
                         <button
                             onClick={() => setActiveTab('config')}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-[1.5rem] text-sm font-black transition-all duration-200 ${activeTab === 'config'
-                                    ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/20'
-                                    : 'text-gray-500 hover:text-gray-900'
-                                }`}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-[1.5rem] text-sm font-black transition-all duration-200"
+                            style={activeTab === 'config'
+                                ? { background: GREEN, color: '#fff', boxShadow: `0 4px 14px ${GREEN}40` }
+                                : { color: '#9ca3af' }}
                         >
                             <Settings2 className="w-4 h-4" />
                             Configuración
@@ -197,262 +428,74 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                 </div>
             </div>
 
-            {/* ════════════════════════════════════════════════════════════
+            {/* ════════════════════════════════════════════════════════
                 DASHBOARD TAB
-            ════════════════════════════════════════════════════════════ */}
+            ════════════════════════════════════════════════════════ */}
             {activeTab === 'dashboard' && (
-                <div className="space-y-8 animate-fade-in">
+                <div className="animate-fade-in">
+                    {!hasData ? (
+                        /* Blurred skeleton with lock overlay */
+                        <div className="relative">
+                            {/* Real layout blurred */}
+                            <div className="blur-sm pointer-events-none select-none opacity-60">
+                                <DashboardContent stats={displayStats!} faded />
+                            </div>
 
-                    {/* Empty state */}
-                    {!stats || stats.totalLinks === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-24 gap-6">
-                            <div className="w-24 h-24 rounded-[2rem] bg-gray-50 flex items-center justify-center border border-gray-100">
-                                <BarChart3 className="w-10 h-10 text-gray-300" />
+                            {/* Overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center z-10">
+                                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/60 p-10 flex flex-col items-center gap-5 max-w-sm mx-4 text-center">
+                                    <div
+                                        className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg"
+                                        style={{ background: `${GREEN}15` }}
+                                    >
+                                        <Lock className="w-7 h-7" style={{ color: GREEN }} />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-900 font-black text-xl tracking-tight mb-2">
+                                            Aún no hay transacciones
+                                        </p>
+                                        <p className="text-gray-400 font-bold text-sm leading-relaxed">
+                                            Cuando tu Chatbot genere el primer link de cobro, aquí verás todas tus métricas de pago en tiempo real.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setActiveTab('config')}
+                                        className="flex items-center gap-2 px-8 py-4 rounded-[1.2rem] font-black text-xs uppercase tracking-widest text-white transition-all shadow-lg active:scale-95"
+                                        style={{ background: GREEN, boxShadow: `0 8px 24px ${GREEN}40` }}
+                                    >
+                                        <Settings2 className="w-4 h-4" />
+                                        Configurar Pasarela
+                                    </button>
+                                </div>
                             </div>
-                            <div className="text-center">
-                                <p className="text-gray-900 font-black text-xl mb-2">Aún no hay transacciones</p>
-                                <p className="text-gray-400 font-bold text-sm max-w-sm">
-                                    Cuando tu Chatbot genere links de cobro, aquí verás todas las métricas de tus pagos.
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setActiveTab('config')}
-                                className="flex items-center gap-2 bg-gray-900 text-white px-8 py-4 rounded-[1.2rem] font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95"
-                            >
-                                <Settings2 className="w-4 h-4" />
-                                Configurar Pasarela
-                            </button>
                         </div>
                     ) : (
-                        <>
-                            {/* KPI Cards Row */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                {/* Total Links */}
-                                <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-lg shadow-gray-100/50 flex flex-col gap-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="w-11 h-11 rounded-[1rem] bg-[#21AC96]/10 flex items-center justify-center">
-                                            <Link2 className="w-5 h-5 text-[#21AC96]" />
-                                        </div>
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Links</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-4xl font-black text-gray-900 tracking-tight">{stats.totalLinks}</p>
-                                        <p className="text-xs font-bold text-gray-400 mt-1">Links generados en total</p>
-                                    </div>
-                                </div>
-
-                                {/* Total Collected */}
-                                <div className="bg-gray-900 rounded-[2rem] p-6 border border-gray-800 shadow-lg shadow-gray-900/20 flex flex-col gap-4 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#21AC96]/10 rounded-full blur-2xl -mr-10 -mt-10" />
-                                    <div className="flex items-center justify-between relative z-10">
-                                        <div className="w-11 h-11 rounded-[1rem] bg-[#21AC96]/20 flex items-center justify-center">
-                                            <DollarSign className="w-5 h-5 text-[#21AC96]" />
-                                        </div>
-                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Cobrado</span>
-                                    </div>
-                                    <div className="relative z-10">
-                                        <p className="text-3xl font-black text-white tracking-tight">{fmt(stats.totalAmountCollected)}</p>
-                                        <p className="text-xs font-bold text-gray-400 mt-1">Monto efectivamente cobrado</p>
-                                    </div>
-                                </div>
-
-                                {/* Conversion Rate */}
-                                <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-lg shadow-gray-100/50 flex flex-col gap-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="w-11 h-11 rounded-[1rem] bg-emerald-50 flex items-center justify-center">
-                                            <TrendingUp className="w-5 h-5 text-emerald-500" />
-                                        </div>
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Conversión</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-4xl font-black text-gray-900 tracking-tight">{conversionRate}%</p>
-                                        <p className="text-xs font-bold text-gray-400 mt-1">Links pagados vs enviados</p>
-                                    </div>
-                                </div>
-
-                                {/* Pending */}
-                                <div className="bg-white rounded-[2rem] p-6 border border-amber-100 shadow-lg shadow-amber-50/50 flex flex-col gap-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="w-11 h-11 rounded-[1rem] bg-amber-50 flex items-center justify-center">
-                                            <Clock className="w-5 h-5 text-amber-500" />
-                                        </div>
-                                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Pendiente</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-4xl font-black text-gray-900 tracking-tight">{stats.pending}</p>
-                                        <p className="text-xs font-bold text-gray-400 mt-1">Links aún sin pagar</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Mid Row: Chart + Gateway Breakdown */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                                {/* Bar Chart – last 7 days */}
-                                <div className="lg:col-span-2 bg-white rounded-[2rem] p-8 border border-gray-100 shadow-lg shadow-gray-100/50">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div>
-                                            <h3 className="text-gray-900 font-black text-lg tracking-tight">Actividad de los últimos 7 días</h3>
-                                            <p className="text-xs font-bold text-gray-400 mt-0.5">Links de pago generados por día</p>
-                                        </div>
-                                        <div className="w-10 h-10 rounded-[1rem] bg-[#21AC96]/10 flex items-center justify-center">
-                                            <BarChart3 className="w-5 h-5 text-[#21AC96]" />
-                                        </div>
-                                    </div>
-                                    <MiniBarChart days={stats.last7Days} />
-                                </div>
-
-                                {/* Gateway Breakdown */}
-                                <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-lg shadow-gray-100/50 flex flex-col gap-6">
-                                    <div>
-                                        <h3 className="text-gray-900 font-black text-lg tracking-tight">Por Pasarela</h3>
-                                        <p className="text-xs font-bold text-gray-400 mt-0.5">Distribución de cobros</p>
-                                    </div>
-
-                                    {/* PagueloFacil */}
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-[0.75rem] bg-orange-50 flex items-center justify-center text-lg">🇵🇦</div>
-                                                <div>
-                                                    <p className="text-sm font-black text-gray-900 leading-none">PagueloFacil</p>
-                                                    <p className="text-[11px] font-bold text-gray-400">Tarjetas</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-sm font-black text-gray-900">{stats.pagueloFacilCount}</span>
-                                        </div>
-                                        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-orange-400 to-orange-300 rounded-full transition-all duration-700"
-                                                style={{ width: `${stats.totalLinks > 0 ? (stats.pagueloFacilCount / stats.totalLinks) * 100 : 0}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Yappy */}
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-[0.75rem] bg-blue-50 flex items-center justify-center text-lg">🇵🇦</div>
-                                                <div>
-                                                    <p className="text-sm font-black text-gray-900 leading-none">Yappy</p>
-                                                    <p className="text-[11px] font-bold text-gray-400">Móvil</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-sm font-black text-gray-900">{stats.yappyCount}</span>
-                                        </div>
-                                        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700"
-                                                style={{ width: `${stats.totalLinks > 0 ? (stats.yappyCount / stats.totalLinks) * 100 : 0}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Divider + Totals */}
-                                    <div className="border-t border-gray-100 pt-4 space-y-2">
-                                        <div className="flex justify-between">
-                                            <span className="text-xs font-bold text-gray-400">Exitosos</span>
-                                            <span className="text-xs font-black text-emerald-600">{stats.successful}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-xs font-bold text-gray-400">Fallidos</span>
-                                            <span className="text-xs font-black text-red-500">{stats.failed}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-xs font-bold text-gray-400">Monto generado</span>
-                                            <span className="text-xs font-black text-gray-900">{fmt(stats.totalAmountGenerated)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Recent Transactions Table */}
-                            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-lg shadow-gray-100/50 overflow-hidden">
-                                <div className="flex items-center justify-between px-8 py-6 border-b border-gray-50">
-                                    <div>
-                                        <h3 className="text-gray-900 font-black text-lg tracking-tight">Transacciones Recientes</h3>
-                                        <p className="text-xs font-bold text-gray-400 mt-0.5">Últimos 10 links de pago generados</p>
-                                    </div>
-                                    <Wallet className="w-5 h-5 text-gray-300" />
-                                </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b border-gray-50">
-                                                <th className="text-left px-8 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Contacto</th>
-                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Descripción</th>
-                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Pasarela</th>
-                                                <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Monto</th>
-                                                <th className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Estado</th>
-                                                <th className="text-right px-8 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Fecha</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {stats.recentTransactions.map((tx, i) => (
-                                                <tr key={tx.id} className={`border-b border-gray-50/80 hover:bg-gray-50/50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/20'}`}>
-                                                    <td className="px-8 py-4">
-                                                        <p className="text-sm font-black text-gray-900">{tx.contactName}</p>
-                                                    </td>
-                                                    <td className="px-4 py-4">
-                                                        <p className="text-sm font-bold text-gray-500 max-w-[180px] truncate">{tx.description || '—'}</p>
-                                                    </td>
-                                                    <td className="px-4 py-4">
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${tx.gateway === 'YAPPY'
-                                                                ? 'bg-blue-50 text-blue-600 border-blue-100'
-                                                                : 'bg-orange-50 text-orange-600 border-orange-100'
-                                                            }`}>
-                                                            {tx.gateway === 'PAGUELOFACIL' ? 'PagueloFacil' : tx.gateway}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-4 text-right">
-                                                        <p className="text-sm font-black text-gray-900">{fmt(tx.amount)}</p>
-                                                    </td>
-                                                    <td className="px-4 py-4 text-center">
-                                                        <StatusBadge status={tx.status} />
-                                                    </td>
-                                                    <td className="px-8 py-4 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <span className="text-xs font-bold text-gray-400">{fmtDate(tx.createdAt)}</span>
-                                                            {tx.paymentUrl && (
-                                                                <a href={tx.paymentUrl} target="_blank" rel="noopener noreferrer"
-                                                                    className="w-7 h-7 rounded-full bg-gray-100 hover:bg-[#21AC96] hover:text-white flex items-center justify-center transition-all group">
-                                                                    <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-white" />
-                                                                </a>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </>
+                        <DashboardContent stats={dashboardStats!} />
                     )}
                 </div>
             )}
 
-            {/* ════════════════════════════════════════════════════════════
+            {/* ════════════════════════════════════════════════════════
                 CONFIG TAB
-            ════════════════════════════════════════════════════════════ */}
+            ════════════════════════════════════════════════════════ */}
             {activeTab === 'config' && (
                 <div className="space-y-8 animate-fade-in">
 
-                    {/* Banner de Educación Premium */}
+                    {/* Banner */}
                     <div className="relative overflow-hidden bg-gray-900 rounded-[2.5rem] p-8 md:p-10 shadow-2xl group border border-white/5">
-                        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-[#21AC96]/10 rounded-full blur-[80px] group-hover:bg-[#21AC96]/20 transition-all duration-700" />
+                        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 rounded-full blur-[80px] transition-all duration-700" style={{ background: `${GREEN}18` }} />
                         <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-[80px] group-hover:bg-indigo-500/20 transition-all duration-700" />
 
                         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
                             <div className="flex-1 text-center lg:text-left">
-                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#21AC96]/20 to-transparent rounded-full border border-[#21AC96]/20 text-[#21AC96] text-xs font-black uppercase tracking-widest mb-6 shadow-sm">
-                                    <Zap className="w-4 h-4 animate-pulse fill-[#21AC96]" />
+                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-black uppercase tracking-widest mb-6 shadow-sm"
+                                    style={{ background: `${GREEN}20`, borderColor: `${GREEN}30`, color: GREEN }}>
+                                    <Zap className="w-4 h-4 animate-pulse" style={{ fill: GREEN }} />
                                     Nuevo: Cobros Automáticos
                                 </div>
                                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight mb-4 leading-tight lg:max-w-3xl">
                                     ¿Sabes cómo cobrar con tus{' '}
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#21AC96] to-emerald-400">
+                                    <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(to right, ${GREEN}, #34d8c0)` }}>
                                         Pasarelas de Pago
                                     </span>?
                                 </h2>
@@ -463,7 +506,10 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                             <div className="shrink-0">
                                 <button
                                     onClick={() => setIsTutorialOpen(true)}
-                                    className="group relative flex items-center gap-4 bg-white hover:bg-[#21AC96] text-gray-900 hover:text-white px-10 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-sm transition-all shadow-2xl hover:shadow-[#21AC96]/40 active:scale-95"
+                                    className="group relative flex items-center gap-4 bg-white px-10 py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-sm transition-all shadow-2xl active:scale-95"
+                                    style={{ color: GREEN }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = GREEN; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; (e.currentTarget as HTMLElement).style.color = GREEN; }}
                                 >
                                     <UserCheck className="w-6 h-6" />
                                     Ver Guía de Integración
@@ -481,19 +527,15 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                                     Recomendado: Tarjetas
                                 </div>
                             </div>
-
                             <div className="flex items-center gap-6 mb-10">
-                                <div className="w-20 h-20 bg-orange-50 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner border border-orange-100/50 shrink-0">
-                                    🇵🇦
-                                </div>
+                                <div className="w-20 h-20 bg-orange-50 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner border border-orange-100/50 shrink-0">🇵🇦</div>
                                 <div>
                                     <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">PagueloFacil</h2>
                                     <p className="text-sm text-gray-400 font-bold max-w-xs">Tarjetas de crédito y débito integradas.</p>
                                 </div>
                             </div>
-
                             <div className="space-y-8 flex-1">
-                                <div className="group space-y-3">
+                                <div className="group/inp space-y-3">
                                     <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1 group-focus-within:text-orange-600 transition-colors flex items-center gap-2">
                                         CCLW (Código de Cliente)
                                         <span className="text-[10px] bg-orange-50 text-orange-400 px-2 py-0.5 rounded-full">Requerido</span>
@@ -506,7 +548,6 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                                         onChange={(e) => setPagueloFacil({ ...pagueloFacil, cclw: e.target.value })}
                                     />
                                 </div>
-
                                 <div className="flex items-center gap-8 p-6 bg-gray-50 rounded-[2rem] border border-gray-100 shadow-inner">
                                     <div className="flex-1">
                                         <p className="text-base font-black text-gray-900">Modo Sandbox</p>
@@ -515,47 +556,44 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                                     <button
                                         type="button"
                                         onClick={() => setPagueloFacil({ ...pagueloFacil, isSandbox: !pagueloFacil.isSandbox })}
-                                        className={`w-16 h-9 rounded-full transition-all relative p-1 ${pagueloFacil.isSandbox ? 'bg-orange-500 shadow-lg shadow-orange-200' : 'bg-gray-200'}`}
+                                        className="w-16 h-9 rounded-full transition-all relative p-1"
+                                        style={{ background: pagueloFacil.isSandbox ? GREEN : '#e5e7eb', boxShadow: pagueloFacil.isSandbox ? `0 4px 12px ${GREEN}40` : 'none' }}
                                     >
                                         <div className={`w-7 h-7 bg-white rounded-full transition-all shadow-sm ${pagueloFacil.isSandbox ? 'translate-x-7' : 'translate-x-0'}`} />
                                     </button>
                                 </div>
                             </div>
-
                             <div className="mt-8">
                                 <button
                                     type="button"
                                     onClick={() => handleSave('PAGUELOFACIL', pagueloFacil)}
                                     disabled={isLoading === 'PAGUELOFACIL' || !pagueloFacil.cclw}
-                                    className="w-full h-16 bg-gray-900 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-black hover:shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95 shadow-lg shadow-gray-200"
+                                    className="w-full h-16 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:opacity-90 transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95 shadow-lg"
+                                    style={{ background: GREEN, boxShadow: `0 8px 20px ${GREEN}30` }}
                                 >
-                                    {isLoading === 'PAGUELOFACIL' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 text-orange-400" />}
+                                    {isLoading === 'PAGUELOFACIL' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                     Guardar Configuración
                                 </button>
                             </div>
                         </div>
 
-                        {/* Yappy Comercial */}
+                        {/* Yappy */}
                         <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-blue-50 shadow-xl shadow-blue-100/30 relative overflow-hidden group transition-all hover:border-blue-200 h-full flex flex-col">
                             <div className="absolute top-0 right-0 p-8">
                                 <div className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
                                     Mas Popular en Panamá
                                 </div>
                             </div>
-
                             <div className="flex items-center gap-6 mb-10">
-                                <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner border border-blue-100/50 shrink-0">
-                                    🇵🇦
-                                </div>
+                                <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner border border-blue-100/50 shrink-0">🇵🇦</div>
                                 <div className="flex flex-col">
                                     <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Yappy Comercial</h2>
                                     <p className="text-sm text-gray-400 font-bold max-w-xs">El método favorito de Panamá.</p>
                                 </div>
                             </div>
-
                             <div className="space-y-8 flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="group space-y-3">
+                                    <div className="group/inp space-y-3">
                                         <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1 group-focus-within:text-blue-600 transition-colors">Merchant ID</label>
                                         <input
                                             type="text"
@@ -565,7 +603,7 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                                             onChange={(e) => setYappy({ ...yappy, merchantId: e.target.value })}
                                         />
                                     </div>
-                                    <div className="group space-y-3">
+                                    <div className="group/inp space-y-3">
                                         <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1 group-focus-within:text-blue-600 transition-colors">Secret Key</label>
                                         <input
                                             type="password"
@@ -576,7 +614,6 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                                         />
                                     </div>
                                 </div>
-
                                 <div className="flex items-center gap-8 p-6 bg-gray-50 rounded-[2rem] border border-gray-100 shadow-inner">
                                     <div className="flex-1">
                                         <p className="text-base font-black text-gray-900">Yappy Sandbox</p>
@@ -585,19 +622,20 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                                     <button
                                         type="button"
                                         onClick={() => setYappy({ ...yappy, isSandbox: !yappy.isSandbox })}
-                                        className={`w-16 h-9 rounded-full transition-all relative p-1 ${yappy.isSandbox ? 'bg-blue-600 shadow-lg shadow-blue-200' : 'bg-gray-200'}`}
+                                        className="w-16 h-9 rounded-full transition-all relative p-1"
+                                        style={{ background: yappy.isSandbox ? GREEN : '#e5e7eb', boxShadow: yappy.isSandbox ? `0 4px 12px ${GREEN}40` : 'none' }}
                                     >
                                         <div className={`w-7 h-7 bg-white rounded-full transition-all shadow-sm ${yappy.isSandbox ? 'translate-x-7' : 'translate-x-0'}`} />
                                     </button>
                                 </div>
                             </div>
-
                             <div className="mt-8">
                                 <button
                                     type="button"
                                     onClick={() => handleSave('YAPPY', yappy)}
                                     disabled={isLoading === 'YAPPY' || !yappy.merchantId || !yappy.secretKey}
-                                    className="w-full h-16 bg-blue-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-blue-700 hover:shadow-xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-100 disabled:opacity-50 active:scale-95"
+                                    className="w-full h-16 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-lg disabled:opacity-50 active:scale-95"
+                                    style={{ background: GREEN, boxShadow: `0 8px 20px ${GREEN}30` }}
                                 >
                                     {isLoading === 'YAPPY' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                     Habilitar Yappy Comercial
@@ -622,21 +660,20 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                 </div>
             )}
 
-            {/* ─── Tutorial Dialog ─────────────────────────────────────── */}
+            {/* ── Tutorial Dialog ──────────────────────────────────── */}
             <Dialog open={isTutorialOpen} onOpenChange={setIsTutorialOpen}>
                 <DialogContent className="max-w-4xl bg-white border-none shadow-2xl rounded-[3rem] p-0 overflow-hidden outline-none">
                     <div className="bg-gray-900 p-12 text-white relative">
                         <div className="flex flex-col items-center text-center">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 text-orange-400 text-[10px] font-black uppercase tracking-widest mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest mb-6"
+                                style={{ color: GREEN }}>
                                 Tutorial de Integración
                             </div>
                             <h3 className="text-4xl font-black tracking-tight mb-4 leading-tight">Domina tus Cobros en Línea</h3>
                             <p className="text-gray-400 font-bold text-lg max-w-xl">Aprende a conectar PagueloFacil y Yappy en menos de 5 minutos.</p>
                         </div>
                     </div>
-
                     <div className="p-10 space-y-12 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                        {/* PagueloFacil */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-4 border-b border-gray-100 pb-4">
                                 <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 font-black">1</div>
@@ -672,8 +709,6 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                                 </div>
                             </div>
                         </div>
-
-                        {/* Yappy */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-4 border-b border-gray-100 pb-4">
                                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-black">2</div>
@@ -705,7 +740,6 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                             </div>
                         </div>
                     </div>
-
                     <div className="p-10 bg-gray-50 flex items-center justify-between gap-6 border-t border-gray-100">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-gray-900 border border-gray-100">
@@ -718,7 +752,8 @@ export function PaymentSettingsClient({ existingConfigs, dashboardStats }: Payme
                         </div>
                         <button
                             onClick={() => setIsTutorialOpen(false)}
-                            className="bg-gray-900 text-white px-10 py-4 rounded-[1.2rem] font-black uppercase tracking-widest text-xs hover:bg-black transition-all shadow-xl active:scale-95"
+                            className="text-white px-10 py-4 rounded-[1.2rem] font-black uppercase tracking-widest text-xs transition-all shadow-xl active:scale-95"
+                            style={{ background: GREEN }}
                         >
                             ¡Entendido!
                         </button>
