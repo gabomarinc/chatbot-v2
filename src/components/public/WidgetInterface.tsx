@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, Loader2 } from 'lucide-react';
+import { Send, Paperclip, Loader2, Mic, MicOff, Square, Trash2, Play, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -39,6 +39,16 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
     const [isUploadingFile, setIsUploadingFile] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Audio recording state
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+    const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const [isTranscribing, setIsTranscribing] = useState(false);
+    const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+    const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
     const config = channel.configJson || {};
     const primaryColor = config.color || '#21AC96';
@@ -145,6 +155,158 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         setFileType(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
+        }
+    };
+
+    // --- Audio Recording Logic ---
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            setMediaRecorder(recorder);
+            setAudioChunks([]);
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    setAudioChunks((prev) => [...prev, e.data]);
+                }
+            };
+
+            recorder.onstop = () => {
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            recorder.start();
+            setIsRecording(true);
+            setRecordingDuration(0);
+
+            recordingTimerRef.current = setInterval(() => {
+                setRecordingDuration((prev) => prev + 1);
+            }, 1000);
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            alert("No se pudo acceder al micrófono. Por favor verifica los permisos.");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            setIsRecording(false);
+            if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+            }
+            // Transition to sending after state updates
+            setTimeout(() => handleSendAudio(), 100);
+        }
+    };
+
+    const cancelRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            setIsRecording(false);
+            if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+            }
+            setAudioChunks([]);
+        }
+    };
+
+    const handleSendAudio = async () => {
+        // This will be called via useEffect or timeout when chunks are ready
+    };
+
+    // Handle audio chunks processing when recording stops
+    useEffect(() => {
+        if (!isRecording && audioChunks.length > 0) {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            processAudioMessage(audioBlob);
+            setAudioChunks([]);
+        }
+    }, [isRecording, audioChunks]);
+
+    const processAudioMessage = async (blob: Blob) => {
+        setIsTranscribing(true);
+        setIsLoading(true);
+
+        const visitorId = localStorage.getItem('konsul_visitor_id') || (Math.random().toString(36).substring(2) + Date.now().toString(36));
+        localStorage.setItem('konsul_visitor_id', visitorId);
+
+        const tempId = 'audio-' + Date.now();
+        const userMsg: Message = {
+            id: tempId,
+            role: 'USER',
+            content: '(Nota de voz)',
+            createdAt: new Date(),
+            metadata: { type: 'audio', url: URL.createObjectURL(blob) }
+        };
+        setMessages(prev => [...prev, userMsg]);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', blob, 'recording.webm');
+
+            const uploadResponse = await fetch('/api/widget/upload-audio', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!uploadResponse.ok) throw new Error('Error al transcribir el audio');
+
+            const { url, transcription } = await uploadResponse.json();
+
+            const { sendWidgetMessage } = await import('@/lib/actions/widget');
+            const { userMsg: savedUserMsg, agentMsg } = await sendWidgetMessage({
+                channelId: channel.id,
+                content: transcription || 'Nota de voz',
+                visitorId,
+                fileUrl: url,
+                fileType: 'audio',
+                transcription: transcription
+            });
+
+            setMessages(prev => prev.map(msg =>
+                msg.id === tempId
+                    ? { ...msg, id: savedUserMsg.id, content: transcription, metadata: { ...msg.metadata, url, transcription } }
+                    : msg
+            ));
+
+            if (agentMsg) {
+                setMessages(prev => [...prev, {
+                    id: agentMsg.id,
+                    role: 'AGENT',
+                    content: agentMsg.content,
+                    createdAt: new Date(agentMsg.createdAt),
+                    metadata: agentMsg.metadata
+                }]);
+            }
+        } catch (err) {
+            console.error("Audio processing error:", err);
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+            alert("Error al procesar la nota de voz. Intenta de nuevo.");
+        } finally {
+            setIsTranscribing(false);
+            setIsLoading(false);
+        }
+    };
+
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const togglePlayAudio = (messageId: string, url: string) => {
+        if (playingMessageId === messageId) {
+            audioPlayerRef.current?.pause();
+            setPlayingMessageId(null);
+        } else {
+            if (audioPlayerRef.current) {
+                audioPlayerRef.current.src = url;
+                audioPlayerRef.current.play();
+                setPlayingMessageId(messageId);
+                audioPlayerRef.current.onended = () => setPlayingMessageId(null);
+            }
         }
     };
 
@@ -400,6 +562,37 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                                             </div>
                                         );
                                     }
+
+                                    // Handle Audio Playback
+                                    if (metadataObj?.type === 'audio' && metadataObj?.url) {
+                                        const isPlaying = playingMessageId === msg.id;
+                                        return (
+                                            <div className={cn(
+                                                "mb-3 p-3 rounded-xl border backdrop-blur-sm",
+                                                isUser
+                                                    ? "bg-gray-50 border-gray-100"
+                                                    : "bg-white/10 border-white/20"
+                                            )}>
+                                                <div className="flex items-center gap-3">
+                                                    <button
+                                                        onClick={() => togglePlayAudio(msg.id, metadataObj.url!)}
+                                                        className={cn(
+                                                            "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                                                            isUser ? "bg-gray-200 text-gray-600 hover:bg-gray-300" : "bg-white/20 text-white hover:bg-white/30"
+                                                        )}
+                                                    >
+                                                        {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+                                                    </button>
+                                                    <div className="flex-1">
+                                                        <div className={cn("h-1.5 rounded-full overflow-hidden", isUser ? "bg-gray-200" : "bg-white/20")}>
+                                                            <div className={cn("h-full transition-all duration-300", isUser ? "bg-gray-600" : "bg-white", isPlaying ? "w-full animate-pulse" : "w-0")}></div>
+                                                        </div>
+                                                        <p className={cn("text-[10px] mt-1.5 font-bold uppercase tracking-wider opacity-80", isUser ? "text-gray-400" : "text-white")}>Nota de voz</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
                                     return null;
                                 })()}
                                 {(() => {
@@ -518,17 +711,41 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
                     />
                     <button
                         type="submit"
-                        disabled={(!newMessage.trim() && !selectedFile) || isLoading || isUploadingFile}
+                        disabled={(!newMessage.trim() && !selectedFile) || isLoading || isUploadingFile || isRecording}
                         className="p-3 text-white rounded-xl shadow-lg transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                         style={{ backgroundColor: primaryColor, boxShadow: `0 4px 12px ${primaryColor}40` }}
                     >
-                        {(isLoading || isUploadingFile) ? (
+                        {(isLoading || isUploadingFile || isTranscribing) ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
                             <Send className="w-5 h-5" />
                         )}
                     </button>
+                    {!newMessage.trim() && !selectedFile && (
+                        <button
+                            type="button"
+                            onClick={isRecording ? stopRecording : startRecording}
+                            className={cn(
+                                "p-3 rounded-xl transition-all active:scale-95 shadow-lg",
+                                isRecording ? "bg-red-500 text-white animate-pulse" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            )}
+                        >
+                            {isRecording ? <Square className="w-5 h-5 fill-current" /> : <Mic className="w-5 h-5" />}
+                        </button>
+                    )}
                 </form>
+                {isRecording && (
+                    <div className="mt-3 flex items-center justify-between bg-red-50 px-4 py-2 rounded-xl border border-red-100 animate-in slide-in-from-bottom-2">
+                        <div className="flex items-center gap-2 text-red-600 font-bold text-xs">
+                            <span className="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
+                            Grabando: {formatDuration(recordingDuration)}
+                        </div>
+                        <button onClick={cancelRecording} className="text-red-400 hover:text-red-600">
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+                <audio ref={audioPlayerRef} className="hidden" />
                 <div className="text-center mt-3">
                     <p className="text-[10px] text-gray-300 font-medium flex items-center justify-center gap-1">
                         Powered by <span className="font-bold text-gray-400">Kônsul AI</span>

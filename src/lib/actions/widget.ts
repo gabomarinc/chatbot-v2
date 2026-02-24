@@ -16,9 +16,10 @@ export async function sendWidgetMessage(data: {
     metadata?: any; // Optional metadata for file attachments
     imageUrl?: string; // URL of uploaded image
     imageBase64?: string; // Base64 encoded image for AI processing
-    fileUrl?: string; // URL of uploaded file (PDF or image)
-    fileType?: 'pdf' | 'image'; // Type of uploaded file
+    fileUrl?: string; // URL of uploaded file (PDF, image or audio)
+    fileType?: 'pdf' | 'image' | 'audio'; // Type of uploaded file
     extractedText?: string; // Extracted text from PDF
+    transcription?: string; // Transcription from audio
 }) {
     try {
         // 0. Resolve API Keys (Env vs DB)
@@ -171,13 +172,16 @@ export async function sendWidgetMessage(data: {
             }
         }
 
-        // For PDFs, include extracted text in the message content
+        // For PDFs or Audio, include extracted text or transcription in the message content
         let messageContent = data.content;
         if (fileType === 'pdf' && data.extractedText) {
             // Prepend extracted text to the message
             messageContent = data.content
                 ? `${data.content}\n\n--- Contenido del PDF ---\n${data.extractedText}`
                 : `--- Contenido del PDF ---\n${data.extractedText}`;
+        } else if (fileType === 'audio' && data.transcription) {
+            // Use transcription for audio messages
+            messageContent = data.transcription;
         }
 
         // 4. Save User Message (with file metadata if present)
