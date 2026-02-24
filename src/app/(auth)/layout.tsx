@@ -17,9 +17,11 @@ export default function AuthLayout({
                 <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white/50 p-10 backdrop-blur-sm">
                     {/* Logo/Brand */}
                     <div className="flex flex-col items-center mb-10">
-                        <div className="w-16 h-16 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-[#21AC96]/20 mb-4 transform hover:scale-105 transition-transform cursor-pointer">
-                            K
-                        </div>
+                        <img
+                            src="/icono-konsul.png"
+                            alt="Kônsul"
+                            className="w-16 h-16 rounded-2xl object-cover mb-4 shadow-lg shadow-[#21AC96]/20 hover:scale-105 transition-transform cursor-pointer"
+                        />
                         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Kônsul</h1>
                         <p className="text-gray-500 text-sm mt-1">Plataforma de Agentes IA</p>
                     </div>
