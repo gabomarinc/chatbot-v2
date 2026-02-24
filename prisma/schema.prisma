@@ -48,6 +48,7 @@ model Workspace {
   contacts      Contact[]         // Added relation
   paymentConfigs PaymentGatewayConfig[]
   transactions   Transaction[]
+  prospectColumns ProspectStatusColumn[]
 }
 
 model WorkspaceMember {
@@ -328,6 +329,9 @@ model Contact {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
+  // Prospect Pipeline
+  prospectStatus  String?  @default("Nuevo") // Kanban column name
+
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   conversations Conversation[]
   activities    ContactActivity[]
@@ -337,6 +341,20 @@ model Contact {
   @@index([email])
   @@index([phone])
   @@index([customData], type: Gin) // High performance filtering for JSONB
+}
+
+model ProspectStatusColumn {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String    // "Nuevo", "En Proceso", "Flujo Terminado", or custom
+  color       String    @default("#21AC96") // hex color for column header
+  order       Int       @default(0)
+  isDefault   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
 }
 
 model ContactActivity {
