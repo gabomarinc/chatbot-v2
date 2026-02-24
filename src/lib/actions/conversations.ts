@@ -6,6 +6,7 @@ import { getUserWorkspace } from './workspace'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
 import { sendAssignmentEmail } from '@/lib/email'
+import { sendAssignmentPushNotification } from '@/lib/push'
 import { adminMessaging } from '@/lib/firebase-admin'
 import OpenAI from 'openai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
@@ -156,28 +157,15 @@ export async function assignConversation(conversationId: string, userId: string)
         }
 
         // Send Push Notification
-        if ((membership.user as any).fcmToken) {
-            try {
-                const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-                await adminMessaging.send({
-                    token: (membership.user as any).fcmToken,
-                    notification: {
-                        title: `🚀 Nuevo Lead: ${conversation.contactName || conversation.contact?.name || 'Visitante'}`,
-                        body: `¡Hola ${membership.user.name ? membership.user.name.split(' ')[0] : 'Agente'}! Te han asignado un nuevo lead. Intención: ${intentSummary}`,
-                    },
-                    data: {
-                        conversationId: conversation.id,
-                        url: `${APP_URL}/chat?id=${conversation.id}`
-                    },
-                    webpush: {
-                        fcmOptions: {
-                            link: `${APP_URL}/chat?id=${conversation.id}`
-                        }
-                    }
-                });
-            } catch (fcmError) {
-                console.error('Error sending FCM notification:', fcmError);
-            }
+        const userWithFcm = membership.user as any;
+        if (userWithFcm.fcmToken) {
+            await sendAssignmentPushNotification(
+                userWithFcm.fcmToken,
+                membership.user.name || '',
+                conversation.contactName || conversation.contact?.name || 'Visitante',
+                intentSummary,
+                conversation.id
+            );
         }
 
         revalidatePath('/dashboard')

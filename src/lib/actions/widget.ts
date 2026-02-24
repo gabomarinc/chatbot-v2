@@ -1020,11 +1020,13 @@ Reglas para cobrar (ESTRICTO):
                                             }
                                         });
 
-                                        // Send Assignment Email
+                                        // Send Assignment Email & Push Notification
                                         try {
                                             const { sendAssignmentEmail } = await import('@/lib/email');
+                                            const { sendAssignmentPushNotification } = await import('@/lib/push');
                                             const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
                                             const link = `${appUrl}/chat?id=${conversation.id}`;
+                                            const intentSummary = (args as any).razon || `El bot ha asignado esta conversación al departamento de ${dept}.`;
 
                                             await sendAssignmentEmail(
                                                 member.user.email,
@@ -1037,10 +1039,20 @@ Reglas para cobrar (ESTRICTO):
                                                     email: conversation.contactEmail || 'No proporcionado',
                                                     phone: (conversation as any).contact?.phone || 'No proporcionado'
                                                 },
-                                                (args as any).razon || `El bot ha asignado esta conversación al departamento de ${dept}.`
+                                                intentSummary
                                             );
-                                        } catch (emailErr) {
-                                            console.error('[GEMINI] Error sending assignment email:', emailErr);
+
+                                            if ((member.user as any).fcmToken) {
+                                                await sendAssignmentPushNotification(
+                                                    (member.user as any).fcmToken,
+                                                    member.user.name || member.user.email,
+                                                    conversation.contactName || 'Visitante',
+                                                    intentSummary,
+                                                    conversation.id
+                                                );
+                                            }
+                                        } catch (notifyErr) {
+                                            console.error('[GEMINI] Error sending notifications:', notifyErr);
                                         }
 
                                         toolResult = {
@@ -1688,11 +1700,13 @@ Reglas para cobrar (ESTRICTO):
                                         }
                                     });
 
-                                    // Send Assignment Email
+                                    // Send Assignment Email & Push Notification
                                     try {
                                         const { sendAssignmentEmail } = await import('@/lib/email');
+                                        const { sendAssignmentPushNotification } = await import('@/lib/push');
                                         const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
                                         const link = `${appUrl}/chat?id=${conversation.id}`;
+                                        const intentSummary = args.razon || `El bot ha asignado esta conversación al departamento de ${dept}.`;
 
                                         await sendAssignmentEmail(
                                             member.user.email,
@@ -1705,10 +1719,20 @@ Reglas para cobrar (ESTRICTO):
                                                 email: conversation.contactEmail || 'No proporcionado',
                                                 phone: (conversation as any).contact?.phone || 'No proporcionado'
                                             },
-                                            args.razon || `El bot ha asignado esta conversación al departamento de ${dept}.`
+                                            intentSummary
                                         );
-                                    } catch (emailErr) {
-                                        console.error('[OPENAI] Error sending assignment email:', emailErr);
+
+                                        if ((member.user as any).fcmToken) {
+                                            await sendAssignmentPushNotification(
+                                                (member.user as any).fcmToken,
+                                                member.user.name || member.user.email,
+                                                conversation.contactName || 'Visitante',
+                                                intentSummary,
+                                                conversation.id
+                                            );
+                                        }
+                                    } catch (notifyErr) {
+                                        console.error('[OPENAI] Error sending notifications:', notifyErr);
                                     }
 
                                     toolResult = {
