@@ -61,6 +61,15 @@ export function AgentTour({ hasSeenTour }: AgentTourProps) {
                     }
                 },
                 {
+                    element: '#tab-pending-questions',
+                    popover: {
+                        title: '❓ Por Responder',
+                        description: 'Las preguntas que el bot <strong>no supo responder</strong> aparecen aquí automáticamente.<br><br>Revísalas periódicamente y entrena a tu agente con las respuestas correctas para que cada día sea más inteligente. ¡Es tu oportunidad de cerrar brechas de conocimiento!',
+                        side: 'bottom',
+                        align: 'start'
+                    }
+                },
+                {
                     element: '#tab-channels',
                     popover: {
                         title: '📡 Canales',
