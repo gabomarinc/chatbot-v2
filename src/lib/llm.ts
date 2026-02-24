@@ -98,9 +98,10 @@ export async function generateAgentReply(
 
   // Altaplaza Integration Check
   const altaplazaIntegration = agent.integrations?.find((i: any) => i.provider === 'ALTAPLAZA' && i.enabled);
+  const neonIntegration = agent.integrations?.find((i: any) => i.provider === 'NEON_CATALOG' && i.enabled);
 
   // Build system prompt
-  const systemPrompt = buildSystemPrompt(agent, contextChunks, !!altaplazaIntegration);
+  const systemPrompt = buildSystemPrompt(agent, contextChunks, !!altaplazaIntegration, !!neonIntegration);
 
   // Get conversation history
   const messages = await prisma.message.findMany({
@@ -221,6 +222,24 @@ export async function generateAgentReply(
         }
       }
     );
+  }
+
+  // Add Neon Catalog tools if enabled
+  if (neonIntegration) {
+    tools.push({
+      type: 'function',
+      function: {
+        name: 'query_product_catalog',
+        description: 'Search for products, prices, and stock in the company catalog.',
+        parameters: {
+          type: 'object',
+          properties: {
+            searchTerm: { type: 'string', description: 'The product or category to search for.' }
+          },
+          required: ['searchTerm']
+        }
+      }
+    });
   }
 
   // Call OpenAI API (Loop for tool calls)
@@ -460,6 +479,37 @@ export async function generateAgentReply(
             });
           }
         }
+
+        // --- NEON CATALOG HANDLER ---
+        if ((toolCall as any).function.name === 'query_product_catalog') {
+          try {
+            const { searchTerm } = JSON.parse((toolCall as any).function.arguments);
+            const { queryProductCatalog } = await import('@/lib/neon-catalog');
+
+            // Execute query using the saved configuration
+            const result = await queryProductCatalog(
+              neonIntegration.configJson as any,
+              searchTerm
+            );
+
+            // Log Event
+            const { logIntegrationEvent } = await import('@/lib/integrations-logger');
+            await logIntegrationEvent(agentId, 'NEON_CATALOG', 'PRODUCT_QUERY', result.error ? 'ERROR' : 'SUCCESS', { searchTerm, count: result.results?.length });
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(result)
+            });
+          } catch (error: any) {
+            console.error('[LLM] Neon query error:', error);
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: false, error: error.message })
+            });
+          }
+        }
       }
       // Loop continues to get the next response from AI
     } else {
@@ -521,7 +571,7 @@ export async function generateAgentReply(
   };
 }
 
-function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: boolean = false): string {
+function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: boolean = false, hasNeon: boolean = false): string {
   let prompt = '';
 
   // Communication style
@@ -621,6 +671,17 @@ Eres capaz de gestionar el flujo de Altaplaza. Sigue este protocolo:
 4. La fecha de nacimiento debe ser en formato AAAA-MM-DD.
 5. Sé amable y guía al usuario en cada paso.
 \n`;
+  }
+
+  // Neon Specific Instructions
+  if (hasNeon) {
+    prompt += `
+### INTEGRACIÓN DE CATÁLOGO (NEON DB)
+Tienes acceso al catálogo de productos y precios en tiempo real. 
+1. Si el usuario pregunta por un producto, precio o disponibilidad, USA 'query_product_catalog'.
+2. Sé específico con los resultados encontrados: nombre, precio, descripción, etc.
+3. Si el buscador no devuelve resultados exactos, intenta términos más generales o informa al usuario que no lo encuentras en el catálogo actual.
+4. NUNCA inventes precios. Si no está en el catálogo, di que no tienes la información disponible.\n\n`;
   }
 
   // STANDARD CONTACT INFO COLLECTION (Always Active)

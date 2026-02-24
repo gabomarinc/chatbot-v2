@@ -81,7 +81,46 @@ export async function saveAltaplazaIntegration(agentId: string) {
     return integration;
 }
 
-export async function getIntegrationStats(agentId: string, provider: 'ZOHO' | 'ODOO' | 'HUBSPOT' | 'ALTAPLAZA' | 'GOOGLE_CALENDAR') {
+export async function saveNeonCatalogIntegration(
+    agentId: string,
+    config: { connectionString: string; tableName: string; description?: string }
+) {
+    const integration = await prisma.agentIntegration.upsert({
+        where: {
+            agentId_provider: {
+                agentId,
+                provider: 'NEON_CATALOG'
+            }
+        },
+        update: {
+            configJson: config as any,
+            enabled: true
+        },
+        create: {
+            agentId,
+            provider: 'NEON_CATALOG',
+            configJson: config as any,
+            enabled: true
+        }
+    });
+
+    revalidatePath(`/agents/${agentId}/settings`);
+    return integration;
+}
+
+export async function testNeonCatalogConnection(
+    connectionString: string,
+    tableName: string
+): Promise<{ ok: boolean; columns?: string[]; preview?: any[]; error?: string }> {
+    try {
+        const { testNeonConnection } = await import('@/lib/neon-catalog');
+        return await testNeonConnection(connectionString, tableName);
+    } catch (err: any) {
+        return { ok: false, error: err.message };
+    }
+}
+
+export async function getIntegrationStats(agentId: string, provider: 'ZOHO' | 'ODOO' | 'HUBSPOT' | 'ALTAPLAZA' | 'GOOGLE_CALENDAR' | 'NEON_CATALOG') {
     const last7Days = new Date();
     last7Days.setDate(last7Days.getDate() - 7);
     last7Days.setHours(0, 0, 0, 0);

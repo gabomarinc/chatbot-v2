@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { initiateGoogleAuth, deleteIntegration, saveOdooIntegration, saveAltaplazaIntegration, getIntegrationStats } from '@/lib/actions/integrations';
-import { Loader2, CheckCircle2, Trash2, AlertTriangle, Globe, Database, User, Key, Search, Sparkles, LayoutGrid } from 'lucide-react';
+import { initiateGoogleAuth, deleteIntegration, saveOdooIntegration, saveAltaplazaIntegration, getIntegrationStats, saveNeonCatalogIntegration, testNeonCatalogConnection } from '@/lib/actions/integrations';
+import { Loader2, CheckCircle2, Trash2, AlertTriangle, Globe, Database, User, Key, Search, Sparkles, LayoutGrid, Terminal } from 'lucide-react';
 import { toast } from 'sonner';
 import {
     Dialog,
@@ -38,6 +38,14 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
     });
     const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isNeonModalOpen, setIsNeonModalOpen] = useState(false);
+    const [neonConfig, setNeonConfig] = useState({
+        connectionString: '',
+        tableName: '',
+        description: 'Consulta de precios y productos en base de datos externa.'
+    });
+    const [isTestingNeon, setIsTestingNeon] = useState(false);
+    const [neonTestResult, setNeonTestResult] = useState<{ ok: boolean; columns?: string[]; error?: string } | null>(null);
 
     interface Integration {
         id: string;
@@ -87,6 +95,13 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
             description: 'Integración privada para registro y consulta de facturas',
             icon: '🛍️',
             color: 'blue',
+        },
+        {
+            id: 'NEON_CATALOG',
+            name: 'Neon DB - Catálogo de Precios',
+            description: 'Consulta directa a tu base de datos Neon para precios y stock en tiempo real',
+            icon: '🐘',
+            color: 'teal',
         }
     ];
 
@@ -103,6 +118,15 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
 
         if (provider === 'ALTAPLAZA') {
             setIsAltaplazaModalOpen(true);
+            return;
+        }
+
+        if (provider === 'NEON_CATALOG') {
+            const existing = existingIntegrations.find(i => i.provider === 'NEON_CATALOG');
+            if (existing && existing.configJson) {
+                setNeonConfig(existing.configJson as any);
+            }
+            setIsNeonModalOpen(true);
             return;
         }
 
@@ -205,6 +229,42 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
         } catch (error: any) {
             console.error('Odoo save error:', error);
             toast.error(error.message || 'Error al guardar la integración.');
+        } finally {
+            setIsLoading(null);
+        }
+    };
+
+    const handleTestNeon = async () => {
+        if (!neonConfig.connectionString || !neonConfig.tableName) {
+            toast.error('Completa los campos de conexión y tabla.');
+            return;
+        }
+        setIsTestingNeon(true);
+        setNeonTestResult(null);
+        try {
+            const res = await testNeonCatalogConnection(neonConfig.connectionString, neonConfig.tableName);
+            setNeonTestResult(res);
+            if (res.ok) {
+                toast.success('Conexión exitosa.');
+            } else {
+                toast.error('Error de conexión: ' + res.error);
+            }
+        } catch (err: any) {
+            toast.error('Error al probar conexión.');
+        } finally {
+            setIsTestingNeon(false);
+        }
+    };
+
+    const handleSaveNeon = async () => {
+        setIsLoading('NEON_CATALOG');
+        try {
+            await saveNeonCatalogIntegration(agentId, neonConfig);
+            toast.success('Configuración de Neon guardada.');
+            setIsNeonModalOpen(false);
+            window.location.reload();
+        } catch (error: any) {
+            toast.error('Error al guardar configuración.');
         } finally {
             setIsLoading(null);
         }
@@ -506,6 +566,104 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                                 'Conectar Odoo'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isNeonModalOpen} onOpenChange={setIsNeonModalOpen}>
+                <DialogContent className="max-w-md w-[95%] sm:w-full bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-10 border-none shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
+                    <DialogHeader className="flex flex-col items-center text-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-teal-50 mb-6 transition-transform hover:scale-110 duration-300 mx-auto">
+                            <span className="text-4xl text-center">🐘</span>
+                        </div>
+                        <DialogTitle className="text-center text-2xl font-black text-gray-900 tracking-tight w-full flex justify-center">
+                            Conectar Neon Database
+                        </DialogTitle>
+                        <DialogDescription className="text-center text-gray-400 font-bold leading-relaxed pt-2 w-full max-w-sm mx-auto">
+                            Consulta el catálogo de productos y precios directamente desde tu base de datos Neon.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-6">
+                        <div className="group space-y-2 flex flex-col items-center text-left">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 w-full group-focus-within:text-teal-600 transition-colors">
+                                Connection String
+                            </label>
+                            <div className="relative w-full">
+                                <Database className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-teal-400 transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="postgres://user:pass@host/db"
+                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                                    value={neonConfig.connectionString}
+                                    onChange={(e) => setNeonConfig({ ...neonConfig, connectionString: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="group space-y-2 flex flex-col items-center text-left">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 w-full group-focus-within:text-teal-600 transition-colors">
+                                Nombre de la Tabla
+                            </label>
+                            <div className="relative w-full">
+                                <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-teal-400 transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="products_table"
+                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                                    value={neonConfig.tableName}
+                                    onChange={(e) => setNeonConfig({ ...neonConfig, tableName: e.target.value })}
+                                />
+                            </div>
+                            <p className="text-[10px] text-gray-400 font-bold px-1 w-full">
+                                El agente podrá buscar en todos los campos de texto de esta tabla.
+                            </p>
+                        </div>
+
+                        {neonTestResult && (
+                            <div className={`p-4 rounded-2xl border ${neonTestResult.ok ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'} text-xs font-bold animate-fade-in`}>
+                                {neonTestResult.ok ? (
+                                    <div>
+                                        <p className="mb-2 flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4" /> Conexión exitosa. Columnas detectadas:
+                                        </p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {neonTestResult.columns?.map(col => (
+                                                <span key={col} className="bg-white/50 px-2 py-0.5 rounded-lg border border-green-200">{col}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4" /> Error: {neonTestResult.error}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="flex flex-row items-center gap-3 pt-2">
+                        <Button
+                            variant="outline"
+                            onClick={handleTestNeon}
+                            disabled={isTestingNeon || !neonConfig.connectionString || !neonConfig.tableName}
+                            className="flex-1 rounded-2xl h-12 text-xs font-black uppercase tracking-widest border-teal-100 text-teal-600 hover:bg-teal-50 transition-all"
+                        >
+                            {isTestingNeon ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Probar'}
+                        </Button>
+                        <Button
+                            onClick={handleSaveNeon}
+                            disabled={isLoading === 'NEON_CATALOG' || !neonTestResult?.ok}
+                            className={`flex-[1.5] rounded-2xl h-12 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2
+                                ${neonTestResult?.ok ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}
+                            `}
+                        >
+                            {isLoading === 'NEON_CATALOG' ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                'Guardar'
                             )}
                         </Button>
                     </DialogFooter>

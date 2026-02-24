@@ -542,6 +542,7 @@ enum IntegrationProvider {
   ODOO
   HUBSPOT
   ALTAPLAZA
+  NEON_CATALOG
 }
 
 enum PlanType {
