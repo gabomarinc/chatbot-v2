@@ -50,7 +50,7 @@ export async function getProspectPipelineData(agentId?: string) {
                             select: { id: true, name: true, avatarUrl: true }
                         },
                         messages: {
-                            where: { role: 'user' },
+                            where: { role: 'USER' },
                             orderBy: { createdAt: 'desc' },
                             take: 1,
                             select: { content: true, createdAt: true }
