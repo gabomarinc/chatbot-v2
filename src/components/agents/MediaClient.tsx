@@ -1,10 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Plus, Image as ImageIcon, Trash2, Search, Tag, FileImage } from 'lucide-react'
+import {
+    Plus, Image as ImageIcon, Trash2, Search, Tag,
+    X, Upload, Loader2, Sparkles, Info
+} from 'lucide-react'
 
+/* ─── Types ─────────────────────────────────────────────────────────────── */
 interface AgentMedia {
     id: string
     agentId: string
@@ -22,6 +26,7 @@ interface MediaClientProps {
     media: AgentMedia[]
 }
 
+/* ─── Main Component ─────────────────────────────────────────────────────── */
 export function MediaClient({ agentId, media: initialMedia }: MediaClientProps) {
     const [media, setMedia] = useState<AgentMedia[]>(initialMedia)
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -30,28 +35,23 @@ export function MediaClient({ agentId, media: initialMedia }: MediaClientProps) 
 
     const filteredMedia = media.filter(m => {
         if (!searchQuery) return true
-        const query = searchQuery.toLowerCase()
+        const q = searchQuery.toLowerCase()
         return (
-            m.fileName.toLowerCase().includes(query) ||
-            m.description?.toLowerCase().includes(query) ||
-            m.tags.some(tag => tag.toLowerCase().includes(query))
+            m.fileName.toLowerCase().includes(q) ||
+            m.description?.toLowerCase().includes(q) ||
+            m.tags.some(t => t.toLowerCase().includes(q))
         )
     })
 
     const handleDelete = async (mediaId: string) => {
         if (!confirm('¿Estás seguro de eliminar esta imagen?')) return
-
         try {
-            const response = await fetch(`/api/agents/${agentId}/media/${mediaId}`, {
-                method: 'DELETE'
-            })
-
-            if (!response.ok) throw new Error('Failed to delete media')
-
+            const res = await fetch(`/api/agents/${agentId}/media/${mediaId}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error()
             setMedia(prev => prev.filter(m => m.id !== mediaId))
             toast.success('Imagen eliminada')
             router.refresh()
-        } catch (error) {
+        } catch {
             toast.error('Error al eliminar')
         }
     }
@@ -62,27 +62,29 @@ export function MediaClient({ agentId, media: initialMedia }: MediaClientProps) 
         router.refresh()
     }
 
+    /* ── Empty state ──────────────────────────────────────────────────── */
     if (media.length === 0) {
         return (
             <>
-                <div className="max-w-4xl space-y-6">
-                    <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
-                            <ImageIcon className="w-8 h-8 text-purple-600" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                            No hay imágenes aún
-                        </h3>
-                        <p className="text-gray-500 mb-6">
-                            Sube imágenes para que tu agente pueda mostrarlas cuando los usuarios las soliciten.
-                        </p>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="px-6 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium cursor-pointer"
-                        >
-                            Subir primera imagen
-                        </button>
+                <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm py-24 px-6 flex flex-col items-center text-center">
+                    <div className="inline-flex items-center justify-center w-[72px] h-[72px] bg-[#21AC96]/10 rounded-[1.25rem] mb-6 text-[#21AC96]">
+                        <ImageIcon className="w-9 h-9" />
                     </div>
+                    <h3 className="text-[20px] font-black text-gray-900 mb-3">Galería Multimedia</h3>
+                    <p className="text-[13px] font-semibold text-gray-500 mb-2">¿Para qué sirven las imágenes?</p>
+                    <p className="text-[13px] text-gray-400 max-w-[480px] mb-6 leading-relaxed">
+                        Las imágenes que subas aquí podrán ser enviadas automáticamente por el agente cuando los usuarios las soliciten — fotos de productos, planos, menús, mapas y más.
+                    </p>
+                    <div className="text-[12px] bg-gray-50 px-5 py-4 rounded-2xl border border-gray-100 text-gray-500 max-w-[520px] mb-10">
+                        <strong className="text-gray-700">Ejemplo:</strong> Si un usuario escribe "muestrame la foto del modelo A", el agente enviará automáticamente la imagen correcta.
+                    </div>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 px-8 py-3.5 bg-[#21AC96] text-white rounded-2xl hover:bg-[#1b8c7a] transition-all font-bold text-sm cursor-pointer shadow-lg shadow-[#21AC96]/20 active:scale-95"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Subir primera imagen
+                    </button>
                 </div>
 
                 {isModalOpen && (
@@ -96,108 +98,98 @@ export function MediaClient({ agentId, media: initialMedia }: MediaClientProps) 
         )
     }
 
+    /* ── Gallery ─────────────────────────────────────────────────────── */
     return (
         <>
-            <div className="max-w-4xl space-y-6">
+            <div className="space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Imágenes del Agente</h2>
-                        <p className="text-gray-500">Gestiona las imágenes que tu agente puede mostrar a los usuarios</p>
+                        <h2 className="text-[18px] font-black text-gray-900">Galería Multimedia</h2>
+                        <p className="text-[13px] text-gray-400 mt-0.5">Gestiona las imágenes que tu agente puede enviar a los usuarios</p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#21AC96] text-white rounded-2xl hover:bg-[#1b8c7a] transition-all font-bold text-sm cursor-pointer shadow-md shadow-[#21AC96]/20 active:scale-95"
                     >
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-4 h-4" />
                         Subir Imagen
                     </button>
                 </div>
 
                 {/* Search */}
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                         type="text"
                         placeholder="Buscar por nombre, descripción o tags..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/30 focus:border-[#21AC96] transition-all shadow-sm"
                     />
                 </div>
 
-                {/* Media Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredMedia.map((item) => (
-                        <div
-                            key={item.id}
-                            className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
-                        >
-                            {/* Image Preview */}
-                            <div className="aspect-video bg-gray-100 relative overflow-hidden">
-                                <img
-                                    src={item.url}
-                                    alt={item.altText || item.description || item.fileName}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none'
-                                        const parent = e.currentTarget.parentElement
-                                        if (parent) {
-                                            parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><FileImage class="w-12 h-12 text-gray-400" /></div>'
-                                        }
-                                    }}
-                                />
-                            </div>
-
-                            {/* Info */}
-                            <div className="p-4 space-y-2">
-                                <h3 className="font-semibold text-gray-900 truncate">
-                                    {item.fileName}
-                                </h3>
-                                {item.description && (
-                                    <p className="text-sm text-gray-600 line-clamp-2">
-                                        {item.description}
-                                    </p>
-                                )}
-
-                                {/* Tags */}
-                                {item.tags.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                        {item.tags.slice(0, 3).map((tag, idx) => (
-                                            <span
-                                                key={idx}
-                                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 text-xs rounded-full"
-                                            >
-                                                <Tag className="w-3 h-3" />
-                                                {tag}
-                                            </span>
-                                        ))}
-                                        {item.tags.length > 3 && (
-                                            <span className="text-xs text-gray-500">
-                                                +{item.tags.length - 3}
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Actions */}
-                                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                {/* Grid */}
+                {filteredMedia.length === 0 ? (
+                    <div className="text-center py-12 text-[13px] text-gray-400 font-medium">
+                        No se encontraron imágenes con &ldquo;{searchQuery}&rdquo;
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredMedia.map((item) => (
+                            <div
+                                key={item.id}
+                                className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden hover:border-[#21AC96]/30 hover:shadow-md transition-all group"
+                            >
+                                {/* Thumbnail */}
+                                <div className="aspect-video bg-gray-50 relative overflow-hidden">
+                                    <img
+                                        src={item.url}
+                                        alt={item.altText || item.description || item.fileName}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        onError={(e) => {
+                                            (e.currentTarget as HTMLImageElement).style.display = 'none'
+                                            const parent = e.currentTarget.parentElement
+                                            if (parent) {
+                                                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4-4 4 4 4-8 4 8M4 20h16M4 4h16"/></svg></div>'
+                                            }
+                                        }}
+                                    />
+                                    {/* Delete overlay */}
                                     <button
                                         onClick={() => handleDelete(item.id)}
-                                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                        className="absolute top-2 right-2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-50"
                                         title="Eliminar"
                                     >
-                                        <Trash2 className="w-4 h-4 text-red-600" />
+                                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
 
-                {filteredMedia.length === 0 && searchQuery && (
-                    <div className="text-center py-8 text-gray-500">
-                        No se encontraron imágenes con "{searchQuery}"
+                                {/* Info */}
+                                <div className="p-4 space-y-2">
+                                    <h3 className="font-black text-[13px] text-gray-900 truncate">{item.fileName}</h3>
+                                    {item.description && (
+                                        <p className="text-[12px] text-gray-400 leading-relaxed line-clamp-2">{item.description}</p>
+                                    )}
+                                    {item.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 pt-1">
+                                            {item.tags.slice(0, 3).map((tag, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#21AC96]/8 text-[#21AC96] text-[10px] font-bold rounded-full border border-[#21AC96]/15"
+                                                >
+                                                    <Tag className="w-2.5 h-2.5" />
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                            {item.tags.length > 3 && (
+                                                <span className="text-[10px] text-gray-400 font-bold px-1">+{item.tags.length - 3}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
@@ -213,6 +205,7 @@ export function MediaClient({ agentId, media: initialMedia }: MediaClientProps) 
     )
 }
 
+/* ─── Upload Modal ───────────────────────────────────────────────────────── */
 function MediaUploadModal({
     agentId,
     onClose,
@@ -229,41 +222,42 @@ function MediaUploadModal({
     const [altText, setAltText] = useState('')
     const [prompt, setPrompt] = useState('')
     const [isUploading, setIsUploading] = useState(false)
+    const [isDragging, setIsDragging] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0]
-        if (!selectedFile) return
-
+    const processFile = (selectedFile: File) => {
         if (!selectedFile.type.startsWith('image/')) {
             toast.error('Por favor selecciona una imagen')
             return
         }
-
         if (selectedFile.size > 5 * 1024 * 1024) {
             toast.error('La imagen debe ser menor a 5MB')
             return
         }
-
         setFile(selectedFile)
-
-        // Create preview
         const reader = new FileReader()
-        reader.onload = (e) => {
-            setPreview(e.target?.result as string)
-        }
+        reader.onload = (e) => setPreview(e.target?.result as string)
         reader.readAsDataURL(selectedFile)
+    }
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0]
+        if (f) processFile(f)
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsDragging(false)
+        const f = e.dataTransfer.files[0]
+        if (f) processFile(f)
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!file) {
-            toast.error('Por favor selecciona una imagen')
-            return
-        }
+        if (!file) { toast.error('Por favor selecciona una imagen'); return }
 
         setIsUploading(true)
-
         try {
             const formData = new FormData()
             formData.append('file', file)
@@ -272,17 +266,12 @@ function MediaUploadModal({
             if (altText) formData.append('altText', altText)
             if (prompt) formData.append('prompt', prompt)
 
-            const response = await fetch(`/api/agents/${agentId}/media`, {
-                method: 'POST',
-                body: formData
-            })
-
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.error || 'Failed to upload media')
+            const res = await fetch(`/api/agents/${agentId}/media`, { method: 'POST', body: formData })
+            if (!res.ok) {
+                const err = await res.json()
+                throw new Error(err.error || 'Error al subir')
             }
-
-            const newMedia = await response.json()
+            const newMedia = await res.json()
             toast.success('Imagen subida correctamente')
             onSuccess(newMedia)
             router.refresh()
@@ -294,52 +283,74 @@ function MediaUploadModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-xl font-bold text-gray-900">Subir Imagen</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                        Agrega una imagen que tu agente pueda mostrar cuando los usuarios la soliciten
-                    </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-900/20 w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+
+                {/* ── Dark Header ─────────────────────────────── */}
+                <div className="bg-gray-900 px-8 py-7 flex items-start justify-between shrink-0 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-[#21AC96]/10 rounded-full -mr-20 -mt-20 blur-2xl" />
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-1">
+                            <div className="w-9 h-9 bg-[#21AC96]/20 rounded-xl flex items-center justify-center">
+                                <ImageIcon className="w-4.5 h-4.5 text-[#21AC96]" />
+                            </div>
+                            <h3 className="text-white font-black text-lg tracking-tight">Subir Imagen</h3>
+                        </div>
+                        <p className="text-gray-400 text-[13px] font-medium pl-12">
+                            Agrega una imagen que tu agente pueda enviar cuando la soliciten
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="relative z-10 p-2 text-gray-500 hover:text-gray-300 hover:bg-white/10 rounded-xl transition-all"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    {/* File Upload */}
+                {/* ── Body ────────────────────────────────────── */}
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-7 space-y-6">
+
+                    {/* Drop zone / Preview */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Imagen *
+                        <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+                            <span>Imagen</span>
+                            <span className="bg-[#21AC96]/10 text-[#21AC96] px-2 py-0.5 rounded-full text-[10px]">Requerido</span>
                         </label>
+
                         {preview ? (
-                            <div className="space-y-3">
-                                <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden">
-                                    <img
-                                        src={preview}
-                                        alt="Preview"
-                                        className="w-full h-full object-cover"
-                                    />
+                            <div className="relative rounded-[1.5rem] overflow-hidden border border-gray-100 shadow-sm">
+                                <img src={preview} alt="Preview" className="w-full aspect-video object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent" />
+                                <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+                                    <p className="text-white text-[12px] font-bold truncate">{file?.name}</p>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setFile(null)
-                                            setPreview(null)
-                                        }}
-                                        className="absolute top-2 right-2 p-2 bg-white rounded-lg shadow-lg hover:bg-gray-50"
+                                        onClick={() => { setFile(null); setPreview(null) }}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-[11px] font-bold rounded-lg hover:bg-red-500/80 transition-all"
                                     >
-                                        <Trash2 className="w-4 h-4 text-red-600" />
+                                        <Trash2 className="w-3 h-3" />
+                                        Cambiar
                                     </button>
                                 </div>
-                                <p className="text-sm text-gray-600">{file?.name}</p>
                             </div>
                         ) : (
-                            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-purple-500 transition-colors">
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <ImageIcon className="w-12 h-12 text-gray-400 mb-3" />
-                                    <p className="mb-2 text-sm text-gray-500">
-                                        <span className="font-semibold">Haz clic para subir</span> o arrastra y suelta
-                                    </p>
-                                    <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 5MB</p>
+                            <label
+                                className={`flex flex-col items-center justify-center w-full h-44 rounded-[1.5rem] border-2 border-dashed cursor-pointer transition-all ${isDragging ? 'border-[#21AC96] bg-[#21AC96]/5' : 'border-gray-200 hover:border-[#21AC96]/50 hover:bg-gray-50/50'}`}
+                                onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                                onDragLeave={() => setIsDragging(false)}
+                                onDrop={handleDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <div className={`w-14 h-14 rounded-[1rem] flex items-center justify-center mb-3 transition-all ${isDragging ? 'bg-[#21AC96] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                    <Upload className="w-6 h-6" />
                                 </div>
+                                <p className="text-[13px] font-bold text-gray-600 mb-1">
+                                    <span className="text-[#21AC96]">Haz clic para subir</span> o arrastra y suelta
+                                </p>
+                                <p className="text-[11px] text-gray-400">PNG, JPG, GIF, WEBP hasta 5MB</p>
                                 <input
+                                    ref={fileInputRef}
                                     type="file"
                                     className="hidden"
                                     accept="image/*"
@@ -349,96 +360,101 @@ function MediaUploadModal({
                         )}
                     </div>
 
-                    {/* Description */}
+                    {/* Instructions para el Chatbot */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Descripción
-                        </label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Describe la imagen para ayudar al chatbot a encontrarla..."
-                            rows={3}
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                            Esta descripción ayudará al chatbot a encontrar la imagen cuando los usuarios la soliciten
-                        </p>
-                    </div>
-
-                    {/* Tags */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Tags (separados por comas)
-                        </label>
-                        <input
-                            type="text"
-                            value={tags}
-                            onChange={(e) => setTags(e.target.value)}
-                            placeholder="casa, exterior, sala, cocina..."
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                            Etiquetas que ayudarán a categorizar y buscar la imagen
-                        </p>
-                    </div>
-
-                    {/* Alt Text */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Texto Alternativo (Alt Text)
-                        </label>
-                        <input
-                            type="text"
-                            value={altText}
-                            onChange={(e) => setAltText(e.target.value)}
-                            placeholder="Descripción breve para accesibilidad..."
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                            Texto que se mostrará si la imagen no puede cargarse
-                        </p>
-                    </div>
-
-                    {/* Prompt/Instructions */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Instrucciones para el Chatbot *
+                        <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+                            <span>Instrucciones para el Chatbot</span>
+                            <span className="bg-[#21AC96]/10 text-[#21AC96] px-2 py-0.5 rounded-full text-[10px]">Requerido</span>
                         </label>
                         <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="Ejemplo: Cuando el usuario pida imagen de la casa A, envía esta imagen"
+                            placeholder="Ej: Cuando el usuario pida ver la imagen del modelo A o pregunte por la planta del apartamento, envía esta imagen."
                             rows={3}
-                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             required
+                            className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/30 focus:border-[#21AC96] transition-all resize-none"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                            Instrucciones específicas que le dirán al chatbot cuándo y cómo usar esta imagen. Ejemplo: "Cuando el usuario pida ver la casa modelo A o pregunte por fotos de la propiedad tipo A, envía esta imagen"
-                        </p>
+                        <div className="flex items-start gap-2 mt-2 text-gray-400">
+                            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <p className="text-[11px] leading-relaxed">Le dicen al agente cuándo y por qué enviar esta imagen.</p>
+                        </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                    {/* Descripción */}
+                    <div>
+                        <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3 block">
+                            Descripción <span className="font-normal normal-case">(opcional)</span>
+                        </label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Describe la imagen para ayudar al chatbot a identificarla con mayor precisión..."
+                            rows={2}
+                            className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/30 focus:border-[#21AC96] transition-all resize-none"
+                        />
+                    </div>
+
+                    {/* Tags + Alt en grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3 block">
+                                Tags <span className="font-normal normal-case">(separados por comas)</span>
+                            </label>
+                            <div className="relative">
+                                <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
+                                <input
+                                    type="text"
+                                    value={tags}
+                                    onChange={(e) => setTags(e.target.value)}
+                                    placeholder="exterior, sala, plano..."
+                                    className="w-full pl-9 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/30 focus:border-[#21AC96] transition-all"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3 block">
+                                Alt Text <span className="font-normal normal-case">(accesibilidad)</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={altText}
+                                onChange={(e) => setAltText(e.target.value)}
+                                placeholder="Descripción breve..."
+                                className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/30 focus:border-[#21AC96] transition-all"
+                            />
+                        </div>
+                    </div>
+                </form>
+
+                {/* ── Footer ──────────────────────────────────── */}
+                <div className="px-8 py-5 border-t border-gray-100 flex items-center justify-between gap-3 bg-gray-50/50 shrink-0">
+                    <div className="flex items-center gap-2 text-[11px] text-gray-400 font-medium">
+                        <Sparkles className="w-3.5 h-3.5 text-[#21AC96]" />
+                        <span>La descripción e instrucciones mejoran la precisión del agente</span>
+                    </div>
+                    <div className="flex items-center gap-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
                             disabled={isUploading}
+                            className="px-5 py-2.5 rounded-2xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
                         >
                             Cancelar
                         </button>
                         <button
-                            type="submit"
+                            onClick={handleSubmit}
                             disabled={!file || isUploading}
-                            className="px-6 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#21AC96] text-white font-bold text-sm hover:bg-[#1b8c7a] transition-all shadow-md shadow-[#21AC96]/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isUploading ? 'Subiendo...' : 'Subir Imagen'}
+                            {isUploading ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" />Subiendo...</>
+                            ) : (
+                                <><Upload className="w-4 h-4" />Subir Imagen</>
+                            )}
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     )
 }
-
