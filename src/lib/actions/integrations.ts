@@ -85,27 +85,33 @@ export async function saveNeonCatalogIntegration(
     agentId: string,
     config: { connectionString: string; tableName: string; description?: string }
 ) {
-    const integration = await prisma.agentIntegration.upsert({
-        where: {
-            agentId_provider: {
+    try {
+        console.log(`[INTEGRATIONS] Saving Neon Catalog for agent ${agentId}`);
+        const integration = await prisma.agentIntegration.upsert({
+            where: {
+                agentId_provider: {
+                    agentId,
+                    provider: 'NEON_CATALOG'
+                }
+            },
+            update: {
+                configJson: config as any,
+                enabled: true
+            },
+            create: {
                 agentId,
-                provider: 'NEON_CATALOG'
+                provider: 'NEON_CATALOG',
+                configJson: config as any,
+                enabled: true
             }
-        },
-        update: {
-            configJson: config as any,
-            enabled: true
-        },
-        create: {
-            agentId,
-            provider: 'NEON_CATALOG',
-            configJson: config as any,
-            enabled: true
-        }
-    });
+        });
 
-    revalidatePath(`/agents/${agentId}/settings`);
-    return integration;
+        revalidatePath(`/agents/${agentId}/settings`);
+        return integration;
+    } catch (error: any) {
+        console.error('[INTEGRATIONS] Error saving Neon Catalog:', error);
+        throw error;
+    }
 }
 
 export async function testNeonCatalogConnection(

@@ -972,14 +972,19 @@ Reglas para cobrar (ESTRICTO):
                                             workspace.id
                                         );
 
-                                        // Sync name to conversation if updated
-                                        if ((args as any).updates?.name) {
+                                        // Sync name & email to conversation if updated
+                                        if (normalizedUpdates.name || normalizedUpdates.email) {
+                                            const syncData: any = {};
+                                            if (normalizedUpdates.name) syncData.contactName = normalizedUpdates.name;
+                                            if (normalizedUpdates.email) syncData.contactEmail = normalizedUpdates.email;
+
                                             await prisma.conversation.update({
                                                 where: { id: conversation.id },
-                                                data: { contactName: (args as any).updates.name }
+                                                data: syncData
                                             });
                                             // Update local object
-                                            conversation.contactName = (args as any).updates.name;
+                                            if (syncData.contactName) conversation.contactName = syncData.contactName;
+                                            if (syncData.contactEmail) conversation.contactEmail = syncData.contactEmail;
                                         }
 
                                         toolResult = result.success
@@ -1006,6 +1011,17 @@ Reglas para cobrar (ESTRICTO):
                                             user: true
                                         }
                                     });
+
+                                    // RE-FETCH conversation to ensure we have any contact info updated in this turn
+                                    const refreshedConv = await prisma.conversation.findUnique({
+                                        where: { id: conversation.id },
+                                        include: { contact: true }
+                                    });
+                                    if (refreshedConv) {
+                                        conversation.contactName = refreshedConv.contactName;
+                                        conversation.contactEmail = refreshedConv.contactEmail;
+                                        (conversation as any).contact = refreshedConv.contact;
+                                    }
 
                                     if (members.length > 0) {
                                         // Pick first member (could be improved with better load balancing)
@@ -1635,14 +1651,20 @@ Reglas para cobrar (ESTRICTO):
                                         console.error('[WIDGET] Failed to log metadata:', logErr);
                                     }
 
-                                    // ONLY Sync name to conversation if contact update SUCCEEDED
-                                    if (result.success && updates.name) {
+                                    // Sync standard fields to conversation if contact update SUCCEEDED
+                                    if (result.success && (updates.name || updates.email)) {
+                                        const syncData: any = {};
+                                        if (updates.name) syncData.contactName = updates.name;
+                                        if (updates.email) syncData.contactEmail = updates.email;
+
                                         await prisma.conversation.update({
                                             where: { id: conversation.id },
-                                            data: { contactName: updates.name }
+                                            data: syncData
                                         });
+
                                         // Update local object
-                                        conversation.contactName = updates.name;
+                                        if (syncData.contactName) conversation.contactName = syncData.contactName;
+                                        if (syncData.contactEmail) conversation.contactEmail = syncData.contactEmail;
                                     }
 
                                     toolResult = result.success
@@ -1686,6 +1708,17 @@ Reglas para cobrar (ESTRICTO):
                                         user: true
                                     }
                                 });
+
+                                // RE-FETCH conversation to ensure we have any contact info updated in this turn
+                                const refreshedConv = await prisma.conversation.findUnique({
+                                    where: { id: conversation.id },
+                                    include: { contact: true }
+                                });
+                                if (refreshedConv) {
+                                    conversation.contactName = refreshedConv.contactName;
+                                    conversation.contactEmail = refreshedConv.contactEmail;
+                                    (conversation as any).contact = refreshedConv.contact;
+                                }
 
                                 if (members.length > 0) {
                                     // Pick first member (could be improved with better load balancing)
