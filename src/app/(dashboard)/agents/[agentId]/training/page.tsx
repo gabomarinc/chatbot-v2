@@ -28,7 +28,7 @@ export default async function AgentTrainingPage({ params }: { params: Promise<{ 
             sources: (kb.sources as any[]).map(source => ({
                 id: source.id,
                 type: source.type,
-                displayName: source.url || source.fileUrl || 'Documento de Texto',
+                displayName: source.url || source.fileUrl || (source.type === 'TEXT' ? 'Pregunta sin título' : 'Documento de Texto'),
                 sourceUrl: source.url || source.fileUrl,
                 status: source.status,
                 errorMessage: source.errorMessage || null,

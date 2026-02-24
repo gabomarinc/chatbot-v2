@@ -210,7 +210,7 @@ export async function addKnowledgeSource(agentId: string, data: {
                 knowledgeBaseId,
                 type: data.type,
                 url: data.type === 'WEBSITE' || data.type === 'VIDEO' ? data.url : undefined,
-                fileUrl: data.type === 'DOCUMENT' ? data.fileName : undefined,
+                fileUrl: (data.type === 'DOCUMENT' || data.type === 'TEXT') ? data.fileName : undefined,
                 status: 'PROCESSING',
                 updateInterval: data.updateInterval || 'NEVER',
                 crawlSubpages: data.crawlSubpages || false,

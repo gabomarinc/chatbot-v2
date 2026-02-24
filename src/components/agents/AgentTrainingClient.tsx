@@ -536,7 +536,7 @@ export function AgentTrainingClient({ agentId, agent, knowledgeBases }: AgentTra
                                                     await addKnowledgeSource(agentId, {
                                                         type: 'TEXT',
                                                         text: `PREGUNTA MANUAL: ${q}\nRESPUESTA MANUAL CORRECTA: ${a}`,
-                                                        fileName: `FAQ: ${q.substring(0, 30)}...`
+                                                        fileName: q
                                                     });
                                                     toast.success('Pregunta manual añadida');
                                                     (document.getElementById('faq-q') as HTMLInputElement).value = '';
