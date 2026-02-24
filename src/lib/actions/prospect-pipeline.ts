@@ -126,15 +126,27 @@ export async function getProspectPipelineData(agentId?: string) {
     }
 }
 
-/* ─── Update prospect status (move card) ─────────────────────────────── */
-export async function updateProspectStatus(contactId: string, newStatus: string) {
+/* ─── Update prospect status + log activity ──────────────────────────── */
+export async function updateProspectStatus(contactId: string, newStatus: string, prevStatus?: string) {
     try {
         const workspace = await getUserWorkspace()
         if (!workspace) return { success: false }
 
         await prisma.contact.update({
             where: { id: contactId },
-            data: { prospectStatus: newStatus }
+            data: { prospectStatus: newStatus } as any
+        })
+
+        // Log the status change as a SYSTEM activity
+        await prisma.contactActivity.create({
+            data: {
+                contactId,
+                type: 'SYSTEM',
+                content: prevStatus
+                    ? `Movido de "${prevStatus}" → "${newStatus}"`
+                    : `Estado actualizado a "${newStatus}"`,
+                metadata: { prevStatus, newStatus }
+            }
         })
 
         revalidatePath('/prospects')
@@ -142,6 +154,46 @@ export async function updateProspectStatus(contactId: string, newStatus: string)
     } catch (error) {
         console.error('[updateProspectStatus]', error)
         return { success: false }
+    }
+}
+
+/* ─── Add a manual note to a contact ─────────────────────────────────── */
+export async function addProspectNote(contactId: string, content: string) {
+    try {
+        const workspace = await getUserWorkspace()
+        if (!workspace) return { success: false, error: 'No workspace' }
+
+        // Verify contact belongs to this workspace
+        const contact = await prisma.contact.findFirst({
+            where: { id: contactId, workspaceId: workspace.id }
+        })
+        if (!contact) return { success: false, error: 'Contact not found' }
+
+        const activity = await prisma.contactActivity.create({
+            data: {
+                contactId,
+                type: 'NOTE',
+                content: content.trim()
+            },
+            include: {
+                user: { select: { name: true, image: true } }
+            }
+        })
+
+        revalidatePath('/prospects')
+        return {
+            success: true,
+            activity: {
+                id: activity.id,
+                type: activity.type,
+                content: activity.content,
+                createdAt: activity.createdAt,
+                userName: activity.user?.name || null
+            }
+        }
+    } catch (error) {
+        console.error('[addProspectNote]', error)
+        return { success: false, error: 'Error creating note' }
     }
 }
 

@@ -358,7 +358,7 @@ export function ProspectsKanbanBoard({ initialColumns, initialProspects, agents,
         setDraggingId(null)
         setIsUpdating(true)
 
-        const res = await updateProspectStatus(draggingId, targetColumn)
+        const res = await updateProspectStatus(draggingId, targetColumn, prospect.prospectStatus)
         setIsUpdating(false)
 
         if (!res.success) {
