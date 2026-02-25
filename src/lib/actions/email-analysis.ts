@@ -1,3 +1,5 @@
+'use server'
+
 import { prisma } from '@/lib/prisma';
 import { decryptFields } from '@/lib/crypto';
 import OpenAI from 'openai';
