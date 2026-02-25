@@ -68,7 +68,20 @@ async function main() {
         })
     }
 
-    console.log(`--- ÉXITO: Plan asignado correctamente a ${EMAIL} ---`)
+    // 4. Sincronizar el saldo de créditos
+    console.log(`Sincronizando saldo de créditos para el workspace...`)
+    await prisma.creditBalance.upsert({
+        where: { workspaceId: workspace.id },
+        update: {
+            balance: unlimitedPlan.creditsPerMonth
+        },
+        create: {
+            workspaceId: workspace.id,
+            balance: unlimitedPlan.creditsPerMonth
+        }
+    })
+
+    console.log(`--- ÉXITO: Plan y Créditos (${unlimitedPlan.creditsPerMonth}) asignados correctamente a ${EMAIL} ---`)
 }
 
 main()
