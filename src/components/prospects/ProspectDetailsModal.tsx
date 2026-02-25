@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, Clock, MessageCircle, FileText, Calendar, Send, Paperclip, CreditCard } from 'lucide-react';
+import { X, User, Phone, Mail, Clock, MessageCircle, FileText, Calendar, Send, Paperclip, CreditCard, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AIInsightsTab } from './AIInsightsTab';
 import { ActivityTimelineTab } from './ActivityTimelineTab';
 import { PaymentsTab } from './PaymentsTab';
+import { generateContactInsights } from '@/lib/actions/contacts';
+import { toast } from 'sonner';
 
 interface ProspectDetailsModalProps {
     isOpen: boolean;
@@ -16,6 +18,36 @@ interface ProspectDetailsModalProps {
 
 export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading }: ProspectDetailsModalProps) {
     const [activeTab, setActiveTab] = useState<'resume' | 'chat' | 'documents' | 'ai_insights' | 'timeline' | 'payments'>('resume');
+    const [localData, setLocalData] = useState<any>(null);
+    const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+
+    useEffect(() => {
+        setLocalData(prospectData);
+    }, [prospectData]);
+
+    useEffect(() => {
+        if (isOpen && !isLoading && localData?.contact && !localData.contact.aiInsights && !isAutoGenerating) {
+            handleAutoGenerate();
+        }
+    }, [isOpen, isLoading, localData]);
+
+    const handleAutoGenerate = async () => {
+        if (!localData?.contact?.id) return;
+        setIsAutoGenerating(true);
+        try {
+            const result = await generateContactInsights(localData.contact.id);
+            if (result.success) {
+                setLocalData((prev: any) => ({
+                    ...prev,
+                    contact: result.contact
+                }));
+            }
+        } catch (error) {
+            console.error("Error in auto-generation:", error);
+        } finally {
+            setIsAutoGenerating(false);
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -54,8 +86,8 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                 </div>
                             ) : (
                                 <>
-                                    <h2 className="text-xl font-bold text-gray-900">{prospectData?.contactName || prospectData?.externalId || 'Prospecto desconocido'}</h2>
-                                    <p className="text-sm text-gray-500 font-medium">ID: {prospectData?.externalId}</p>
+                                    <h2 className="text-xl font-bold text-gray-900">{localData?.contactName || localData?.externalId || 'Prospecto desconocido'}</h2>
+                                    <p className="text-sm text-gray-500 font-medium">ID: {localData?.externalId}</p>
                                 </>
                             )}
                         </div>
@@ -86,7 +118,7 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                             : 'border-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        <div className={`w-1.5 h-1.5 rounded-full bg-amber-500 ${isAutoGenerating ? 'animate-pulse' : ''}`} />
                         Inteligencia AI
                     </button>
                     <button
@@ -167,13 +199,13 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                                         strokeWidth="8"
                                                         fill="transparent"
                                                         strokeDasharray={364.4}
-                                                        strokeDashoffset={364.4 - (364.4 * (prospectData?.contact?.leadScore || 0)) / 100}
+                                                        strokeDashoffset={364.4 - (364.4 * (localData?.contact?.leadScore || 0)) / 100}
                                                         className="text-amber-500 transition-all duration-1000"
                                                         strokeLinecap="round"
                                                     />
                                                 </svg>
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                    <span className="text-3xl font-black">{prospectData?.contact?.leadScore || '-'}</span>
+                                                    <span className="text-3xl font-black">{localData?.contact?.leadScore || '-'}</span>
                                                     <span className="text-[10px] uppercase font-black tracking-widest opacity-60">Lead Score</span>
                                                 </div>
                                             </div>
@@ -181,7 +213,14 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                             <div className="flex-1 text-center md:text-left">
                                                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-amber-500 mb-2">Resumen Ejecutivo</h3>
                                                 <p className="text-lg font-medium leading-relaxed opacity-90 italic">
-                                                    {prospectData?.contact?.summary || "No hay un resumen generado aún. Usa la pestaña Inteligencia AI para analizar a este contacto."}
+                                                    {isAutoGenerating ? (
+                                                        <span className="flex items-center gap-2">
+                                                            <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                                                            Kônsul AI está analizando el perfil de este contacto...
+                                                        </span>
+                                                    ) : (
+                                                        localData?.contact?.summary || "No hay un resumen generado aún. Haz clic en la pestaña Inteligencia AI para forzar un análisis."
+                                                    )}
                                                 </p>
                                             </div>
                                         </div>
@@ -200,14 +239,14 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                                     <Phone className="w-4 h-4 text-gray-400 group-hover:text-gray-900" />
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">WhatsApp / Tel</span>
-                                                        <span className="text-gray-900 font-bold">{prospectData?.contact?.phone || prospectData?.externalId || '-'}</span>
+                                                        <span className="text-gray-900 font-bold">{localData?.contact?.phone || localData?.externalId || '-'}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl group transition-all hover:bg-gray-100">
                                                     <Mail className="w-4 h-4 text-gray-400 group-hover:text-gray-900" />
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Correo Electrónico</span>
-                                                        <span className="text-gray-900 font-bold">{prospectData?.contact?.email || 'No captado'}</span>
+                                                        <span className="text-gray-900 font-bold">{localData?.contact?.email || 'No captado'}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl group transition-all hover:bg-gray-100">
@@ -215,7 +254,7 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Primer Contacto</span>
                                                         <span className="text-gray-900 font-bold">
-                                                            {format(new Date(prospectData?.createdAt), "d 'de' MMMM, yyyy", { locale: es })}
+                                                            {localData?.createdAt ? format(new Date(localData.createdAt), "d 'de' MMMM, yyyy", { locale: es }) : '-'}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -233,21 +272,21 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                                 <div className="flex justify-between items-center p-4 border-b border-gray-50">
                                                     <span className="text-gray-500 font-bold text-sm">Origen</span>
                                                     <span className="px-3 py-1 bg-gray-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                                        {prospectData?.channel?.type || 'WEB'}
+                                                        {localData?.channel?.type || 'WEB'}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between items-center p-4 border-b border-gray-50">
                                                     <span className="text-gray-500 font-bold text-sm">Agente Asignado</span>
-                                                    <span className="font-black text-gray-900">{prospectData?.agent?.name || 'Sistema'}</span>
+                                                    <span className="font-black text-gray-900">{localData?.agent?.name || 'Sistema'}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center p-4 border-b border-gray-50">
                                                     <span className="text-gray-500 font-bold text-sm">Volumen de Chat</span>
-                                                    <span className="font-black text-[#21AC96]">{prospectData?.messages?.length || 0} mensajes</span>
+                                                    <span className="font-black text-[#21AC96]">{localData?.messages?.length || 0} mensajes</span>
                                                 </div>
                                                 <div className="flex justify-between items-center p-4">
                                                     <span className="text-gray-500 font-bold text-sm">Estado de Lead</span>
                                                     <span className="px-3 py-1 bg-emerald-100 text-[#1a8a78] rounded-xl text-[10px] font-black uppercase tracking-widest">
-                                                        {prospectData?.status || 'Abierto'}
+                                                        {localData?.status || 'Abierto'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -257,28 +296,28 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                             )}
 
                             {activeTab === ('ai_insights' as any) && (
-                                <AIInsightsTab contactId={prospectData?.contact?.id} initialData={prospectData?.contact} />
+                                <AIInsightsTab contactId={localData?.contact?.id} initialData={localData?.contact} />
                             )}
 
                             {activeTab === ('timeline' as any) && (
                                 <ActivityTimelineTab
-                                    contactId={prospectData?.contact?.id}
-                                    activities={prospectData?.contact?.activities}
+                                    contactId={localData?.contact?.id}
+                                    activities={localData?.contact?.activities}
                                 />
                             )}
 
                             {activeTab === ('payments' as any) && (
                                 <PaymentsTab
-                                    contactId={prospectData?.contact?.id}
-                                    transactions={prospectData?.contact?.transactions}
+                                    contactId={localData?.contact?.id}
+                                    transactions={localData?.contact?.transactions}
                                 />
                             )}
 
                             {activeTab === 'chat' && (
                                 <div className="flex flex-col h-[500px] bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
                                     <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/30">
-                                        {prospectData?.messages?.length > 0 ? (
-                                            prospectData.messages.map((msg: any) => (
+                                        {localData?.messages?.length > 0 ? (
+                                            localData.messages.map((msg: any) => (
                                                 <div
                                                     key={msg.id}
                                                     className={`flex ${msg.role === 'USER' ? 'justify-end' : 'justify-start'}`}

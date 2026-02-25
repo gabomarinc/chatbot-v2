@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, Brain, Target, Zap, TrendingUp, RotateCcw, Loader2, CheckCircle2 } from 'lucide-react';
 import { generateContactInsights } from '@/lib/actions/contacts';
 import { toast } from 'sonner';
@@ -14,7 +14,15 @@ export function AIInsightsTab({ contactId, initialData }: AIInsightsTabProps) {
     const [data, setData] = useState(initialData);
     const [isGenerating, setIsGenerating] = useState(false);
 
+    // Automatic generation if empty
+    useEffect(() => {
+        if (!data?.aiInsights && !isGenerating) {
+            handleGenerate();
+        }
+    }, [contactId]);
+
     const handleGenerate = async () => {
+        if (isGenerating) return;
         setIsGenerating(true);
         try {
             const result = await generateContactInsights(contactId);
@@ -60,15 +68,26 @@ export function AIInsightsTab({ contactId, initialData }: AIInsightsTabProps) {
                 </button>
             </div>
 
-            {!data?.aiInsights && !isGenerating ? (
+            {!data?.aiInsights ? (
                 <div className="bg-white border-2 border-dashed border-gray-100 rounded-[3rem] p-16 text-center">
                     <div className="w-20 h-20 bg-amber-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-amber-500 shadow-inner">
-                        <Brain className="w-10 h-10" />
+                        <Brain className={`w-10 h-10 ${isGenerating ? 'animate-pulse' : ''}`} />
                     </div>
-                    <h4 className="text-gray-900 font-extrabold text-2xl mb-3">Sin Inteligencia Generada</h4>
+                    <h4 className="text-gray-900 font-extrabold text-2xl mb-3">
+                        {isGenerating ? 'Analizando Perfil...' : 'Sin Inteligencia Generada'}
+                    </h4>
                     <p className="text-gray-500 max-w-sm mx-auto font-medium mb-8">
-                        Haz clic en el botón superior para que la IA lea todo el historial de chats y extraiga los intereses, dolores y perfil de este contacto.
+                        {isGenerating
+                            ? 'Kônsul AI está leyendo el historial de chats para extraer intereses, dolores y perfil de este contacto. Esto tardará unos segundos...'
+                            : 'Haz clic en el botón superior para que la IA lea todo el historial de chats y extraiga los intereses, dolores y perfil de este contacto.'}
                     </p>
+                    {isGenerating && (
+                        <div className="flex justify-center gap-2">
+                            <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                            <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                            <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" />
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
