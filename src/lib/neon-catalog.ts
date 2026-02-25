@@ -45,9 +45,21 @@ export async function queryProductCatalog(
         connectionTimeoutMillis: 5_000,
     });
 
-    // Split into keywords and remove short noise words (like "de", "el", "a")
+    // Split into keywords and remove Spanish noise words
     const keywords = safeTerm.split(/\s+/)
-        .filter(k => k.length >= 2) // Keep keywords of 2 or more chars
+        .map(k => k.toLowerCase())
+        .filter(k => {
+            const noise = ['de', 'el', 'la', 'un', 'una', 'en', 'para', 'con', 'por', 'los', 'las'];
+            return k.length >= 2 && !noise.includes(k);
+        })
+        .map(k => {
+            // Basic singularization for Spanish keywords > 3 chars
+            if (k.length > 3) {
+                if (k.endsWith('es')) return k.slice(0, -2);
+                if (k.endsWith('s')) return k.slice(0, -1);
+            }
+            return k;
+        })
         .slice(0, 5); // Limit keywords to top 5 for performance
 
     if (keywords.length === 0) {
