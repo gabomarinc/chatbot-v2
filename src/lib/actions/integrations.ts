@@ -185,3 +185,69 @@ export async function getIntegrationStats(agentId: string, provider: 'ZOHO' | 'O
         health: errorsLast24h > 0 ? 'WARNING' : 'EXCELLENT'
     };
 }
+
+export async function saveEmailIMAPIntegration(
+    agentId: string,
+    config: { host: string; port: number; secure: boolean; user: string; password?: string }
+) {
+    try {
+        // Encrypt sensitive fields (especially password)
+        const encryptedConfig = encryptFields(config, SENSITIVE_INTEGRATION_FIELDS);
+
+        const integration = await prisma.agentIntegration.upsert({
+            where: {
+                agentId_provider: {
+                    agentId,
+                    provider: 'EMAIL_IMAP'
+                }
+            },
+            update: {
+                configJson: encryptedConfig as any,
+                enabled: true
+            },
+            create: {
+                agentId,
+                provider: 'EMAIL_IMAP',
+                configJson: encryptedConfig as any,
+                enabled: true
+            }
+        });
+
+        revalidatePath(`/agents/${agentId}/settings`);
+        return { success: true, integration };
+    } catch (error: any) {
+        console.error('[INTEGRATIONS] Error saving Email IMAP:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function testEmailIMAPConnection(config: any) {
+    try {
+        const { ImapFlow } = await import('imapflow');
+
+        // Decrypt password if it's already encrypted
+        const decryptedConfig = decryptFields(config, SENSITIVE_INTEGRATION_FIELDS);
+
+        const client = new ImapFlow({
+            host: decryptedConfig.host,
+            port: parseInt(decryptedConfig.port),
+            secure: decryptedConfig.secure,
+            auth: {
+                user: decryptedConfig.user,
+                pass: decryptedConfig.password
+            },
+            logger: false,
+            // Low timeout for testing
+            connectionTimeout: 10000,
+            greetingTimeout: 5000
+        });
+
+        await client.connect();
+        await client.logout();
+
+        return { ok: true };
+    } catch (err: any) {
+        console.error('[IMAP_TEST] Connection failed:', err);
+        return { ok: false, error: err.message };
+    }
+}
