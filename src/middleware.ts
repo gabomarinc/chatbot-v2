@@ -5,7 +5,7 @@ export default auth((req) => {
     const isLoggedIn = !!req.auth
     const isAuthPage = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/register")
     const isPublicApiRoute = req.nextUrl.pathname.startsWith("/api/webhooks") || req.nextUrl.pathname.startsWith("/api/widget")
-    const isWidgetPage = req.nextUrl.pathname.startsWith("/widget")
+    const isWidgetPage = req.nextUrl.pathname.startsWith("/widget") || req.nextUrl.pathname.startsWith("/test-agent")
 
     // Allow public API and widget pages
     if (isPublicApiRoute || isWidgetPage) {
