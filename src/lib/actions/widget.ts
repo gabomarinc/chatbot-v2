@@ -2208,6 +2208,13 @@ Reglas para cobrar (ESTRICTO):
                                         where: { id: conversation.id },
                                         data: { status: 'CLOSED', assignedTo: null, assignedAt: null }
                                     });
+
+                                    // AUTOMATIC INSIGHTS: Trigger on close (Forced)
+                                    if (conversation.contactId) {
+                                        const { generateContactInsights } = await import('@/lib/actions/contacts');
+                                        generateContactInsights(conversation.contactId, true).catch(e => console.error('[AUTO-INSIGHTS] Error on close:', e));
+                                    }
+
                                     toolResult = { success: true, message: "Conversación cerrada correctamente." };
                                 }
                             } catch (e: any) {
@@ -2247,6 +2254,16 @@ Reglas para cobrar (ESTRICTO):
                     } : undefined
                 }
             });
+
+            // 6.2 AUTOMATIC INSIGHTS: Trigger after 5 messages
+            if (conversation.contactId) {
+                const msgCount = await prisma.message.count({ where: { conversationId: conversation.id } });
+                if (msgCount === 5) {
+                    console.log(`[AUTO-INSIGHTS] 5th message milestone reached. Triggering...`);
+                    const { generateContactInsights } = await import('@/lib/actions/contacts');
+                    generateContactInsights(conversation.contactId).catch(e => console.error('[AUTO-INSIGHTS] Milestone error:', e));
+                }
+            }
 
             // 6.5. [REMOVED] Legacy regex extraction.
             // We rely on the 'update_contact' tool for this now.

@@ -267,7 +267,7 @@ export async function getContactDetail(contactId: string) {
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export async function generateContactInsights(contactId: string) {
+export async function generateContactInsights(contactId: string, force: boolean = false) {
     try {
         const contact = await prisma.contact.findUnique({
             where: { id: contactId },
@@ -302,7 +302,6 @@ export async function generateContactInsights(contactId: string) {
             if (!googleKey) googleKey = configs.find(c => c.key === 'GOOGLE_API_KEY')?.value;
         }
 
-        // Fetch custom field definitions for the workspace to guide extraction
         const agents = await prisma.agent.findMany({
             where: { workspaceId: contact.workspaceId },
             include: { customFieldDefinitions: true }
@@ -338,7 +337,6 @@ export async function generateContactInsights(contactId: string) {
         }`;
 
         let aiResponse = "";
-
         if (openaiKey) {
             const openai = new OpenAI({ apiKey: openaiKey });
             const completion = await openai.chat.completions.create({
@@ -351,36 +349,34 @@ export async function generateContactInsights(contactId: string) {
             const genAI = new GoogleGenerativeAI(googleKey);
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             const result = await model.generateContent(prompt);
-            aiResponse = result.response.text();
-            // Basic JSON cleaning if Gemini returns markdown
-            aiResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+            aiResponse = result.response.text().replace(/```json\n?|\n?```/g, '').trim();
         }
 
-        const insights = JSON.parse(aiResponse);
-
-        // Merge existing customData with newly extracted one
+        const newInsights = JSON.parse(aiResponse);
         const currentCustomData = (contact.customData as Record<string, any>) || {};
-        const newCustomData = { ...currentCustomData, ...(insights.customData || {}) };
+        const newCustomData = { ...currentCustomData, ...(newInsights.customData || {}) };
 
-        // Prepare standard fields update (only if they have values)
         const standardUpdates: any = {};
-        if (insights.standardFields?.name) standardUpdates.name = insights.standardFields.name;
-        if (insights.standardFields?.email) standardUpdates.email = insights.standardFields.email;
-        if (insights.standardFields?.phone) standardUpdates.phone = insights.standardFields.phone;
+        if (newInsights.standardFields?.name) standardUpdates.name = newInsights.standardFields.name;
+        if (newInsights.standardFields?.email) standardUpdates.email = newInsights.standardFields.email;
+        if (newInsights.standardFields?.phone) standardUpdates.phone = newInsights.standardFields.phone;
 
         const updatedContact = await prisma.contact.update({
             where: { id: contactId },
             data: {
-                summary: insights.summary,
-                leadScore: insights.leadScore,
-                aiInsights: insights.aiInsights,
+                summary: newInsights.summary,
+                leadScore: newInsights.leadScore,
+                aiInsights: {
+                    ...newInsights.aiInsights,
+                    lastGeneratedAt: new Date().toISOString()
+                },
                 customData: newCustomData,
                 ...standardUpdates,
                 lastContactAt: allMessages[allMessages.length - 1].createdAt,
                 activities: {
                     create: {
                         type: 'AI',
-                        content: `Inteligencia AI actualizada. Lead Score: ${insights.leadScore}. Urgencia: ${insights.aiInsights.urgency}.`
+                        content: `Inteligencia AI actualizada (Auto). Lead Score: ${newInsights.leadScore}.`
                     }
                 }
             }
