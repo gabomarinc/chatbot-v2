@@ -3,6 +3,9 @@
 import { getGoogleAuthUrl } from '@/lib/google';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { encryptFields, decryptFields } from '@/lib/crypto';
+
+const SENSITIVE_INTEGRATION_FIELDS = ['apiKey', 'connectionString', 'apiSecret', 'password', 'token'];
 
 export async function initiateGoogleAuth(agentId: string) {
     const url = getGoogleAuthUrl(agentId);
@@ -10,9 +13,14 @@ export async function initiateGoogleAuth(agentId: string) {
 }
 
 export async function getAgentIntegrations(agentId: string) {
-    return prisma.agentIntegration.findMany({
+    const integrations = await prisma.agentIntegration.findMany({
         where: { agentId }
     });
+
+    return integrations.map(integ => ({
+        ...integ,
+        configJson: decryptFields(integ.configJson as any, SENSITIVE_INTEGRATION_FIELDS)
+    }));
 }
 
 export async function toggleIntegration(integrationId: string, enabled: boolean) {
@@ -34,6 +42,9 @@ export async function deleteIntegration(integrationId: string) {
 }
 
 export async function saveOdooIntegration(agentId: string, config: { url: string; db: string; username: string; apiKey: string }) {
+    // Encrypt sensitive fields
+    const encryptedConfig = encryptFields(config, SENSITIVE_INTEGRATION_FIELDS);
+
     const integration = await prisma.agentIntegration.upsert({
         where: {
             agentId_provider: {
@@ -42,13 +53,13 @@ export async function saveOdooIntegration(agentId: string, config: { url: string
             }
         },
         update: {
-            configJson: config as any,
+            configJson: encryptedConfig as any,
             enabled: true
         },
         create: {
             agentId,
             provider: 'ODOO',
-            configJson: config as any,
+            configJson: encryptedConfig as any,
             enabled: true
         }
     });
@@ -87,6 +98,10 @@ export async function saveNeonCatalogIntegration(
 ) {
     try {
         console.log(`[INTEGRATIONS] Saving Neon Catalog for agent ${agentId}`);
+
+        // Encrypt sensitive fields
+        const encryptedConfig = encryptFields(config, SENSITIVE_INTEGRATION_FIELDS);
+
         const integration = await prisma.agentIntegration.upsert({
             where: {
                 agentId_provider: {
@@ -95,13 +110,13 @@ export async function saveNeonCatalogIntegration(
                 }
             },
             update: {
-                configJson: config as any,
+                configJson: encryptedConfig as any,
                 enabled: true
             },
             create: {
                 agentId,
                 provider: 'NEON_CATALOG',
-                configJson: config as any,
+                configJson: encryptedConfig as any,
                 enabled: true
             }
         });

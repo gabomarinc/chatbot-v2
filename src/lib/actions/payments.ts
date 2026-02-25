@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { getUserWorkspace } from './workspace';
+import { encryptFields, decryptFields } from '@/lib/crypto';
+
+const SENSITIVE_PAYMENT_FIELDS = ['cclw', 'apiKey', 'apiSecret', 'merchantId', 'secretKey'];
 
 export async function getPaymentDashboardStats() {
     try {
@@ -98,7 +101,13 @@ export async function getPaymentConfigs() {
             where: { workspaceId: workspace.id, isActive: true }
         });
 
-        return { success: true, configs };
+        // Decrypt sensitive fields for the UI/Internal use
+        const decryptedConfigs = configs.map(cfg => ({
+            ...cfg,
+            config: decryptFields(cfg.config as any, SENSITIVE_PAYMENT_FIELDS)
+        }));
+
+        return { success: true, configs: decryptedConfigs };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -163,7 +172,8 @@ export async function createPaymentLinkInternal({
             throw new Error(`La pasarela ${gateway} no está configurada o activa.`);
         }
 
-        const config = configEntry.config as any;
+        // Decrypt config for use
+        const config = decryptFields(configEntry.config as any, SENSITIVE_PAYMENT_FIELDS);
         let paymentUrl = '';
         let gatewayReference = '';
 
@@ -243,6 +253,9 @@ export async function savePaymentConfig(gateway: 'PAGUELOFACIL' | 'YAPPY', confi
         const workspace = await getUserWorkspace();
         if (!workspace) throw new Error('Workspace no encontrado');
 
+        // Encrypt sensitive fields before saving
+        const encryptedConfig = encryptFields(config, SENSITIVE_PAYMENT_FIELDS);
+
         const updatedConfig = await prisma.paymentGatewayConfig.upsert({
             where: {
                 workspaceId_gateway: {
@@ -251,14 +264,14 @@ export async function savePaymentConfig(gateway: 'PAGUELOFACIL' | 'YAPPY', confi
                 }
             },
             update: {
-                config,
+                config: encryptedConfig,
                 isActive: true,
                 updatedAt: new Date()
             },
             create: {
                 workspaceId: workspace.id,
                 gateway,
-                config,
+                config: encryptedConfig,
                 isActive: true
             }
         });
