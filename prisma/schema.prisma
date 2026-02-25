@@ -545,6 +545,7 @@ enum IntegrationProvider {
   ALTAPLAZA
   NEON_CATALOG
   TIKTOK
+  EMAIL_IMAP
 }
 
 enum PlanType {
