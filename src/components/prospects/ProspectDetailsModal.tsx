@@ -19,35 +19,10 @@ interface ProspectDetailsModalProps {
 export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading }: ProspectDetailsModalProps) {
     const [activeTab, setActiveTab] = useState<'resume' | 'chat' | 'documents' | 'ai_insights' | 'timeline' | 'payments'>('resume');
     const [localData, setLocalData] = useState<any>(null);
-    const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
     useEffect(() => {
         setLocalData(prospectData);
     }, [prospectData]);
-
-    useEffect(() => {
-        if (isOpen && !isLoading && localData?.contact && !localData.contact.aiInsights && !isAutoGenerating) {
-            handleAutoGenerate();
-        }
-    }, [isOpen, isLoading, localData]);
-
-    const handleAutoGenerate = async () => {
-        if (!localData?.contact?.id) return;
-        setIsAutoGenerating(true);
-        try {
-            const result = await generateContactInsights(localData.contact.id);
-            if (result.success) {
-                setLocalData((prev: any) => ({
-                    ...prev,
-                    contact: result.contact
-                }));
-            }
-        } catch (error) {
-            console.error("Error in auto-generation:", error);
-        } finally {
-            setIsAutoGenerating(false);
-        }
-    };
 
     useEffect(() => {
         if (isOpen) {
@@ -118,7 +93,7 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                             : 'border-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
-                        <div className={`w-1.5 h-1.5 rounded-full bg-amber-500 ${isAutoGenerating ? 'animate-pulse' : ''}`} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                         Inteligencia AI
                     </button>
                     <button
@@ -213,14 +188,7 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
                                             <div className="flex-1 text-center md:text-left">
                                                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-amber-500 mb-2">Resumen Ejecutivo</h3>
                                                 <p className="text-lg font-medium leading-relaxed opacity-90 italic">
-                                                    {isAutoGenerating ? (
-                                                        <span className="flex items-center gap-2">
-                                                            <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
-                                                            Kônsul AI está analizando el perfil de este contacto...
-                                                        </span>
-                                                    ) : (
-                                                        localData?.contact?.summary || "No hay un resumen generado aún. Haz clic en la pestaña Inteligencia AI para forzar un análisis."
-                                                    )}
+                                                    {localData?.contact?.summary || "No hay un resumen generado aún. El sistema analizará automáticamente el perfil cuando haya suficiente interacción."}
                                                 </p>
                                             </div>
                                         </div>

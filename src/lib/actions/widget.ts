@@ -2255,11 +2255,25 @@ Reglas para cobrar (ESTRICTO):
                 }
             });
 
-            // 6.2 AUTOMATIC INSIGHTS: Trigger after 5 messages
+            // 6.2 AUTOMATIC INSIGHTS: Trigger after 5 messages milestone
             if (conversation.contactId) {
                 const msgCount = await prisma.message.count({ where: { conversationId: conversation.id } });
-                if (msgCount === 5) {
-                    console.log(`[AUTO-INSIGHTS] 5th message milestone reached. Triggering...`);
+                const meta = (conversation.metadata as any) || {};
+
+                if (msgCount >= 5 && !meta.milestoneInsightsGenerated) {
+                    console.log(`[AUTO-INSIGHTS] Milestone reached (${msgCount} messages). Triggering generation...`);
+
+                    // Mark as generated in metadata FIRST to avoid race conditions
+                    await prisma.conversation.update({
+                        where: { id: conversation.id },
+                        data: {
+                            metadata: {
+                                ...meta,
+                                milestoneInsightsGenerated: true
+                            }
+                        }
+                    });
+
                     const { generateContactInsights } = await import('@/lib/actions/contacts');
                     generateContactInsights(conversation.contactId).catch(e => console.error('[AUTO-INSIGHTS] Milestone error:', e));
                 }
