@@ -27,6 +27,16 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
     //     return () => { document.body.style.overflow = 'unset'; }
     // }, []);
 
+    const TikTokIcon = ({ className }: { className?: string }) => (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className={className}
+        >
+            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.6-4.13-1.47V18c0 1.94-1.06 3.75-2.84 4.59-1.54.74-3.41.87-5.02.26-2.12-.78-3.7-3.05-3.56-5.32-.08-2.61 1.76-5.1 4.31-5.69.57-.14 1.16-.19 1.74-.15v4.13c-.3-.04-.61-.03-.91.03-1.07.18-1.92 1.25-1.78 2.33a2.12 2.12 0 001.31 1.63c.69.23 1.48.15 2.1-.25.56-.34.9-.98.88-1.64V.02z" />
+        </svg>
+    );
+
     const channels = [
         {
             id: 'web',
@@ -67,6 +77,16 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
             textColor: 'text-blue-600',
             href: '/channels/setup/messenger',
             enabled: false
+        },
+        {
+            id: 'tiktok',
+            name: 'TikTok',
+            icon: TikTokIcon,
+            description: 'TikTok Business',
+            color: 'bg-black',
+            textColor: 'text-black',
+            href: '/channels/setup/tiktok',
+            enabled: false
         }
     ];
 
@@ -79,7 +99,7 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 duration-200 border border-gray-100">
+            <div className="relative w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 duration-200 border border-gray-100">
                 <button
                     onClick={onClose}
                     className="absolute top-6 right-6 p-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors"
@@ -92,7 +112,7 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
                     <p className="text-gray-500 font-medium max-w-lg mx-auto">Selecciona la plataforma donde deseas integrar tu agente de IA.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     {channels.map((channel) => (
                         channel.enabled ? (
                             <Link
