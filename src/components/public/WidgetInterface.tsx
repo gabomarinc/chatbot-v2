@@ -18,6 +18,7 @@ interface Message {
 }
 
 interface WidgetInterfaceProps {
+    isTest?: boolean;
     channel: {
         id: string;
         displayName: string;
@@ -29,7 +30,7 @@ interface WidgetInterfaceProps {
     };
 }
 
-export function WidgetInterface({ channel }: WidgetInterfaceProps) {
+export function WidgetInterface({ channel, isTest = false }: WidgetInterfaceProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +40,9 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
     const [isUploadingFile, setIsUploadingFile] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Ephemeral visitor ID for tests
+    const [testVisitorId] = useState(() => isTest ? `test-${Math.random().toString(36).substring(2, 9)}` : null);
 
     // Audio recording state
     const [isRecording, setIsRecording] = useState(false);
@@ -76,7 +80,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
     // Polling for new messages
     useEffect(() => {
         const fetchMessages = async () => {
-            const visitorId = localStorage.getItem('konsul_visitor_id');
+            const visitorId = isTest ? testVisitorId : localStorage.getItem('konsul_visitor_id');
             if (!visitorId) return;
 
             try {
@@ -229,8 +233,9 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         setIsTranscribing(true);
         setIsLoading(true);
 
-        const visitorId = localStorage.getItem('konsul_visitor_id') || (Math.random().toString(36).substring(2) + Date.now().toString(36));
-        localStorage.setItem('konsul_visitor_id', visitorId);
+        const currentVisitorId = isTest ? testVisitorId : (localStorage.getItem('konsul_visitor_id') || (Math.random().toString(36).substring(2) + Date.now().toString(36)));
+        if (!isTest) localStorage.setItem('konsul_visitor_id', currentVisitorId!);
+        const visitorId = currentVisitorId!;
 
         const tempId = 'audio-' + Date.now();
         const userMsg: Message = {
@@ -325,11 +330,15 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
         }
 
         // 1. Visitor ID Management
-        let visitorId = localStorage.getItem('konsul_visitor_id');
-        if (!visitorId) {
+        const currentVisitorId = isTest ? testVisitorId : localStorage.getItem('konsul_visitor_id');
+        let visitorId = currentVisitorId;
+
+        if (!visitorId && !isTest) {
             visitorId = Math.random().toString(36).substring(2) + Date.now().toString(36);
             localStorage.setItem('konsul_visitor_id', visitorId);
         }
+
+        if (!visitorId && isTest) visitorId = testVisitorId; // Should already be there but for safety
 
         // 2. Optimistic UI
         const tempId = Date.now().toString();
@@ -404,7 +413,7 @@ export function WidgetInterface({ channel }: WidgetInterfaceProps) {
             const { userMsg: savedUserMsg, agentMsg } = await sendWidgetMessage({
                 channelId: channel.id,
                 content: content,
-                visitorId,
+                visitorId: visitorId!, // Guaranteed to exist by the ID management block above
                 fileUrl,
                 fileType: fileTypeUploaded,
                 imageBase64: fileTypeUploaded === 'image' ? imageBase64 : undefined,

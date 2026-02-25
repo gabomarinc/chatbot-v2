@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Play } from 'lucide-react';
 import { useState } from 'react';
 import { TestAgentModal } from './TestAgentModal';
+import { TestAgentSelectorModal } from './TestAgentSelectorModal';
 
 interface Tab {
     id: string;
@@ -32,6 +33,7 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
     const pathname = usePathname();
     const router = useRouter(); // Import useRouter
     const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+    const [isSelectorModalOpen, setIsSelectorModalOpen] = useState(false);
     const [configMode, setConfigMode] = useState<'BASIC' | 'ADVANCED'>('BASIC');
 
     const basicTabs = ['profile', 'job', 'training', 'channels'];
@@ -84,7 +86,7 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
 
                 <button
                     id="test-agent-btn"
-                    onClick={() => setIsTestModalOpen(true)}
+                    onClick={() => setIsSelectorModalOpen(true)}
                     className="flex items-center justify-center gap-2 px-6 py-3.5 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95 font-bold text-sm"
                 >
                     <Play className="w-4 h-4" />
@@ -122,6 +124,19 @@ export function AgentLayoutClient({ agentId, agentName, tabs, userRole, hasSeenT
                 onClose={() => setIsTestModalOpen(false)}
                 agentId={agentId}
                 agentName={agentName}
+            />
+
+            <TestAgentSelectorModal
+                isOpen={isSelectorModalOpen}
+                onClose={() => setIsSelectorModalOpen(false)}
+                onSelectInternal={() => {
+                    setIsSelectorModalOpen(false);
+                    setIsTestModalOpen(true);
+                }}
+                onSelectExternal={() => {
+                    setIsSelectorModalOpen(false);
+                    window.open(`/test-agent/${agentId}`, '_blank');
+                }}
             />
         </div>
     );
