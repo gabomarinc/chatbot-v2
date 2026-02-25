@@ -109,7 +109,7 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
 
                 <div className="text-center mb-10">
                     <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-2">Conectar un Canal</h2>
-                    <p className="text-gray-500 font-medium max-w-lg mx-auto">Selecciona la plataforma para tu nuevo agente.</p>
+                    <p className="text-gray-500 font-medium max-w-lg mx-auto">Selecciona la plataforma donde deseas integrar tu agente de IA.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
