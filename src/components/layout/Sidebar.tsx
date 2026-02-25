@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Bot, Users, Radio, MessageSquare, UserCircle, CreditCard, Settings, Gift, Sparkles, PieChart, ArrowRight, X } from 'lucide-react';
+import { LayoutDashboard, Bot, Users, Radio, MessageSquare, UserCircle, CreditCard, Settings, Gift, Sparkles, PieChart, ArrowRight, X, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -44,6 +44,7 @@ export function Sidebar() {
                 { id: 'chat', href: '/chat', label: 'Chats', icon: MessageSquare, color: 'indigo' },
                 { id: 'contacts', href: '/contacts', label: 'Contactos', icon: Users, color: 'blue' },
                 { id: 'prospects', href: '/prospects', label: 'Prospectos', icon: UserCircle, color: 'pink' },
+                { id: 'inbox', href: '/inbox', label: 'Correo Inteligente', icon: Mail, color: 'blue' },
             ]
         }
     ];

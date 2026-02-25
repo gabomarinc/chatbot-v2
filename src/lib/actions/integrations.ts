@@ -4,6 +4,44 @@ import { getGoogleAuthUrl } from '@/lib/google';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { encryptFields, decryptFields } from '@/lib/crypto';
+import { getUserWorkspace } from './workspace';
+
+export async function getAgentsWithEmail() {
+    try {
+        const workspace = await getUserWorkspace();
+        if (!workspace) return [];
+
+        const agents = await prisma.agent.findMany({
+            where: {
+                workspaceId: workspace.id,
+                integrations: {
+                    some: {
+                        provider: 'EMAIL_IMAP',
+                        enabled: true
+                    }
+                }
+            },
+            include: {
+                integrations: {
+                    where: {
+                        provider: 'EMAIL_IMAP'
+                    }
+                }
+            } as any
+        });
+
+        return (agents as any[]).map(agent => ({
+            ...agent,
+            integrations: agent.integrations.map((integ: any) => ({
+                ...integ,
+                configJson: decryptFields(integ.configJson as any, SENSITIVE_INTEGRATION_FIELDS)
+            }))
+        }));
+    } catch (error) {
+        console.error('[INTEGRATIONS] Error fetching agents with email:', error);
+        return [];
+    }
+}
 
 const SENSITIVE_INTEGRATION_FIELDS = ['apiKey', 'connectionString', 'apiSecret', 'password', 'token'];
 
