@@ -519,6 +519,7 @@ enum ChannelType {
   INSTAGRAM
   MESSENGER
   WEBCHAT
+  TIKTOK
 }
 
 enum ConversationStatus {
@@ -543,6 +544,7 @@ enum IntegrationProvider {
   HUBSPOT
   ALTAPLAZA
   NEON_CATALOG
+  TIKTOK
 }
 
 enum PlanType {
