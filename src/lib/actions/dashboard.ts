@@ -444,6 +444,21 @@ export async function createAgent(data: any) {
         throw new Error("No tienes permisos para crear agentes")
     }
 
+    // Check plan limits
+    const subscription = await prisma.subscription.findUnique({
+        where: { workspaceId: workspace.id },
+        include: { plan: true }
+    })
+
+    const maxAgents = subscription?.plan?.maxAgents || 1
+    const currentAgentsCount = await prisma.agent.count({
+        where: { workspaceId: workspace.id }
+    })
+
+    if (currentAgentsCount >= maxAgents) {
+        throw new Error(`Has alcanzado el límite de ${maxAgents} agentes para tu plan. Mejora tu suscripción para crear más.`)
+    }
+
     try {
         const agent = await prisma.agent.create({
             data: {
