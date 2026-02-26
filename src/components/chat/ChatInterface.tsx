@@ -70,6 +70,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const lastMessageDateRef = useRef<Date | undefined>(undefined);
 
     // Pagination state
     const [page, setPage] = useState(1);
@@ -160,7 +161,10 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
 
         const pollInterval = setInterval(async () => {
             try {
-                const msgs = await getChatMessages(selectedConvId);
+                // Pass the timestamp cursor to avoid downloading full history
+                const msgs = await getChatMessages(selectedConvId, lastMessageDateRef.current);
+                if (!msgs || msgs.length === 0) return;
+
                 const transformedMessages = msgs.map(m => ({
                     ...m,
                     createdAt: new Date(m.createdAt),
@@ -173,7 +177,11 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
 
                     if (newMsgs.length === 0) return prev;
 
-                    return [...prev, ...newMsgs].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+                    const newFullArray = [...prev, ...newMsgs].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+                    // Securely update the cursor ref inside the set state lifecycle
+                    const latestMsg = newFullArray[newFullArray.length - 1];
+                    if (latestMsg) lastMessageDateRef.current = latestMsg.createdAt;
+                    return newFullArray;
                 });
             } catch (error) {
                 console.error('Polling error:', error);
@@ -185,6 +193,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
 
     const loadMessages = async (id: string) => {
         setIsLoadingMessages(true);
+        lastMessageDateRef.current = undefined; // Reset cursor completely on initial load
         try {
             const msgs = await getChatMessages(id);
             const transformedMessages = msgs.map(m => {
@@ -194,6 +203,9 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                 return { ...m, createdAt: new Date(m.createdAt) };
             }) as any;
             setMessages(transformedMessages);
+            if (transformedMessages.length > 0) {
+                lastMessageDateRef.current = transformedMessages[transformedMessages.length - 1].createdAt;
+            }
         } catch (error) {
             console.error('Failed to load messages:', error);
         } finally {

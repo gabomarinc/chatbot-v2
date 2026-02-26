@@ -40,6 +40,7 @@ export function WidgetInterface({ channel, isTest = false }: WidgetInterfaceProp
     const [isUploadingFile, setIsUploadingFile] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const lastMessageDateRef = useRef<Date | undefined>(undefined);
 
     // Ephemeral visitor ID for tests
     const [testVisitorId] = useState(() => isTest ? `test-${Math.random().toString(36).substring(2, 9)}` : null);
@@ -85,7 +86,7 @@ export function WidgetInterface({ channel, isTest = false }: WidgetInterfaceProp
 
             try {
                 const { getWidgetMessages } = await import('@/lib/actions/widget');
-                const serverMessages = await getWidgetMessages(channel.id, visitorId, isTest, (channel as any).agentId);
+                const serverMessages = await getWidgetMessages(channel.id, visitorId, isTest, (channel as any).agentId, lastMessageDateRef.current);
 
                 if (serverMessages && serverMessages.length > 0) {
                     setMessages(prev => {
@@ -102,7 +103,10 @@ export function WidgetInterface({ channel, isTest = false }: WidgetInterfaceProp
                             metadata: m.metadata as any
                         }));
 
-                        return [...prev, ...mapped].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+                        const newFullArray = [...prev, ...mapped].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+                        const latestMsg = newFullArray[newFullArray.length - 1];
+                        if (latestMsg) lastMessageDateRef.current = latestMsg.createdAt;
+                        return newFullArray;
                     });
                 }
             } catch (error) {

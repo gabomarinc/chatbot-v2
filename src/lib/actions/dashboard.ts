@@ -807,7 +807,7 @@ export async function getConversations(page: number = 1, pageSize: number = 20) 
     })
 }
 
-export async function getChatMessages(conversationId: string) {
+export async function getChatMessages(conversationId: string, lastMessageAt?: Date) {
     const workspace = await getUserWorkspace()
     if (!workspace) return []
 
@@ -821,7 +821,10 @@ export async function getChatMessages(conversationId: string) {
     if (!conversation) return []
 
     return prisma.message.findMany({
-        where: { conversationId },
+        where: {
+            conversationId,
+            ...(lastMessageAt ? { createdAt: { gt: new Date(lastMessageAt) } } : {})
+        },
         orderBy: { createdAt: 'asc' },
         select: {
             id: true,
