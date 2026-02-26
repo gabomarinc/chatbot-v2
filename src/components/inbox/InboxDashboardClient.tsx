@@ -182,28 +182,29 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                             </div>
                                             <div>
                                                 <h3 className="text-3xl font-black text-gray-900 tracking-tight">Tu Analista de Inbox</h3>
-                                                <div className="flex items-center gap-2">
-                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">IA Personalizada para tu Negocio</p>
-                                                    {lastAnalysisAt && (
-                                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full">
-                                                            <Clock className="w-3 h-3 text-gray-500" />
-                                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap">
-                                                                Hace {formatDistanceToNow(lastAnalysisAt, { locale: es })}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">IA Personalizada para tu Negocio</p>
                                             </div>
                                         </div>
 
-                                        <Button
-                                            onClick={handleRunAnalysis}
-                                            disabled={isAnalyzing}
-                                            className="bg-gray-900 hover:bg-black text-white rounded-2xl h-14 px-8 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-2xl"
-                                        >
-                                            {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCw className="w-5 h-5" />}
-                                            {isAnalyzing ? 'Procesando...' : 'Analizar Correos'}
-                                        </Button>
+                                        <div className="flex flex-col items-end gap-3">
+                                            <Button
+                                                onClick={handleRunAnalysis}
+                                                disabled={isAnalyzing}
+                                                className="bg-gray-900 hover:bg-black text-white rounded-2xl h-14 px-8 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-2xl"
+                                            >
+                                                {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCw className="w-5 h-5" />}
+                                                {isAnalyzing ? 'Procesando...' : 'Analizar Correos'}
+                                            </Button>
+
+                                            {lastAnalysisAt && !isAnalyzing && (
+                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 rounded-full border border-gray-100 animate-fade-in">
+                                                    <Clock className="w-3 h-3 text-gray-400" />
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                                                        Actualizado hace {formatDistanceToNow(lastAnalysisAt, { locale: es })}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="flex-1 relative">
