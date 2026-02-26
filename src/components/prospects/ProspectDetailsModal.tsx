@@ -27,6 +27,7 @@ export function ProspectDetailsModal({ isOpen, onClose, prospectData, isLoading 
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+            setActiveTab('resume'); // Force layout reset to 'resume' tab
         } else {
             document.body.style.overflow = 'unset';
         }
