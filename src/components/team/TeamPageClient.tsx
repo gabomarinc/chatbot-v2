@@ -414,85 +414,78 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                                 </button>
                                                             )}
 
-                                                            {isActionMenuOpen === member.id && mounted && buttonRect && (
-                                                                createPortal(
-                                                                    <div
-                                                                        ref={(el) => {
-                                                                            if (el) actionMenuRefs.current[member.id] = el;
-                                                                        }}
-                                                                        className="fixed bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-[200] min-w-[192px]"
-                                                                        style={{
-                                                                            top: `${Math.min(buttonRect.bottom + 8, window.innerHeight - 150)}px`,
-                                                                            right: `${Math.max(window.innerWidth - buttonRect.right, 16)}px`,
-                                                                        }}
+                                                            {isActionMenuOpen === member.id && mounted && (
+                                                                <div
+                                                                    ref={(el) => {
+                                                                        if (el) actionMenuRefs.current[member.id] = el;
+                                                                    }}
+                                                                    className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-[100] min-w-[192px]"
+                                                                >
+                                                                    {member.role !== 'OWNER' && member.role !== 'MANAGER' && (
+                                                                        <button
+                                                                            onClick={() => handleUpdateRole(member.id, 'MANAGER')}
+                                                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium"
+                                                                        >
+                                                                            <Shield className="w-4 h-4 text-purple-500" />
+                                                                            Promover a Administrador
+                                                                        </button>
+                                                                    )}
+                                                                    {member.role === 'MANAGER' && (
+                                                                        <button
+                                                                            onClick={() => handleUpdateRole(member.id, 'AGENT')}
+                                                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium"
+                                                                        >
+                                                                            <Shield className="w-4 h-4 text-gray-400" />
+                                                                            Degradar a Agente
+                                                                        </button>
+                                                                    )}
+
+                                                                    <div className="h-px bg-gray-100 my-1"></div>
+                                                                    <div className="px-4 py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Departamento</div>
+
+                                                                    <button
+                                                                        onClick={() => handleUpdateDepartment(member.id, 'SALES')}
+                                                                        className={cn(
+                                                                            "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
+                                                                            member.department === 'SALES' ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
+                                                                        )}
                                                                     >
-                                                                        {member.role !== 'OWNER' && member.role !== 'MANAGER' && (
+                                                                        <Users className="w-4 h-4" />
+                                                                        Comercial / Ventas
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleUpdateDepartment(member.id, 'SUPPORT')}
+                                                                        className={cn(
+                                                                            "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
+                                                                            member.department === 'SUPPORT' ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
+                                                                        )}
+                                                                    >
+                                                                        <Users className="w-4 h-4" />
+                                                                        Soporte Técnico
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleUpdateDepartment(member.id, 'PERSONAL')}
+                                                                        className={cn(
+                                                                            "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
+                                                                            member.department === 'PERSONAL' || !member.department ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
+                                                                        )}
+                                                                    >
+                                                                        <Users className="w-4 h-4" />
+                                                                        General / Personal
+                                                                    </button>
+                                                                    {member.role !== 'OWNER' && (
+                                                                        <>
+                                                                            <div className="h-px bg-gray-100 my-1"></div>
                                                                             <button
-                                                                                onClick={() => handleUpdateRole(member.id, 'MANAGER')}
-                                                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium"
+                                                                                onClick={() => handleRemoveMemberClick(member.id, member.user.name || member.user.email)}
+                                                                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                                                             >
-                                                                                <Shield className="w-4 h-4 text-purple-500" />
-                                                                                Promover a Administrador
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                                Eliminar del equipo
                                                                             </button>
-                                                                        )}
-                                                                        {member.role === 'MANAGER' && (
-                                                                            <button
-                                                                                onClick={() => handleUpdateRole(member.id, 'AGENT')}
-                                                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium"
-                                                                            >
-                                                                                <Shield className="w-4 h-4 text-gray-400" />
-                                                                                Degradar a Agente
-                                                                            </button>
-                                                                        )}
-
-                                                                        <div className="h-px bg-gray-100 my-1"></div>
-                                                                        <div className="px-4 py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Departamento</div>
-
-                                                                        <button
-                                                                            onClick={() => handleUpdateDepartment(member.id, 'SALES')}
-                                                                            className={cn(
-                                                                                "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
-                                                                                member.department === 'SALES' ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
-                                                                            )}
-                                                                        >
-                                                                            <Users className="w-4 h-4" />
-                                                                            Comercial / Ventas
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleUpdateDepartment(member.id, 'SUPPORT')}
-                                                                            className={cn(
-                                                                                "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
-                                                                                member.department === 'SUPPORT' ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
-                                                                            )}
-                                                                        >
-                                                                            <Users className="w-4 h-4" />
-                                                                            Soporte Técnico
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleUpdateDepartment(member.id, 'PERSONAL')}
-                                                                            className={cn(
-                                                                                "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 font-medium",
-                                                                                member.department === 'PERSONAL' || !member.department ? "text-[#21AC96] bg-[#21AC96]/5" : "text-gray-700"
-                                                                            )}
-                                                                        >
-                                                                            <Users className="w-4 h-4" />
-                                                                            General / Personal
-                                                                        </button>
-                                                                        {member.role !== 'OWNER' && (
-                                                                            <>
-                                                                                <div className="h-px bg-gray-100 my-1"></div>
-                                                                                <button
-                                                                                    onClick={() => handleRemoveMemberClick(member.id, member.user.name || member.user.email)}
-                                                                                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                                                                >
-                                                                                    <Trash2 className="w-4 h-4" />
-                                                                                    Eliminar del equipo
-                                                                                </button>
-                                                                            </>
-                                                                        )}
-                                                                    </div>,
-                                                                    document.body
-                                                                )
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>
@@ -625,61 +618,54 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                             </div>
                                         </div>
 
-                                        {/* Mobile Portal for action menu */}
-                                        {isActionMenuOpen === member.id && mounted && buttonRect && (
-                                            createPortal(
-                                                <div
-                                                    ref={(el) => {
-                                                        if (el) actionMenuRefs.current[member.id] = el;
-                                                    }}
-                                                    className="fixed bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 py-3 z-[200] min-w-[220px]"
-                                                    style={{
-                                                        top: `${Math.min(buttonRect.bottom + 8, window.innerHeight - 150)}px`,
-                                                        right: `16px`,
-                                                    }}
-                                                >
-                                                    {member.role !== 'OWNER' && member.role !== 'MANAGER' && (
+                                        {/* Mobile action menu */}
+                                        {isActionMenuOpen === member.id && mounted && (
+                                            <div
+                                                ref={(el) => {
+                                                    if (el) actionMenuRefs.current[member.id] = el;
+                                                }}
+                                                className="absolute top-16 right-6 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 py-3 z-[100] min-w-[220px]"
+                                            >
+                                                {member.role !== 'OWNER' && member.role !== 'MANAGER' && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleUpdateRole(member.id, 'MANAGER');
+                                                        }}
+                                                        className="w-full px-6 py-3 text-left text-[13px] font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                                                    >
+                                                        <Edit className="w-4 h-4 text-[#21AC96]" />
+                                                        Promover a Admin
+                                                    </button>
+                                                )}
+                                                {member.role === 'MANAGER' && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleUpdateRole(member.id, 'AGENT');
+                                                        }}
+                                                        className="w-full px-6 py-3 text-left text-[13px] font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                                                    >
+                                                        <Edit className="w-4 h-4 text-[#21AC96]" />
+                                                        Degradar a Agente
+                                                    </button>
+                                                )}
+                                                {member.role !== 'OWNER' && (
+                                                    <>
+                                                        <div className="h-px bg-gray-100 my-2"></div>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                handleUpdateRole(member.id, 'MANAGER');
+                                                                handleRemoveMemberClick(member.id, member.user.name || member.user.email);
                                                             }}
-                                                            className="w-full px-6 py-3 text-left text-[13px] font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                                                            className="w-full px-6 py-3 text-left text-[13px] font-bold text-red-600 hover:bg-red-50 flex items-center gap-3"
                                                         >
-                                                            <Edit className="w-4 h-4 text-[#21AC96]" />
-                                                            Promover a Admin
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Eliminar del equipo
                                                         </button>
-                                                    )}
-                                                    {member.role === 'MANAGER' && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleUpdateRole(member.id, 'AGENT');
-                                                            }}
-                                                            className="w-full px-6 py-3 text-left text-[13px] font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3"
-                                                        >
-                                                            <Edit className="w-4 h-4 text-[#21AC96]" />
-                                                            Degradar a Agente
-                                                        </button>
-                                                    )}
-                                                    {member.role !== 'OWNER' && (
-                                                        <>
-                                                            <div className="h-px bg-gray-100 my-2"></div>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleRemoveMemberClick(member.id, member.user.name || member.user.email);
-                                                                }}
-                                                                className="w-full px-6 py-3 text-left text-[13px] font-bold text-red-600 hover:bg-red-50 flex items-center gap-3"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                                Eliminar del equipo
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>,
-                                                document.body
-                                            )
+                                                    </>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 );
