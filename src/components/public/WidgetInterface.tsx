@@ -85,7 +85,7 @@ export function WidgetInterface({ channel, isTest = false }: WidgetInterfaceProp
 
             try {
                 const { getWidgetMessages } = await import('@/lib/actions/widget');
-                const serverMessages = await getWidgetMessages(channel.id, visitorId);
+                const serverMessages = await getWidgetMessages(channel.id, visitorId, isTest, (channel as any).agentId);
 
                 if (serverMessages && serverMessages.length > 0) {
                     setMessages(prev => {

@@ -100,7 +100,8 @@ export async function sendWidgetMessage(data: {
         // 3. Find or Create Conversation (Try to resume the latest one if possible)
         let conversation = await prisma.conversation.findFirst({
             where: {
-                channelId: channel.id,
+                channelId: data.isTest ? null : channel.id,
+                agentId: channel.agentId,
                 externalId: data.visitorId,
             },
             include: { contact: true },
@@ -111,7 +112,7 @@ export async function sendWidgetMessage(data: {
             conversation = await prisma.conversation.create({
                 data: {
                     agentId: channel.agentId,
-                    channelId: channel.id,
+                    channelId: data.isTest ? null : channel.id,
                     externalId: data.visitorId,
                     contactName: `Visitante ${data.visitorId.slice(0, 4)}`,
                     status: 'OPEN',
@@ -2429,11 +2430,12 @@ Reglas para cobrar (ESTRICTO):
     }
 }
 
-export async function getWidgetMessages(channelId: string, visitorId: string) {
+export async function getWidgetMessages(channelId: string, visitorId: string, isTest?: boolean, agentId?: string) {
     try {
         const conversation = await prisma.conversation.findFirst({
             where: {
-                channelId: channelId,
+                channelId: isTest ? null : channelId,
+                agentId: isTest ? agentId : undefined,
                 externalId: visitorId
             },
             include: {
