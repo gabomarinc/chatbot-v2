@@ -20,6 +20,8 @@ export async function sendWidgetMessage(data: {
     fileType?: 'pdf' | 'image' | 'audio'; // Type of uploaded file
     extractedText?: string; // Extracted text from PDF
     transcription?: string; // Transcription from audio
+    isTest?: boolean;
+    agentId?: string;
 }) {
     try {
         // 0. Resolve API Keys (Env vs DB)
@@ -38,27 +40,50 @@ export async function sendWidgetMessage(data: {
             if (!googleKey) googleKey = configs.find((c: any) => c.key === 'GOOGLE_API_KEY')?.value;
         }
 
-        // 1. Validate Channel
-        const channel = (await prisma.channel.findUnique({
-            where: { id: data.channelId },
-            include: {
-                agent: {
-                    include: {
-                        workspace: { include: { creditBalance: true, paymentConfigs: true } },
-                        integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT', 'NEON_CATALOG', 'ALTAPLAZA'] as any }, enabled: true } },
-                        intents: { where: { enabled: true } },
-                        customFieldDefinitions: true
+        // 1. Validate Channel or Agent (if testing)
+        let channel: any;
+
+        if (data.isTest && data.agentId) {
+            // Bypass strict channel validation for testing environment
+            const agent = await prisma.agent.findUnique({
+                where: { id: data.agentId },
+                include: {
+                    workspace: { include: { creditBalance: true, paymentConfigs: true } },
+                    integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT', 'NEON_CATALOG', 'ALTAPLAZA'] as any }, enabled: true } },
+                    intents: { where: { enabled: true } },
+                    customFieldDefinitions: true
+                }
+            });
+            if (!agent) throw new Error("Agent not found for testing");
+
+            channel = {
+                id: data.channelId || 'test-channel',
+                isActive: true, // Always active for testing
+                agentId: agent.id,
+                agent: agent
+            };
+        } else {
+            channel = await prisma.channel.findUnique({
+                where: { id: data.channelId },
+                include: {
+                    agent: {
+                        include: {
+                            workspace: { include: { creditBalance: true, paymentConfigs: true } },
+                            integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT', 'NEON_CATALOG', 'ALTAPLAZA'] as any }, enabled: true } },
+                            intents: { where: { enabled: true } },
+                            customFieldDefinitions: true
+                        }
                     }
                 }
+            }) as any;
+
+            if (!channel) {
+                throw new Error("Channel not found")
             }
-        })) as any;
 
-        if (!channel) {
-            throw new Error("Channel not found")
-        }
-
-        if (!channel.isActive) {
-            throw new Error("Channel is not active. Please activate the channel in the channel settings.")
+            if (!channel.isActive) {
+                throw new Error("Channel is not active. Please activate the channel in the channel settings.")
+            }
         }
 
         const agent = channel.agent;

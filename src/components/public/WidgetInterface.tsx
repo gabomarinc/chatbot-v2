@@ -417,7 +417,9 @@ export function WidgetInterface({ channel, isTest = false }: WidgetInterfaceProp
                 fileUrl,
                 fileType: fileTypeUploaded,
                 imageBase64: fileTypeUploaded === 'image' ? imageBase64 : undefined,
-                extractedText
+                extractedText,
+                isTest,
+                agentId: (channel as any).agentId
             });
 
             // 5. Update UI with Real User Message (update with real fileUrl from server)

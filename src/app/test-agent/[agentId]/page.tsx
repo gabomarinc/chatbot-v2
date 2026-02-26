@@ -44,7 +44,8 @@ export default async function TestAgentPage({ params }: TestAgentPageProps) {
             agent: {
                 name: agent.name,
                 avatarUrl: agent.avatarUrl
-            }
+            },
+            agentId: agent.id
         };
         return <WidgetInterface channel={fallbackChannel as any} isTest={true} />;
     }
@@ -56,7 +57,8 @@ export default async function TestAgentPage({ params }: TestAgentPageProps) {
         agent: {
             name: agent.name,
             avatarUrl: agent.avatarUrl
-        }
+        },
+        agentId: agent.id
     };
 
     return <WidgetInterface channel={channelData as any} isTest={true} />;
