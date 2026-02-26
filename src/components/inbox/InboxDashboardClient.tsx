@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface InboxDashboardClientProps {
     initialIntegration: any;
@@ -29,7 +31,8 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+    const [analysisResult, setAnalysisResult] = useState<string | null>(initialIntegration?.lastAnalysis || null);
+    const [lastAnalysisAt, setLastAnalysisAt] = useState<Date | null>(initialIntegration?.lastAnalysisAt ? new Date(initialIntegration.lastAnalysisAt) : null);
 
     // Form state
     const [config, setConfig] = useState({
@@ -49,6 +52,7 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
             const res = await analyzeWorkspaceInbox();
             if (res.success) {
                 setAnalysisResult(res.summary || null);
+                if (res.lastAnalysisAt) setLastAnalysisAt(new Date(res.lastAnalysisAt));
                 toast.success('Análisis de inbox completado.');
             } else {
                 toast.error('Error: ' + res.error);
@@ -178,7 +182,17 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                             </div>
                                             <div>
                                                 <h3 className="text-3xl font-black text-gray-900 tracking-tight">Tu Analista de Inbox</h3>
-                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">IA Personalizada para tu Negocio</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">IA Personalizada para tu Negocio</p>
+                                                    {lastAnalysisAt && (
+                                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full">
+                                                            <Clock className="w-3 h-3 text-gray-500" />
+                                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap">
+                                                                Hace {formatDistanceToNow(lastAnalysisAt, { locale: es })}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 

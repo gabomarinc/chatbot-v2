@@ -204,7 +204,27 @@ export async function analyzeWorkspaceInbox() {
 
         const summary = response.choices[0].message.content;
 
-        return { success: true, summary, emailCount: emails.length };
+        // Persist the analysis result in the database
+        await (prisma as any).workspaceIntegration.update({
+            where: {
+                workspaceId_userId_provider: {
+                    workspaceId: workspace.id,
+                    userId: session.user.id,
+                    provider: 'EMAIL_IMAP'
+                }
+            },
+            data: {
+                lastAnalysis: summary,
+                lastAnalysisAt: new Date()
+            }
+        });
+
+        return {
+            success: true,
+            summary,
+            emailCount: emails.length,
+            lastAnalysisAt: new Date()
+        };
     } catch (error: any) {
         console.error('[WORKSPACE_EMAIL_ANALYSIS] Error:', error);
         return { success: false, error: error.message };

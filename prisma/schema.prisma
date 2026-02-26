@@ -269,6 +269,8 @@ model WorkspaceIntegration {
   provider    IntegrationProvider
   configJson  Json
   enabled     Boolean             @default(false)
+  lastAnalysis String?           @db.Text
+  lastAnalysisAt DateTime?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   workspace   Workspace           @relation(fields: [workspaceId], references: [id])
