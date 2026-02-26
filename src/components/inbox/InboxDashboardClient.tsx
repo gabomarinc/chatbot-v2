@@ -628,19 +628,19 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
                                         components={{
-                                            h1: ({ node, ...props }) => <h1 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-3 underline decoration-[#21AC96]/20 decoration-4 underline-offset-8" {...props}>
+                                            h1: ({ node, ...props }) => <h1 className="text-xl font-black text-gray-900 mb-10 flex items-center gap-3 underline decoration-[#21AC96]/20 decoration-4 underline-offset-8" {...props}>
                                                 <div className="w-1.5 h-6 bg-[#21AC96] rounded-full" /> {props.children}
                                             </h1>,
-                                            h2: ({ node, ...props }) => <h2 className="text-lg font-black text-gray-900 mt-10 mb-6 flex items-center gap-2" {...props}>
-                                                <div className="w-2 h-2 rounded-full bg-[#21AC96]" /> {props.children}
+                                            h2: ({ node, ...props }) => <h2 className="text-lg font-black text-gray-900 mt-16 mb-8 flex items-center gap-2" {...props}>
+                                                <div className="w-2.5 h-2.5 rounded-full bg-[#21AC96]" /> {props.children}
                                             </h2>,
-                                            p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.6] font-medium mb-4 text-sm" {...props} />,
-                                            ul: ({ node, ...props }) => <ul className="space-y-8 mb-8 pl-0 list-none" {...props} />,
-                                            li: ({ node, ...props }) => <li className="flex items-start gap-4 text-gray-700 bg-gray-50/50 p-5 rounded-xl border border-gray-100 group transition-all hover:bg-white hover:shadow-md" {...props}>
-                                                <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center group-hover:bg-[#21AC96] group-hover:text-white transition-all shrink-0 shadow-sm">
-                                                    <ChevronRight className="w-4 h-4" />
+                                            p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.8] font-medium mb-6 text-sm" {...props} />,
+                                            ul: ({ node, ...props }) => <ul className="space-y-10 mb-12 pl-0 list-none" {...props} />,
+                                            li: ({ node, ...props }) => <li className="flex items-start gap-6 text-gray-700 bg-gray-50/50 p-6 md:p-8 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:shadow-xl hover:-translate-y-1" {...props}>
+                                                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center group-hover:bg-[#21AC96] group-hover:text-white transition-all shrink-0 shadow-sm">
+                                                    <ChevronRight className="w-5 h-5" />
                                                 </div>
-                                                <span className="font-bold text-sm leading-relaxed">{props.children}</span>
+                                                <span className="font-bold text-base leading-relaxed">{props.children}</span>
                                             </li>,
                                             strong: ({ node, ...props }) => <strong className="font-black text-gray-900 bg-[#21AC96]/10 px-1.5 rounded" {...props} />,
                                             code: ({ node, ...props }) => (
@@ -652,17 +652,17 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                 </div>
                                             ),
                                             blockquote: ({ node, ...props }) => (
-                                                <div className="relative mt-8 mb-4 group">
-                                                    <div className="absolute -inset-2 bg-gradient-to-r from-[#21AC96] to-emerald-600 rounded-[2rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
-                                                    <div className="relative bg-white p-6 md:p-8 rounded-[1.8rem] border border-gray-50 shadow-xl overflow-hidden">
-                                                        <div className="absolute top-0 right-0 p-3">
-                                                            <Sparkles className="w-8 h-8 text-[#21AC96]/10" />
+                                                <div className="relative mt-12 mb-8 group">
+                                                    <div className="absolute -inset-4 bg-gradient-to-r from-[#21AC96] to-emerald-600 rounded-[2.5rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
+                                                    <div className="relative bg-white p-8 md:p-12 rounded-[2.2rem] border border-gray-50 shadow-2xl overflow-hidden">
+                                                        <div className="absolute top-0 right-0 p-6">
+                                                            <Sparkles className="w-12 h-12 text-[#21AC96]/10" />
                                                         </div>
-                                                        <div className="flex items-center gap-3 mb-4">
-                                                            <div className="h-0.5 w-8 bg-[#21AC96]" />
-                                                            <span className="text-[9px] font-black text-[#21AC96] uppercase tracking-[0.3em]">Borrador IA</span>
+                                                        <div className="flex items-center gap-4 mb-8">
+                                                            <div className="h-0.5 w-12 bg-[#21AC96]" />
+                                                            <span className="text-[10px] font-black text-[#21AC96] uppercase tracking-[0.4em]">Borrador IA Recomendado</span>
                                                         </div>
-                                                        <blockquote className="italic font-medium text-gray-700 leading-relaxed text-md border-none p-0 m-0">
+                                                        <blockquote className="italic font-medium text-gray-700 leading-[2] text-lg border-none p-0 m-0 space-y-4">
                                                             {props.children}
                                                         </blockquote>
                                                         <div className="mt-6 flex justify-end">
