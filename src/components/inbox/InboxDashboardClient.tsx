@@ -124,9 +124,18 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
         setRecommendation(null);
         try {
             const res = await generateEmailRecommendations(text);
-            if (res.success) {
-                setRecommendation(res.content || null);
-            } else {
+            if (res.success && res.content) {
+                // Clean markdown from potentially wrapped code blocks
+                let cleanContent = res.content.trim();
+                if (cleanContent.startsWith('```')) {
+                    const lines = cleanContent.split('\n');
+                    // Remove first line (like ```markdown) and last line (like ```)
+                    if (lines[0].startsWith('```')) lines.shift();
+                    if (lines[lines.length - 1].startsWith('```')) lines.pop();
+                    cleanContent = lines.join('\n').trim();
+                }
+                setRecommendation(cleanContent);
+            } else if (!res.success) {
                 toast.error('Error al generar recomendaciones.');
             }
         } catch (error) {
@@ -141,11 +150,18 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
         setAnalysisResult(null);
         try {
             const res = await analyzeWorkspaceInbox();
-            if (res.success) {
-                setAnalysisResult(res.summary || null);
+            if (res.success && res.summary) {
+                let cleanSummary = res.summary.trim();
+                if (cleanSummary.startsWith('```')) {
+                    const lines = cleanSummary.split('\n');
+                    if (lines[0].startsWith('```')) lines.shift();
+                    if (lines[lines.length - 1].startsWith('```')) lines.pop();
+                    cleanSummary = lines.join('\n').trim();
+                }
+                setAnalysisResult(cleanSummary);
                 if (res.lastAnalysisAt) setLastAnalysisAt(new Date(res.lastAnalysisAt));
                 toast.success('Análisis de inbox completado.');
-            } else {
+            } else if (!res.success) {
                 toast.error('Error: ' + res.error);
             }
         } catch (error) {
@@ -359,6 +375,14 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                                 );
                                                             },
                                                             strong: ({ node, ...props }) => <strong className="font-black text-gray-900 bg-[#21AC96]/10 px-1 rounded" {...props} />,
+                                                            code: ({ node, ...props }) => (
+                                                                <code className="bg-gray-100 text-[#21AC96] px-1.5 py-0.5 rounded-md font-mono text-[0.9em]" {...props} />
+                                                            ),
+                                                            pre: ({ node, ...props }) => (
+                                                                <div className="bg-gray-900 rounded-2xl p-6 my-6 overflow-x-auto border border-gray-800 shadow-xl">
+                                                                    <pre className="m-0 text-white/90 font-mono text-sm leading-relaxed" {...props} />
+                                                                </div>
+                                                            ),
                                                             blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#21AC96] pl-6 my-8 italic text-gray-500 font-medium" {...props} />,
                                                         }}
                                                     >
@@ -621,6 +645,14 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                 <span className="font-semibold">{props.children}</span>
                                             </li>,
                                             strong: ({ node, ...props }) => <strong className="font-black text-gray-900 bg-[#21AC96]/10 px-1.5 rounded" {...props} />,
+                                            code: ({ node, ...props }) => (
+                                                <code className="bg-gray-100 text-[#21AC96] px-1.5 py-0.5 rounded-md font-mono text-[0.9em]" {...props} />
+                                            ),
+                                            pre: ({ node, ...props }) => (
+                                                <div className="bg-gray-900 rounded-2xl p-6 my-6 overflow-x-auto border border-gray-800 shadow-xl">
+                                                    <pre className="m-0 text-white/90 font-mono text-sm leading-relaxed" {...props} />
+                                                </div>
+                                            ),
                                             blockquote: ({ node, ...props }) => (
                                                 <div className="relative mt-12 mb-8 group">
                                                     <div className="absolute -inset-2 bg-gradient-to-r from-[#21AC96] to-emerald-600 rounded-[2.5rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
@@ -638,9 +670,15 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                         <div className="mt-8 flex justify-end">
                                                             <Button
                                                                 onClick={() => {
-                                                                    // Simple text copy logic 
-                                                                    const text = (props.children as any)?.toString() || "";
-                                                                    navigator.clipboard.writeText(text);
+                                                                    // Extract text content safely from React nodes for copying
+                                                                    const extractPlainText = (children: any): string => {
+                                                                        if (typeof children === 'string') return children;
+                                                                        if (Array.isArray(children)) return children.map(extractPlainText).join('');
+                                                                        if (children?.props?.children) return extractPlainText(children.props.children);
+                                                                        return '';
+                                                                    };
+                                                                    const textToCopy = extractPlainText(props.children);
+                                                                    navigator.clipboard.writeText(textToCopy);
                                                                     toast.success('Borrador copiado al portapapeles');
                                                                 }}
                                                                 variant="ghost"
