@@ -129,6 +129,8 @@ export async function analyzeWorkspaceInbox() {
         }
 
         const config = decryptFields(integration.configJson as any, SENSITIVE_INTEGRATION_FIELDS);
+        const focusArea = config.focusArea || 'General';
+        const goals = config.goals || 'Identificar temas importantes';
 
         // Fetch emails via IMAP
         const { ImapFlow } = await import('imapflow');
@@ -177,7 +179,10 @@ export async function analyzeWorkspaceInbox() {
 
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
         const prompt = `Analiza la siguiente lista de correos electrónicos recientes y genera un resumen ejecutivo. 
-        Enfoque: Identificar oportunidades comerciales, urgencias de clientes y temas recurrentes.
+        
+        CONTEXTO DEL NEGOCIO:
+        - Área de Enfoque: ${focusArea}
+        - Objetivos del Usuario: ${goals}
         
         Lista de correos:
         ${emails.map(e => `- De: ${e.from} | Asunto: ${e.subject} | Fecha: ${e.date}`).join('\n')}
@@ -186,15 +191,16 @@ export async function analyzeWorkspaceInbox() {
         - Responde en español.
         - Usa Markdown con jerarquía clara (## para secciones).
         - Sé extremadamente conciso pero accionable.
-        - Agrupa por categorías: 🚀 Oportunidades Comerciales, ⚠️ Urgencias Críticas, 📊 Temas Recurrentes.
-        - Usa negritas para nombres de empresas o personas.
-        - No incluyas correos genéricos o de spam en el resumen.`;
+        - Prioriza los temas que coincidan con los objetivos: ${goals}.
+        - Agrupa por categorías relevantes al área (${focusArea}): Ej: 🚀 Oportunidades, ⚠️ Urgencias, 📊 Seguimiento.
+        - Usa negritas para entidades clave.
+        - No incluyas correos genéricos o de spam.`;
 
         const response = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [{
                 role: "system",
-                content: "Eres un analista de negocios experto que revisa bandejas de entrada para extraer inteligencia operativa."
+                content: "Eres un analista de negocios experto que revisa bandejas de entrada para extraer inteligencia operativa basada en objetivos específicos."
             }, {
                 role: "user",
                 content: prompt
@@ -230,3 +236,31 @@ export async function analyzeWorkspaceInbox() {
         return { success: false, error: error.message };
     }
 }
+
+export async function generateEmailRecommendations(bulletContext: string) {
+    try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{
+                role: "system",
+                content: "Eres un asistente ejecutivo experto. Tu tarea es analizar un punto específico de un resumen de correos y generar recomendaciones accionables y borradores de respuesta."
+            }, {
+                role: "user",
+                content: `Basado en este punto: "${bulletContext}", genera:
+                1. Un análisis rápido de por qué es importante.
+                2. 2-3 Acciones recomendadas inmediatas.
+                3. Un borrador de respuesta profesional y persuasivo si aplica.
+                
+                Responde en formato Markdown limpio adecuado para un modal.`
+            }],
+            temperature: 0.7
+        });
+
+        return { success: true, content: response.choices[0].message.content };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+

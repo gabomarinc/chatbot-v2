@@ -62,6 +62,7 @@ export function Sidebar() {
                 title: 'COMUNICACIÓN',
                 items: [
                     { id: 'chat', href: '/chat', label: 'Chats', icon: MessageSquare, color: 'indigo' },
+                    { id: 'inbox', href: '/inbox', label: 'Smart Mail', icon: Mail, color: 'blue', badge: 'Nuevo' },
                 ]
             }
         ]
