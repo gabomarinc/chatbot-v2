@@ -30,6 +30,8 @@ export default async function AgentSettingsPage({ params }: { params: Promise<{ 
                 responseDelay: agent.responseDelay,
                 enableNPS: (agent as any).enableNPS,
                 handoffTargets: (agent as any).handoffTargets,
+                proactiveFollowUps: (agent as any).proactiveFollowUps,
+                followUpTimer: (agent as any).followUpTimer,
             }}
         />
     );
