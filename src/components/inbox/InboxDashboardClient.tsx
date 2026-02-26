@@ -60,6 +60,12 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
         goals: initialIntegration?.configJson?.goals || ''
     });
 
+    const [metrics, setMetrics] = useState({
+        emailCount: initialIntegration?.configJson?.lastMetrics?.emailCount || 0,
+        themesCount: initialIntegration?.configJson?.lastMetrics?.themesCount || 0,
+        criticalCount: initialIntegration?.configJson?.lastMetrics?.criticalCount || 0
+    });
+
     const [selectedGoals, setSelectedGoals] = useState<string[]>(
         initialIntegration?.configJson?.goals ? initialIntegration.configJson.goals.split(', ').filter(Boolean) : []
     );
@@ -152,13 +158,37 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
             const res = await analyzeWorkspaceInbox();
             if (res.success && res.summary) {
                 let cleanSummary = res.summary.trim();
+                let themes = 0;
+                let critical = 0;
+
+                // Extract metrics from the summary if present
+                const metricsMatch = cleanSummary.match(/```json_metrics\n([\s\S]*?)\n```/);
+                if (metricsMatch) {
+                    try {
+                        const parsed = JSON.parse(metricsMatch[1]);
+                        themes = parsed.themesCount || 0;
+                        critical = parsed.criticalCount || 0;
+                        // Remove the metrics block from the displayed summary
+                        cleanSummary = cleanSummary.replace(metricsMatch[0], '').trim();
+                    } catch (e) {
+                        console.error('Error parsing metrics:', e);
+                    }
+                }
+
                 if (cleanSummary.startsWith('```')) {
                     const lines = cleanSummary.split('\n');
                     if (lines[0].startsWith('```')) lines.shift();
                     if (lines[lines.length - 1].startsWith('```')) lines.pop();
                     cleanSummary = lines.join('\n').trim();
                 }
+
                 setAnalysisResult(cleanSummary);
+                setMetrics({
+                    emailCount: res.emailCount || 0,
+                    themesCount: themes,
+                    criticalCount: critical
+                });
+
                 if (res.lastAnalysisAt) setLastAnalysisAt(new Date(res.lastAnalysisAt));
                 toast.success('Análisis de inbox completado.');
             } else if (!res.success) {
@@ -279,9 +309,9 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                             {[
                                 { label: 'Estado', value: isConfigured ? 'Activo' : 'Pendiente', icon: ShieldCheck, color: 'text-green-500', bg: 'bg-green-50' },
-                                { label: 'Correos Analizados', value: '30 Recientes', icon: MailSearch, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/10' },
-                                { label: 'Insights Generados', value: '12 Temas', icon: BrainCircuit, color: 'text-purple-500', bg: 'bg-purple-50' },
-                                { label: 'Urgencias', value: '0 Críticas', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50' }
+                                { label: 'Correos Analizados', value: `${metrics.emailCount || 0} Recientes`, icon: MailSearch, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/10' },
+                                { label: 'Insights Generados', value: `${metrics.themesCount || 0} Temas`, icon: BrainCircuit, color: 'text-purple-500', bg: 'bg-purple-50' },
+                                { label: 'Urgencias', value: `${metrics.criticalCount || 0} Críticas`, icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50' }
                             ].map((stat, i) => (
                                 <Card key={i} className="p-6 rounded-[2.5rem] border-none shadow-xl shadow-gray-200/20 bg-white group hover:scale-[1.02] transition-all duration-300">
                                     <div className="flex items-start justify-between">
@@ -642,12 +672,14 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                             </h2>,
                                             p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.8] font-medium mb-6 text-sm" {...props} />,
                                             ul: ({ node, ...props }) => <ul className="space-y-10 mb-12 pl-0 list-none" {...props} />,
-                                            li: ({ node, ...props }) => <li className="flex items-start gap-6 text-gray-700 bg-gray-50/50 p-6 md:p-8 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:shadow-xl hover:-translate-y-1" {...props}>
-                                                <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center group-hover:bg-[#21AC96] group-hover:text-white transition-all shrink-0 shadow-sm">
-                                                    <ChevronRight className="w-5 h-5" />
-                                                </div>
-                                                <span className="font-bold text-base leading-relaxed">{props.children}</span>
-                                            </li>,
+                                            li: ({ node, ...props }) => (
+                                                <li className="flex items-start gap-4 text-gray-600 bg-white/50 p-5 rounded-2xl border border-gray-100 shadow-sm transition-all cursor-default mb-6 relative overflow-hidden group/item">
+                                                    <div className="w-2 h-2 rounded-full bg-[#21AC96] mt-[0.6rem] shrink-0" />
+                                                    <div className="flex-1">
+                                                        <span className="font-semibold text-[0.95rem] leading-relaxed text-gray-700">{props.children}</span>
+                                                    </div>
+                                                </li>
+                                            ),
                                             strong: ({ node, ...props }) => <strong className="font-black text-gray-900 bg-[#21AC96]/10 px-1.5 rounded" {...props} />,
                                             code: ({ node, ...props }) => (
                                                 <code className="bg-gray-100 text-[#21AC96] px-1.5 py-0.5 rounded-md font-mono text-[0.9em]" {...props} />

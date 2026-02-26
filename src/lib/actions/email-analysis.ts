@@ -195,7 +195,16 @@ export async function analyzeWorkspaceInbox() {
         - Agrupa por categorías relevantes al área (${focusArea}): Ej: ## 🚀 Oportunidades, ## ⚠️ Urgencias, ## 📊 Seguimiento.
         - **IMPORTANTE: No uses sub-listas ni agrupaciones anidadas.** Cada punto debe ser un bullet de primer nivel inmediatamente debajo de su sección ##.
         - Usa negritas para entidades clave.
-        - No incluyas correos genéricos o de spam.`;
+        - No incluyas correos genéricos o de spam.
+        
+        - **IMPORTANTE (MÉTRICAS):** Al final del análisis, añade siempre un bloque JSON encerrado en triple backticks con el lenguaje 'json_metrics' (para que yo pueda procesarlo) con este formato EXACTO: 
+        \`\`\`json_metrics
+        {
+          "themesCount": número de temas/bullets totales generados,
+          "criticalCount": número de puntos que son urgencias críticas (sección Urgencias)
+        }
+        \`\`\`
+        No menciones este bloque en el texto, solo inclúyelo al final.`;
 
         const response = await openai.chat.completions.create({
             model: "gpt-4o-mini",
@@ -222,7 +231,15 @@ export async function analyzeWorkspaceInbox() {
             },
             data: {
                 lastAnalysis: summary,
-                lastAnalysisAt: new Date()
+                lastAnalysisAt: new Date(),
+                configJson: {
+                    ...(integration.configJson as any),
+                    lastMetrics: {
+                        emailCount: emails.length,
+                        themesCount: 0, // Will be updated by frontend if needed or we could parse here
+                        criticalCount: 0
+                    }
+                }
             }
         });
 
