@@ -191,6 +191,7 @@ export async function analyzeWorkspaceInbox() {
         - Responde en español.
         - Usa Markdown con jerarquía clara (## para secciones).
         - Sé extremadamente conciso pero accionable.
+        - **FILTRO ESTRICTO:** Ignora cualquier correo que no esté directamente relacionado con "${focusArea}" y los objetivos: "${goals}". No incluyas reportes técnicos, notificaciones de sistema, seguridad de dominio o spam administrativo a menos que sea crítico para los objetivos comerciales mencionados.
         - Prioriza los temas que coincidan con los objetivos: ${goals}.
         - Agrupa por categorías relevantes al área (${focusArea}): Ej: ## 🚀 Oportunidades, ## ⚠️ Urgencias, ## 📊 Seguimiento.
         - **IMPORTANTE: No uses sub-listas ni agrupaciones anidadas.** Cada punto debe ser un bullet de primer nivel inmediatamente debajo de su sección ##.
