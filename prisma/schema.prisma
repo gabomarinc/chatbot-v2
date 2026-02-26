@@ -54,13 +54,14 @@ model Workspace {
 }
 
 model WorkspaceMember {
-  id          String        @id @default(cuid())
-  userId      String
-  workspaceId String
-  role        WorkspaceRole
-  department  AgentJobType?
-  user        User          @relation(fields: [userId], references: [id])
-  workspace   Workspace     @relation(fields: [workspaceId], references: [id])
+  id            String        @id @default(cuid())
+  userId        String
+  workspaceId   String
+  role          WorkspaceRole
+  department    AgentJobType?
+  subDepartment String?
+  user          User          @relation(fields: [userId], references: [id])
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id])
 
   @@unique([userId, workspaceId])
 }

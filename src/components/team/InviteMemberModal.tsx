@@ -19,6 +19,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
     const [email, setEmail] = useState('');
     const [role, setRole] = useState<'MANAGER' | 'AGENT'>('AGENT');
     const [department, setDepartment] = useState<'SUPPORT' | 'SALES' | 'PERSONAL'>('SUPPORT');
+    const [subDepartment, setSubDepartment] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -55,7 +56,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
 
         setIsLoading(true);
         try {
-            const result = await inviteTeamMember(name.trim(), email.trim().toLowerCase(), role, department);
+            const result = await inviteTeamMember(name.trim(), email.trim().toLowerCase(), role, department, subDepartment.trim() || undefined);
 
             if (result.error) {
                 setError(result.error);
@@ -63,6 +64,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                 setSuccess(true);
                 setName('');
                 setEmail('');
+                setSubDepartment('');
                 setTimeout(() => {
                     onClose();
                     if (onSuccess) {
@@ -85,6 +87,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
             setEmail('');
             setRole('AGENT');
             setDepartment('SUPPORT');
+            setSubDepartment('');
             setError(null);
             setSuccess(false);
             onClose();
@@ -167,8 +170,8 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                                 onClick={() => setRole('MANAGER')}
                                 disabled={isLoading}
                                 className={`p-4 rounded-xl border-2 transition-all ${role === 'MANAGER'
-                                        ? 'border-[#21AC96] bg-[#21AC96]/5'
-                                        : 'border-gray-200 hover:border-gray-300'
+                                    ? 'border-[#21AC96] bg-[#21AC96]/5'
+                                    : 'border-gray-200 hover:border-gray-300'
                                     } disabled:opacity-50`}
                             >
                                 <div className="text-left">
@@ -183,8 +186,8 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                                 onClick={() => setRole('AGENT')}
                                 disabled={isLoading}
                                 className={`p-4 rounded-xl border-2 transition-all ${role === 'AGENT'
-                                        ? 'border-[#21AC96] bg-[#21AC96]/5'
-                                        : 'border-gray-200 hover:border-gray-300'
+                                    ? 'border-[#21AC96] bg-[#21AC96]/5'
+                                    : 'border-gray-200 hover:border-gray-300'
                                     } disabled:opacity-50`}
                             >
                                 <div className="text-left">
@@ -212,8 +215,8 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                                 onClick={() => setDepartment('SALES')}
                                 disabled={isLoading}
                                 className={`p-3 rounded-xl border-2 transition-all text-center ${department === 'SALES'
-                                        ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
-                                        : 'border-gray-100 hover:border-gray-200 text-gray-500'
+                                    ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
+                                    : 'border-gray-100 hover:border-gray-200 text-gray-500'
                                     } disabled:opacity-50`}
                             >
                                 <div className="font-bold text-xs">COMERCIAL</div>
@@ -223,8 +226,8 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                                 onClick={() => setDepartment('SUPPORT')}
                                 disabled={isLoading}
                                 className={`p-3 rounded-xl border-2 transition-all text-center ${department === 'SUPPORT'
-                                        ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
-                                        : 'border-gray-100 hover:border-gray-200 text-gray-500'
+                                    ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
+                                    : 'border-gray-100 hover:border-gray-200 text-gray-500'
                                     } disabled:opacity-50`}
                             >
                                 <div className="font-bold text-xs">SOPORTE</div>
@@ -234,12 +237,28 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                                 onClick={() => setDepartment('PERSONAL')}
                                 disabled={isLoading}
                                 className={`p-3 rounded-xl border-2 transition-all text-center ${department === 'PERSONAL'
-                                        ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
-                                        : 'border-gray-100 hover:border-gray-200 text-gray-500'
+                                    ? 'border-[#21AC96] bg-[#21AC96]/5 text-[#21AC96]'
+                                    : 'border-gray-100 hover:border-gray-200 text-gray-500'
                                     } disabled:opacity-50`}
                             >
                                 <div className="font-bold text-xs">GENERAL</div>
                             </button>
+                        </div>
+
+                        {/* Sub-department Input */}
+                        <div className="mt-4">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">
+                                Subdepartamento (Opcional)
+                            </label>
+                            <input
+                                type="text"
+                                value={subDepartment}
+                                onChange={(e) => setSubDepartment(e.target.value)}
+                                placeholder="Ej: Motores Marítimos"
+                                disabled={isLoading}
+                                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96] focus:border-transparent transition-all disabled:opacity-50"
+                            />
+                            <p className="text-[10px] text-gray-400 mt-1">Específica si este rol atiende a un nicho en particular de este departamento.</p>
                         </div>
                     </div>
 

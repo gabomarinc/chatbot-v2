@@ -292,6 +292,7 @@ export async function getMemberStats(memberUserId: string) {
                 email: membership.user.email,
                 role: membership.role,
                 department: (membership as any).department,
+                subDepartment: (membership as any).subDepartment,
                 joinedAt: membership.user.createdAt,
                 lastLoginAt: membership.user.lastLoginAt
             },
@@ -328,7 +329,7 @@ export async function getMemberStats(memberUserId: string) {
 }
 
 // Invite team member
-export async function inviteTeamMember(name: string, email: string, role: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL') {
+export async function inviteTeamMember(name: string, email: string, role: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL', subDepartment?: string) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
@@ -400,7 +401,8 @@ export async function inviteTeamMember(name: string, email: string, role: 'MANAG
                 userId: user.id,
                 workspaceId: workspace.id,
                 role,
-                department: department as any
+                department: department as any,
+                subDepartment: subDepartment || null
             } as any
         })
 
@@ -505,7 +507,7 @@ export async function removeTeamMember(memberId: string) {
 }
 
 // Update team member (role and/or department)
-export async function updateTeamMember(memberId: string, data: { role?: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL' }) {
+export async function updateTeamMember(memberId: string, data: { role?: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL', subDepartment?: string | null }) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
@@ -539,7 +541,8 @@ export async function updateTeamMember(memberId: string, data: { role?: 'MANAGER
             where: { id: memberId },
             data: {
                 ...(data.role && { role: data.role }),
-                ...(data.department && { department: data.department as any })
+                ...(data.department && { department: data.department as any }),
+                ...(data.subDepartment !== undefined && { subDepartment: data.subDepartment })
             }
         })
 
@@ -552,7 +555,7 @@ export async function updateTeamMember(memberId: string, data: { role?: 'MANAGER
 }
 
 // Update comprehensive member details (including user name/email if permitted)
-export async function updateMemberDetails(userId: string, data: { name?: string, email?: string, role?: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL' }) {
+export async function updateMemberDetails(userId: string, data: { name?: string, email?: string, role?: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL', subDepartment?: string | null }) {
     try {
         const session = await auth()
         if (!session?.user?.id) {
@@ -616,12 +619,13 @@ export async function updateMemberDetails(userId: string, data: { name?: string,
         }
 
         // Update Member info
-        if (data.role || data.department) {
+        if (data.role || data.department || data.subDepartment !== undefined) {
             await prisma.workspaceMember.update({
                 where: { id: membership.id },
                 data: {
                     ...(data.role && { role: data.role }),
-                    ...(data.department && { department: data.department as any })
+                    ...(data.department && { department: data.department as any }),
+                    ...(data.subDepartment !== undefined && { subDepartment: data.subDepartment })
                 }
             })
         }

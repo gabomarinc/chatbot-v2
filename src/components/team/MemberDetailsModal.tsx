@@ -16,6 +16,7 @@ interface MemberDetailsModalProps {
     memberEmail: string;
     memberRole: 'OWNER' | 'MANAGER' | 'AGENT';
     currentUserRole?: 'OWNER' | 'MANAGER' | 'AGENT' | null;
+    onUpdate?: () => void;
 }
 
 interface MemberStats {
@@ -25,6 +26,7 @@ interface MemberStats {
         email: string;
         role: 'OWNER' | 'MANAGER' | 'AGENT';
         department: 'SUPPORT' | 'SALES' | 'PERSONAL' | null;
+        subDepartment: string | null;
         joinedAt: Date;
         lastLoginAt: Date | null;
     };
@@ -62,7 +64,8 @@ export function MemberDetailsModal({
     memberName,
     memberEmail,
     memberRole,
-    currentUserRole
+    currentUserRole,
+    onUpdate
 }: MemberDetailsModalProps) {
     const router = useRouter();
     const [stats, setStats] = useState<MemberStats | null>(null);
@@ -76,7 +79,8 @@ export function MemberDetailsModal({
         name: '',
         email: '',
         role: 'AGENT' as 'MANAGER' | 'AGENT',
-        department: 'PERSONAL' as 'SUPPORT' | 'SALES' | 'PERSONAL'
+        department: 'PERSONAL' as 'SUPPORT' | 'SALES' | 'PERSONAL',
+        subDepartment: ''
     });
 
     useEffect(() => {
@@ -98,7 +102,8 @@ export function MemberDetailsModal({
                     name: result.member.name || '',
                     email: result.member.email || '',
                     role: result.member.role as any,
-                    department: (result.member.department as any) || 'PERSONAL'
+                    department: (result.member.department as any) || 'PERSONAL',
+                    subDepartment: result.member.subDepartment || ''
                 });
             }
         } catch (err) {
@@ -116,7 +121,8 @@ export function MemberDetailsModal({
                 name: editData.name,
                 email: editData.email,
                 role: editData.role,
-                department: editData.department
+                department: editData.department,
+                subDepartment: editData.subDepartment.trim() || null
             });
 
             if (result.error) {
@@ -125,6 +131,7 @@ export function MemberDetailsModal({
                 router.refresh();
                 setIsEditing(false);
                 loadMemberStats();
+                if (onUpdate) onUpdate();
             }
         } catch (err) {
             setError('Error al guardar cambios');
@@ -324,17 +331,33 @@ export function MemberDetailsModal({
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Departamento</p>
                                 {isEditing && currentUserRole === 'OWNER' ? (
-                                    <select
-                                        value={editData.department}
-                                        onChange={e => setEditData({ ...editData, department: e.target.value as any })}
-                                        className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 font-bold focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
-                                    >
-                                        <option value="SALES">Comercial / Ventas</option>
-                                        <option value="SUPPORT">Soporte Técnico</option>
-                                        <option value="PERSONAL">General / Personal</option>
-                                    </select>
+                                    <div className="space-y-3">
+                                        <select
+                                            value={editData.department}
+                                            onChange={e => setEditData({ ...editData, department: e.target.value as any })}
+                                            className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 font-bold focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
+                                        >
+                                            <option value="SALES">Comercial / Ventas</option>
+                                            <option value="SUPPORT">Soporte Técnico</option>
+                                            <option value="PERSONAL">General / Personal</option>
+                                        </select>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={editData.subDepartment}
+                                                onChange={e => setEditData({ ...editData, subDepartment: e.target.value })}
+                                                placeholder="Subdepartamento (opcional)"
+                                                className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
+                                            />
+                                        </div>
+                                    </div>
                                 ) : (
-                                    <p className="text-lg font-extrabold text-[#21AC96]">{getDepartmentLabel(stats.member.department)}</p>
+                                    <>
+                                        <p className="text-lg font-extrabold text-[#21AC96]">{getDepartmentLabel(stats.member.department)}</p>
+                                        {stats.member.subDepartment && (
+                                            <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wide">{stats.member.subDepartment}</p>
+                                        )}
+                                    </>
                                 )}
                             </div>
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">

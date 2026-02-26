@@ -18,6 +18,7 @@ interface TeamMember {
     id: string;
     role: 'OWNER' | 'MANAGER' | 'AGENT';
     department: 'SUPPORT' | 'SALES' | 'PERSONAL' | null;
+    subDepartment: string | null;
     user: {
         id: string;
         name: string | null;
@@ -41,6 +42,11 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
     const router = useRouter();
     const { data: session } = useSession();
     const [members, setMembers] = useState(initialMembers);
+
+    useEffect(() => {
+        setMembers(initialMembers);
+    }, [initialMembers]);
+
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [isMaxMembersModalOpen, setIsMaxMembersModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -359,12 +365,17 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-6">
-                                                    <div className={cn(
-                                                        "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border",
-                                                        getDepartmentBadgeStyle(member.department)
-                                                    )}>
-                                                        <Users className="w-3 h-3" />
-                                                        {getDepartmentLabel(member.department)}
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <div className={cn(
+                                                            "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border",
+                                                            getDepartmentBadgeStyle(member.department)
+                                                        )}>
+                                                            <Users className="w-3 h-3" />
+                                                            {getDepartmentLabel(member.department)}
+                                                        </div>
+                                                        {member.subDepartment && (
+                                                            <span className="text-[10px] font-black tracking-widest uppercase text-gray-400 pl-1">{member.subDepartment}</span>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-6">
@@ -560,6 +571,27 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                     <Shield className="w-3 h-3" />
                                                     {getRoleLabel(member.role)}
                                                 </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 items-end text-right">
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Departamento</span>
+                                                <div className={cn(
+                                                    "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black border w-fit",
+                                                    getDepartmentBadgeStyle(member.department)
+                                                )}>
+                                                    <Users className="w-3 h-3" />
+                                                    {getDepartmentLabel(member.department)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
+                                            <div className="flex flex-col gap-1.5">
+                                                {member.subDepartment && (
+                                                    <>
+                                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Subdepartamento</span>
+                                                        <span className="text-xs font-bold text-gray-700">{member.subDepartment}</span>
+                                                    </>
+                                                )}
                                             </div>
                                             <div className="flex flex-col gap-1.5 items-end text-right">
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Estado</span>
