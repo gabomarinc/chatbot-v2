@@ -6,7 +6,7 @@ import { getMemberStats } from '@/lib/actions/team';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
-import { updateTeamMember, removeTeamMember } from '@/lib/actions/team';
+import { updateTeamMember, removeTeamMember, updateMemberDetails } from '@/lib/actions/team';
 
 interface MemberDetailsModalProps {
     isOpen: boolean;
@@ -70,6 +70,15 @@ export function MemberDetailsModal({
     const [error, setError] = useState<string | null>(null);
     const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
+    // Edit state
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState({
+        name: '',
+        email: '',
+        role: 'AGENT' as 'MANAGER' | 'AGENT',
+        department: 'PERSONAL' as 'SUPPORT' | 'SALES' | 'PERSONAL'
+    });
+
     useEffect(() => {
         if (isOpen && memberId) {
             loadMemberStats();
@@ -85,11 +94,42 @@ export function MemberDetailsModal({
                 setError(result.error);
             } else if (result.success && result.member) {
                 setStats(result as any);
+                setEditData({
+                    name: result.member.name || '',
+                    email: result.member.email || '',
+                    role: result.member.role as any,
+                    department: (result.member.department as any) || 'PERSONAL'
+                });
             }
         } catch (err) {
             setError('Error al cargar estadísticas');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleSaveEdit = async () => {
+        setIsUpdatingRole(true);
+        setError(null);
+        try {
+            const result = await updateMemberDetails(memberId, {
+                name: editData.name,
+                email: editData.email,
+                role: editData.role,
+                department: editData.department
+            });
+
+            if (result.error) {
+                setError(result.error);
+            } else {
+                router.refresh();
+                setIsEditing(false);
+                loadMemberStats();
+            }
+        } catch (err) {
+            setError('Error al guardar cambios');
+        } finally {
+            setIsUpdatingRole(false);
         }
     };
 
@@ -189,17 +229,66 @@ export function MemberDetailsModal({
                             <User className="w-7 h-7" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-extrabold text-gray-900">{memberName}</h2>
-                            <p className="text-sm text-gray-500 font-medium">{memberEmail}</p>
+                            {isEditing && currentUserRole === 'OWNER' ? (
+                                <div className="space-y-2">
+                                    <input
+                                        type="text"
+                                        value={editData.name}
+                                        onChange={e => setEditData({ ...editData, name: e.target.value })}
+                                        className="text-xl font-extrabold text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 w-full"
+                                        placeholder="Nombre del usuario"
+                                    />
+                                    <input
+                                        type="email"
+                                        value={editData.email}
+                                        onChange={e => setEditData({ ...editData, email: e.target.value })}
+                                        className="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 w-full"
+                                        placeholder="correo@ejemplo.com"
+                                    />
+                                </div>
+                            ) : (
+                                <>
+                                    <h2 className="text-2xl font-extrabold text-gray-900">{stats?.member.name || memberName}</h2>
+                                    <p className="text-sm text-gray-500 font-medium">{stats?.member.email || memberEmail}</p>
+                                </>
+                            )}
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                        disabled={isLoading || isUpdatingRole}
-                    >
-                        <X className="w-5 h-5 text-gray-400" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {canManage && !isEditing && currentUserRole === 'OWNER' && (
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors font-bold text-sm"
+                            >
+                                <Edit className="w-4 h-4" />
+                                Editar
+                            </button>
+                        )}
+                        {isEditing && (
+                            <>
+                                <button
+                                    onClick={() => setIsEditing(false)}
+                                    className="px-4 py-2 text-gray-500 hover:bg-gray-50 rounded-xl font-bold text-sm"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleSaveEdit}
+                                    disabled={isUpdatingRole}
+                                    className="px-4 py-2 bg-[#21AC96] text-white rounded-xl font-bold text-sm hover:bg-[#1a8a78] disabled:opacity-50"
+                                >
+                                    {isUpdatingRole ? 'Guardando...' : 'Guardar'}
+                                </button>
+                            </>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-gray-100 rounded-xl transition-colors ml-2"
+                            disabled={isLoading || isUpdatingRole}
+                        >
+                            <X className="w-5 h-5 text-gray-400" />
+                        </button>
+                    </div>
                 </div>
 
                 {error && (
@@ -219,11 +308,34 @@ export function MemberDetailsModal({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Rol</p>
-                                <p className="text-lg font-extrabold text-gray-900">{getRoleLabel(stats.member.role)}</p>
+                                {isEditing && currentUserRole === 'OWNER' && stats.member.role !== 'OWNER' ? (
+                                    <select
+                                        value={editData.role}
+                                        onChange={e => setEditData({ ...editData, role: e.target.value as any })}
+                                        className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 font-bold focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
+                                    >
+                                        <option value="MANAGER">Administrador</option>
+                                        <option value="AGENT">Agente</option>
+                                    </select>
+                                ) : (
+                                    <p className="text-lg font-extrabold text-gray-900">{getRoleLabel(stats.member.role)}</p>
+                                )}
                             </div>
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Departamento</p>
-                                <p className="text-lg font-extrabold text-[#21AC96]">{getDepartmentLabel(stats.member.department)}</p>
+                                {isEditing && currentUserRole === 'OWNER' ? (
+                                    <select
+                                        value={editData.department}
+                                        onChange={e => setEditData({ ...editData, department: e.target.value as any })}
+                                        className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 font-bold focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
+                                    >
+                                        <option value="SALES">Comercial / Ventas</option>
+                                        <option value="SUPPORT">Soporte Técnico</option>
+                                        <option value="PERSONAL">General / Personal</option>
+                                    </select>
+                                ) : (
+                                    <p className="text-lg font-extrabold text-[#21AC96]">{getDepartmentLabel(stats.member.department)}</p>
+                                )}
                             </div>
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Estado</p>

@@ -551,6 +551,89 @@ export async function updateTeamMember(memberId: string, data: { role?: 'MANAGER
     }
 }
 
+// Update comprehensive member details (including user name/email if permitted)
+export async function updateMemberDetails(userId: string, data: { name?: string, email?: string, role?: 'MANAGER' | 'AGENT', department?: 'SUPPORT' | 'SALES' | 'PERSONAL' }) {
+    try {
+        const session = await auth()
+        if (!session?.user?.id) {
+            return { error: 'No autorizado' }
+        }
+
+        const workspace = await getUserWorkspace()
+        if (!workspace) {
+            return { error: 'Workspace no encontrado' }
+        }
+
+        const currentUserRole = await getUserWorkspaceRole(workspace.id)
+        if (currentUserRole !== 'OWNER' && currentUserRole !== 'MANAGER') {
+            return { error: 'No tienes permisos para editar miembros' }
+        }
+
+        // Find the target user's membership
+        const membership = await prisma.workspaceMember.findFirst({
+            where: {
+                userId,
+                workspaceId: workspace.id
+            },
+            include: {
+                user: true
+            }
+        })
+
+        if (!membership) {
+            return { error: 'Miembro no encontrado' }
+        }
+
+        // If trying to change role
+        if (data.role && data.role !== membership.role) {
+            if (membership.role === 'OWNER') {
+                return { error: 'No se puede cambiar el rol de un propietario' }
+            }
+            if (currentUserRole !== 'OWNER' && data.role === 'MANAGER') {
+                return { error: 'Solo los propietarios pueden promover a administrador' }
+            }
+        }
+
+        // Update User info if OWNER
+        if (currentUserRole === 'OWNER') {
+            if (data.name !== undefined || data.email !== undefined) {
+                // Check email uniqueness if it's changing
+                if (data.email && data.email !== membership.user.email) {
+                    const existingUser = await prisma.user.findUnique({ where: { email: data.email } })
+                    if (existingUser) {
+                        return { error: 'El correo electrónico ya está en uso' }
+                    }
+                }
+
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: {
+                        ...(data.name !== undefined && { name: data.name }),
+                        ...(data.email !== undefined && { email: data.email })
+                    }
+                })
+            }
+        }
+
+        // Update Member info
+        if (data.role || data.department) {
+            await prisma.workspaceMember.update({
+                where: { id: membership.id },
+                data: {
+                    ...(data.role && { role: data.role }),
+                    ...(data.department && { department: data.department as any })
+                }
+            })
+        }
+
+        revalidatePath('/team')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error updating member details:', error)
+        return { error: error.message || 'Error al actualizar detalles del miembro' }
+    }
+}
+
 // Deprecated: used for backward compatibility if needed, but we should use updateTeamMember
 export async function updateTeamMemberRole(memberId: string, newRole: 'MANAGER' | 'AGENT') {
     return updateTeamMember(memberId, { role: newRole })
