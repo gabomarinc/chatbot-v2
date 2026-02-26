@@ -44,7 +44,7 @@ export function Sidebar() {
                 { id: 'chat', href: '/chat', label: 'Chats', icon: MessageSquare, color: 'indigo' },
                 { id: 'contacts', href: '/contacts', label: 'Contactos', icon: Users, color: 'blue' },
                 { id: 'prospects', href: '/prospects', label: 'Prospectos', icon: UserCircle, color: 'pink' },
-                { id: 'inbox', href: '/inbox', label: 'Correo Inteligente', icon: Mail, color: 'blue', badge: 'Nuevo' },
+                { id: 'inbox', href: '/inbox', label: 'Smart Mail', icon: Mail, color: 'blue', badge: 'Nuevo' },
             ]
         }
     ];

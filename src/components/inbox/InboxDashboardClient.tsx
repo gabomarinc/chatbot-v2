@@ -140,7 +140,7 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                         <Sparkles className="w-4 h-4" />
                         <span className="text-[10px] font-black uppercase tracking-widest">Inteligencia de Negocio</span>
                     </div>
-                    <h1 className="text-gray-900 text-4xl font-black tracking-tight leading-none">Correo Inteligente</h1>
+                    <h1 className="text-gray-900 text-4xl font-black tracking-tight leading-none">Smart Mail</h1>
                     <p className="text-gray-500 font-bold text-lg">
                         {activeTab === 'dashboard'
                             ? 'Analiza patrones y detecta oportunidades en tu inbox.'
