@@ -357,24 +357,6 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                                     return '';
                                                                 };
 
-                                                                // Identify if this is a parent bullet (contains a nested list)
-                                                                const childrenArray = React.Children.toArray(props.children);
-                                                                const hasNestedList = childrenArray.some((child: any) =>
-                                                                    child?.props?.node?.type === 'list' ||
-                                                                    (child?.props?.children && React.Children.toArray(child.props.children).some((c: any) => c?.props?.node?.type === 'list'))
-                                                                );
-
-                                                                if (hasNestedList) {
-                                                                    return (
-                                                                        <li className="mb-6 list-none">
-                                                                            <div className="flex items-center gap-2 mb-4">
-                                                                                <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                                                                                <span className="font-black text-gray-900 tracking-tight uppercase text-[11px] tracking-[0.1em]">{props.children}</span>
-                                                                            </div>
-                                                                        </li>
-                                                                    );
-                                                                }
-
                                                                 const textContent = extractText(props.children);
 
                                                                 return (
@@ -586,14 +568,7 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                     <h3 className="text-3xl font-black tracking-tight leading-none text-white">Inteligencia Profunda</h3>
                                 </div>
                             </div>
-                            <div className="hidden md:flex flex-col items-end">
-                                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#21AC96]">Estado del Agente</p>
-                                    <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                                        <ShieldCheck className="w-3 h-3 text-green-400" /> Analizando contexto...
-                                    </p>
-                                </div>
-                            </div>
+
                         </div>
                     </div>
 
@@ -611,14 +586,26 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                         </div>
 
                         {isLoadingRec ? (
-                            <div className="py-24 flex flex-col items-center justify-center gap-6">
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-[#21AC96]/20 rounded-full blur-3xl animate-ping opacity-50"></div>
-                                    <Loader2 className="w-14 h-14 text-[#21AC96] animate-spin relative" />
+                            <div className="space-y-12 animate-in fade-in duration-500">
+                                {/* Skeleton Metrics */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="h-24 bg-gray-50 rounded-3xl animate-pulse border border-gray-100"></div>
+                                    ))}
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-gray-900 font-black text-xl tracking-tight">Generando Recomendaciones...</p>
-                                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-2">Nuestra IA está redactando estrategias para ti</p>
+                                <div className="space-y-8">
+                                    <div className="h-8 bg-gray-50 rounded-lg w-1/3 animate-pulse"></div>
+                                    <div className="space-y-6">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="h-32 bg-gray-50 rounded-2xl animate-pulse border border-gray-100 flex items-center p-8 gap-6">
+                                                <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
+                                                <div className="flex-1 space-y-3">
+                                                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                                                    <div className="h-3 bg-gray-100 rounded w-3/4"></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         ) : recommendation ? (

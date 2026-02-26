@@ -192,7 +192,8 @@ export async function analyzeWorkspaceInbox() {
         - Usa Markdown con jerarquía clara (## para secciones).
         - Sé extremadamente conciso pero accionable.
         - Prioriza los temas que coincidan con los objetivos: ${goals}.
-        - Agrupa por categorías relevantes al área (${focusArea}): Ej: 🚀 Oportunidades, ⚠️ Urgencias, 📊 Seguimiento.
+        - Agrupa por categorías relevantes al área (${focusArea}): Ej: ## 🚀 Oportunidades, ## ⚠️ Urgencias, ## 📊 Seguimiento.
+        - **IMPORTANTE: No uses sub-listas ni agrupaciones anidadas.** Cada punto debe ser un bullet de primer nivel inmediatamente debajo de su sección ##.
         - Usa negritas para entidades clave.
         - No incluyas correos genéricos o de spam.`;
 
