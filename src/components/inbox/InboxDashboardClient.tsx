@@ -346,8 +346,8 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                             h1: ({ node, ...props }) => <h1 className="text-3xl font-black text-gray-900 mb-8 pb-4 border-b-4 border-[#21AC96]/20 inline-block tracking-tight" {...props} />,
                                                             h2: ({ node, ...props }) => <h2 className="text-xl font-black text-gray-800 mt-12 mb-6 flex items-center gap-2 group tracking-tight" {...props} />,
                                                             h3: ({ node, ...props }) => <h3 className="text-lg font-black text-gray-700 mt-8 mb-4 tracking-tight" {...props} />,
-                                                            p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.8] font-medium mb-6 text-base" {...props} />,
-                                                            ul: ({ node, ...props }) => <ul className="space-y-4 mb-8" {...props} />,
+                                                            p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.8] font-medium mb-4 text-base" {...props} />,
+                                                            ul: ({ node, ...props }) => <ul className="space-y-6 mb-8" {...props} />,
                                                             li: ({ node, ...props }) => {
                                                                 // Extract text content safely from React nodes to avoid [object Object]
                                                                 const extractText = (children: any): string => {
@@ -578,18 +578,16 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                         </div>
                     </div>
 
-                    <div className="p-10 space-y-10 max-h-[75vh] overflow-y-auto custom-scrollbar">
-                        {/* Summary Reference */}
-                        <div className="bg-gray-50/80 backdrop-blur-sm p-8 rounded-[2.5rem] border border-gray-100 flex gap-6 relative group overflow-hidden">
+                    <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                        {/* Summary Reference - More Compact */}
+                        <div className="bg-gray-50/80 backdrop-blur-sm p-6 rounded-[2rem] border border-gray-100 flex gap-4 relative group overflow-hidden">
                             <div className="absolute top-0 left-0 w-1 h-full bg-[#21AC96]" />
-                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0 border border-gray-100">
-                                <Mail className="w-5 h-5 text-gray-400" />
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0 border border-gray-100">
+                                <Mail className="w-4 h-4 text-gray-400" />
                             </div>
-                            <div className="space-y-2">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                    Punto del resumen analizado
-                                </p>
-                                <p className="text-gray-900 font-bold leading-relaxed text-lg tracking-tight">"{selectedBullet}"</p>
+                            <div className="space-y-1">
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Punto analizado</p>
+                                <p className="text-gray-900 font-bold leading-tight text-md">"{selectedBullet}"</p>
                             </div>
                         </div>
 
@@ -605,9 +603,9 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                 </div>
                             </div>
                         ) : recommendation ? (
-                            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
                                 {/* Insights & Metrics Panel */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {[
                                         { label: 'Prioridad', value: 'Alta', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-50' },
                                         { label: 'Impacto Comercial', value: 'Crítico', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-50' },
@@ -630,19 +628,19 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
                                         components={{
-                                            h1: ({ node, ...props }) => <h1 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3" {...props}>
-                                                <div className="w-2 h-8 bg-[#21AC96] rounded-full" /> {props.children}
+                                            h1: ({ node, ...props }) => <h1 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-3" {...props}>
+                                                <div className="w-1.5 h-6 bg-[#21AC96] rounded-full" /> {props.children}
                                             </h1>,
-                                            h2: ({ node, ...props }) => <h2 className="text-xl font-black text-gray-800 mt-10 mb-6 underline decoration-[#21AC96]/30 decoration-4 flex items-center gap-3" {...props}>
-                                                <Lightbulb className="w-5 h-5 text-[#21AC96]" /> {props.children}
+                                            h2: ({ node, ...props }) => <h2 className="text-lg font-black text-gray-800 mt-8 mb-4 underline decoration-[#21AC96]/30 decoration-4 flex items-center gap-2" {...props}>
+                                                <Lightbulb className="w-4 h-4 text-[#21AC96]" /> {props.children}
                                             </h2>,
-                                            p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.8] font-medium mb-6 text-[1.05rem]" {...props} />,
-                                            ul: ({ node, ...props }) => <ul className="space-y-4 mb-8 pl-0 list-none" {...props} />,
-                                            li: ({ node, ...props }) => <li className="flex items-start gap-4 text-gray-700 bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:shadow-md" {...props}>
-                                                <div className="w-8 h-8 rounded-xl bg-white border border-gray-100 flex items-center justify-center group-hover:bg-[#21AC96] group-hover:text-white transition-all shrink-0 shadow-sm">
+                                            p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.6] font-medium mb-4 text-sm" {...props} />,
+                                            ul: ({ node, ...props }) => <ul className="space-y-6 mb-8 pl-0 list-none" {...props} />,
+                                            li: ({ node, ...props }) => <li className="flex items-start gap-4 text-gray-700 bg-gray-50/50 p-4 rounded-xl border border-gray-100 group transition-all hover:bg-white hover:shadow-md" {...props}>
+                                                <div className="w-7 h-7 rounded-lg bg-white border border-gray-100 flex items-center justify-center group-hover:bg-[#21AC96] group-hover:text-white transition-all shrink-0 shadow-sm">
                                                     <ChevronRight className="w-4 h-4" />
                                                 </div>
-                                                <span className="font-semibold">{props.children}</span>
+                                                <span className="font-semibold text-sm">{props.children}</span>
                                             </li>,
                                             strong: ({ node, ...props }) => <strong className="font-black text-gray-900 bg-[#21AC96]/10 px-1.5 rounded" {...props} />,
                                             code: ({ node, ...props }) => (
@@ -654,23 +652,22 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                 </div>
                                             ),
                                             blockquote: ({ node, ...props }) => (
-                                                <div className="relative mt-12 mb-8 group">
-                                                    <div className="absolute -inset-2 bg-gradient-to-r from-[#21AC96] to-emerald-600 rounded-[2.5rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
-                                                    <div className="relative bg-white p-8 md:p-12 rounded-[2.2rem] border border-gray-50 shadow-xl overflow-hidden">
-                                                        <div className="absolute top-0 right-0 p-4">
-                                                            <Sparkles className="w-10 h-10 text-[#21AC96]/10" />
+                                                <div className="relative mt-8 mb-4 group">
+                                                    <div className="absolute -inset-2 bg-gradient-to-r from-[#21AC96] to-emerald-600 rounded-[2rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
+                                                    <div className="relative bg-white p-6 md:p-8 rounded-[1.8rem] border border-gray-50 shadow-xl overflow-hidden">
+                                                        <div className="absolute top-0 right-0 p-3">
+                                                            <Sparkles className="w-8 h-8 text-[#21AC96]/10" />
                                                         </div>
-                                                        <div className="flex items-center gap-3 mb-6">
-                                                            <div className="h-0.5 w-10 bg-[#21AC96]" />
-                                                            <span className="text-[10px] font-black text-[#21AC96] uppercase tracking-[0.3em]">Borrador IA Recomendado</span>
+                                                        <div className="flex items-center gap-3 mb-4">
+                                                            <div className="h-0.5 w-8 bg-[#21AC96]" />
+                                                            <span className="text-[9px] font-black text-[#21AC96] uppercase tracking-[0.3em]">Borrador IA</span>
                                                         </div>
-                                                        <blockquote className="italic font-medium text-gray-700 leading-relaxed text-lg border-none p-0 m-0">
+                                                        <blockquote className="italic font-medium text-gray-700 leading-relaxed text-md border-none p-0 m-0">
                                                             {props.children}
                                                         </blockquote>
-                                                        <div className="mt-8 flex justify-end">
+                                                        <div className="mt-6 flex justify-end">
                                                             <Button
                                                                 onClick={() => {
-                                                                    // Extract text content safely from React nodes for copying
                                                                     const extractPlainText = (children: any): string => {
                                                                         if (typeof children === 'string') return children;
                                                                         if (Array.isArray(children)) return children.map(extractPlainText).join('');
@@ -682,9 +679,9 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                                     toast.success('Borrador copiado al portapapeles');
                                                                 }}
                                                                 variant="ghost"
-                                                                className="text-[#21AC96] font-black text-[10px] uppercase tracking-widest hover:bg-[#21AC96]/5 gap-2"
+                                                                className="text-[#21AC96] font-black text-[10px] uppercase tracking-widest hover:bg-[#21AC96]/5 gap-2 h-8"
                                                             >
-                                                                Copiar Borrador <Zap className="w-3 h-3" />
+                                                                Copiar <Zap className="w-3 h-3" />
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -720,7 +717,7 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                     <div className="p-10 pt-0 flex gap-4">
                         <Button
                             onClick={() => setShowRecDialog(false)}
-                            className="flex-1 h-18 rounded-[1.8rem] bg-gray-900 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
+                            className="flex-1 h-14 rounded-[1.4rem] bg-gray-900 text-white font-black uppercase tracking-widest text-[10px] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
                         >
                             Cerrar Inteligencia
                         </Button>
