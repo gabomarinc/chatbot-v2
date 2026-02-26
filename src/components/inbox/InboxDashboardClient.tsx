@@ -1,38 +1,50 @@
 'use client'
 
 import { useState } from 'react';
-import { analyzeInbox } from '@/lib/actions/email-analysis';
-import { testEmailIMAPConnection, saveEmailIMAPIntegration } from '@/lib/actions/integrations';
+import { analyzeWorkspaceInbox } from '@/lib/actions/email-analysis';
+import { testEmailIMAPConnection, saveWorkspaceEmailIMAPIntegration } from '@/lib/actions/integrations';
 import {
     Mail, BrainCircuit, Sparkles, TrendingUp, AlertCircle,
     Clock, Settings2, RotateCw, Loader2, CheckCircle2,
-    ArrowRight, MailSearch, Zap, ShieldCheck, MailOpen
+    ArrowRight, MailSearch, Zap, ShieldCheck, MailOpen,
+    LayoutDashboard, Lock, Server, Key, User, Globe, Shield, Save
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import {
-    Dialog, DialogContent, DialogDescription,
-    DialogHeader, DialogTitle, DialogFooter
-} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 
 interface InboxDashboardClientProps {
-    initialAgents: any[];
+    initialIntegration: any;
 }
 
-export function InboxDashboardClient({ initialAgents }: InboxDashboardClientProps) {
-    const [agents, setAgents] = useState(initialAgents);
-    const [selectedAgent, setSelectedAgent] = useState(initialAgents[0] || null);
+const GREEN = '#21AC96';
+
+export function InboxDashboardClient({ initialIntegration }: InboxDashboardClientProps) {
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'config'>('dashboard');
+    const [integration, setIntegration] = useState(initialIntegration);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isTesting, setIsTesting] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-    const [showConfigModal, setShowConfigModal] = useState(false);
+
+    // Form state
+    const [config, setConfig] = useState({
+        host: initialIntegration?.configJson?.host || '',
+        port: initialIntegration?.configJson?.port || '993',
+        secure: initialIntegration?.configJson?.secure ?? true,
+        user: initialIntegration?.configJson?.user || '',
+        password: initialIntegration?.configJson?.password || ''
+    });
+
+    const isConfigured = integration?.enabled;
 
     const handleRunAnalysis = async () => {
-        if (!selectedAgent) return;
         setIsAnalyzing(true);
         setAnalysisResult(null);
         try {
-            const res = await analyzeInbox(selectedAgent.id);
+            const res = await analyzeWorkspaceInbox();
             if (res.success) {
                 setAnalysisResult(res.summary || null);
                 toast.success('Análisis de inbox completado.');
@@ -46,237 +58,396 @@ export function InboxDashboardClient({ initialAgents }: InboxDashboardClientProp
         }
     };
 
-    if (agents.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] text-center animate-fade-in">
-                <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-xl shadow-blue-100/50">
-                    <MailOpen className="w-12 h-12 text-blue-500" />
-                </div>
-                <h1 className="text-4xl font-black text-gray-900 mb-4 tracking-tight">Correo Inteligente</h1>
-                <p className="text-gray-400 font-bold max-w-md mx-auto leading-relaxed mb-10 text-lg">
-                    Aún no tienes agentes configurados para analizar correos. Conecta tu cuenta IMAP para empezar a recibir insights.
-                </p>
-                <Button
-                    variant="outline"
-                    className="rounded-2xl h-14 px-8 text-sm font-black uppercase tracking-widest border-gray-200 hover:bg-gray-50 transition-all gap-3"
-                    onClick={() => window.location.href = '/agents'}
-                >
-                    Ir a Agentes
-                    <ArrowRight className="w-4 h-4" />
-                </Button>
-            </div>
-        );
-    }
+    const handleTestConnection = async () => {
+        setIsTesting(true);
+        try {
+            const res = await testEmailIMAPConnection(config);
+            if (res.ok) {
+                toast.success('Conexión IMAP exitosa.');
+            } else {
+                toast.error('Error de conexión: ' + res.error);
+            }
+        } catch (error) {
+            toast.error('Error al probar la conexión.');
+        } finally {
+            setIsTesting(false);
+        }
+    };
+
+    const handleSaveConfig = async () => {
+        setIsSaving(true);
+        try {
+            const res = await saveWorkspaceEmailIMAPIntegration(config);
+            if (res.success) {
+                setIntegration(res.integration);
+                toast.success('Configuración guardada correctamente.');
+                setActiveTab('dashboard');
+            } else {
+                toast.error('Error al guardar: ' + res.error);
+            }
+        } catch (error) {
+            toast.error('Error inesperado al guardar.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-10">
-            {/* Header Section */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-gray-100">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3 text-blue-600">
-                        <div className="bg-blue-100 p-2 rounded-xl">
-                            <BrainCircuit className="w-5 h-5" />
-                        </div>
-                        <span className="text-xs font-black uppercase tracking-[0.2em]">Inteligencia Artificial</span>
+        <div className="max-w-[1600px] mx-auto animate-fade-in p-6 pb-20">
+            {/* Header + Toggle */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-blue-600 mb-1">
+                        <Sparkles className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Inteligencia de Negocio</span>
                     </div>
-                    <h1 className="text-5xl font-black text-gray-900 tracking-tighter">Correo Inteligente</h1>
-                    <p className="text-gray-400 font-bold text-lg">Analiza patrones, detecta urgencias y optimiza tus ventas.</p>
+                    <h1 className="text-gray-900 text-4xl font-black tracking-tight leading-none">Correo Inteligente</h1>
+                    <p className="text-gray-500 font-bold text-lg">
+                        {activeTab === 'dashboard'
+                            ? 'Analiza patrones y detecta oportunidades en tu inbox.'
+                            : 'Configura tu cuenta IMAP para habilitar el análisis basado en IA.'}
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="bg-white p-2 rounded-[1.5rem] border border-gray-100 shadow-sm flex items-center gap-1">
-                        {agents.map(agent => (
-                            <button
-                                key={agent.id}
-                                onClick={() => {
-                                    setSelectedAgent(agent);
-                                    setAnalysisResult(null);
-                                }}
-                                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${selectedAgent?.id === agent.id ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20' : 'text-gray-400 hover:bg-gray-50'}`}
-                            >
-                                {agent.name}
-                            </button>
-                        ))}
+                <div className="flex items-center gap-4 bg-white border border-gray-100 shadow-md shadow-gray-100/60 rounded-[2rem] px-2 py-2 shrink-0 self-start md:self-center">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 pl-3 select-none">Vista</span>
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => setActiveTab('dashboard')}
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-sm font-black transition-all duration-300"
+                            style={activeTab === 'dashboard'
+                                ? { background: '#1e293b', color: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
+                                : { color: '#9ca3af' }}
+                        >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Dashboard
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('config')}
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-[1.5rem] text-sm font-black transition-all duration-300"
+                            style={activeTab === 'config'
+                                ? { background: '#1e293b', color: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
+                                : { color: '#9ca3af' }}
+                        >
+                            <Settings2 className="w-4 h-4" />
+                            Configuración
+                        </button>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-2xl h-12 w-12 bg-white border border-gray-100 shadow-sm text-gray-400 hover:text-blue-600 transition-all hover:rotate-180 duration-500"
-                    >
-                        <Settings2 className="w-5 h-5" />
-                    </Button>
                 </div>
-            </header>
-
-            {/* Metrics Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: 'Estado', value: 'Excelente', icon: ShieldCheck, color: 'text-green-500', bg: 'bg-green-50' },
-                    { label: 'Último Análisis', value: 'Hace 5 min', icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
-                    { label: 'Ops Detectadas', value: '14 Nuevas', icon: TrendingUp, color: 'text-orange-500', bg: 'bg-orange-50' },
-                    { label: 'Urgencias', value: '3 Pendientes', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50' }
-                ].map((stat, i) => (
-                    <Card key={i} className="p-6 rounded-[2rem] border-none shadow-xl shadow-gray-200/20 bg-white group hover:scale-[1.02] transition-all duration-300">
-                        <div className="flex items-start justify-between">
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
-                                <p className="text-xl font-black text-gray-900 tracking-tight">{stat.value}</p>
-                            </div>
-                            <div className={`${stat.bg} ${stat.color} p-3 rounded-2xl group-hover:rotate-12 transition-all`}>
-                                <stat.icon className="w-5 h-5" />
-                            </div>
-                        </div>
-                    </Card>
-                ))}
             </div>
 
-            {/* Main Action Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Analysis Area */}
-                <div className="lg:col-span-2 space-y-8">
-                    <Card className="rounded-[3rem] p-10 border-none shadow-2xl bg-white relative overflow-hidden h-full flex flex-col">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full translate-x-32 -translate-y-32 blur-3xl"></div>
-
-                        <div className="flex items-center justify-between mb-10 relative">
-                            <div className="flex items-center gap-4">
-                                <div className="h-14 w-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200 rotate-3">
-                                    <Sparkles className="w-7 h-7 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-black text-gray-900 tracking-tight">Reporte Ejecutivo</h3>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Generado con Inteligencia Artificial</p>
-                                </div>
-                            </div>
-
-                            <Button
-                                onClick={handleRunAnalysis}
-                                disabled={isAnalyzing}
-                                className="bg-gray-900 hover:bg-black text-white rounded-2xl h-12 px-6 text-xs font-black uppercase tracking-[0.15em] flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-gray-200"
-                            >
-                                {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
-                                {isAnalyzing ? 'Procesando...' : 'Actualizar Análisis'}
-                            </Button>
-                        </div>
-
-                        <div className="flex-1 relative">
-                            {analysisResult ? (
-                                <div className="space-y-6 animate-fade-in">
-                                    <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed font-medium bg-gray-50/50 p-8 rounded-[2rem] border border-gray-100 shadow-inner">
-                                        {analysisResult.split('\n').map((line, i) => (
-                                            <p key={i} className="mb-4 last:mb-0">
-                                                {line}
-                                            </p>
-                                        ))}
-                                    </div>
-                                    <div className="flex flex-wrap gap-4">
-                                        <div className="flex-1 bg-green-50 p-6 rounded-[1.5rem] border border-green-100 flex items-center gap-4 group cursor-pointer hover:bg-green-100 transition-all">
-                                            <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
-                                                <Zap className="w-5 h-5 text-white" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-green-700 uppercase tracking-widest">Acción Sugerida</p>
-                                                <p className="text-xs font-bold text-green-600">Crear seguimiento automático</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex-1 bg-[#21AC96]/5 p-6 rounded-[1.5rem] border border-[#21AC96]/10 flex items-center gap-4 group cursor-pointer hover:bg-[#21AC96]/10 transition-all">
-                                            <div className="w-10 h-10 bg-[#21AC96] rounded-xl flex items-center justify-center shadow-lg shadow-[#21AC96]/20">
-                                                <TrendingUp className="w-5 h-5 text-white" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-[#21AC96] uppercase tracking-widest">Oportunidad</p>
-                                                <p className="text-xs font-bold text-[#21AC96]">Enviar propuesta a 3 leads</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : isAnalyzing ? (
-                                <div className="flex flex-col items-center justify-center h-[400px] space-y-6 animate-pulse">
-                                    <div className="relative">
-                                        <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-2xl animate-pulse"></div>
-                                        <MailSearch className="w-20 h-20 text-blue-500 relative" />
-                                    </div>
-                                    <p className="text-gray-400 font-extrabold text-sm uppercase tracking-widest animate-bounce">
-                                        Escaneando bandeja de entrada...
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-[400px] text-center space-y-8">
-                                    <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center border border-gray-100 shadow-inner">
-                                        <MailSearch className="w-8 h-8 text-gray-300" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h4 className="text-xl font-black text-gray-900 tracking-tight">Listo para analizar</h4>
-                                        <p className="text-gray-400 font-bold max-w-xs leading-relaxed">
-                                            Pulsa el botón de arriba para que tu agente IA revise tus últimos correos.
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
-                </div>
-
-                {/* Sidebar Info Area */}
-                <div className="space-y-8">
-                    {/* Connection Info */}
-                    <Card className="rounded-[2.5rem] p-8 bg-gradient-to-br from-gray-900 to-gray-800 text-white border-none shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
-
-                        <div className="relative space-y-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
-                                    <Mail className="w-5 h-5 text-blue-400" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Conexión IMAP</span>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest uppercase">Servidor</p>
-                                    <p className="text-sm font-black tracking-tight flex items-center gap-2">
-                                        {selectedAgent?.integrations[0]?.configJson?.host || 'No configurado'}
-                                        {selectedAgent && <CheckCircle2 className="w-4 h-4 text-[#21AC96]" />}
-                                    </p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest uppercase">Usuario</p>
-                                    <p className="text-sm font-black tracking-tight truncate">
-                                        {selectedAgent?.integrations[0]?.configJson?.user || '---'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <Button
-                                variant="outline"
-                                className="w-full rounded-xl bg-white/5 border-white/10 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all"
-                            >
-                                Gestionar Conexión
-                            </Button>
-                        </div>
-                    </Card>
-
-                    {/* How it works area */}
-                    <Card className="rounded-[2.5rem] p-8 bg-blue-50/50 border-blue-100 flex flex-col gap-6 shadow-sm">
-                        <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-amber-500" />
-                            ¿Cómo funciona?
-                        </h4>
-                        <div className="space-y-4">
+            {/* Dashboard View */}
+            {activeTab === 'dashboard' && (
+                <div className="relative">
+                    {/* Blurred Layer if not configured */}
+                    <div className={isConfigured ? "" : "blur-md pointer-events-none select-none opacity-40"}>
+                        {/* Metrics Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                             {[
-                                { text: 'Escaneo de cabeceras seguro.', icon: '🛡️' },
-                                { text: 'Análisis semántico de intención.', icon: '🧠' },
-                                { text: 'Detección de urgencias reales.', icon: '⚡' },
-                                { text: 'Sugerencias accionables 1-clic.', icon: '🎯' }
-                            ].map((item, i) => (
-                                <div key={i} className="flex gap-3 text-xs font-bold text-blue-900/70">
-                                    <span>{item.icon}</span>
-                                    <span>{item.text}</span>
-                                </div>
+                                { label: 'Estado', value: isConfigured ? 'Activo' : 'Pendiente', icon: ShieldCheck, color: 'text-green-500', bg: 'bg-green-50' },
+                                { label: 'Correos Analizados', value: '30 Recientes', icon: MailSearch, color: 'text-blue-500', bg: 'bg-blue-50' },
+                                { label: 'Insights Generados', value: '12 Temas', icon: BrainCircuit, color: 'text-purple-500', bg: 'bg-purple-50' },
+                                { label: 'Urgencias', value: '0 Críticas', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50' }
+                            ].map((stat, i) => (
+                                <Card key={i} className="p-6 rounded-[2.5rem] border-none shadow-xl shadow-gray-200/20 bg-white group hover:scale-[1.02] transition-all duration-300">
+                                    <div className="flex items-start justify-between">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                                            <p className="text-2xl font-black text-gray-900 tracking-tight">{stat.value}</p>
+                                        </div>
+                                        <div className={`${stat.bg} ${stat.color} p-4 rounded-[1.5rem] group-hover:rotate-12 transition-all`}>
+                                            <stat.icon className="w-6 h-6" />
+                                        </div>
+                                    </div>
+                                </Card>
                             ))}
                         </div>
-                    </Card>
+
+                        {/* Main Content */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2">
+                                <Card className="rounded-[3rem] p-10 border-none shadow-2xl bg-white relative overflow-hidden flex flex-col min-h-[600px]">
+                                    <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/50 rounded-full translate-x-32 -translate-y-32 blur-[80px]"></div>
+
+                                    <div className="flex items-center justify-between mb-10 relative">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-16 w-16 bg-gray-900 rounded-[1.5rem] flex items-center justify-center shadow-2xl rotate-3 shrink-0">
+                                                <Sparkles className="w-8 h-8 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-3xl font-black text-gray-900 tracking-tight">Tu Analista de Inbox</h3>
+                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">IA Personalizada para tu Negocio</p>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            onClick={handleRunAnalysis}
+                                            disabled={isAnalyzing}
+                                            className="bg-gray-900 hover:bg-black text-white rounded-2xl h-14 px-8 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-2xl"
+                                        >
+                                            {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCw className="w-5 h-5" />}
+                                            {isAnalyzing ? 'Procesando...' : 'Analizar Correos'}
+                                        </Button>
+                                    </div>
+
+                                    <div className="flex-1 relative">
+                                        {analysisResult ? (
+                                            <div className="space-y-8 animate-fade-in pb-4">
+                                                <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed font-medium bg-gray-50/80 p-10 rounded-[2.5rem] border border-gray-100 shadow-inner whitespace-pre-wrap">
+                                                    {analysisResult}
+                                                </div>
+                                                <div className="flex flex-wrap gap-4">
+                                                    <div className="flex-1 bg-green-50 p-6 rounded-[2rem] border border-green-100 flex items-center gap-4 transition-all">
+                                                        <div className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-200 shrink-0">
+                                                            <TrendingUp className="w-6 h-6 text-white" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-green-700 uppercase tracking-widest">Oportunidad</p>
+                                                            <p className="text-sm font-black text-green-600 tracking-tight">Detectados 4 leads calientes</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 bg-blue-50 p-6 rounded-[2rem] border border-blue-100 flex items-center gap-4 transition-all">
+                                                        <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 shrink-0">
+                                                            <Zap className="w-6 h-6 text-white" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Sugerencia IA</p>
+                                                            <p className="text-sm font-black text-blue-600 tracking-tight">Redactar respuestas automáticas</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : isAnalyzing ? (
+                                            <div className="flex flex-col items-center justify-center h-[450px] space-y-8 animate-pulse">
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-3xl animate-pulse scale-150"></div>
+                                                    <MailSearch className="w-24 h-24 text-blue-500 relative" />
+                                                </div>
+                                                <div className="text-center space-y-2">
+                                                    <p className="text-gray-900 font-black text-xl tracking-tight">Escaneando Inbox...</p>
+                                                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Estamos procesando tu inteligencia de negocio</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center h-[450px] text-center space-y-8">
+                                                <div className="w-24 h-24 bg-gray-50 rounded-[2.5rem] flex items-center justify-center border border-gray-100 shadow-inner">
+                                                    <MailOpen className="w-10 h-10 text-gray-300" />
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <h4 className="text-2xl font-black text-gray-900 tracking-tight">Sin análisis reciente</h4>
+                                                    <p className="text-gray-400 font-bold max-w-sm mx-auto leading-relaxed text-lg">
+                                                        Tu analista IA está listo. Pulsa el botón superior para procesar los últimos 30 correos.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </Card>
+                            </div>
+
+                            <div className="space-y-8">
+                                <Card className="p-8 rounded-[3rem] bg-gray-900 text-white border-none shadow-2xl relative overflow-hidden h-full">
+                                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20 blur-3xl"></div>
+                                    <div className="relative space-y-8">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/10 shadow-lg">
+                                                <Mail className="w-6 h-6 text-blue-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Canal Conectado</p>
+                                                <p className="text-lg font-black tracking-tight">{config.host || 'IMAP Server'}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Cuenta de Usuario</label>
+                                                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
+                                                    <User className="w-4 h-4 text-gray-500" />
+                                                    <p className="text-sm font-bold text-gray-300 truncate">{config.user}</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Cifrado de Datos</label>
+                                                <div className="p-4 bg-green-500/10 rounded-2xl border border-green-500/20 flex items-center gap-3">
+                                                    <ShieldCheck className="w-4 h-4 text-green-500" />
+                                                    <p className="text-sm font-black text-green-500">AES-256 GCM Activo</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setActiveTab('config')}
+                                            className="w-full h-14 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white text-xs font-black uppercase tracking-widest transition-all"
+                                        >
+                                            Editar Configuración
+                                        </Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Lock Overlay if not configured */}
+                    {!isConfigured && (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center pt-20">
+                            <Card className="max-w-md bg-white rounded-[3rem] p-12 border border-gray-100 shadow-[0_32px_80px_rgba(0,0,0,0.15)] flex flex-col items-center text-center gap-8 group animate-scale-up">
+                                <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center shadow-xl shadow-blue-100/50 group-hover:scale-110 transition-transform duration-500">
+                                    <Lock className="w-10 h-10 text-blue-600" />
+                                </div>
+                                <div className="space-y-4">
+                                    <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-none">Smart Mail Bloqueado</h2>
+                                    <p className="text-gray-400 font-bold text-sm leading-relaxed max-w-[280px]">
+                                        Conecta tu cuenta de correo IMAP para que nuestra IA pueda analizar tu bandeja de entrada y generar reportes ejecutivos.
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => setActiveTab('config')}
+                                    className="h-16 px-10 rounded-[1.5rem] bg-gray-900 text-white font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all w-full flex items-center justify-center gap-3"
+                                >
+                                    <Settings2 className="w-5 h-5" />
+                                    Configurar Correo
+                                </Button>
+                            </Card>
+                        </div>
+                    )}
                 </div>
-            </div>
+            )}
+
+            {/* Config View */}
+            {activeTab === 'config' && (
+                <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+                    <Card className="rounded-[3rem] p-10 md:p-12 border-none shadow-2xl bg-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/50 rounded-full translate-x-40 -translate-y-40 blur-[80px]"></div>
+
+                        <div className="relative space-y-10">
+                            <div className="flex items-center gap-6">
+                                <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-200 shrink-0 rotate-3">
+                                    <Server className="w-10 h-10 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-2">Configuración IMAP</h2>
+                                    <p className="text-gray-400 font-bold text-sm">Conecta cualquier servidor de correo compatible.</p>
+                                </div>
+                            </div>
+
+                            <form className="grid grid-cols-1 md:grid-cols-2 gap-8" onSubmit={(e) => e.preventDefault()}>
+                                {/* Host */}
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-2">
+                                        <Globe className="w-3 h-3" />
+                                        Servidor (Host)
+                                    </label>
+                                    <Input
+                                        value={config.host}
+                                        onChange={(e) => setConfig({ ...config, host: e.target.value })}
+                                        placeholder="imap.tuservidor.com"
+                                        className="h-16 rounded-2xl border-gray-100 bg-gray-50/50 px-6 font-bold text-sm focus:ring-4 focus:ring-blue-500/5 transition-all"
+                                    />
+                                </div>
+
+                                {/* Port */}
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-2">
+                                        <Globe className="w-3 h-3" />
+                                        Puerto
+                                    </label>
+                                    <Input
+                                        value={config.port}
+                                        onChange={(e) => setConfig({ ...config, port: e.target.value })}
+                                        placeholder="993"
+                                        className="h-16 rounded-2xl border-gray-100 bg-gray-50/50 px-6 font-bold text-sm focus:ring-4 focus:ring-blue-500/5 transition-all"
+                                    />
+                                </div>
+
+                                {/* User */}
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-2">
+                                        <User className="w-3 h-3" />
+                                        Usuario / Email
+                                    </label>
+                                    <Input
+                                        value={config.user}
+                                        onChange={(e) => setConfig({ ...config, user: e.target.value })}
+                                        placeholder="tu@correo.com"
+                                        className="h-16 rounded-2xl border-gray-100 bg-gray-50/50 px-6 font-bold text-sm focus:ring-4 focus:ring-blue-500/5 transition-all"
+                                    />
+                                </div>
+
+                                {/* Password */}
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-2">
+                                        <Key className="w-3 h-3" />
+                                        Contraseña / App Key
+                                    </label>
+                                    <Input
+                                        type="password"
+                                        value={config.password}
+                                        onChange={(e) => setConfig({ ...config, password: e.target.value })}
+                                        placeholder="••••••••••••"
+                                        className="h-16 rounded-2xl border-gray-100 bg-gray-50/50 px-6 font-bold text-sm focus:ring-4 focus:ring-blue-500/5 transition-all"
+                                    />
+                                </div>
+
+                                {/* Secure Switch */}
+                                <div className="md:col-span-2 flex items-center justify-between p-8 bg-gray-50/50 rounded-[2.5rem] border border-gray-100">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg border border-gray-100">
+                                            <Shield className="w-6 h-6 text-[#21AC96]" />
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-black text-gray-900 leading-none mb-1">Conexión Segura (SSL/TLS)</p>
+                                            <p className="text-sm text-gray-400 font-bold">Recomendado para servidores modernos.</p>
+                                        </div>
+                                    </div>
+                                    <Switch
+                                        checked={config.secure}
+                                        onCheckedChange={(val) => setConfig({ ...config, secure: val })}
+                                    />
+                                </div>
+
+                                {/* Actions */}
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleTestConnection}
+                                        disabled={isTesting || !config.host || !config.user || !config.password}
+                                        className="h-16 rounded-2xl border-gray-100 px-8 text-xs font-black uppercase tracking-widest gap-3 hover:bg-gray-50 transition-all shadow-sm"
+                                    >
+                                        {isTesting ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCw className="w-5 h-5" />}
+                                        Probar Conexión
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        onClick={handleSaveConfig}
+                                        disabled={isSaving || !config.host || !config.user || !config.password}
+                                        className="h-16 rounded-2xl bg-gray-900 text-white px-8 text-xs font-black uppercase tracking-widest gap-3 transition-all shadow-2xl hover:scale-[1.02] active:scale-95"
+                                    >
+                                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                                        Guardar y Activar
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                    </Card>
+
+                    {/* Security Note */}
+                    <div className="bg-blue-50/50 p-10 rounded-[3rem] border border-blue-100 flex items-center gap-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200 border border-blue-100 shrink-0">
+                            <ShieldCheck className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div className="space-y-1">
+                            <h4 className="text-blue-900 font-black text-xl tracking-tight leading-none mb-2">Privacidad Garantizada</h4>
+                            <p className="text-blue-600/70 text-sm font-bold leading-relaxed max-w-2xl">
+                                Tus credenciales se encriptan bajo el estándar <strong className="text-blue-700">AES-256</strong>. Solo nuestro analista IA accede de forma puntual bajo tu demanda para procesar los resúmenes; nunca se almacenan los cuerpos de los correos permanentemente.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

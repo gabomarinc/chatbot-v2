@@ -23,6 +23,7 @@ model User {
   assignedConversations Conversation[]
   fcmToken     String?           // Token for Firebase Push Notifications
   activities   ContactActivity[]
+  workspaceIntegrations WorkspaceIntegration[]
 }
 
 model GlobalConfig {
@@ -49,6 +50,7 @@ model Workspace {
   paymentConfigs PaymentGatewayConfig[]
   transactions   Transaction[]
   prospectColumns ProspectStatusColumn[]
+  integrations   WorkspaceIntegration[]
 }
 
 model WorkspaceMember {
@@ -258,6 +260,23 @@ model AgentIntegration {
   agent      Agent               @relation(fields: [agentId], references: [id])
 
   @@unique([agentId, provider])
+}
+
+model WorkspaceIntegration {
+  id          String              @id @default(cuid())
+  workspaceId String
+  userId      String?
+  provider    IntegrationProvider
+  configJson  Json
+  enabled     Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id])
+  user        User?               @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId, provider])
+  @@index([workspaceId])
+  @@index([userId])
 }
 
 model IntegrationEvent {

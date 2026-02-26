@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { encryptFields, decryptFields } from '@/lib/crypto';
 import { getUserWorkspace } from './workspace';
+import { auth } from '@/auth';
 
 export async function getAgentsWithEmail() {
     try {
@@ -40,6 +41,76 @@ export async function getAgentsWithEmail() {
     } catch (error) {
         console.error('[INTEGRATIONS] Error fetching agents with email:', error);
         return [];
+    }
+}
+
+export async function getWorkspaceIntegration(provider: string) {
+    try {
+        const session = await auth();
+        const workspace = await getUserWorkspace();
+        if (!workspace) return null;
+
+        const userId = provider === 'EMAIL_IMAP' ? session?.user?.id : null;
+
+        const integration = await (prisma as any).workspaceIntegration.findUnique({
+            where: {
+                workspaceId_userId_provider: {
+                    workspaceId: workspace.id,
+                    userId: userId || null,
+                    provider: provider as any
+                }
+            }
+        });
+
+        if (!integration) return null;
+
+        return {
+            ...integration,
+            configJson: decryptFields(integration.configJson as any, SENSITIVE_INTEGRATION_FIELDS)
+        };
+    } catch (error) {
+        console.error('[INTEGRATIONS] Error getting workspace integration:', error);
+        return null;
+    }
+}
+
+export async function saveWorkspaceEmailIMAPIntegration(
+    config: { host: string; port: number; secure: boolean; user: string; password?: string }
+) {
+    try {
+        const session = await auth();
+        const workspace = await getUserWorkspace();
+        if (!workspace || !session?.user?.id) throw new Error("No se encontró el workspace o usuario activo.");
+
+        // Encrypt sensitive fields (especially password)
+        const encryptedConfig = encryptFields(config, SENSITIVE_INTEGRATION_FIELDS);
+
+        const integration = await (prisma as any).workspaceIntegration.upsert({
+            where: {
+                workspaceId_userId_provider: {
+                    workspaceId: workspace.id,
+                    userId: session.user.id,
+                    provider: 'EMAIL_IMAP'
+                }
+            },
+            update: {
+                configJson: encryptedConfig as any,
+                enabled: true
+            },
+            create: {
+                workspaceId: workspace.id,
+                userId: session.user.id,
+                provider: 'EMAIL_IMAP',
+                configJson: encryptedConfig as any,
+                enabled: true
+            }
+        });
+
+        revalidatePath(`/inbox`);
+        return { success: true, integration };
+    } catch (error: any) {
+        console.error('[INTEGRATIONS] Error saving Workspace Email IMAP:', error);
+        return { success: false, error: error.message };
     }
 }
 

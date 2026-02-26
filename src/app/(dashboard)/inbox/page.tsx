@@ -1,13 +1,12 @@
-import { getAgentsWithEmail } from "@/lib/actions/integrations";
+import { getWorkspaceIntegration } from "@/lib/actions/integrations";
 import { InboxDashboardClient } from "@/components/inbox/InboxDashboardClient";
-import { redirect } from "next/navigation";
 
 export default async function InboxPage() {
-    const agents = await getAgentsWithEmail();
+    const integration = await getWorkspaceIntegration('EMAIL_IMAP');
 
     return (
         <div className="min-h-screen">
-            <InboxDashboardClient initialAgents={agents as any} />
+            <InboxDashboardClient initialIntegration={integration} />
         </div>
     );
 }
