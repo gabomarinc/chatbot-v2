@@ -2430,7 +2430,13 @@ Reglas para cobrar (ESTRICTO):
     }
 }
 
-export async function getWidgetMessages(channelId: string, visitorId: string, isTest?: boolean, agentId?: string) {
+export async function getWidgetMessages(
+    channelId: string,
+    visitorId: string,
+    isTest?: boolean,
+    agentId?: string,
+    lastMessageAt?: Date
+) {
     try {
         const conversation = await prisma.conversation.findFirst({
             where: {
@@ -2440,6 +2446,9 @@ export async function getWidgetMessages(channelId: string, visitorId: string, is
             },
             include: {
                 messages: {
+                    where: lastMessageAt ? {
+                        createdAt: { gt: new Date(lastMessageAt) }
+                    } : undefined,
                     orderBy: { createdAt: 'asc' }
                 }
             }
