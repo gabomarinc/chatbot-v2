@@ -52,6 +52,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null);
     const [isActionMenuOpen, setIsActionMenuOpen] = useState<string | null>(null);
+    const [actionMenuRect, setActionMenuRect] = useState<DOMRect | null>(null);
     const [isMemberDetailsModalOpen, setIsMemberDetailsModalOpen] = useState(false);
     const [selectedMemberForDetails, setSelectedMemberForDetails] = useState<TeamMember | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -262,6 +263,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                 // If scroll event, just close it immediately to prevent disconnected fixed portals
                 if (event.type === 'scroll') {
                     setIsActionMenuOpen(null);
+                    setActionMenuRect(null);
                     return;
                 }
                 const menuElement = actionMenuRefs.current[isActionMenuOpen];
@@ -272,6 +274,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                     buttonElement && !buttonElement.contains(target)
                 ) {
                     setIsActionMenuOpen(null);
+                    setActionMenuRect(null);
                 }
             }
         };
@@ -341,7 +344,6 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                 {members.length > 0 ? (
                                     members.map((member) => {
                                         const status = getUserStatus(member);
-                                        const buttonRect = buttonRefs.current[member.id]?.getBoundingClientRect();
                                         return (
                                             <tr
                                                 key={member.id}
@@ -417,7 +419,16 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                                     ref={(el) => {
                                                                         if (el) buttonRefs.current[member.id] = el;
                                                                     }}
-                                                                    onClick={() => setIsActionMenuOpen(isActionMenuOpen === member.id ? null : member.id)}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (isActionMenuOpen === member.id) {
+                                                                            setIsActionMenuOpen(null);
+                                                                            setActionMenuRect(null);
+                                                                        } else {
+                                                                            setIsActionMenuOpen(member.id);
+                                                                            setActionMenuRect(e.currentTarget.getBoundingClientRect());
+                                                                        }
+                                                                    }}
                                                                     disabled={member.role === 'OWNER'}
                                                                     className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                                                 >
@@ -425,7 +436,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                                 </button>
                                                             )}
 
-                                                            {isActionMenuOpen === member.id && mounted && buttonRect && (
+                                                            {isActionMenuOpen === member.id && mounted && actionMenuRect && (
                                                                 createPortal(
                                                                     <div
                                                                         ref={(el) => {
@@ -433,8 +444,8 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                                         }}
                                                                         className="fixed bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-[9999] min-w-[192px]"
                                                                         style={{
-                                                                            top: `${buttonRect.bottom + 8}px`,
-                                                                            right: `${Math.max(window.innerWidth - buttonRect.right, 16)}px`,
+                                                                            top: `${actionMenuRect.bottom + 8}px`,
+                                                                            right: `${Math.max(window.innerWidth - actionMenuRect.right, 16)}px`,
                                                                         }}
                                                                     >
                                                                         {member.role !== 'OWNER' && member.role !== 'MANAGER' && (
@@ -535,7 +546,6 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                         {members.length > 0 ? (
                             members.map((member) => {
                                 const status = getUserStatus(member);
-                                const buttonRect = buttonRefs.current[member.id]?.getBoundingClientRect();
                                 return (
                                     <div
                                         key={member.id}
@@ -565,7 +575,13 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                     }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setIsActionMenuOpen(isActionMenuOpen === member.id ? null : member.id);
+                                                        if (isActionMenuOpen === member.id) {
+                                                            setIsActionMenuOpen(null);
+                                                            setActionMenuRect(null);
+                                                        } else {
+                                                            setIsActionMenuOpen(member.id);
+                                                            setActionMenuRect(e.currentTarget.getBoundingClientRect());
+                                                        }
                                                     }}
                                                     disabled={member.role === 'OWNER'}
                                                     className="p-3 hover:bg-gray-50 rounded-2xl transition-colors text-gray-400 disabled:opacity-30"
@@ -640,7 +656,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                         </div>
 
                                         {/* Mobile action menu */}
-                                        {isActionMenuOpen === member.id && mounted && buttonRect && (
+                                        {isActionMenuOpen === member.id && mounted && actionMenuRect && (
                                             createPortal(
                                                 <div
                                                     ref={(el) => {
@@ -648,7 +664,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                                     }}
                                                     className="fixed bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 py-3 z-[9999] min-w-[220px]"
                                                     style={{
-                                                        top: `${buttonRect.bottom + 8}px`,
+                                                        top: `${actionMenuRect.bottom + 8}px`,
                                                         right: '16px',
                                                     }}
                                                 >
