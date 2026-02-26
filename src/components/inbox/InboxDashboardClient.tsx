@@ -57,8 +57,58 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
         user: initialIntegration?.configJson?.user || '',
         password: initialIntegration?.configJson?.password || '',
         focusArea: initialIntegration?.configJson?.focusArea || 'Ventas',
-        goals: initialIntegration?.configJson?.goals || 'Detectar oportunidades nuevas'
+        goals: initialIntegration?.configJson?.goals || ''
     });
+
+    const [selectedGoals, setSelectedGoals] = useState<string[]>(
+        initialIntegration?.configJson?.goals ? initialIntegration.configJson.goals.split(', ').filter(Boolean) : []
+    );
+
+    const goalsByFocus: Record<string, string[]> = {
+        'Ventas': [
+            'Detectar oportunidades nuevas',
+            'Seguimiento de leads',
+            'Análisis de objeciones',
+            'Identificar intención de compra',
+            'Resumen de reuniones comerciales'
+        ],
+        'Soporte': [
+            'Resumir urgencias críticas',
+            'Reporte de incidencias',
+            'Detectar bugs recurrentes',
+            'Clasificación automática de tickets',
+            'Análisis de sentimiento del cliente'
+        ],
+        'Operaciones': [
+            'Control de pagos/facturas',
+            'Seguimiento de proveedores',
+            'Coordinación de logística',
+            'Alertas de plazos de entrega',
+            'Resumen de reportes operativos'
+        ],
+        'Personal': [
+            'Priorización de networking',
+            'Resumen de newsletters',
+            'Recordatorios de eventos',
+            'Filtro de suscripciones',
+            'Organización de viajes/citas'
+        ]
+    };
+
+    const toggleGoal = (goal: string) => {
+        let newGoals: string[];
+        if (selectedGoals.includes(goal)) {
+            newGoals = selectedGoals.filter(g => g !== goal);
+        } else {
+            if (selectedGoals.length >= 3) {
+                toast.error('Puedes seleccionar hasta 3 objetivos.');
+                return;
+            }
+            newGoals = [...selectedGoals, goal];
+        }
+        setSelectedGoals(newGoals);
+        setConfig({ ...config, goals: newGoals.join(', ') });
+    };
 
     const [selectedBullet, setSelectedBullet] = useState<string | null>(null);
     const [isLoadingRec, setIsLoadingRec] = useState(false);
@@ -580,7 +630,10 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                         {['Ventas', 'Soporte', 'Operaciones', 'Personal'].map((area) => (
                                             <button
                                                 key={area}
-                                                onClick={() => setConfig({ ...config, focusArea: area })}
+                                                onClick={() => {
+                                                    setConfig({ ...config, focusArea: area });
+                                                    setSelectedGoals([]);
+                                                }}
                                                 className={cn(
                                                     "p-6 rounded-3xl border-2 transition-all duration-300 text-center space-y-3 group",
                                                     config.focusArea === area
@@ -625,19 +678,13 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
 
                                     <div className="space-y-6">
                                         <div className="flex flex-wrap gap-3 justify-center">
-                                            {[
-                                                'Detectar oportunidades nuevas',
-                                                'Resumir urgencias críticas',
-                                                'Seguimiento de leads',
-                                                'Control de pagos/facturas',
-                                                'Reporte de incidencias'
-                                            ].map((goal) => (
+                                            {goalsByFocus[config.focusArea]?.map((goal) => (
                                                 <button
                                                     key={goal}
-                                                    onClick={() => setConfig({ ...config, goals: goal })}
+                                                    onClick={() => toggleGoal(goal)}
                                                     className={cn(
                                                         "px-6 py-4 rounded-full border-2 font-bold text-xs uppercase tracking-widest transition-all",
-                                                        config.goals === goal
+                                                        selectedGoals.includes(goal)
                                                             ? "bg-[#21AC96] border-[#21AC96] text-white shadow-xl shadow-[#21AC96]/10"
                                                             : "border-gray-100 text-gray-400 hover:border-gray-200"
                                                     )}
@@ -648,12 +695,12 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                         </div>
 
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">U otro objetivo personalizado:</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Tus objetivos seleccionados ({selectedGoals.length}/3):</label>
                                             <Input
                                                 value={config.goals}
-                                                onChange={(e) => setConfig({ ...config, goals: e.target.value })}
-                                                placeholder="Ej: Buscar correos sobre el proyecto Alpha..."
-                                                className="h-16 rounded-2xl border-gray-100 bg-gray-50/50 px-6 font-bold text-sm"
+                                                readOnly
+                                                placeholder="Selecciona objetivos arriba..."
+                                                className="h-16 rounded-2xl border-gray-100 bg-gray-50/50 px-6 font-bold text-sm text-[#21AC96]"
                                             />
                                         </div>
                                     </div>
