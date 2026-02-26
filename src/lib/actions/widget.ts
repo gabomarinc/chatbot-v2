@@ -471,6 +471,21 @@ Reglas para cobrar (ESTRICTO):
                 systemPrompt += `- Departamento SUPPORT: Problemas técnicos, errores, ayuda con el uso.\n`;
                 systemPrompt += `- Departamento PERSONAL: Consultas generales o cuando no estés seguro.\n`;
 
+                // Add subdepartments dynamically to inform the bot about human specialties
+                try {
+                    const availableMembers = await (prisma.workspaceMember as any).findMany({
+                        where: { workspaceId: workspace.id, subDepartment: { not: null } },
+                        select: { subDepartment: true }
+                    });
+
+                    const uniqueSubDepts = Array.from(new Set(availableMembers.map((m: any) => m.subDepartment)));
+                    if (uniqueSubDepts.length > 0) {
+                        systemPrompt += `\nSUBDEPARTAMENTOS DISPONIBLES (NICHOS/ESPECIALIDADES):\n`;
+                        systemPrompt += `El equipo tiene expertos en los siguientes nichos: ${uniqueSubDepts.join(', ')}.\n`;
+                        systemPrompt += `Si el usuario menciona o busca algo relacionado a estos nichos, DEBES incluir el parámetro 'subdepartamento' exacto al llamar a la herramienta 'asignar_a_humano'.\n`;
+                    }
+                } catch (e) { console.error(e) }
+
                 // Add custom departments from "Ruteo Inteligente" (handoffTargets)
                 const handoffTargets = (agent as any).handoffTargets;
                 if (handoffTargets && Array.isArray(handoffTargets) && handoffTargets.length > 0) {
@@ -550,7 +565,11 @@ Reglas para cobrar (ESTRICTO):
                         properties: {
                             departamento: {
                                 type: 'string',
-                                description: 'Departamento al que asignar (SALES, SUPPORT, PERSONAL o cualquier nombre de departamento personalizado configurado).'
+                                description: 'Departamento principal al que asignar (SALES, SUPPORT, PERSONAL o cualquier nombre de departamento personalizado configurado).'
+                            },
+                            subdepartamento: {
+                                type: 'string',
+                                description: 'Nicho específico o subdepartamento (solo si está en la lista de Subdepartamentos Disponibles). Opcional.'
                             },
                             razon: { type: 'string', description: 'Breve explicación de por qué se transfiere la conversación.' }
                         },
@@ -1029,17 +1048,32 @@ Reglas para cobrar (ESTRICTO):
                             } else if (name === "asignar_a_humano") {
                                 try {
                                     const dept = (args as any).departamento;
+                                    const subDept = (args as any).subdepartamento;
 
                                     // Find members in this workspace with that department
-                                    const members = await (prisma.workspaceMember as any).findMany({
+                                    let members = await (prisma.workspaceMember as any).findMany({
                                         where: {
                                             workspaceId: workspace.id,
-                                            department: dept as any
+                                            department: dept as any,
+                                            ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
                                         },
                                         include: {
                                             user: true
                                         }
                                     });
+
+                                    // If subDept was provided but no member was found, fallback to department search
+                                    if (subDept && members.length === 0) {
+                                        members = await (prisma.workspaceMember as any).findMany({
+                                            where: {
+                                                workspaceId: workspace.id,
+                                                department: dept as any
+                                            },
+                                            include: {
+                                                user: true
+                                            }
+                                        });
+                                    }
 
                                     // RE-FETCH conversation to ensure we have any contact info updated in this turn
                                     const refreshedConv = await prisma.conversation.findUnique({
@@ -1771,17 +1805,32 @@ Reglas para cobrar (ESTRICTO):
                         } else if (name === "asignar_a_humano") {
                             try {
                                 const dept = args.departamento;
+                                const subDept = args.subdepartamento;
 
                                 // Find members in this workspace with that department
-                                const members = await (prisma.workspaceMember as any).findMany({
+                                let members = await (prisma.workspaceMember as any).findMany({
                                     where: {
                                         workspaceId: workspace.id,
-                                        department: dept as any
+                                        department: dept as any,
+                                        ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
                                     },
                                     include: {
                                         user: true
                                     }
                                 });
+
+                                // If subDept was provided but no member was found, fallback to department search
+                                if (subDept && members.length === 0) {
+                                    members = await (prisma.workspaceMember as any).findMany({
+                                        where: {
+                                            workspaceId: workspace.id,
+                                            department: dept as any
+                                        },
+                                        include: {
+                                            user: true
+                                        }
+                                    });
+                                }
 
                                 // RE-FETCH conversation to ensure we have any contact info updated in this turn
                                 const refreshedConv = await prisma.conversation.findUnique({

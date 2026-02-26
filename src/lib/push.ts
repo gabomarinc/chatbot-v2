@@ -1,4 +1,4 @@
-import { adminMessaging } from './firebase-admin';
+import { getAdminMessaging } from './firebase-admin';
 
 export async function sendAssignmentPushNotification(
     fcmToken: string,
@@ -8,10 +8,16 @@ export async function sendAssignmentPushNotification(
     conversationId: string
 ) {
     try {
+        const messaging = getAdminMessaging();
+        if (!messaging) {
+            console.warn('Firebase Messaging no inicializado. Se omite notificación push.');
+            return { success: false, error: 'Firebase not initialized' };
+        }
+
         const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
         const firstName = userName ? userName.split(' ')[0] : 'Agente';
 
-        await adminMessaging.send({
+        await messaging.send({
             token: fcmToken,
             notification: {
                 title: `🚀 Nuevo Lead: ${contactName}`,
