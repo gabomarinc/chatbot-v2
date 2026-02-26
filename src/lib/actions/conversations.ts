@@ -7,7 +7,6 @@ import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
 import { sendAssignmentEmail } from '@/lib/email'
 import { sendAssignmentPushNotification } from '@/lib/push'
-import { adminMessaging } from '@/lib/firebase-admin'
 import OpenAI from 'openai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
