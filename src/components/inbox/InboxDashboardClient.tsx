@@ -333,7 +333,15 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                             p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.8] font-medium mb-6 text-base" {...props} />,
                                                             ul: ({ node, ...props }) => <ul className="space-y-4 mb-8" {...props} />,
                                                             li: ({ node, ...props }) => {
-                                                                const textContent = (props.children as any)?.toString() || "";
+                                                                // Extract text content safely from React nodes to avoid [object Object]
+                                                                const extractText = (children: any): string => {
+                                                                    if (typeof children === 'string') return children;
+                                                                    if (Array.isArray(children)) return children.map(extractText).join('');
+                                                                    if (children?.props?.children) return extractText(children.props.children);
+                                                                    return '';
+                                                                };
+                                                                const textContent = extractText(props.children);
+
                                                                 return (
                                                                     <li
                                                                         onClick={() => handleBulletClick(textContent)}
@@ -519,73 +527,164 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
 
             {/* Recommendation Modal */}
             <Dialog open={showRecDialog} onOpenChange={setShowRecDialog}>
-                <DialogContent className="rounded-[3rem] p-0 border-none shadow-2xl bg-white max-w-2xl overflow-hidden">
-                    <div className="bg-gray-900 p-8 text-white relative">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#21AC96]/20 rounded-full blur-3xl -translate-y-16 translate-x-16"></div>
-                        <div className="relative flex items-center gap-4">
-                            <div className="w-12 h-12 bg-[#21AC96] rounded-2xl flex items-center justify-center">
-                                <BrainCircuit className="w-6 h-6" />
+                <DialogContent className="rounded-[3.5rem] p-0 border-none shadow-2xl bg-white max-w-3xl overflow-hidden">
+                    {/* Modal Header Premium */}
+                    <div className="bg-gray-900 p-10 text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#21AC96]/20 rounded-full blur-[80px] -translate-y-24 translate-x-24 animate-pulse"></div>
+                        <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#21AC96]/10 rounded-full blur-[60px] translate-y-20 -translate-x-10"></div>
+
+                        <div className="relative flex items-center justify-between">
+                            <div className="flex items-center gap-5">
+                                <div className="w-16 h-16 bg-[#21AC96] rounded-[1.5rem] flex items-center justify-center shadow-lg shadow-[#21AC96]/30 rotate-3">
+                                    <BrainCircuit className="w-8 h-8 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#21AC96] mb-1">Análisis de Punto Clave</p>
+                                    <h3 className="text-3xl font-black tracking-tight leading-none text-white">Inteligencia Profunda</h3>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-[#21AC96]">Inteligencia Profunda</p>
-                                <h3 className="text-xl font-black tracking-tight">Análisis de Punto Clave</h3>
+                            <div className="hidden md:flex flex-col items-end">
+                                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#21AC96]">Estado del Agente</p>
+                                    <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                                        <ShieldCheck className="w-3 h-3 text-green-400" /> Analizando contexto...
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
-                        <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Punto del Resumen:</p>
-                            <p className="text-gray-900 font-bold leading-relaxed italic">"{selectedBullet}"</p>
+                    <div className="p-10 space-y-10 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                        {/* Summary Reference */}
+                        <div className="bg-gray-50/80 backdrop-blur-sm p-8 rounded-[2.5rem] border border-gray-100 flex gap-6 relative group overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-[#21AC96]" />
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0 border border-gray-100">
+                                <Mail className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    Punto del resumen analizado
+                                </p>
+                                <p className="text-gray-900 font-bold leading-relaxed text-lg tracking-tight">"{selectedBullet}"</p>
+                            </div>
                         </div>
 
                         {isLoadingRec ? (
-                            <div className="py-20 flex flex-col items-center justify-center gap-4">
-                                <Loader2 className="w-10 h-10 text-[#21AC96] animate-spin" />
-                                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Generando recomendaciones...</p>
+                            <div className="py-24 flex flex-col items-center justify-center gap-6">
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-[#21AC96]/20 rounded-full blur-3xl animate-ping opacity-50"></div>
+                                    <Loader2 className="w-14 h-14 text-[#21AC96] animate-spin relative" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-gray-900 font-black text-xl tracking-tight">Generando Recomendaciones...</p>
+                                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-2">Nuestra IA está redactando estrategias para ti</p>
+                                </div>
                             </div>
                         ) : recommendation ? (
-                            <div className="prose prose-teal max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={{
-                                        h1: ({ node, ...props }) => <h1 className="text-xl font-black text-gray-900 mb-4" {...props} />,
-                                        h2: ({ node, ...props }) => <h2 className="text-lg font-black text-gray-800 mt-6 mb-3" {...props} />,
-                                        p: ({ node, ...props }) => <p className="text-gray-600 leading-relaxed font-medium mb-4" {...props} />,
-                                        ul: ({ node, ...props }) => <ul className="space-y-2 mb-6" {...props} />,
-                                        li: ({ node, ...props }) => <li className="flex items-start gap-2 text-gray-600 font-medium" {...props}>
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] mt-2 shrink-0" />
-                                            <span>{props.children}</span>
-                                        </li>,
-                                        strong: ({ node, ...props }) => <strong className="font-bold text-gray-900" {...props} />,
-                                        blockquote: ({ node, ...props }) => (
-                                            <div className="relative mt-8 group">
-                                                <div className="absolute -inset-1 bg-gradient-to-r from-[#21AC96] to-emerald-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                                                <blockquote className="relative bg-white p-6 rounded-2xl border border-gray-100 italic font-medium text-gray-700 leading-relaxed shadow-sm">
-                                                    {props.children}
-                                                </blockquote>
-                                                <div className="absolute -top-3 left-6 px-3 py-1 bg-[#21AC96] text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">Borrador IA</div>
+                            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                                {/* Insights & Metrics Panel */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {[
+                                        { label: 'Prioridad', value: 'Alta', icon: AlertCircle, color: 'text-orange-500', bg: 'bg-orange-50' },
+                                        { label: 'Impacto Comercial', value: 'Crítico', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-50' },
+                                        { label: 'Categoría', value: config.focusArea, icon: Target, color: 'text-[#21AC96]', bg: 'bg-[#21AC96]/10' }
+                                    ].map((stat, i) => (
+                                        <div key={i} className={cn("p-5 rounded-3xl border border-gray-50 shadow-sm flex items-center gap-4", stat.bg)}>
+                                            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center bg-white shadow-sm", stat.color)}>
+                                                <stat.icon className="w-5 h-5" />
                                             </div>
-                                        )
-                                    }}
-                                >
-                                    {recommendation}
-                                </ReactMarkdown>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{stat.label}</p>
+                                                <p className={cn("text-sm font-black tracking-tight", stat.color)}>{stat.value}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Markdown Content Redesign */}
+                                <div className="prose prose-teal max-w-none">
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        components={{
+                                            h1: ({ node, ...props }) => <h1 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3" {...props}>
+                                                <div className="w-2 h-8 bg-[#21AC96] rounded-full" /> {props.children}
+                                            </h1>,
+                                            h2: ({ node, ...props }) => <h2 className="text-xl font-black text-gray-800 mt-10 mb-6 underline decoration-[#21AC96]/30 decoration-4 flex items-center gap-3" {...props}>
+                                                <Lightbulb className="w-5 h-5 text-[#21AC96]" /> {props.children}
+                                            </h2>,
+                                            p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.8] font-medium mb-6 text-[1.05rem]" {...props} />,
+                                            ul: ({ node, ...props }) => <ul className="space-y-4 mb-8 pl-0 list-none" {...props} />,
+                                            li: ({ node, ...props }) => <li className="flex items-start gap-4 text-gray-700 bg-gray-50/50 p-5 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:shadow-md" {...props}>
+                                                <div className="w-8 h-8 rounded-xl bg-white border border-gray-100 flex items-center justify-center group-hover:bg-[#21AC96] group-hover:text-white transition-all shrink-0 shadow-sm">
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </div>
+                                                <span className="font-semibold">{props.children}</span>
+                                            </li>,
+                                            strong: ({ node, ...props }) => <strong className="font-black text-gray-900 bg-[#21AC96]/10 px-1.5 rounded" {...props} />,
+                                            blockquote: ({ node, ...props }) => (
+                                                <div className="relative mt-12 mb-8 group">
+                                                    <div className="absolute -inset-2 bg-gradient-to-r from-[#21AC96] to-emerald-600 rounded-[2.5rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
+                                                    <div className="relative bg-white p-8 md:p-12 rounded-[2.2rem] border border-gray-50 shadow-xl overflow-hidden">
+                                                        <div className="absolute top-0 right-0 p-4">
+                                                            <Sparkles className="w-10 h-10 text-[#21AC96]/10" />
+                                                        </div>
+                                                        <div className="flex items-center gap-3 mb-6">
+                                                            <div className="h-0.5 w-10 bg-[#21AC96]" />
+                                                            <span className="text-[10px] font-black text-[#21AC96] uppercase tracking-[0.3em]">Borrador IA Recomendado</span>
+                                                        </div>
+                                                        <blockquote className="italic font-medium text-gray-700 leading-relaxed text-lg border-none p-0 m-0">
+                                                            {props.children}
+                                                        </blockquote>
+                                                        <div className="mt-8 flex justify-end">
+                                                            <Button
+                                                                onClick={() => {
+                                                                    // Simple text copy logic 
+                                                                    const text = (props.children as any)?.toString() || "";
+                                                                    navigator.clipboard.writeText(text);
+                                                                    toast.success('Borrador copiado al portapapeles');
+                                                                }}
+                                                                variant="ghost"
+                                                                className="text-[#21AC96] font-black text-[10px] uppercase tracking-widest hover:bg-[#21AC96]/5 gap-2"
+                                                            >
+                                                                Copiar Borrador <Zap className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        }}
+                                    >
+                                        {recommendation}
+                                    </ReactMarkdown>
+                                </div>
                             </div>
                         ) : (
-                            <div className="py-20 text-center">
-                                <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                                <p className="text-gray-500 font-bold text-sm">No pudimos generar recomendaciones en este momento.</p>
+                            <div className="py-24 text-center space-y-6">
+                                <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto border border-red-100">
+                                    <AlertCircle className="w-10 h-10 text-red-500" />
+                                </div>
+                                <div>
+                                    <h4 className="text-xl font-black text-gray-900">Error de Generación</h4>
+                                    <p className="text-gray-400 font-bold text-sm max-w-xs mx-auto">
+                                        No pudimos establecer comunicación con el núcleo de inteligencia. Por favor, intenta de nuevo.
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => handleBulletClick(selectedBullet || "")}
+                                    className="bg-gray-900 text-white rounded-2xl px-8 h-12 text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    Reintentar Análisis
+                                </Button>
                             </div>
                         )}
                     </div>
 
-                    <div className="p-8 pt-0">
+                    <div className="p-10 pt-0 flex gap-4">
                         <Button
                             onClick={() => setShowRecDialog(false)}
-                            className="w-full h-14 rounded-2xl bg-gray-900 text-white font-black uppercase tracking-widest text-[10px]"
+                            className="flex-1 h-18 rounded-[1.8rem] bg-gray-900 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
                         >
-                            Entendido
+                            Cerrar Inteligencia
                         </Button>
                     </div>
                 </DialogContent>
