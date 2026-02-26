@@ -522,7 +522,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                     <div
                                         key={member.id}
                                         onClick={(e) => handleMemberClick(member, e)}
-                                        className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm active:scale-[0.98] transition-all relative overflow-hidden"
+                                        className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm active:scale-[0.98] transition-all relative"
                                     >
                                         <div className="flex justify-between items-start mb-6">
                                             <div className="flex items-center gap-4">
