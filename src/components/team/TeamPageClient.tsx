@@ -337,7 +337,10 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                         return (
                                             <tr
                                                 key={member.id}
-                                                className="hover:bg-gray-50/50 transition-colors group"
+                                                className={cn(
+                                                    "hover:bg-gray-50/50 transition-colors group relative",
+                                                    isActionMenuOpen === member.id ? "z-50" : "z-0"
+                                                )}
                                                 onClick={(e) => handleMemberClick(member, e)}
                                                 style={{ cursor: (userRole === 'OWNER' || userRole === 'MANAGER') ? 'pointer' : 'default' }}
                                             >
@@ -522,7 +525,10 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
                                     <div
                                         key={member.id}
                                         onClick={(e) => handleMemberClick(member, e)}
-                                        className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm active:scale-[0.98] transition-all relative"
+                                        className={cn(
+                                            "bg-white rounded-3xl p-6 border border-gray-100 shadow-sm active:scale-[0.98] transition-all relative",
+                                            isActionMenuOpen === member.id ? "z-50" : "z-10"
+                                        )}
                                     >
                                         <div className="flex justify-between items-start mb-6">
                                             <div className="flex items-center gap-4">
