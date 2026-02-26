@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface InboxDashboardClientProps {
     initialIntegration: any;
@@ -193,8 +195,28 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                     <div className="flex-1 relative">
                                         {analysisResult ? (
                                             <div className="space-y-8 animate-fade-in pb-4">
-                                                <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed font-medium bg-gray-50/80 p-10 rounded-[2.5rem] border border-gray-100 shadow-inner whitespace-pre-wrap">
-                                                    {analysisResult}
+                                                <div className="bg-gray-50/50 p-8 md:p-12 rounded-[3.5rem] border border-gray-100 shadow-inner relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/40 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                                                    <ReactMarkdown
+                                                        remarkPlugins={[remarkGfm]}
+                                                        components={{
+                                                            h1: ({ node, ...props }) => <h1 className="text-3xl font-black text-gray-900 mb-8 pb-4 border-b-4 border-blue-500/20 inline-block tracking-tight" {...props} />,
+                                                            h2: ({ node, ...props }) => <h2 className="text-xl font-black text-gray-800 mt-12 mb-6 flex items-center gap-2 group tracking-tight" {...props} />,
+                                                            h3: ({ node, ...props }) => <h3 className="text-lg font-black text-gray-700 mt-8 mb-4 tracking-tight" {...props} />,
+                                                            p: ({ node, ...props }) => <p className="text-gray-600 leading-[1.8] font-medium mb-6 text-base" {...props} />,
+                                                            ul: ({ node, ...props }) => <ul className="space-y-4 mb-8" {...props} />,
+                                                            li: ({ node, ...props }) => (
+                                                                <li className="flex items-start gap-3 text-gray-600 bg-white/50 p-4 rounded-2xl border border-gray-100/50 shadow-sm hover:shadow-md transition-all">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-[0.6rem] shrink-0" />
+                                                                    <span className="font-medium text-[0.95rem]">{props.children}</span>
+                                                                </li>
+                                                            ),
+                                                            strong: ({ node, ...props }) => <strong className="font-black text-gray-900 bg-blue-50 px-1 rounded" {...props} />,
+                                                            blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-blue-500 pl-6 my-8 italic text-gray-500 font-medium" {...props} />,
+                                                        }}
+                                                    >
+                                                        {analysisResult}
+                                                    </ReactMarkdown>
                                                 </div>
                                                 <div className="flex flex-wrap gap-4">
                                                     <div className="flex-1 bg-green-50 p-6 rounded-[2rem] border border-green-100 flex items-center gap-4 transition-all">

@@ -184,9 +184,11 @@ export async function analyzeWorkspaceInbox() {
         
         Reglas:
         - Responde en español.
-        - Usa Markdown.
-        - Sé conciso pero accionable.
-        - Agrupa por categorías (Ventas, Soporte, Otros).`;
+        - Usa Markdown con jerarquía clara (## para secciones).
+        - Sé extremadamente conciso pero accionable.
+        - Agrupa por categorías: 🚀 Oportunidades Comerciales, ⚠️ Urgencias Críticas, 📊 Temas Recurrentes.
+        - Usa negritas para nombres de empresas o personas.
+        - No incluyas correos genéricos o de spam en el resumen.`;
 
         const response = await openai.chat.completions.create({
             model: "gpt-4o-mini",
