@@ -248,12 +248,11 @@ export async function generateEmailRecommendations(bulletContext: string) {
                 content: "Eres un asistente ejecutivo experto. Tu tarea es analizar un punto específico de un resumen de correos y generar recomendaciones accionables y borradores de respuesta."
             }, {
                 role: "user",
-                content: `Basado en este punto: "${bulletContext}", genera una respuesta extremadamente concisa y directa:
-                1. Análisis Rápido (máx 2 frases).
-                2. 2 Acciones recomendadas inmediatas (muy breves).
-                3. Un borrador de respuesta profesional (parcial y directo).
+                content: `Basado en este punto: "${bulletContext}", genera una respuesta extremadamente directa:
+                1. **Acciones Recomendadas Inmediatas** (2-3 puntos breves y accionables).
+                2. **Borrador de Respuesta Profesional** (un borrador listo para copiar).
                 
-                Usa un tono ejecutivo. No incluyas introducciones ni conclusiones innecesarias. Responde en Markdown.`
+                No incluyas introducciones, ni "Análisis Rápido", ni conclusiones. Usa negritas para los títulos de sección. Responde en Markdown.`
             }],
             temperature: 0.7
         });
