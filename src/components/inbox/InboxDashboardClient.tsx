@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { analyzeWorkspaceInbox, generateEmailRecommendations } from '@/lib/actions/email-analysis';
 import { testEmailIMAPConnection, saveWorkspaceEmailIMAPIntegration } from '@/lib/actions/integrations';
 import { cn } from '@/lib/utils';
@@ -356,19 +356,38 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                                     if (children?.props?.children) return extractText(children.props.children);
                                                                     return '';
                                                                 };
+
+                                                                // Identify if this is a parent bullet (contains a nested list)
+                                                                const childrenArray = React.Children.toArray(props.children);
+                                                                const hasNestedList = childrenArray.some((child: any) =>
+                                                                    child?.props?.node?.type === 'list' ||
+                                                                    (child?.props?.children && React.Children.toArray(child.props.children).some((c: any) => c?.props?.node?.type === 'list'))
+                                                                );
+
+                                                                if (hasNestedList) {
+                                                                    return (
+                                                                        <li className="mb-6 list-none">
+                                                                            <div className="flex items-center gap-2 mb-4">
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                                                                                <span className="font-black text-gray-900 tracking-tight uppercase text-[11px] tracking-[0.1em]">{props.children}</span>
+                                                                            </div>
+                                                                        </li>
+                                                                    );
+                                                                }
+
                                                                 const textContent = extractText(props.children);
 
                                                                 return (
                                                                     <li
                                                                         onClick={() => handleBulletClick(textContent)}
-                                                                        className="flex items-start gap-3 text-gray-600 bg-white/50 p-4 rounded-2xl border border-gray-100/50 shadow-sm hover:shadow-md transition-all cursor-pointer group/item relative overflow-hidden"
+                                                                        className="flex items-start gap-4 text-gray-600 bg-white/50 p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group/item relative overflow-hidden mb-6"
                                                                     >
                                                                         <div className="absolute inset-0 bg-[#21AC96]/0 group-hover/item:bg-[#21AC96]/5 transition-colors" />
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] mt-[0.6rem] shrink-0 group-hover/item:scale-150 transition-all z-10" />
+                                                                        <div className="w-2 h-2 rounded-full bg-[#21AC96] mt-[0.6rem] shrink-0 group-hover/item:scale-150 transition-all z-10" />
                                                                         <div className="flex-1 z-10">
-                                                                            <span className="font-medium text-[0.95rem]">{props.children}</span>
-                                                                            <div className="text-[10px] text-[#21AC96] font-black mt-2 opacity-0 group-hover/item:opacity-100 transition-all flex items-center gap-1.5 uppercase tracking-widest">
-                                                                                <Sparkles className="w-3 h-3" /> Ver Inteligencia y Acciones
+                                                                            <span className="font-semibold text-[0.95rem] leading-relaxed text-gray-700">{props.children}</span>
+                                                                            <div className="text-[10px] text-[#21AC96] font-black mt-3 opacity-0 group-hover/item:opacity-100 transition-all flex items-center gap-1.5 uppercase tracking-widest">
+                                                                                <Sparkles className="w-4 h-4" /> Ver Inteligencia y Acciones
                                                                             </div>
                                                                         </div>
                                                                     </li>
@@ -649,42 +668,6 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                             pre: ({ node, ...props }) => (
                                                 <div className="bg-gray-900 rounded-2xl p-6 my-6 overflow-x-auto border border-gray-800 shadow-xl">
                                                     <pre className="m-0 text-white/90 font-mono text-sm leading-relaxed" {...props} />
-                                                </div>
-                                            ),
-                                            blockquote: ({ node, ...props }) => (
-                                                <div className="relative mt-12 mb-8 group">
-                                                    <div className="absolute -inset-4 bg-gradient-to-r from-[#21AC96] to-emerald-600 rounded-[2.5rem] blur opacity-15 group-hover:opacity-25 transition duration-1000"></div>
-                                                    <div className="relative bg-white p-8 md:p-12 rounded-[2.2rem] border border-gray-50 shadow-2xl overflow-hidden">
-                                                        <div className="absolute top-0 right-0 p-6">
-                                                            <Sparkles className="w-12 h-12 text-[#21AC96]/10" />
-                                                        </div>
-                                                        <div className="flex items-center gap-4 mb-8">
-                                                            <div className="h-0.5 w-12 bg-[#21AC96]" />
-                                                            <span className="text-[10px] font-black text-[#21AC96] uppercase tracking-[0.4em]">Borrador IA Recomendado</span>
-                                                        </div>
-                                                        <blockquote className="italic font-medium text-gray-700 leading-[2] text-lg border-none p-0 m-0 space-y-4">
-                                                            {props.children}
-                                                        </blockquote>
-                                                        <div className="mt-6 flex justify-end">
-                                                            <Button
-                                                                onClick={() => {
-                                                                    const extractPlainText = (children: any): string => {
-                                                                        if (typeof children === 'string') return children;
-                                                                        if (Array.isArray(children)) return children.map(extractPlainText).join('');
-                                                                        if (children?.props?.children) return extractPlainText(children.props.children);
-                                                                        return '';
-                                                                    };
-                                                                    const textToCopy = extractPlainText(props.children);
-                                                                    navigator.clipboard.writeText(textToCopy);
-                                                                    toast.success('Borrador copiado al portapapeles');
-                                                                }}
-                                                                variant="ghost"
-                                                                className="text-[#21AC96] font-black text-[10px] uppercase tracking-widest hover:bg-[#21AC96]/5 gap-2 h-8"
-                                                            >
-                                                                Copiar <Zap className="w-3 h-3" />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             )
                                         }}

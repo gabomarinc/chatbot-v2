@@ -249,10 +249,9 @@ export async function generateEmailRecommendations(bulletContext: string) {
             }, {
                 role: "user",
                 content: `Basado en este punto: "${bulletContext}", genera una respuesta extremadamente directa:
-                1. **Acciones Recomendadas Inmediatas** (2-3 puntos breves y accionables).
-                2. **Borrador de Respuesta Profesional** (un borrador listo para copiar).
+                - **Acciones Recomendadas Inmediatas**: Genera 2-3 puntos breves, muy específicos y accionables.
                 
-                No incluyas introducciones, ni "Análisis Rápido", ni conclusiones. Usa negritas para los títulos de sección. Responde en Markdown.`
+                No incluyas introducciones, ni borradores de respuesta, ni conclusiones. Usa negritas para el título de la sección. Responde en Markdown.`
             }],
             temperature: 0.7
         });
