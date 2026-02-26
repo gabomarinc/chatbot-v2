@@ -18,6 +18,16 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { deleteWorkspaceEmailIMAPIntegration } from '@/lib/actions/integrations';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface InboxDashboardClientProps {
     initialIntegration: any;
@@ -31,6 +41,8 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
+    const [isDisconnecting, setIsDisconnecting] = useState(false);
+    const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<string | null>(initialIntegration?.lastAnalysis || null);
     const [lastAnalysisAt, setLastAnalysisAt] = useState<Date | null>(initialIntegration?.lastAnalysisAt ? new Date(initialIntegration.lastAnalysisAt) : null);
 
@@ -95,6 +107,27 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
             toast.error('Error inesperado al guardar.');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDisconnect = async () => {
+        setIsDisconnecting(true);
+        try {
+            const res = await deleteWorkspaceEmailIMAPIntegration();
+            if (res.success) {
+                setIntegration(null);
+                setAnalysisResult(null);
+                setLastAnalysisAt(null);
+                toast.success('Correo desconectado correctamente.');
+                setShowDisconnectDialog(false);
+                setActiveTab('config');
+            } else {
+                toast.error('Error: ' + res.error);
+            }
+        } catch (error) {
+            toast.error('Error al desconectar el correo.');
+        } finally {
+            setIsDisconnecting(false);
         }
     };
 
@@ -313,13 +346,54 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                             </div>
                                         </div>
 
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setActiveTab('config')}
-                                            className="w-full h-14 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10 text-white text-xs font-black uppercase tracking-widest transition-all"
-                                        >
-                                            Editar Configuración
-                                        </Button>
+                                        <div className="space-y-4">
+                                            <Button
+                                                onClick={() => setActiveTab('config')}
+                                                variant="outline"
+                                                className="w-full h-16 rounded-2xl border-gray-200 text-gray-900 font-black uppercase tracking-widest text-[10px] hover:bg-gray-50 transition-all"
+                                            >
+                                                EDITAR CONFIGURACIÓN
+                                            </Button>
+
+                                            <Dialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+                                                <DialogTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="w-full h-16 rounded-2xl text-red-500 font-black uppercase tracking-widest text-[10px] hover:bg-red-50 hover:text-red-600 transition-all"
+                                                    >
+                                                        DESCONECTAR CORREO
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="rounded-[2.5rem] p-10 border-none shadow-2xl bg-white max-w-md">
+                                                    <DialogHeader className="space-y-4">
+                                                        <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mb-2">
+                                                            <AlertCircle className="w-8 h-8" />
+                                                        </div>
+                                                        <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">¿Desconectar correo?</DialogTitle>
+                                                        <DialogDescription className="text-gray-500 font-medium leading-relaxed">
+                                                            Esta acción eliminará tu configuración de IMAP y los análisis de IA guardados. Tendrás que configurar todo de nuevo para volver a usar esta sección.
+                                                        </DialogDescription>
+                                                    </DialogHeader>
+                                                    <DialogFooter className="mt-10 gap-3 sm:flex-col lg:flex-row">
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={() => setShowDisconnectDialog(false)}
+                                                            className="flex-1 h-14 rounded-2xl border-gray-100 font-bold"
+                                                        >
+                                                            Cancelar
+                                                        </Button>
+                                                        <Button
+                                                            variant="destructive"
+                                                            onClick={handleDisconnect}
+                                                            disabled={isDisconnecting}
+                                                            className="flex-1 h-14 rounded-2xl bg-red-600 hover:bg-red-700 font-black uppercase tracking-widest text-[10px]"
+                                                        >
+                                                            {isDisconnecting ? 'Desconectando...' : 'Confirmar Desconexión'}
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
                                     </div>
                                 </Card>
                             </div>

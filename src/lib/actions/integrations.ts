@@ -114,6 +114,30 @@ export async function saveWorkspaceEmailIMAPIntegration(
     }
 }
 
+export async function deleteWorkspaceEmailIMAPIntegration() {
+    try {
+        const session = await auth();
+        const workspace = await getUserWorkspace();
+        if (!workspace || !session?.user?.id) throw new Error('No autorizado');
+
+        await (prisma as any).workspaceIntegration.delete({
+            where: {
+                workspaceId_userId_provider: {
+                    workspaceId: workspace.id,
+                    userId: session.user.id,
+                    provider: 'EMAIL_IMAP'
+                }
+            }
+        });
+
+        revalidatePath(`/inbox`);
+        return { success: true };
+    } catch (error: any) {
+        console.error('[INTEGRATIONS] Error deleting Workspace Email IMAP:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 const SENSITIVE_INTEGRATION_FIELDS = ['apiKey', 'connectionString', 'apiSecret', 'password', 'token'];
 
 export async function initiateGoogleAuth(agentId: string) {
