@@ -629,7 +629,8 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
     prompt += `----------------------------------------------\n\n`;
     prompt += `REGLAS DE ORO DE CONTESTACIÓN:\n`;
     prompt += `1. **Cero Alucinación**: Si un dato no está en los bloques, di que no lo sabes. Sé honesto.\n`;
-    prompt += `2. **Fidelidad**: Mantén la precisión técnica por encima de la creatividad.\n\n`;
+    prompt += `2. **Respuesta Inmediata**: NUNCA digas frases como "Déjame verificar y te contactaremos pronto" o "Lo revisaré y te aviso". Si la información está en los fragmentos de arriba o puedes buscarla con una herramienta, DALA DIRECTAMENTE EN ESE MISMO MENSAJE. Si no la tienes, simplemente di que no tienes esa información en este momento, pero NO pauses la conversación prometiendo un contacto futuro a menos que vayas a transferir a un humano.\n`;
+    prompt += `3. **Fidelidad**: Mantén la precisión técnica por encima de la creatividad.\n\n`;
   }
 
   // Restrictions
