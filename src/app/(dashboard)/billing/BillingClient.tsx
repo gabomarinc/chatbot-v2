@@ -221,10 +221,10 @@ export default function BillingClient({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
                     {[
-                        { amount: 1000, price: 10, popular: false },
-                        { amount: 5000, price: 45, popular: true },
-                        { amount: 10000, price: 85, popular: false },
-                        { amount: 25000, price: 200, popular: false },
+                        { amount: 500, price: 25, popular: false },
+                        { amount: 1000, price: 50, popular: false },
+                        { amount: 2000, price: 95, popular: true },
+                        { amount: 5000, price: 150, popular: false },
                     ].map((pack) => (
                         <div
                             key={pack.amount}
