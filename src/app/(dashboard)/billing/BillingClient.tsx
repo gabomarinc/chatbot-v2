@@ -193,10 +193,6 @@ export default function BillingClient({
                         </div>
                         <p className="text-gray-500 font-bold leading-relaxed">Añade créditos adicionales cuando los necesites para mantener tu flujo</p>
                     </div>
-                    <div className="flex items-center gap-4 bg-gray-50 px-6 py-4 rounded-[1.25rem] border border-gray-100 w-fit">
-                        <input type="checkbox" id="auto-credits" className="w-5 h-5 rounded border-gray-200 text-[#21AC96] focus:ring-[#21AC96] transition-all" />
-                        <label htmlFor="auto-credits" className="text-[13px] text-gray-700 font-black uppercase tracking-widest cursor-pointer">Créditos automáticos</label>
-                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
@@ -251,7 +247,7 @@ export default function BillingClient({
                         </div>
                         <div className="flex items-center gap-3 px-6 py-4 bg-[#21AC96]/5 rounded-2xl border border-[#21AC96]/10">
                             <Zap className="w-4 h-4 text-[#21AC96]" />
-                            <span className="text-sm text-[#21AC96] font-black uppercase tracking-widest">$0.01 por crédito</span>
+                            <span className="text-sm text-[#21AC96] font-black uppercase tracking-widest">$0.05 por crédito</span>
                         </div>
                     </div>
                     <button className="w-full md:w-auto px-12 py-4 bg-[#21AC96] text-white rounded-[1.25rem] hover:bg-[#1a8a78] transition-all font-black text-xs uppercase tracking-widest shadow-xl shadow-[#21AC96]/20 active:scale-95 cursor-pointer">
