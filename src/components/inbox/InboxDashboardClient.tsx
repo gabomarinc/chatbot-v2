@@ -417,7 +417,7 @@ export function InboxDashboardClient({ initialIntegration }: InboxDashboardClien
                                                             blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#21AC96] pl-6 my-8 italic text-gray-500 font-medium" {...props} />,
                                                         }}
                                                     >
-                                                        {analysisResult}
+                                                        {analysisResult.replace(/```(?:json)?\s*\{\s*"themesCount"[\s\S]*?\}\s*```/g, '').replace(/\{\s*"themesCount"[\s\S]*?\}/g, '').trim()}
                                                     </ReactMarkdown>
                                                 </div>
                                                 <div className="flex flex-wrap gap-4">
