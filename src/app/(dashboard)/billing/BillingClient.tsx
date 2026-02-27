@@ -149,16 +149,6 @@ export default function BillingClient({
 
                 {/* Payment Method */}
                 <div className="relative overflow-hidden bg-white rounded-[2rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] flex flex-col">
-                    {/* Coming Soon Overlay */}
-                    <div className="absolute inset-0 z-50 backdrop-blur-md bg-white/40 flex items-center justify-center">
-                        <div className="bg-white px-6 py-3 rounded-2xl shadow-xl shadow-indigo-500/10 border border-gray-100 flex items-center gap-3 animate-fade-in-up">
-                            <span className="relative flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
-                            </span>
-                            <span className="text-gray-900 font-black tracking-tight uppercase text-sm">Próximamente</span>
-                        </div>
-                    </div>
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
                             <CreditCard className="w-5 h-5" />
@@ -193,16 +183,6 @@ export default function BillingClient({
 
             {/* Buy Extra Credits */}
             <div className="relative overflow-hidden bg-white rounded-[2rem] p-8 md:p-12 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)]">
-                {/* Coming Soon Overlay */}
-                <div className="absolute inset-0 z-50 backdrop-blur-md bg-white/40 flex items-center justify-center">
-                    <div className="bg-white px-8 py-4 rounded-3xl shadow-xl shadow-[#21AC96]/10 border border-gray-100 flex items-center gap-4 animate-fade-in-up">
-                        <span className="relative flex h-4 w-4">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#21AC96] opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-4 w-4 bg-[#21AC96]"></span>
-                        </span>
-                        <span className="text-gray-900 font-black tracking-tight uppercase text-base">Próximamente</span>
-                    </div>
-                </div>
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-10">
                     <div>
                         <div className="flex items-center gap-3 mb-3">
