@@ -1,6 +1,8 @@
 import { getWorkspaceIntegration } from "@/lib/actions/integrations";
 import { InboxDashboardClient } from "@/components/inbox/InboxDashboardClient";
 
+export const dynamic = 'force-dynamic';
+
 export default async function InboxPage() {
     const integration = await getWorkspaceIntegration('EMAIL_IMAP');
 
