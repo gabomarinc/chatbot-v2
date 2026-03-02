@@ -654,6 +654,18 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
     prompt += 'Si un usuario solicita hablar con un humano o si la situación lo requiere, puedes transferir la conversación a un agente humano.\n\n';
   }
 
+  // CRITICAL: Anti-Stalling Rule (ALWAYS ACTIVE for all agents)
+  prompt += `REGLA CRÍTICA - PROHIBIDO PAUSAR LA CONVERSACIÓN:\n`;
+  prompt += `NUNCA uses frases que impliquen que vas a verificar, buscar o investigar algo y luego contactar al usuario después. Tú NO puedes enviar mensajes proactivamente; solo respondes cuando el usuario te escribe.\n`;
+  prompt += `FRASES ESTRICTAMENTE PROHIBIDAS (y cualquier variante similar):\n`;
+  prompt += `- "Déjame verificar algunas opciones"\n`;
+  prompt += `- "Te contactaremos pronto con los detalles"\n`;
+  prompt += `- "Lo revisaré y te aviso"\n`;
+  prompt += `- "Voy a buscar opciones para ti"\n`;
+  prompt += `- "Mientras tanto, si tienes alguna otra pregunta..."\n`;
+  prompt += `- "Te enviaremos la información"\n`;
+  prompt += `EN SU LUGAR: Si tienes la información en tu contexto o puedes usar una herramienta para buscarla, PROPORCIÓNALA DIRECTAMENTE en este mismo mensaje. Si NO tienes la información, di honestamente: "No cuento con esa información específica en este momento" y ofrece alternativas útiles como contactar al equipo directamente.\n\n`;
+
   // Custom Fields Collection
   if (agent.customFieldDefinitions && agent.customFieldDefinitions.length > 0) {
     prompt += 'TU OBJETIVO SECUNDARIO ES RECOLECTAR LA SIGUIENTE INFORMACIÓN DEL USUARIO:\n';
