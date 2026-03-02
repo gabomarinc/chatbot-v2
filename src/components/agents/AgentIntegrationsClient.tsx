@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { initiateGoogleAuth, deleteIntegration, saveOdooIntegration, saveAltaplazaIntegration, getIntegrationStats, saveNeonCatalogIntegration, testNeonCatalogConnection, testEmailIMAPConnection, saveEmailIMAPIntegration } from '@/lib/actions/integrations';
 import { analyzeInbox } from '@/lib/actions/email-analysis';
-import { Loader2, CheckCircle2, Trash2, AlertTriangle, Globe, Database, User, Key, Search, Sparkles, LayoutGrid, Terminal, Mail, Server, ShieldCheck, ShieldAlert, BrainCircuit, RotateCw } from 'lucide-react';
+import { Loader2, CheckCircle2, Trash2, AlertTriangle, Globe, Database, User, Key, Search, Sparkles, LayoutGrid, Terminal, Mail, Server, ShieldCheck, ShieldAlert, BrainCircuit, RotateCw, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import {
     Dialog,
@@ -29,6 +29,7 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
     const [isOdooModalOpen, setIsOdooModalOpen] = useState(false);
     const [isAltaplazaModalOpen, setIsAltaplazaModalOpen] = useState(false);
     const [altaplazaPassword, setAltaplazaPassword] = useState('');
+    const [showAltaplazaPassword, setShowAltaplazaPassword] = useState(false);
     const [integrationStats, setIntegrationStats] = useState<any>(null);
     const [isStatsLoading, setIsStatsLoading] = useState(false);
     const [odooConfig, setOdooConfig] = useState({
@@ -512,13 +513,24 @@ export function AgentIntegrationsClient({ agentId, existingIntegrations }: Agent
                             <div className="relative w-full">
                                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-indigo-400 transition-colors" />
                                 <input
-                                    type="password"
+                                    type={showAltaplazaPassword ? "text" : "password"}
                                     placeholder="Ingrese la contraseña"
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
+                                    className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
                                     value={altaplazaPassword}
                                     onChange={(e) => setAltaplazaPassword(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAltaplazaConnect()}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAltaplazaPassword(!showAltaplazaPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors focus:outline-none"
+                                >
+                                    {showAltaplazaPassword ? (
+                                        <EyeOff className="w-5 h-5" />
+                                    ) : (
+                                        <Eye className="w-5 h-5" />
+                                    )}
+                                </button>
                             </div>
                         </div>
                     </div>
