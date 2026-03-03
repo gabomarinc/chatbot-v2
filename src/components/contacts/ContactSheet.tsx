@@ -90,92 +90,101 @@ export function ContactSheet({ contactId, isOpen, onClose, initialData, customFi
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                            <AlignLeft className="w-4 h-4" />
-                            Campos Personalizados
-                        </h3>
+                    {(() => {
+                        const agentId = initialData.conversations?.[0]?.agent?.id;
+                        const relevantFields = customFields.filter(f =>
+                            f.agentId === agentId
+                        );
 
-                        {customFields.length === 0 && (
-                            <p className="text-sm text-gray-500 italic">No hay campos personalizados definidos.</p>
-                        )}
+                        return (
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                                    <AlignLeft className="w-4 h-4" />
+                                    Campos Personalizados
+                                </h3>
 
-                        <div className="grid gap-4">
-                            {customFields.map(field => (
-                                <div key={field.id} className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
-                                        {field.label}
-                                        <span className="bg-gray-100 text-gray-400 text-[10px] px-1.5 rounded font-mono uppercase">{field.type}</span>
-                                    </label>
+                                {relevantFields.length === 0 && (
+                                    <p className="text-sm text-gray-500 italic">No hay campos personalizados definidos.</p>
+                                )}
 
-                                    {field.type === 'TEXT' && (
-                                        <input
-                                            type="text"
-                                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
-                                            value={formData[field.key] || ''}
-                                            onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
-                                            placeholder={`Ingresa ${field.label.toLowerCase()}...`}
-                                        />
-                                    )}
+                                <div className="grid gap-4">
+                                    {relevantFields.map(field => (
+                                        <div key={field.id} className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+                                                {field.label}
+                                                <span className="bg-gray-100 text-gray-400 text-[10px] px-1.5 rounded font-mono uppercase">{field.type}</span>
+                                            </label>
 
-                                    {field.type === 'NUMBER' && (
-                                        <div className="relative">
-                                            <Hash className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-                                            <input
-                                                type="number"
-                                                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
-                                                value={formData[field.key] || ''}
-                                                onChange={e => setFormData({ ...formData, [field.key]: Number(e.target.value) })}
-                                            />
+                                            {field.type === 'TEXT' && (
+                                                <input
+                                                    type="text"
+                                                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                    value={formData[field.key] || ''}
+                                                    onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
+                                                    placeholder={`Ingresa ${field.label.toLowerCase()}...`}
+                                                />
+                                            )}
+
+                                            {field.type === 'NUMBER' && (
+                                                <div className="relative">
+                                                    <Hash className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+                                                    <input
+                                                        type="number"
+                                                        className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                        value={formData[field.key] || ''}
+                                                        onChange={e => setFormData({ ...formData, [field.key]: Number(e.target.value) })}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {field.type === 'DATE' && (
+                                                <div className="relative">
+                                                    <Calendar className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+                                                    <input
+                                                        type="date"
+                                                        className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
+                                                        // Handle date parsing/formatting if needed. Assuming string for simplicity or ISO.
+                                                        value={formData[field.key] ? String(formData[field.key]).split('T')[0] : ''}
+                                                        onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {field.type === 'BOOLEAN' && (
+                                                <div className="flex items-center gap-3">
+                                                    <button
+                                                        onClick={() => setFormData({ ...formData, [field.key]: true })}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${formData[field.key] === true ? 'bg-[#21AC96] text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                                    >
+                                                        SÍ
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setFormData({ ...formData, [field.key]: false })}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${formData[field.key] === false ? 'bg-red-500 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                                    >
+                                                        NO
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {field.type === 'SELECT' && (
+                                                <select
+                                                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96] h-10"
+                                                    value={formData[field.key] || ''}
+                                                    onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
+                                                >
+                                                    <option value="">Seleccionar...</option>
+                                                    {field.options && field.options.map((opt: string, idx: number) => (
+                                                        <option key={idx} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                            )}
                                         </div>
-                                    )}
-
-                                    {field.type === 'DATE' && (
-                                        <div className="relative">
-                                            <Calendar className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-                                            <input
-                                                type="date"
-                                                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96]"
-                                                // Handle date parsing/formatting if needed. Assuming string for simplicity or ISO.
-                                                value={formData[field.key] ? String(formData[field.key]).split('T')[0] : ''}
-                                                onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {field.type === 'BOOLEAN' && (
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => setFormData({ ...formData, [field.key]: true })}
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${formData[field.key] === true ? 'bg-[#21AC96] text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                                            >
-                                                SÍ
-                                            </button>
-                                            <button
-                                                onClick={() => setFormData({ ...formData, [field.key]: false })}
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${formData[field.key] === false ? 'bg-red-500 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                                            >
-                                                NO
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {field.type === 'SELECT' && (
-                                        <select
-                                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96]/20 focus:border-[#21AC96] h-10"
-                                            value={formData[field.key] || ''}
-                                            onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
-                                        >
-                                            <option value="">Seleccionar...</option>
-                                            {field.options && field.options.map((opt: string, idx: number) => (
-                                                <option key={idx} value={opt}>{opt}</option>
-                                            ))}
-                                        </select>
-                                    )}
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 <SheetFooter className="mt-8">

@@ -174,6 +174,7 @@ export function ProspectKanbanModal({ prospect, customFields, statusColor, onClo
     const initials = prospect.name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2) || '?'
 
     const filledFields = customFields.filter(f =>
+        f.agentId === prospect.agentId &&
         prospect.customData?.[f.key] !== undefined &&
         prospect.customData?.[f.key] !== null &&
         prospect.customData?.[f.key] !== ''

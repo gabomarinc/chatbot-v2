@@ -77,6 +77,7 @@ function ProspectCard({
     isDragging: boolean
 }) {
     const relevantFields = customFields.filter(f =>
+        f.agentId === prospect.agentId &&
         prospect.customData?.[f.key] !== undefined &&
         prospect.customData?.[f.key] !== null &&
         prospect.customData?.[f.key] !== ''

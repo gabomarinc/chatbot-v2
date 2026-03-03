@@ -110,7 +110,7 @@ export async function getContacts({ workspaceId, filters = [], page = 1, pageSiz
                         orderBy: { createdAt: 'desc' },
                         select: {
                             agent: {
-                                select: { name: true }
+                                select: { id: true, name: true }
                             }
                         }
                     },
@@ -248,7 +248,7 @@ export async function getContactDetail(contactId: string) {
                             orderBy: { createdAt: 'asc' }
                         },
                         agent: {
-                            select: { name: true }
+                            select: { id: true, name: true }
                         }
                     }
                 }
@@ -302,8 +302,10 @@ export async function generateContactInsights(contactId: string, force: boolean 
             if (!googleKey) googleKey = configs.find(c => c.key === 'GOOGLE_API_KEY')?.value;
         }
 
+        const agentIds = Array.from(new Set(contact.conversations.map(c => c.agentId).filter(Boolean)));
+
         const agents = await prisma.agent.findMany({
-            where: { workspaceId: contact.workspaceId },
+            where: { id: { in: agentIds as string[] } },
             include: { customFieldDefinitions: true }
         });
         const allFields = agents.flatMap(a => a.customFieldDefinitions);
