@@ -938,7 +938,11 @@ Reglas para cobrar (ESTRICTO):
                             tools: geminiTools as any
                         });
 
-                        const chatHistory = history.reverse().map((m: Message) => {
+                        // Gemini startChat expects chronological history (Oldest -> Newest)
+                        // history is already 'asc' (chronological), so we don't need to reverse it.
+                        // However, we MUST make a copy to avoid accidental mutations later.
+                        const chronHistory = [...history];
+                        const chatHistory = chronHistory.map((m: any) => {
                             const parts: any[] = [{
                                 text: m.role === 'HUMAN'
                                     ? `[Intervención humana]: ${m.content}`
@@ -1333,7 +1337,8 @@ Reglas para cobrar (ESTRICTO):
                                     // Robustness: If AI forgot the image URL, try to find the last image in the conversation
                                     if (!invoiceArgs.imageUrl) {
                                         console.log('[ALTAPLAZA] Image URL missing from AI arguments, searching history...');
-                                        const lastImageMsg = history.find((m: any) =>
+                                        // Search from newest to oldest
+                                        const lastImageMsg = [...history].reverse().find((m: any) =>
                                             m.metadata && typeof m.metadata === 'object' &&
                                             (m.metadata as any).type === 'image' && (m.metadata as any).url
                                         );
@@ -1588,9 +1593,10 @@ Reglas para cobrar (ESTRICTO):
 
                 const currentOpenAI = new OpenAI({ apiKey: openaiKey });
 
+                // OpenAI expects messages in chronological order (Oldest -> Newest)
                 const openAiMessages: any[] = [
                     { role: 'system', content: systemPrompt },
-                    ...history.reverse().map((m: Message) => {
+                    ...history.map((m: any) => {
                         const isImage = m.metadata && typeof m.metadata === 'object' && (m.metadata as any).type === 'image' && (m.metadata as any).url;
 
                         if (isImage) {
@@ -2107,7 +2113,7 @@ Reglas para cobrar (ESTRICTO):
                                 // Robustness: If AI forgot the image URL, try to find the last image in the conversation
                                 if (!invoiceArgs.imageUrl) {
                                     console.log('[ALTAPLAZA] [OPENAI] Image URL missing, searching history...');
-                                    const lastImageMsg = history.find((m: any) =>
+                                    const lastImageMsg = [...history].reverse().find((m: any) =>
                                         m.metadata && typeof m.metadata === 'object' &&
                                         (m.metadata as any).type === 'image' && (m.metadata as any).url
                                     );
