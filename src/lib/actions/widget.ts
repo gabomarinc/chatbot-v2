@@ -1332,7 +1332,7 @@ Reglas para cobrar (ESTRICTO):
                                     // Robustness: If AI forgot the image URL, try to find the last image in the conversation
                                     if (!invoiceArgs.imageUrl) {
                                         console.log('[ALTAPLAZA] Image URL missing from AI arguments, searching history...');
-                                        const lastImageMsg = history.find(m =>
+                                        const lastImageMsg = history.find((m: any) =>
                                             m.metadata && typeof m.metadata === 'object' &&
                                             (m.metadata as any).type === 'image' && (m.metadata as any).url
                                         );
@@ -2106,7 +2106,7 @@ Reglas para cobrar (ESTRICTO):
                                 // Robustness: If AI forgot the image URL, try to find the last image in the conversation
                                 if (!invoiceArgs.imageUrl) {
                                     console.log('[ALTAPLAZA] [OPENAI] Image URL missing, searching history...');
-                                    const lastImageMsg = history.find(m =>
+                                    const lastImageMsg = history.find((m: any) =>
                                         m.metadata && typeof m.metadata === 'object' &&
                                         (m.metadata as any).type === 'image' && (m.metadata as any).url
                                     );
