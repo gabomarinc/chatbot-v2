@@ -879,7 +879,7 @@ Reglas para cobrar (ESTRICTO):
                 1. SI el usuario quiere registrar factura o ver puntos, pide cédula y usa 'altaplaza_check_user'. 
                 2. LA RESPUESTA ahora incluye 'invoicesCount' y 'points' del usuario. Úsalos para saludar de forma personalizada.
                 3. SI no existe el usuario, regístralo con 'altaplaza_register_user'.
-                4. LUEGO usa 'altaplaza_register_invoice' para registrar facturas.\n`;
+                4. LUEGO usa 'altaplaza_register_invoice' para registrar facturas. DEBES incluir la URL de la imagen recibida en el parámetro 'imageUrl'.\n`;
             }
 
             // Try Gemini first if model is Gemini, with fallback to OpenAI
@@ -1326,8 +1326,24 @@ Reglas para cobrar (ESTRICTO):
                                 try {
                                     const { registerInvoice } = await import('@/lib/altaplaza');
                                     const { logIntegrationEvent } = await import('@/lib/integrations-logger');
-                                    const result = await registerInvoice(args as any);
-                                    await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_INVOICE', 'SUCCESS', { invoiceNumber: (args as any).invoiceNumber });
+
+                                    const invoiceArgs = args as any;
+
+                                    // Robustness: If AI forgot the image URL, try to find the last image in the conversation
+                                    if (!invoiceArgs.imageUrl) {
+                                        console.log('[ALTAPLAZA] Image URL missing from AI arguments, searching history...');
+                                        const lastImageMsg = history.find(m =>
+                                            m.metadata && typeof m.metadata === 'object' &&
+                                            (m.metadata as any).type === 'image' && (m.metadata as any).url
+                                        );
+                                        if (lastImageMsg) {
+                                            invoiceArgs.imageUrl = (lastImageMsg.metadata as any).url;
+                                            console.log('[ALTAPLAZA] Automatically injected image URL:', invoiceArgs.imageUrl);
+                                        }
+                                    }
+
+                                    const result = await registerInvoice(invoiceArgs);
+                                    await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_INVOICE', 'SUCCESS', { invoiceNumber: invoiceArgs.invoiceNumber, imageUrl: invoiceArgs.imageUrl });
                                     toolResult = result;
                                 } catch (e: any) {
                                     console.error('[GEMINI] altaplaza_register_invoice error:', e);
@@ -2084,8 +2100,24 @@ Reglas para cobrar (ESTRICTO):
                             try {
                                 const { registerInvoice } = await import('@/lib/altaplaza');
                                 const { logIntegrationEvent } = await import('@/lib/integrations-logger');
-                                const result = await registerInvoice(args as any);
-                                await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_INVOICE', 'SUCCESS', { invoiceNumber: (args as any).invoiceNumber });
+
+                                const invoiceArgs = args as any;
+
+                                // Robustness: If AI forgot the image URL, try to find the last image in the conversation
+                                if (!invoiceArgs.imageUrl) {
+                                    console.log('[ALTAPLAZA] [OPENAI] Image URL missing, searching history...');
+                                    const lastImageMsg = history.find(m =>
+                                        m.metadata && typeof m.metadata === 'object' &&
+                                        (m.metadata as any).type === 'image' && (m.metadata as any).url
+                                    );
+                                    if (lastImageMsg) {
+                                        invoiceArgs.imageUrl = (lastImageMsg.metadata as any).url;
+                                        console.log('[ALTAPLAZA] [OPENAI] Injected URL:', invoiceArgs.imageUrl);
+                                    }
+                                }
+
+                                const result = await registerInvoice(invoiceArgs);
+                                await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_INVOICE', 'SUCCESS', { invoiceNumber: invoiceArgs.invoiceNumber, imageUrl: invoiceArgs.imageUrl });
                                 toolResult = result;
                             } catch (e: any) {
                                 console.error('[OPENAI] altaplaza_register_invoice error:', e);
