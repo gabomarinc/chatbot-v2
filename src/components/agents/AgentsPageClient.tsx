@@ -238,7 +238,7 @@ export function AgentsPageClient({ initialAgents, userRole }: AgentsPageClientPr
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     {/* View Toggle - Hidden on very small screens to save space */}
-                    <div className="hidden xs:flex bg-white p-1 rounded-xl border border-gray-100 items-center shadow-sm">
+                    <div className="hidden sm:flex bg-white p-1 rounded-xl border border-gray-100 items-center shadow-sm">
                         <button
                             onClick={() => setViewMode('GRID')}
                             className={`p-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-gray-100 text-[#21AC96]' : 'text-gray-400 hover:text-gray-600'}`}
