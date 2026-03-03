@@ -692,8 +692,9 @@ Eres capaz de gestionar el flujo de Altaplaza. Sigue este protocolo:
 3. SI 'altaplaza_check_user' dice que el usuario NO existe, pide sus datos (Nombre, Apellido, Email, Fecha Nacimiento) y usa 'altaplaza_register_user'. Informa al usuario su "temporaryPassword" si se genera una.
 4. SI el usuario ya existe o acaba de ser registrado, puedes proceder a registrar facturas usando 'altaplaza_register_invoice'.
 5. CRÍTICO: Al usar 'altaplaza_register_invoice', DEBES incluir la URL de la imagen de la factura que recibiste anteriormente en el parámetro 'imageUrl'. No la omitas.
-6. La fecha de nacimiento debe ser en formato AAAA-MM-DD.
-7. Sé amable y guía al usuario en cada paso.
+6. SI YA ANALIZASTE EL TICKET y el usuario confirmó que los datos son correctos (ej: "Sí", "Correcto"), NO pidas la foto de nuevo. USA los datos extraídos y la URL del historial para llamar a 'altaplaza_register_invoice' inmediatamente.
+7. La fecha de nacimiento debe ser en formato AAAA-MM-DD.
+8. Sé amigable pero eficiente.
 \n`;
   }
 

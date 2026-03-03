@@ -867,7 +867,7 @@ Reglas para cobrar (ESTRICTO):
                                 invoiceNumber: { type: "string" },
                                 amount: { type: "number" },
                                 storeName: { type: "string" },
-                                imageUrl: { type: "string" },
+                                imageUrl: { type: "string", description: "URL de la imagen de la factura. SI ya procesaste una imagen en turnos anteriores, usa esa misma URL que está en el historial." },
                                 date: { type: "string", description: "AAAA-MM-DD" }
                             },
                             required: ["idCard", "invoiceNumber", "amount", "storeName"]
@@ -879,7 +879,8 @@ Reglas para cobrar (ESTRICTO):
                 1. SI el usuario quiere registrar factura o ver puntos, pide cédula y usa 'altaplaza_check_user'. 
                 2. LA RESPUESTA ahora incluye 'invoicesCount' y 'points' del usuario. Úsalos para saludar de forma personalizada.
                 3. SI no existe el usuario, regístralo con 'altaplaza_register_user'.
-                4. LUEGO usa 'altaplaza_register_invoice' para registrar facturas. DEBES incluir la URL de la imagen recibida en el parámetro 'imageUrl'.\n`;
+                4. LUEGO usa 'altaplaza_register_invoice' para registrar facturas. DEBES incluir la URL de la imagen recibida en el parámetro 'imageUrl'.
+                5. MUY IMPORTANTE: Si ya leíste los datos de un ticket (tienda, monto) y el usuario te confirma que son correctos (ej: con un "Correcto"), NO pidas la foto de nuevo. USA los datos que ya tienes y la URL de la imagen (R2 URL) que aparece en el historial para llamar a 'altaplaza_register_invoice' INMEDIATAMENTE.\n`;
             }
 
             // Try Gemini first if model is Gemini, with fallback to OpenAI
@@ -946,8 +947,8 @@ Reglas para cobrar (ESTRICTO):
 
                             // Add image if present in metadata
                             if (m.metadata && typeof m.metadata === 'object' && (m.metadata as any).type === 'image' && (m.metadata as any).url) {
-                                // For history, we'll just reference the image in text since we can't load old images easily
-                                parts.push({ text: `[Imagen adjunta: ${(m.metadata as any).url}]` });
+                                // For history, we'll explicitly label the URL as the invoice image URL
+                                parts.push({ text: `[URL DE IMAGEN DE FACTURA: ${(m.metadata as any).url}]` });
                             }
 
                             return {
