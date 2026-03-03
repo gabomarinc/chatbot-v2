@@ -876,9 +876,10 @@ Reglas para cobrar (ESTRICTO):
                 );
 
                 systemPrompt += `\nINSTRUCCIONES ALTAPLAZA:
-                1. SI el usuario quiere registrar factura, pide cédula y usa 'altaplaza_check_user'.
-                2. SI no existe, regístralo con 'altaplaza_register_user'.
-                3. LUEGO usa 'altaplaza_register_invoice'.\n`;
+                1. SI el usuario quiere registrar factura o ver puntos, pide cédula y usa 'altaplaza_check_user'. 
+                2. LA RESPUESTA ahora incluye 'invoicesCount' y 'points' del usuario. Úsalos para saludar de forma personalizada.
+                3. SI no existe el usuario, regístralo con 'altaplaza_register_user'.
+                4. LUEGO usa 'altaplaza_register_invoice' para registrar facturas.\n`;
             }
 
             // Try Gemini first if model is Gemini, with fallback to OpenAI

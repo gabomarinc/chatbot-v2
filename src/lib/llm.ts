@@ -688,10 +688,11 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
 INSTRUCCIONES PARA INTEGRACIÓN ALTAPLAZA:
 Eres capaz de gestionar el flujo de Altaplaza. Sigue este protocolo:
 1. SI el usuario quiere registrar una factura o consultar puntos, PRIMERO pide su cédula y usa 'altaplaza_check_user'.
-2. SI 'altaplaza_check_user' dice que el usuario NO existe, pide sus datos (Nombre, Apellido, Email, Fecha Nacimiento) y usa 'altaplaza_register_user'. Informa al usuario su "temporaryPassword" si se genera una.
-3. SI el usuario ya existe o acaba de ser registrado, puedes proceder a registrar facturas usando 'altaplaza_register_invoice'.
-4. La fecha de nacimiento debe ser en formato AAAA-MM-DD.
-5. Sé amable y guía al usuario en cada paso.
+2. SI 'altaplaza_check_user' devuelve datos del usuario, ahora tienes acceso a información adicional: 'user.invoicesCount' (total de facturas) y 'user.points' (puntos acumulados). USA ESTA INFORMACIÓN para saludar con más detalle (ej: "¡Hola Omar! Tienes 1,830 puntos acumulados y has registrado 5 facturas hasta ahora").
+3. SI 'altaplaza_check_user' dice que el usuario NO existe, pide sus datos (Nombre, Apellido, Email, Fecha Nacimiento) y usa 'altaplaza_register_user'. Informa al usuario su "temporaryPassword" si se genera una.
+4. SI el usuario ya existe o acaba de ser registrado, puedes proceder a registrar facturas usando 'altaplaza_register_invoice'.
+5. La fecha de nacimiento debe ser en formato AAAA-MM-DD.
+6. Sé amable y guía al usuario en cada paso.
 \n`;
   }
 

@@ -14,6 +14,8 @@ export interface AltaplazaUser {
     birthDate: string;
     phone?: string;
     neighborhood?: string;
+    invoicesCount?: number; // Total de facturas registradas
+    points?: number;       // Puntos acumulados
 }
 
 /**
