@@ -141,15 +141,23 @@ export async function sendWidgetMessage(data: {
         if (!conversation.contactId) {
             console.log(`[WIDGET] No contact linked for conversation ${conversation.id}. Creating new contact...`);
             try {
+                // WhatsApp Phone Extraction Logic
+                let extractedPhone = null;
+                if (channel.type === 'WHATSAPP' || channel.type === 'WHATSAPP_WEB') {
+                    // externalId usually looks like "50766667777@c.us" or similar
+                    extractedPhone = conversation.externalId.split('@')[0];
+                    console.log(`[WIDGET] Extracted WhatsApp phone: ${extractedPhone}`);
+                }
+
                 // Create a new contact if one doesn't exist
                 const newContact = await prisma.contact.create({
                     data: {
                         workspaceId: workspace.id,
                         name: conversation.contactName || 'Visitante',
                         email: conversation.contactEmail,
+                        phone: extractedPhone,
                         externalId: conversation.externalId,
                         customData: {},
-                        // Add phone if extracted from somewhere, but currently not in conversation model apparently
                     }
                 });
                 console.log(`[WIDGET] Created contact ${newContact.id}`);
@@ -158,15 +166,24 @@ export async function sendWidgetMessage(data: {
                 const updatedConversation = await prisma.conversation.update({
                     where: { id: conversation.id },
                     data: { contactId: newContact.id },
-                    include: { contact: true } // Include contact for downstream use if needed
+                    include: { contact: true }
                 });
 
-                // Update local variable
                 conversation = updatedConversation;
-                console.log(`[WIDGET] Linked contact to conversation.`);
             } catch (error) {
                 console.error(`[WIDGET] Error creating/linking contact:`, error);
-                // Continue execution
+            }
+        } else if (conversation.contact && !conversation.contact.phone && (channel.type === 'WHATSAPP' || channel.type === 'WHATSAPP_WEB')) {
+            // Update existing contact if phone is missing
+            try {
+                const extractedPhone = conversation.externalId.split('@')[0];
+                await prisma.contact.update({
+                    where: { id: conversation.contactId },
+                    data: { phone: extractedPhone }
+                });
+                console.log(`[WIDGET] Updated existing contact phone: ${extractedPhone}`);
+            } catch (e) {
+                console.error('[WIDGET] Error updating contact phone:', e);
             }
         }
 
@@ -875,12 +892,17 @@ Reglas para cobrar (ESTRICTO):
                     }
                 );
 
-                systemPrompt += `\nINSTRUCCIONES ALTAPLAZA:
+                systemPrompt += `\nINSTRUCCIONES ALTAPLAZA (CRÍTICO):
                 1. SI el usuario quiere registrar factura o ver puntos, pide cédula y usa 'altaplaza_check_user'. 
-                2. LA RESPUESTA ahora incluye 'invoicesCount' y 'points' del usuario. Úsalos para saludar de forma personalizada.
+                2. LA RESPUESTA de 'altaplaza_check_user' incluye 'invoicesCount' y 'points'. Úsalos para saludar.
                 3. SI no existe el usuario, regístralo con 'altaplaza_register_user'.
-                4. LUEGO usa 'altaplaza_register_invoice' para registrar facturas. DEBES incluir la URL de la imagen recibida en el parámetro 'imageUrl'.
-                5. MUY IMPORTANTE: Si ya leíste los datos de un ticket (tienda, monto) y el usuario te confirma que son correctos (ej: con un "Correcto"), NO pidas la foto de nuevo. USA los datos que ya tienes y la URL de la imagen (R2 URL) que aparece en el historial para llamar a 'altaplaza_register_invoice' INMEDIATAMENTE.\n`;
+                4. PARA REGISTRAR FACTURAS (altaplaza_register_invoice):
+                   - EXTRACCIÓN: Analiza la foto enviada por el usuario para extraer Monto, Tienda y Fecha.
+                   - CONFIRMACIÓN: Pide al usuario que confirme si los datos extraídos son correctos.
+                   - EJECUCIÓN: Una vez confirmado (ej: "Sí", "Correcto"), llama a 'altaplaza_register_invoice'.
+                5. MEMORIA DE IMAGEN: Si ya hay una foto analizada en el historial, NO pidas la foto de nuevo. USA los datos que ya tienes.
+                6. CÉDULA FALTANTE: Si el usuario confirma los datos pero aún no te ha dado su cédula (idCard), PÍDESELA ("Por favor, bríndame tu cédula para completar el registro"). NO pidas la foto en su lugar.
+                7. REGLA DE ORO: Si ya viste la foto una vez, el parámetro 'imageUrl' debe ser la URL que está en el historial. NUNCA respondas diciendo que no ves la imagen si la URL está presente en los mensajes anteriores.\n`;
             }
 
             // Try Gemini first if model is Gemini, with fallback to OpenAI
@@ -939,10 +961,9 @@ Reglas para cobrar (ESTRICTO):
                         });
 
                         // Gemini startChat expects chronological history (Oldest -> Newest)
-                        // history is already 'asc' (chronological), so we don't need to reverse it.
-                        // However, we MUST make a copy to avoid accidental mutations later.
-                        const chronHistory = [...history];
-                        const chatHistory = chronHistory.map((m: any) => {
+                        // EXCLUDE the current message (last one in history) to avoid duplication
+                        const previousHistory = history.slice(0, -1);
+                        const chatHistory = previousHistory.map((m: any) => {
                             const parts: any[] = [{
                                 text: m.role === 'HUMAN'
                                     ? `[Intervención humana]: ${m.content}`
@@ -1594,9 +1615,11 @@ Reglas para cobrar (ESTRICTO):
                 const currentOpenAI = new OpenAI({ apiKey: openaiKey });
 
                 // OpenAI expects messages in chronological order (Oldest -> Newest)
+                // EXCLUDE the current message (last one in history) to avoid duplication
+                const previousHistory = history.slice(0, -1);
                 const openAiMessages: any[] = [
                     { role: 'system', content: systemPrompt },
-                    ...history.map((m: any) => {
+                    ...previousHistory.map((m: any) => {
                         const isImage = m.metadata && typeof m.metadata === 'object' && (m.metadata as any).type === 'image' && (m.metadata as any).url;
 
                         if (isImage) {

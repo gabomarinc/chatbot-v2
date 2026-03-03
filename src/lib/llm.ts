@@ -685,16 +685,15 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
   // Altaplaza Specific Instructions
   if (hasAltaplaza) {
     prompt += `
-INSTRUCCIONES PARA INTEGRACIÓN ALTAPLAZA:
-Eres capaz de gestionar el flujo de Altaplaza. Sigue este protocolo:
+INSTRUCCIONES PARA INTEGRACIÓN ALTAPLAZA (CRÍTICO):
 1. SI el usuario quiere registrar una factura o consultar puntos, PRIMERO pide su cédula y usa 'altaplaza_check_user'.
-2. SI 'altaplaza_check_user' devuelve datos del usuario, ahora tienes acceso a información adicional: 'user.invoicesCount' (total de facturas) y 'user.points' (puntos acumulados). USA ESTA INFORMACIÓN para saludar con más detalle (ej: "¡Hola Omar! Tienes 1,830 puntos acumulados y has registrado 5 facturas hasta ahora").
-3. SI 'altaplaza_check_user' dice que el usuario NO existe, pide sus datos (Nombre, Apellido, Email, Fecha Nacimiento) y usa 'altaplaza_register_user'. Informa al usuario su "temporaryPassword" si se genera una.
-4. SI el usuario ya existe o acaba de ser registrado, puedes proceder a registrar facturas usando 'altaplaza_register_invoice'.
-5. CRÍTICO: Al usar 'altaplaza_register_invoice', DEBES incluir la URL de la imagen de la factura que recibiste anteriormente en el parámetro 'imageUrl'. No la omitas.
-6. SI YA ANALIZASTE EL TICKET y el usuario confirmó que los datos son correctos (ej: "Sí", "Correcto"), NO pidas la foto de nuevo. USA los datos extraídos y la URL del historial para llamar a 'altaplaza_register_invoice' inmediatamente.
-7. La fecha de nacimiento debe ser en formato AAAA-MM-DD.
-8. Sé amigable pero eficiente.
+2. SI 'altaplaza_check_user' devuelve datos del usuario, usa 'user.invoicesCount' y 'user.points' para saludar.
+3. SI el usuario no existe, pide sus datos y usa 'altaplaza_register_user'.
+4. REGISTRO DE FACTURA (altaplaza_register_invoice):
+   - Una vez tengas la foto, extráe Tienda y Monto y pide confirmación al usuario.
+   - Si el usuario confirma (ej: "Sí", "Correcto"), llama a 'altaplaza_register_invoice'.
+5. MEMORIA: Si ya analizaste la foto y el usuario confirma, NO pidas la foto de nuevo. Si te falta la cédula, pídela específicamente, pero NO digas que no ves la imagen si ya la recibiste antes.
+6. La URL de la imagen (imageUrl) debe ser la que recibiste en el chat (URL de R2).
 \n`;
   }
 
