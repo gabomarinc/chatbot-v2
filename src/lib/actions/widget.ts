@@ -470,6 +470,17 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
 - Map user input to the *exact* custom field keys defined above (e.g. if field is "salary", map "5000" to "salary").
 5. FINALIZACIÓN DE ATENCIÓN: Solo usa 'finalizar_atencion' cuando el usuario ya no tenga dudas y la consulta haya sido resuelta. NO la uses si hay una cita agendada hoy o pendiente, o si el usuario dijo que volvería con una consulta específica mas tarde.
 
+${(() => {
+                    if (!hasAltaplaza) return '';
+                    const contact = conversation.contact as any;
+                    const customData = contact?.customData || {};
+                    const storedIdCard = customData.idCard;
+                    if (storedIdCard) {
+                        return `\nIDENTIFICACIÓN ALTAPLAZA (SISTEMA): El usuario ya está identificado con la cédula ${storedIdCard}. NO se la vuelvas a pedir.\n`;
+                    }
+                    return '';
+                })()}
+
 ${channel.agent.jobType === 'SALES' ? `
 PAGOS Y COBROS (CAPACIDAD DE VENTAS):
 Tienes la capacidad de generar LINKS DE PAGO para los clientes.
@@ -892,6 +903,22 @@ Reglas para cobrar (ESTRICTO):
                     }
                 );
 
+                // MOVED: Altaplaza critical instructions are now at the very end of systemPrompt for maximum priority.
+            }
+
+            // Try Gemini first if model is Gemini, with fallback to OpenAI
+            let useOpenAI = false;
+            let fallbackModel = 'gpt-4o'; // Default fallback model
+
+            // Check if we need to force OpenAI due to missing base64 for image
+            if (model.includes('gemini') && fileType === 'image' && fileUrl && !imageBase64) {
+                console.log('[GEMINI] Image present but Base64 missing. Forcing OpenAI to use URL.');
+                useOpenAI = true;
+                modelUsedForLogging = fallbackModel;
+            }
+
+            // FINAL REINFORCEMENT: Altaplaza rules must be at the very end to override any personality ambiguity
+            if (hasAltaplaza) {
                 systemPrompt += `\nINSTRUCCIONES ALTAPLAZA (PRIORIDAD ABSOLUTA - REGLAS DE ORO):
                 1. FLUJO DE REGISTRO:
                    - PASO A: El usuario envía foto -> Tú la analizas, extraes TIENDA, MONTO y NÚMERO DE FACTURA.
@@ -905,17 +932,6 @@ Reglas para cobrar (ESTRICTO):
                    - 'imageUrl': USA SIEMPRE la URL de la imagen que está en el historial reciente.
                    - 'invoiceNumber': Es OBLIGATORIO. Si no lo tienes, pídelo al usuario.
                 4. SI EL USUARIO DICE "YA TE LA MANDÉ": Revisa el historial, busca la URL de la imagen y úsala. NO digas que no la ves.\n`;
-            }
-
-            // Try Gemini first if model is Gemini, with fallback to OpenAI
-            let useOpenAI = false;
-            let fallbackModel = 'gpt-4o'; // Default fallback model
-
-            // Check if we need to force OpenAI due to missing base64 for image
-            if (model.includes('gemini') && fileType === 'image' && fileUrl && !imageBase64) {
-                console.log('[GEMINI] Image present but Base64 missing. Forcing OpenAI to use URL.');
-                useOpenAI = true;
-                modelUsedForLogging = fallbackModel;
             }
 
             if (model.includes('gemini') && !useOpenAI) {
@@ -1334,6 +1350,16 @@ Reglas para cobrar (ESTRICTO):
                                     const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const result = await checkUser((args as any).idCard);
                                     await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'CHECK_USER', 'SUCCESS', { idCard: (args as any).idCard });
+
+                                    // Save idCard to contact customData for memory
+                                    if (result && conversation.contactId) {
+                                        const currentData = (conversation.contact as any)?.customData || {};
+                                        await prisma.contact.update({
+                                            where: { id: conversation.contactId },
+                                            data: { customData: { ...currentData, idCard: (args as any).idCard } }
+                                        });
+                                    }
+
                                     toolResult = result;
                                 } catch (e: any) {
                                     console.error('[GEMINI] altaplaza_check_user error:', e);
@@ -1345,6 +1371,16 @@ Reglas para cobrar (ESTRICTO):
                                     const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                     const result = await registerUser(args as any);
                                     await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_USER', 'SUCCESS', { email: (args as any).email });
+
+                                    // Save idCard to contact customData for memory
+                                    if (result && conversation.contactId) {
+                                        const currentData = (conversation.contact as any)?.customData || {};
+                                        await prisma.contact.update({
+                                            where: { id: conversation.contactId },
+                                            data: { customData: { ...currentData, idCard: (args as any).idCard } }
+                                        });
+                                    }
+
                                     toolResult = result;
                                 } catch (e: any) {
                                     console.error('[GEMINI] altaplaza_register_user error:', e);
@@ -1368,6 +1404,15 @@ Reglas para cobrar (ESTRICTO):
                                         if (lastImageMsg) {
                                             invoiceArgs.imageUrl = (lastImageMsg.metadata as any).url;
                                             console.log('[ALTAPLAZA] Automatically injected image URL:', invoiceArgs.imageUrl);
+                                        }
+                                    }
+
+                                    // Auto-inject idCard from contact if missing
+                                    if (!invoiceArgs.idCard && conversation.contactId) {
+                                        const contact = conversation.contact as any;
+                                        if (contact?.customData?.idCard) {
+                                            invoiceArgs.idCard = contact.customData.idCard;
+                                            console.log('[ALTAPLAZA] Automatically injected idCard from contact:', invoiceArgs.idCard);
                                         }
                                     }
 
@@ -2112,6 +2157,16 @@ Reglas para cobrar (ESTRICTO):
                                 const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const result = await checkUser((args as any).idCard);
                                 await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'CHECK_USER', 'SUCCESS', { idCard: (args as any).idCard });
+
+                                // Save idCard to contact customData for memory
+                                if (result && conversation.contactId) {
+                                    const currentData = (conversation.contact as any)?.customData || {};
+                                    await prisma.contact.update({
+                                        where: { id: conversation.contactId },
+                                        data: { customData: { ...currentData, idCard: (args as any).idCard } }
+                                    });
+                                }
+
                                 toolResult = result;
                             } catch (e: any) {
                                 console.error('[OPENAI] altaplaza_check_user error:', e);
@@ -2123,6 +2178,16 @@ Reglas para cobrar (ESTRICTO):
                                 const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const result = await registerUser(args as any);
                                 await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_USER', 'SUCCESS', { email: (args as any).email });
+
+                                // Save idCard to contact customData for memory
+                                if (result && conversation.contactId) {
+                                    const currentData = (conversation.contact as any)?.customData || {};
+                                    await prisma.contact.update({
+                                        where: { id: conversation.contactId },
+                                        data: { customData: { ...currentData, idCard: (args as any).idCard } }
+                                    });
+                                }
+
                                 toolResult = result;
                             } catch (e: any) {
                                 console.error('[OPENAI] altaplaza_register_user error:', e);
@@ -2145,6 +2210,15 @@ Reglas para cobrar (ESTRICTO):
                                     if (lastImageMsg) {
                                         invoiceArgs.imageUrl = (lastImageMsg.metadata as any).url;
                                         console.log('[ALTAPLAZA] [OPENAI] Injected URL:', invoiceArgs.imageUrl);
+                                    }
+                                }
+
+                                // Auto-inject idCard from contact if missing
+                                if (!invoiceArgs.idCard && conversation.contactId) {
+                                    const contact = conversation.contact as any;
+                                    if (contact?.customData?.idCard) {
+                                        invoiceArgs.idCard = contact.customData.idCard;
+                                        console.log('[ALTAPLAZA] [OPENAI] Injected idCard:', invoiceArgs.idCard);
                                     }
                                 }
 
