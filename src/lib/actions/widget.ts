@@ -1351,12 +1351,27 @@ Reglas para cobrar (ESTRICTO):
                                     const result = await checkUser((args as any).idCard);
                                     await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'CHECK_USER', 'SUCCESS', { idCard: (args as any).idCard });
 
-                                    // Save idCard to contact customData for memory
+                                    // Save idCard and Sync Name to contact for memory and CRM visibility
                                     if (result && conversation.contactId) {
                                         const currentData = (conversation.contact as any)?.customData || {};
+                                        const contactName = (conversation.contact as any)?.name || '';
+
+                                        const updateData: any = {
+                                            customData: { ...currentData, idCard: (args as any).idCard }
+                                        };
+
+                                        // If name is generic "Visitante..." or empty, update it with Altaplaza name
+                                        if (result.exists && result.user?.firstName) {
+                                            const fullName = `${result.user.firstName} ${result.user.lastName || ''}`.trim();
+                                            if (!contactName || contactName.toLowerCase().includes('visitante')) {
+                                                updateData.name = fullName;
+                                                console.log('[ALTAPLAZA] Syncing contact name from Altaplaza:', fullName);
+                                            }
+                                        }
+
                                         await prisma.contact.update({
                                             where: { id: conversation.contactId },
-                                            data: { customData: { ...currentData, idCard: (args as any).idCard } }
+                                            data: updateData
                                         });
                                     }
 
@@ -2164,12 +2179,27 @@ Reglas para cobrar (ESTRICTO):
                                 const result = await checkUser((args as any).idCard);
                                 await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'CHECK_USER', 'SUCCESS', { idCard: (args as any).idCard });
 
-                                // Save idCard to contact customData for memory
+                                // Save idCard and Sync Name to contact for memory and CRM visibility
                                 if (result && conversation.contactId) {
                                     const currentData = (conversation.contact as any)?.customData || {};
+                                    const contactName = (conversation.contact as any)?.name || '';
+
+                                    const updateData: any = {
+                                        customData: { ...currentData, idCard: (args as any).idCard }
+                                    };
+
+                                    // If name is generic "Visitante..." or empty, update it with Altaplaza name
+                                    if (result.exists && result.user?.firstName) {
+                                        const fullName = `${result.user.firstName} ${result.user.lastName || ''}`.trim();
+                                        if (!contactName || contactName.toLowerCase().includes('visitante')) {
+                                            updateData.name = fullName;
+                                            console.log('[ALTAPLAZA] [OPENAI] Syncing contact name from Altaplaza:', fullName);
+                                        }
+                                    }
+
                                     await prisma.contact.update({
                                         where: { id: conversation.contactId },
-                                        data: { customData: { ...currentData, idCard: (args as any).idCard } }
+                                        data: updateData
                                     });
                                 }
 
