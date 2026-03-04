@@ -929,9 +929,9 @@ Reglas para cobrar (ESTRICTO):
                    - SI el usuario confirmó pero NO lograste leer el 'invoiceNumber' (número de factura/orden), PÍDELO: "¡Listo! Por favor, dime el número de factura/orden que sale arriba en el ticket."
                    - NUNCA, bajo ninguna circunstancia, pidas la foto de nuevo si ya analizaste una previamente en el chat.
                 3. PARÁMETROS DE HERRAMIENTA:
-                - 'imageUrl': Si ya analizaste la foto en mensajes anteriores, NO te preocupes por este campo, el sistema recuperará la URL real automáticamente. NUNCA inventes una URL falsa.
+                - 'imageUrl': Si ya analizaste la foto en mensajes anteriores, NO te preocupes por este campo, el sistema recuperará la URL real automáticamente (siempre la más reciente). NUNCA inventes una URL falsa.
                 - 'invoiceNumber': Es OBLIGATORIO. Si no lo tienes, pídelo al usuario.
-                4. REGLA DE ORO: Si ya analizaste una foto y extrajiste los datos, NO la pidas de nuevo. Procede al registro si el usuario confirma. Solo pide la foto si el historial está vacío o no hay ninguna imagen previa.
+                4. REGLA DE ORO: Si ya analizaste una foto y extrajiste los datos, NO la pidas de nuevo. Procede al registro si el usuario confirma. Si el usuario desea registrar VARIAR FACTURAS, procesa una por una siguiendo el ciclo (Foto -> Análisis -> Confirmación -> Registro).
 `;
             }
 
@@ -1447,6 +1447,8 @@ Reglas para cobrar (ESTRICTO):
                                     let errorMsg = e.message;
                                     if (errorMsg === 'STORE_NOT_PARTICIPATING') {
                                         errorMsg = "Lo sentimos, el local indicado no forma parte de las tiendas participantes de Altaplaza. Solo se pueden registrar facturas de comercios afiliados.";
+                                    } else if (errorMsg === 'INVOICE_ALREADY_REGISTERED') {
+                                        errorMsg = "Esta factura ya ha sido registrada anteriormente por nuestro sistema. No es posible registrar la misma factura más de una vez.";
                                     }
                                     toolResult = { success: false, error: errorMsg };
                                 }
@@ -2281,6 +2283,8 @@ Reglas para cobrar (ESTRICTO):
                                 let errorMsg = e.message;
                                 if (errorMsg === 'STORE_NOT_PARTICIPATING') {
                                     errorMsg = "Lo sentimos, el local indicado no forma parte de las tiendas participantes de Altaplaza. Solo se pueden registrar facturas de comercios afiliados.";
+                                } else if (errorMsg === 'INVOICE_ALREADY_REGISTERED') {
+                                    errorMsg = "Esta factura ya ha sido registrada anteriormente por nuestro sistema. No es posible registrar la misma factura más de una vez.";
                                 }
                                 toolResult = { success: false, error: errorMsg };
                             }
