@@ -929,9 +929,9 @@ Reglas para cobrar (ESTRICTO):
                    - SI el usuario confirmó pero NO lograste leer el 'invoiceNumber' (número de factura/orden), PÍDELO: "¡Listo! Por favor, dime el número de factura/orden que sale arriba en el ticket."
                    - NUNCA, bajo ninguna circunstancia, pidas la foto de nuevo si ya analizaste una previamente en el chat.
                 3. PARÁMETROS DE HERRAMIENTA:
-                   - 'imageUrl': USA SIEMPRE la URL de la imagen que está en el historial reciente.
+                   - 'imageUrl': USA SIEMPRE la URL de la imagen que está en el historial reciente (proveniente de r2.dev). NUNCA uses imágenes que veas en documentos web o logos como 'AltaPlaza_logo.webp'.
                    - 'invoiceNumber': Es OBLIGATORIO. Si no lo tienes, pídelo al usuario.
-                4. SI EL USUARIO DICE "YA TE LA MANDÉ": Revisa el historial, busca la URL de la imagen y úsala. NO digas que no la ves.\n`;
+                4. SI EL USUARIO DICE "YA TE LA MANDÉ": Revisa el historial, busca la URL de la imagen de chat y úsala. NO digas que no la ves.\n`;
             }
 
             if (model.includes('gemini') && !useOpenAI) {
@@ -1396,14 +1396,19 @@ Reglas para cobrar (ESTRICTO):
                                     // Robustness: If AI forgot the image URL, try to find the last image in the conversation
                                     if (!invoiceArgs.imageUrl) {
                                         console.log('[ALTAPLAZA] Image URL missing from AI arguments, searching history...');
-                                        // Search from newest to oldest
+                                        // Search from newest to oldest, ensuring it's a real R2 image from the chat, not a logo from the web
                                         const lastImageMsg = [...history].reverse().find((m: any) =>
                                             m.metadata && typeof m.metadata === 'object' &&
-                                            (m.metadata as any).type === 'image' && (m.metadata as any).url
+                                            (m.metadata as any).type === 'image' &&
+                                            (m.metadata as any).url &&
+                                            (m.metadata as any).url.includes('r2.dev') &&
+                                            !(m.metadata as any).url.toLowerCase().includes('logo')
                                         );
                                         if (lastImageMsg) {
                                             invoiceArgs.imageUrl = (lastImageMsg.metadata as any).url;
-                                            console.log('[ALTAPLAZA] Automatically injected image URL:', invoiceArgs.imageUrl);
+                                            console.log('[ALTAPLAZA] Automatically injected REAL chat image URL:', invoiceArgs.imageUrl);
+                                        } else {
+                                            console.log('[ALTAPLAZA] No suitable chat image found in history for injection.');
                                         }
                                     }
 
@@ -2203,13 +2208,19 @@ Reglas para cobrar (ESTRICTO):
                                 // Robustness: If AI forgot the image URL, try to find the last image in the conversation
                                 if (!invoiceArgs.imageUrl) {
                                     console.log('[ALTAPLAZA] [OPENAI] Image URL missing, searching history...');
+                                    // Search from newest to oldest, ensuring it's a real R2 image from the chat, not a logo from the web
                                     const lastImageMsg = [...history].reverse().find((m: any) =>
                                         m.metadata && typeof m.metadata === 'object' &&
-                                        (m.metadata as any).type === 'image' && (m.metadata as any).url
+                                        (m.metadata as any).type === 'image' &&
+                                        (m.metadata as any).url &&
+                                        (m.metadata as any).url.includes('r2.dev') &&
+                                        !(m.metadata as any).url.toLowerCase().includes('logo')
                                     );
                                     if (lastImageMsg) {
                                         invoiceArgs.imageUrl = (lastImageMsg.metadata as any).url;
-                                        console.log('[ALTAPLAZA] [OPENAI] Injected URL:', invoiceArgs.imageUrl);
+                                        console.log('[ALTAPLAZA] [OPENAI] Injected REAL chat URL:', invoiceArgs.imageUrl);
+                                    } else {
+                                        console.log('[ALTAPLAZA] [OPENAI] No suitable chat image found in history.');
                                     }
                                 }
 
