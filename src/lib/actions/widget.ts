@@ -895,7 +895,7 @@ Reglas para cobrar (ESTRICTO):
                                 invoiceNumber: { type: "string" },
                                 amount: { type: "number" },
                                 storeName: { type: "string" },
-                                imageUrl: { type: "string", description: "URL de la imagen de la factura. SI ya procesaste una imagen en turnos anteriores, usa esa misma URL que está en el historial." },
+                                imageUrl: { type: "string", description: "Opcional. Si ya analizaste la foto en el turno anterior, puedes dejar este campo vacío o poner 'auto' y el sistema la recuperará del historial automáticamente." },
                                 date: { type: "string", description: "AAAA-MM-DD" }
                             },
                             required: ["idCard", "invoiceNumber", "amount", "storeName"]
@@ -929,9 +929,10 @@ Reglas para cobrar (ESTRICTO):
                    - SI el usuario confirmó pero NO lograste leer el 'invoiceNumber' (número de factura/orden), PÍDELO: "¡Listo! Por favor, dime el número de factura/orden que sale arriba en el ticket."
                    - NUNCA, bajo ninguna circunstancia, pidas la foto de nuevo si ya analizaste una previamente en el chat.
                 3. PARÁMETROS DE HERRAMIENTA:
-                - 'imageUrl': USA SIEMPRE la URL de la imagen que está en el historial reciente (proveniente de r2.dev). NUNCA inventes URLs ni uses placeholders como 'imagen.jpg'. Si no hay una imagen real de R2 en el chat, deja el campo vacío o pídele al usuario que espere.
+                - 'imageUrl': Si ya analizaste la foto en mensajes anteriores, NO te preocupes por este campo, el sistema recuperará la URL real automáticamente. NUNCA inventes una URL falsa.
                 - 'invoiceNumber': Es OBLIGATORIO. Si no lo tienes, pídelo al usuario.
-                4. REGLA DE ORO: No inventes NINGÚN dato. Si no ves la imagen de la factura en el historial reciente, NO procedas con el registro hasta obtenerla.\n`;
+                4. REGLA DE ORO: Si ya analizaste una foto y extrajiste los datos, NO la pidas de nuevo. Procede al registro si el usuario confirma. Solo pide la foto si el historial está vacío o no hay ninguna imagen previa.
+`;
             }
 
             if (model.includes('gemini') && !useOpenAI) {
@@ -1409,7 +1410,7 @@ Reglas para cobrar (ESTRICTO):
                                     const invoiceArgs = args as any;
 
                                     // Robustness: If AI forgot the image URL OR hallucinated a placeholder, try to find the last image in the conversation
-                                    if (!invoiceArgs.imageUrl || invoiceArgs.imageUrl.toLowerCase().includes('imagen.jpg') || !invoiceArgs.imageUrl.includes('r2.dev')) {
+                                    if (!invoiceArgs.imageUrl || invoiceArgs.imageUrl === 'auto' || invoiceArgs.imageUrl.toLowerCase().includes('imagen.jpg') || !invoiceArgs.imageUrl.includes('r2.dev')) {
                                         console.log('[ALTAPLAZA] [GEMINI] Image URL missing or looks like a placeholder, searching history...');
                                         // Search from newest to oldest, ensuring it's a real R2 image from the chat, not a logo or placeholder
                                         const lastImageMsg = [...history].reverse().find((m: any) =>
@@ -1699,7 +1700,8 @@ Reglas para cobrar (ESTRICTO):
                                 role: m.role === 'USER' ? 'user' : 'assistant',
                                 content: [
                                     {
-                                        type: 'text', text: m.role === 'HUMAN'
+                                        type: 'text',
+                                        text: m.role === 'HUMAN'
                                             ? `[Intervención humana]: ${m.content}`
                                             : (m.content || 'Imagen enviada')
                                     },
@@ -2241,7 +2243,7 @@ Reglas para cobrar (ESTRICTO):
                                 const invoiceArgs = args as any;
 
                                 // Robustness: If AI forgot the image URL OR hallucinated a placeholder, try to find the last image in the conversation
-                                if (!invoiceArgs.imageUrl || invoiceArgs.imageUrl.toLowerCase().includes('imagen.jpg') || !invoiceArgs.imageUrl.includes('r2.dev')) {
+                                if (!invoiceArgs.imageUrl || invoiceArgs.imageUrl === 'auto' || invoiceArgs.imageUrl.toLowerCase().includes('imagen.jpg') || !invoiceArgs.imageUrl.includes('r2.dev')) {
                                     console.log('[ALTAPLAZA] [OPENAI] Image URL missing or looks like a placeholder, searching history...');
                                     // Search from newest to oldest, ensuring it's a real R2 image from the chat, not a logo or placeholder
                                     const lastImageMsg = [...history].reverse().find((m: any) =>
