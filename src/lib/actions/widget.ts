@@ -1442,7 +1442,11 @@ Reglas para cobrar (ESTRICTO):
                                     toolResult = result;
                                 } catch (e: any) {
                                     console.error('[GEMINI] altaplaza_register_invoice error:', e);
-                                    toolResult = { success: false, error: e.message };
+                                    let errorMsg = e.message;
+                                    if (errorMsg === 'STORE_NOT_PARTICIPATING') {
+                                        errorMsg = "Lo sentimos, el local indicado no forma parte de las tiendas participantes de Altaplaza. Solo se pueden registrar facturas de comercios afiliados.";
+                                    }
+                                    toolResult = { success: false, error: errorMsg };
                                 }
                             } else if (name === "create_zoho_lead") {
                                 console.log('[GEMINI] Tool create_zoho_lead called with:', args);
@@ -2270,7 +2274,11 @@ Reglas para cobrar (ESTRICTO):
                                 toolResult = result;
                             } catch (e: any) {
                                 console.error('[OPENAI] altaplaza_register_invoice error:', e);
-                                toolResult = { success: false, error: e.message };
+                                let errorMsg = e.message;
+                                if (errorMsg === 'STORE_NOT_PARTICIPATING') {
+                                    errorMsg = "Lo sentimos, el local indicado no forma parte de las tiendas participantes de Altaplaza. Solo se pueden registrar facturas de comercios afiliados.";
+                                }
+                                toolResult = { success: false, error: errorMsg };
                             }
                         } else if (name === "create_zoho_lead") {
                             console.log('[OPENAI] Tool create_zoho_lead called with:', args);

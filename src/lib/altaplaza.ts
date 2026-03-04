@@ -87,8 +87,8 @@ export async function registerInvoice(invoiceData: AltaplazaInvoice) {
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error registering invoice');
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Error registering invoice');
     }
 
     return response.json();
