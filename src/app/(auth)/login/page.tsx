@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, ArrowRight, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { setInitialPassword } from '@/lib/actions/auth';
 
 function LoginForm() {
@@ -15,6 +15,8 @@ function LoginForm() {
     const [error, setError] = useState<string | null>(null);
     const [isSettingPassword, setIsSettingPassword] = useState(false);
     const [passwordSet, setPasswordSet] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // Check if we're in "set password" mode
     useEffect(() => {
@@ -37,7 +39,7 @@ function LoginForm() {
 
         try {
             const result = await setInitialPassword(email, password, confirmPassword);
-            
+
             if (result.error) {
                 // Handle field-specific errors
                 const errorMessages = Object.values(result.error).flat();
@@ -52,7 +54,7 @@ function LoginForm() {
                         password,
                         redirect: false,
                     });
-                    
+
                     if (signInResult?.error) {
                         setError('Contraseña establecida, pero hubo un error al iniciar sesión. Por favor, intenta iniciar sesión manualmente.');
                         setPasswordSet(false);
@@ -151,12 +153,19 @@ function LoginForm() {
                                 </div>
                                 <input
                                     name="password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
                                     minLength={6}
-                                    className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] focus:bg-white transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-medium"
+                                    className="block w-full pl-11 pr-11 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] focus:bg-white transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-medium"
                                     placeholder="Mínimo 6 caracteres"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#21AC96] transition-colors z-20"
+                                >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
                             </div>
                         </div>
 
@@ -168,12 +177,19 @@ function LoginForm() {
                                 </div>
                                 <input
                                     name="confirmPassword"
-                                    type="password"
+                                    type={showConfirmPassword ? "text" : "password"}
                                     required
                                     minLength={6}
-                                    className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] focus:bg-white transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-medium"
+                                    className="block w-full pl-11 pr-11 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] focus:bg-white transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-medium"
                                     placeholder="Repite la contraseña"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#21AC96] transition-colors z-20"
+                                >
+                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
                             </div>
                         </div>
 
@@ -196,8 +212,8 @@ function LoginForm() {
                 )}
 
                 <div className="text-center pt-4">
-                    <Link 
-                        href="/login" 
+                    <Link
+                        href="/login"
                         className="text-sm text-[#21AC96] font-bold hover:text-[#1a8a78] transition-colors inline-flex items-center gap-1"
                     >
                         ← Volver al inicio de sesión
@@ -250,11 +266,18 @@ function LoginForm() {
                         </div>
                         <input
                             name="password"
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             required
-                            className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] focus:bg-white transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-medium"
+                            className="block w-full pl-11 pr-11 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] focus:bg-white transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-medium"
                             placeholder="••••••••"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#21AC96] transition-colors z-20"
+                        >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
                     </div>
                 </div>
 
