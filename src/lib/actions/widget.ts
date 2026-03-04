@@ -1394,15 +1394,31 @@ Reglas para cobrar (ESTRICTO):
                                 try {
                                     const { registerUser } = await import('@/lib/altaplaza');
                                     const { logIntegrationEvent } = await import('@/lib/integrations-logger');
-                                    const result = await registerUser(args as any);
-                                    await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_USER', 'SUCCESS', { email: (args as any).email });
+                                    const userArgs = args as any;
+
+                                    // Auto-inject phone if missing
+                                    if (!userArgs.phone) {
+                                        // 1. Try to get it from contact
+                                        if (conversation.contact?.phone) {
+                                            userArgs.phone = conversation.contact.phone;
+                                            console.log('[ALTAPLAZA] [GEMINI] Auto-injected phone from contact:', userArgs.phone);
+                                        }
+                                        // 2. Fallback to extracting from externalId if WhatsApp
+                                        else if (channel.type === 'WHATSAPP' || channel.type === 'WHATSAPP_WEB') {
+                                            userArgs.phone = conversation.externalId.split('@')[0];
+                                            console.log('[ALTAPLAZA] [GEMINI] Auto-injected phone from externalId (WhatsApp):', userArgs.phone);
+                                        }
+                                    }
+
+                                    const result = await registerUser(userArgs);
+                                    await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_USER', 'SUCCESS', { email: userArgs.email, phone: userArgs.phone });
 
                                     // Save idCard to contact customData for memory
                                     if (result && conversation.contactId) {
                                         const currentData = (conversation.contact as any)?.customData || {};
                                         await prisma.contact.update({
                                             where: { id: conversation.contactId },
-                                            data: { customData: { ...currentData, idCard: (args as any).idCard } }
+                                            data: { customData: { ...currentData, idCard: userArgs.idCard } }
                                         });
                                     }
 
@@ -2230,15 +2246,31 @@ Reglas para cobrar (ESTRICTO):
                             try {
                                 const { registerUser } = await import('@/lib/altaplaza');
                                 const { logIntegrationEvent } = await import('@/lib/integrations-logger');
-                                const result = await registerUser(args as any);
-                                await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_USER', 'SUCCESS', { email: (args as any).email });
+                                const userArgs = args as any;
+
+                                // Auto-inject phone if missing
+                                if (!userArgs.phone) {
+                                    // 1. Try to get it from contact
+                                    if (conversation.contact?.phone) {
+                                        userArgs.phone = conversation.contact.phone;
+                                        console.log('[ALTAPLAZA] [OPENAI] Auto-injected phone from contact:', userArgs.phone);
+                                    }
+                                    // 2. Fallback to extracting from externalId if WhatsApp
+                                    else if (channel.type === 'WHATSAPP' || channel.type === 'WHATSAPP_WEB') {
+                                        userArgs.phone = conversation.externalId.split('@')[0];
+                                        console.log('[ALTAPLAZA] [OPENAI] Auto-injected phone from externalId (WhatsApp):', userArgs.phone);
+                                    }
+                                }
+
+                                const result = await registerUser(userArgs);
+                                await logIntegrationEvent(agent.id, 'ALTAPLAZA' as any, 'REGISTER_USER', 'SUCCESS', { email: userArgs.email, phone: userArgs.phone });
 
                                 // Save idCard to contact customData for memory
                                 if (result && conversation.contactId) {
                                     const currentData = (conversation.contact as any)?.customData || {};
                                     await prisma.contact.update({
                                         where: { id: conversation.contactId },
-                                        data: { customData: { ...currentData, idCard: (args as any).idCard } }
+                                        data: { customData: { ...currentData, idCard: userArgs.idCard } }
                                     });
                                 }
 
