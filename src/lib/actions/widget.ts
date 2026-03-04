@@ -892,17 +892,19 @@ Reglas para cobrar (ESTRICTO):
                     }
                 );
 
-                systemPrompt += `\nINSTRUCCIONES ALTAPLAZA (CRÍTICO):
-                1. SI el usuario quiere registrar factura o ver puntos, pide cédula y usa 'altaplaza_check_user'. 
-                2. LA RESPUESTA de 'altaplaza_check_user' incluye 'invoicesCount' y 'points'. Úsalos para saludar.
-                3. SI no existe el usuario, regístralo con 'altaplaza_register_user'.
-                4. PARA REGISTRAR FACTURAS (altaplaza_register_invoice):
-                   - EXTRACCIÓN: Analiza la foto enviada por el usuario para extraer Monto, Tienda y Fecha.
-                   - CONFIRMACIÓN: Pide al usuario que confirme si los datos extraídos son correctos.
-                   - EJECUCIÓN: Una vez confirmado (ej: "Sí", "Correcto"), llama a 'altaplaza_register_invoice'.
-                5. MEMORIA DE IMAGEN: Si ya hay una foto analizada en el historial, NO pidas la foto de nuevo. USA los datos que ya tienes.
-                6. CÉDULA FALTANTE: Si el usuario confirma los datos pero aún no te ha dado su cédula (idCard), PÍDESELA ("Por favor, bríndame tu cédula para completar el registro"). NO pidas la foto en su lugar.
-                7. REGLA DE ORO: Si ya viste la foto una vez, el parámetro 'imageUrl' debe ser la URL que está en el historial. NUNCA respondas diciendo que no ves la imagen si la URL está presente en los mensajes anteriores.\n`;
+                systemPrompt += `\nINSTRUCCIONES ALTAPLAZA (PRIORIDAD ABSOLUTA - REGLAS DE ORO):
+                1. FLUJO DE REGISTRO:
+                   - PASO A: El usuario envía foto -> Tú la analizas, extraes TIENDA, MONTO y NÚMERO DE FACTURA.
+                   - PASO B: Pides confirmación del local y monto.
+                   - PASO C: Si el usuario confirma (ej: "Sí", "Correcto"), PROCEDE AL REGISTRO.
+                2. MANEJO DE DATOS FALTANTES (CRÍTICO):
+                   - SI el usuario confirmó pero NO tienes su 'idCard' (cédula), PÍDESELA: "¡Perfecto! Para terminar, dime tu cédula para registrarlo."
+                   - SI el usuario confirmó pero NO lograste leer el 'invoiceNumber' (número de factura/orden), PÍDELO: "¡Listo! Por favor, dime el número de factura/orden que sale arriba en el ticket."
+                   - NUNCA, bajo ninguna circunstancia, pidas la foto de nuevo si ya analizaste una previamente en el chat.
+                3. PARÁMETROS DE HERRAMIENTA:
+                   - 'imageUrl': USA SIEMPRE la URL de la imagen que está en el historial reciente.
+                   - 'invoiceNumber': Es OBLIGATORIO. Si no lo tienes, pídelo al usuario.
+                4. SI EL USUARIO DICE "YA TE LA MANDÉ": Revisa el historial, busca la URL de la imagen y úsala. NO digas que no la ves.\n`;
             }
 
             // Try Gemini first if model is Gemini, with fallback to OpenAI
