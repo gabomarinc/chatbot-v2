@@ -291,7 +291,7 @@ export async function sendWidgetMessage(data: {
         try {
             // Fetch recent history for context
             // Re-fetch conversation with contact and messages for full context
-            conversation = await prisma.conversation.findUniqueOrThrow({
+            const reFetchedConversation = await prisma.conversation.findUnique({
                 where: { id: conversation.id },
                 include: {
                     contact: true,
@@ -302,8 +302,12 @@ export async function sendWidgetMessage(data: {
                 }
             });
 
+            if (reFetchedConversation) {
+                conversation = reFetchedConversation;
+            }
+
             // Define history from the conversation messages we just fetched, but REVERSE back to chronological order for the AI
-            const history = ((conversation as any).messages || []).reverse();
+            const history = (Array.isArray((conversation as any).messages) ? (conversation as any).messages : []).slice().reverse();
 
             let replyContent = '...';
             let tokensUsed = 0;
@@ -351,11 +355,16 @@ export async function sendWidgetMessage(data: {
             const styleDescription = agent.communicationStyle === 'FORMAL' ? 'serio y profesional (FORMAL)' :
                 agent.communicationStyle === 'CASUAL' ? 'amigable y cercano (DESENFADADO)' : 'equilibrado (NORMAL)';
 
-            const currentTime = new Intl.DateTimeFormat('es-ES', {
-                timeZone: agent.timezone || 'UTC',
-                dateStyle: 'full',
-                timeStyle: 'long'
-            }).format(new Date());
+            let currentTime = new Date().toLocaleString('es-ES');
+            try {
+                currentTime = new Intl.DateTimeFormat('es-ES', {
+                    timeZone: agent.timezone || 'UTC',
+                    dateStyle: 'full',
+                    timeStyle: 'long'
+                }).format(new Date());
+            } catch (intlError) {
+                console.warn("[INTL ERROR] Invalid timezone or locale setup, using system default:", intlError);
+            }
 
             const calendarIntegration = agent.integrations.find((i: any) => i.provider === 'GOOGLE_CALENDAR');
             const hasCalendar = !!calendarIntegration;
@@ -985,8 +994,8 @@ Reglas para cobrar (ESTRICTO):
                         const chatHistory = previousHistory.map((m: any) => {
                             const parts: any[] = [{
                                 text: m.role === 'HUMAN'
-                                    ? `[Intervención humana]: ${m.content}`
-                                    : m.content
+                                    ? `[Intervención humana]: ${m.content || '(Mensaje sin texto)'}`
+                                    : (m.content || (m.metadata?.type === 'image' ? '(Imagen)' : '(Mensaje vacío)'))
                             }];
 
                             // Add image if present in metadata
@@ -1717,8 +1726,8 @@ Reglas para cobrar (ESTRICTO):
                         return {
                             role: m.role === 'USER' ? 'user' : 'assistant',
                             content: m.role === 'HUMAN'
-                                ? `[Intervención humana]: ${m.content}`
-                                : m.content
+                                ? `[Intervención humana]: ${m.content || '(Mensaje sin texto)'}`
+                                : (m.content || (m.metadata?.type === 'image' ? 'Imagen enviada' : '...'))
                         };
                     }),
                     (() => {
