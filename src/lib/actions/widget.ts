@@ -296,14 +296,14 @@ export async function sendWidgetMessage(data: {
                 include: {
                     contact: true,
                     messages: {
-                        orderBy: { createdAt: 'asc' },
+                        orderBy: { createdAt: 'desc' }, // Get latest messages
                         take: 20 // Context window
                     }
                 }
             });
 
-            // Define history from the conversation messages we just fetched
-            const history = (conversation as any).messages || [];
+            // Define history from the conversation messages we just fetched, but REVERSE back to chronological order for the AI
+            const history = ((conversation as any).messages || []).reverse();
 
             let replyContent = '...';
             let tokensUsed = 0;
@@ -1412,12 +1412,13 @@ Reglas para cobrar (ESTRICTO):
                                     // Robustness: If AI forgot the image URL OR hallucinated a placeholder, try to find the last image in the conversation
                                     if (!invoiceArgs.imageUrl || invoiceArgs.imageUrl === 'auto' || invoiceArgs.imageUrl.toLowerCase().includes('imagen.jpg') || !invoiceArgs.imageUrl.includes('r2.dev')) {
                                         console.log('[ALTAPLAZA] [GEMINI] Image URL missing or looks like a placeholder, searching history...');
-                                        // Search from newest to oldest, ensuring it's a real R2 image from the chat, not a logo or placeholder
+                                        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
                                         const lastImageMsg = [...history].reverse().find((m: any) =>
                                             m.metadata && typeof m.metadata === 'object' &&
                                             (m.metadata as any).type === 'image' &&
                                             (m.metadata as any).url &&
                                             (m.metadata as any).url.includes('r2.dev') &&
+                                            new Date(m.createdAt) > oneHourAgo && // Only recover if sent in the last hour
                                             !(m.metadata as any).url.toLowerCase().includes('logo') &&
                                             !(m.metadata as any).url.toLowerCase().includes('imagen.jpg')
                                         );
@@ -2245,12 +2246,13 @@ Reglas para cobrar (ESTRICTO):
                                 // Robustness: If AI forgot the image URL OR hallucinated a placeholder, try to find the last image in the conversation
                                 if (!invoiceArgs.imageUrl || invoiceArgs.imageUrl === 'auto' || invoiceArgs.imageUrl.toLowerCase().includes('imagen.jpg') || !invoiceArgs.imageUrl.includes('r2.dev')) {
                                     console.log('[ALTAPLAZA] [OPENAI] Image URL missing or looks like a placeholder, searching history...');
-                                    // Search from newest to oldest, ensuring it's a real R2 image from the chat, not a logo or placeholder
+                                    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
                                     const lastImageMsg = [...history].reverse().find((m: any) =>
                                         m.metadata && typeof m.metadata === 'object' &&
                                         (m.metadata as any).type === 'image' &&
                                         (m.metadata as any).url &&
                                         (m.metadata as any).url.includes('r2.dev') &&
+                                        new Date(m.createdAt) > oneHourAgo && // Only recover if sent in the last hour
                                         !(m.metadata as any).url.toLowerCase().includes('logo') &&
                                         !(m.metadata as any).url.toLowerCase().includes('imagen.jpg')
                                     );
