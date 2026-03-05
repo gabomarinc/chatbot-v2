@@ -57,22 +57,22 @@ export async function canAssumeConversations(): Promise<boolean> {
     return workspace !== null
 }
 
-// Check if user can view billing/subscriptions (only OWNER)
+// Check if user can view billing/subscriptions (OWNER or MANAGER)
 export async function canViewBilling(): Promise<boolean> {
     const workspace = await getUserWorkspace()
     if (!workspace) return false
 
     const role = await getUserWorkspaceRole(workspace.id)
-    return role === 'OWNER'
+    return role === 'OWNER' || role === 'MANAGER'
 }
 
-// Check if user can view settings (only OWNER)
+// Check if user can view settings (OWNER or MANAGER)
 export async function canViewSettings(): Promise<boolean> {
     const workspace = await getUserWorkspace()
     if (!workspace) return false
 
     const role = await getUserWorkspaceRole(workspace.id)
-    return role === 'OWNER'
+    return role === 'OWNER' || role === 'MANAGER'
 }
 
 /**

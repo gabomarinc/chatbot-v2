@@ -95,7 +95,7 @@ export function WorkspaceDropdown({ isOpen, workspaceInfo, isLoading = false, on
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-gray-900 truncate">{workspaceInfo.plan.name}</p>
                                     <p className="text-xs text-gray-600">
-                                        {userRole === 'OWNER' ? (
+                                        {(userRole === 'OWNER' || userRole === 'MANAGER') ? (
                                             <>${workspaceInfo.plan.price.toLocaleString()}/mes • {workspaceInfo.plan.creditsPerMonth.toLocaleString()} créditos</>
                                         ) : (
                                             <>{workspaceInfo.plan.creditsPerMonth.toLocaleString()} créditos</>
@@ -139,7 +139,7 @@ export function WorkspaceDropdown({ isOpen, workspaceInfo, isLoading = false, on
                             <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#21AC96] group-hover:translate-x-1 transition-all" />
                         </button>
 
-                        {userRole === 'OWNER' && (
+                        {(userRole === 'OWNER' || userRole === 'MANAGER') && (
                             <>
                                 <button
                                     onClick={() => handleAction('settings')}

@@ -325,7 +325,7 @@ export function Topbar() {
                                         </div>
                                         <span className="text-sm font-semibold">Perfil</span>
                                     </Link>
-                                    {userRole === 'OWNER' && (
+                                    {(userRole === 'OWNER' || userRole === 'MANAGER') && (
                                         <>
                                             <Link href="/billing" onClick={() => setIsUserMenuOpen(false)}
                                                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 group">
