@@ -36,7 +36,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             where: { id: user.id },
                             data: { lastLoginAt: new Date() }
                         })
-                        
+
                         return {
                             id: user.id,
                             email: user.email,
@@ -55,25 +55,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         signIn: '/login',
     },
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id
                 token.role = user.role
                 token.name = user.name || null
                 token.email = user.email || null
+                token.image = user.image || null
             }
+
+            // Handle profile updates from updateSession()
+            if (trigger === "update" && session) {
+                if (session.name) token.name = session.name
+                if (session.image) token.image = session.image
+            }
+
             return token
         },
         async session({ session, token }) {
             if (session.user && token.id) {
                 session.user.id = token.id as string
                 session.user.role = token.role as any
-                if (token.name) {
-                    session.user.name = token.name
-                }
-                if (token.email) {
-                    session.user.email = token.email
-                }
+                session.user.name = token.name as string
+                session.user.email = token.email as string
+                session.user.image = token.image as string
             }
             return session
         },

@@ -70,8 +70,11 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
                 setErrorMessage(result.error);
             } else {
                 setSuccessMessage('Perfil actualizado exitosamente');
-                // Update session to reflect name changes
-                await updateSession();
+                // Update session to reflect changes
+                await updateSession({
+                    name: name,
+                    image: finalAvatarUrl
+                });
                 router.refresh();
                 setTimeout(() => setSuccessMessage(null), 3000);
             }
