@@ -69,7 +69,9 @@ export function WebWidgetConfig({ agents, existingChannel, defaultAgentId }: Web
 
             setIsSaved(true);
             router.refresh();
-            setTimeout(() => setIsSaved(false), 3000);
+            setTimeout(() => {
+                router.push('/channels');
+            }, 1500);
         } catch (error) {
             console.error('Error saving widget:', error);
             alert('Error al guardar la configuración');

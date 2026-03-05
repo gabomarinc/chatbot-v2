@@ -112,7 +112,9 @@ export function MessengerConfig({ agents, initialAgentId, initialChannelId, meta
                 toast.success('Canal de Messenger conectado correctamente');
             }
 
-            router.push('/channels');
+            setTimeout(() => {
+                router.push('/channels');
+            }, 1500);
             router.refresh();
         } catch (error) {
             console.error('Error saving channel:', error);
@@ -178,7 +180,13 @@ export function MessengerConfig({ agents, initialAgentId, initialChannelId, meta
                     <MessengerEmbeddedSignup
                         appId={metaAppId}
                         agentId={formData.agentId}
-                        onSuccess={() => router.refresh()}
+                        onSuccess={() => {
+                            toast.success('¡Messenger conectado correctamente! 🎉 Redirigiendo...');
+                            setTimeout(() => {
+                                router.push('/channels');
+                            }, 1500);
+                            router.refresh();
+                        }}
                     />
                 </div>
 

@@ -322,7 +322,10 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                             if (typeof window !== 'undefined') {
                                 sessionStorage.removeItem('wa_pending_agent_id');
                             }
-                            router.refresh();
+                            toast.success('¡WhatsApp conectado correctamente! Redirigiendo...');
+                            setTimeout(() => {
+                                router.push('/channels');
+                            }, 1500);
                         }}
                     />
                 </div>

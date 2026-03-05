@@ -124,7 +124,7 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 // We force a redirect to ensure the user ends up in the app
                 if (window.location.search.includes('code=')) {
                     // Force hard redirection/navigation to channels
-                    router.push('/dashboard/channels');
+                    router.push('/channels');
                 }
             }
             else if ('requiresSelection' in result && result.requiresSelection) {
@@ -281,6 +281,11 @@ export function WhatsAppEmbeddedSignup({ appId, agentId, configId, onSuccess }: 
                 toast.success(`Conectado a ${account.phoneNumber}`);
                 setShowSelectionModal(false);
                 if (onSuccess) onSuccess();
+
+                // Redirigir a canales
+                setTimeout(() => {
+                    router.push('/channels');
+                }, 1500);
             } else {
                 toast.error(result.error || 'Error al finalizar la conexión');
             }

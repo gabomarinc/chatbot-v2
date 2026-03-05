@@ -70,9 +70,10 @@ export function InstagramConfig({ agents, existingChannel, defaultAgentId, metaA
             }
 
             setIsSaved(true);
-            toast.success('¡Configuración de Instagram guardada! 🎉');
-            router.refresh();
-            setTimeout(() => setIsSaved(false), 3000);
+            toast.success('¡Configuración de Instagram guardada! 🎉 Redirigiendo...');
+            setTimeout(() => {
+                router.push('/channels');
+            }, 1500);
         } catch (error) {
             console.error('Error saving Instagram:', error);
             toast.error('Error al guardar la configuración');
@@ -117,7 +118,10 @@ export function InstagramConfig({ agents, existingChannel, defaultAgentId, metaA
                     appId={metaAppId}
                     agentId={formData.agentId}
                     onSuccess={() => {
-                        router.refresh();
+                        toast.success('¡Instagram conectado correctamente! 🎉 Redirigiendo...');
+                        setTimeout(() => {
+                            router.push('/channels');
+                        }, 1500);
                         setIsSaved(true);
                     }}
                 />
