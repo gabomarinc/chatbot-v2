@@ -90,11 +90,11 @@ export function Sidebar() {
             )}>
                 {/* Logo & Close Button (Mobile) */}
                 <div className="p-8 flex items-center justify-between">
-                    <div className="flex items-center group cursor-pointer">
+                    <div className="flex items-center justify-center w-full group cursor-pointer">
                         <img
                             src="/logo-konsul-app.png"
                             alt="Kônsul"
-                            className="h-10 w-auto object-contain transform group-hover:scale-105 transition-all duration-300"
+                            className="h-14 w-auto object-contain transform group-hover:scale-105 transition-all duration-300"
                         />
                     </div>
                     <button
