@@ -92,14 +92,11 @@ export function Sidebar() {
                 <div className="p-8 flex items-center justify-between">
                     <div className="flex items-center gap-3 group cursor-pointer">
                         <img
-                            src="/icono-konsul.png"
+                            src="/logo-konsul-app.png"
                             alt="Kônsul"
-                            className="w-12 h-12 rounded-2xl object-cover transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300"
+                            className="h-10 w-auto object-contain transform group-hover:scale-105 transition-all duration-300"
                         />
-                        <div>
-                            <div className="text-gray-900 font-bold text-xl tracking-tight group-hover:text-[#21AC96] transition-colors">Kônsul</div>
-                            <div className="text-[10px] text-[#21AC96] font-bold uppercase tracking-widest bg-[#21AC96]/5 px-1.5 rounded-full inline-block animate-pulse">BETA v1.0</div>
-                        </div>
+                        <div className="text-[10px] text-[#21AC96] font-bold uppercase tracking-widest bg-[#21AC96]/5 px-1.5 rounded-full inline-block animate-pulse">BETA v1.0</div>
                     </div>
                     <button
                         onClick={() => setIsOpen(false)}
