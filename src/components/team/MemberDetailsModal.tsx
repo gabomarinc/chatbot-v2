@@ -338,7 +338,7 @@ export function MemberDetailsModal({
                                             className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 font-bold focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
                                         >
                                             <option value="SALES">Comercial / Ventas</option>
-                                            <option value="SUPPORT">Soporte Técnico</option>
+                                            <option value="SUPPORT">Atención</option>
                                             <option value="PERSONAL">General / Personal</option>
                                         </select>
                                         <div>
