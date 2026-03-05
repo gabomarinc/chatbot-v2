@@ -27,6 +27,22 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
     //     return () => { document.body.style.overflow = 'unset'; }
     // }, []);
 
+    const WhatsAppIcon = ({ className }: { className?: string }) => (
+        <img
+            src="/whatsapp-icono.png"
+            alt="WhatsApp"
+            className={cn("object-contain", className)}
+        />
+    );
+
+    const InstagramIcon = ({ className }: { className?: string }) => (
+        <img
+            src="/instagram-icono.png"
+            alt="Instagram"
+            className={cn("object-contain", className)}
+        />
+    );
+
     const TikTokIcon = ({ className }: { className?: string }) => (
         <svg
             viewBox="0 0 24 24"
@@ -51,9 +67,9 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
         {
             id: 'whatsapp',
             name: 'WhatsApp',
-            icon: Phone,
+            icon: WhatsAppIcon,
             description: 'WhatsApp Business API',
-            color: 'bg-green-500',
+            color: 'bg-white border border-gray-100',
             textColor: 'text-green-600',
             href: '/channels/setup/whatsapp',
             enabled: true
@@ -61,9 +77,9 @@ export function ConnectChannelModal({ isOpen, onClose, agentId }: ConnectChannel
         {
             id: 'instagram',
             name: 'Instagram',
-            icon: Instagram,
+            icon: InstagramIcon,
             description: 'DM y Comentarios',
-            color: 'bg-pink-500',
+            color: 'bg-white border border-gray-100',
             textColor: 'text-pink-600',
             href: '/channels/setup/instagram',
             enabled: true
