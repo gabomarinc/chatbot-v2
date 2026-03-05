@@ -30,6 +30,28 @@ export const metadata: Metadata = {
     icon: "/favicon-v2.jpeg?v=2",
     apple: "/favicon-v2.jpeg?v=2",
   },
+  openGraph: {
+    title: "Kônsul - Agentes de IA",
+    description: "Crea y gestiona tus agentes de IA profesionalmente",
+    url: "https://agentes.konsul.digital",
+    siteName: "Kônsul",
+    images: [
+      {
+        url: "/favicon-v2.jpeg?v=2",
+        width: 800,
+        height: 800,
+        alt: "Kônsul Logo",
+      },
+    ],
+    locale: "es_PA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kônsul - Agentes de IA",
+    description: "Crea y gestiona tus agentes de IA profesionalmente",
+    images: ["/favicon-v2.jpeg?v=2"],
+  },
 };
 
 export const viewport: Viewport = {
