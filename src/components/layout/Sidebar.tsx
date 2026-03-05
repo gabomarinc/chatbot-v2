@@ -94,7 +94,7 @@ export function Sidebar() {
                         <img
                             src="/logo-konsul-app.png"
                             alt="Kônsul"
-                            className="h-14 w-auto object-contain transform group-hover:scale-105 transition-all duration-300"
+                            className="h-20 w-auto object-contain transform group-hover:scale-105 transition-all duration-300"
                         />
                     </div>
                     <button
