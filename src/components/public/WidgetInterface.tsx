@@ -68,7 +68,12 @@ export function WidgetInterface({ channel, isTest = false }: WidgetInterfaceProp
                 createdAt: new Date()
             }]);
         }
-    }, [config.welcomeMessage, messages.length]);
+
+        // Notify parent about the color
+        if (typeof window !== 'undefined' && primaryColor) {
+            window.parent.postMessage({ type: 'KONSUL_WIDGET_COLOR', color: primaryColor }, '*');
+        }
+    }, [config.welcomeMessage, messages.length, primaryColor]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

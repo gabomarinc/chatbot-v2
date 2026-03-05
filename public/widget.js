@@ -21,6 +21,10 @@
         // Estilos
         const style = document.createElement('style');
         style.innerHTML = `
+            :root {
+                --konsul-primary: #21AC96;
+                --konsul-primary-hover: #1a8a78;
+            }
             .konsul-widget-container {
                 position: fixed;
                 bottom: 20px;
@@ -32,7 +36,7 @@
                 width: 60px;
                 height: 60px;
                 border-radius: 30px;
-                background: #21AC96;
+                background: var(--konsul-primary);
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 cursor: pointer;
                 display: flex;
@@ -42,7 +46,7 @@
             }
             .konsul-bubble:hover {
                 transform: scale(1.05);
-                background: #1a8a78;
+                filter: brightness(0.9);
             }
             .konsul-bubble svg {
                 width: 32px;
@@ -128,6 +132,19 @@
         container.appendChild(bubble);
         document.body.appendChild(iframeContainer);
         document.body.appendChild(container);
+
+        // Listen for color configuration from iframe
+        window.addEventListener('message', (event) => {
+            if (event.data?.type === 'KONSUL_WIDGET_COLOR' && event.data.color) {
+                const root = document.documentElement;
+                root.style.setProperty('--konsul-primary', event.data.color);
+                // Create a slightly darker version for hover (hacky but works for HEX)
+                try {
+                    root.style.setProperty('--konsul-primary-hover', event.data.color);
+                    // We can also use filter in CSS instead of calculating darker color
+                } catch (e) { }
+            }
+        });
     }
 
     // 3. Ejecutar cuando el DOM esté listo
