@@ -51,13 +51,16 @@ export default async function ChannelsPage() {
                                         </div>
                                     ) : (
                                         <div className={cn(
-                                            "w-16 h-16 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-sm relative",
-                                            channel.type === 'WHATSAPP' ? 'bg-green-50 text-green-600' :
-                                                channel.type === 'INSTAGRAM' ? 'bg-pink-50 text-pink-600' :
-                                                    'bg-indigo-50 text-indigo-600'
+                                            "w-16 h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm relative overflow-hidden",
+                                            channel.type === 'WHATSAPP' || channel.type === 'INSTAGRAM' ? 'bg-white border border-gray-100 p-3' :
+                                                'bg-indigo-50 text-indigo-600'
                                         )}>
-                                            {channel.type === 'WHATSAPP' && <PhoneIcon className="w-7 h-7" />}
-                                            {channel.type === 'INSTAGRAM' && <Instagram className="w-7 h-7" />}
+                                            {channel.type === 'WHATSAPP' && (
+                                                <img src="/whatsapp-icono.png" alt="WhatsApp" className="w-full h-full object-contain" />
+                                            )}
+                                            {channel.type === 'INSTAGRAM' && (
+                                                <img src="/instagram-icono.png" alt="Instagram" className="w-full h-full object-contain" />
+                                            )}
                                             {channel.type === 'WEBCHAT' && <Globe className="w-7 h-7" />}
 
                                             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] shadow-sm border border-gray-100">
