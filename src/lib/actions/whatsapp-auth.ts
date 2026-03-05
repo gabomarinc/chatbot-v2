@@ -409,16 +409,29 @@ export async function finishWhatsAppSetup(data: {
         }
 
         // 6. Save/Update Channel
-        const workspace = await prisma.workspace.findFirst({
-            where: { ownerId: sessionUserId }
+        // Resolve workspace from agentId (Absolute source of truth)
+        const agent = await prisma.agent.findUnique({
+            where: { id: data.agentId },
+            include: { workspace: true }
         });
 
-        if (!workspace) throw new Error('Workspace not found');
+        if (!agent) throw new Error('Agente no encontrado');
+        const workspace = agent.workspace;
+
+        // Verify user has membership in THIS workspace
+        const membership = await prisma.workspaceMember.findFirst({
+            where: {
+                userId: sessionUserId,
+                workspaceId: workspace.id
+            }
+        });
+
+        if (!membership) throw new Error('No tienes acceso a este workspace');
 
         const existingChannel = await prisma.channel.findFirst({
             where: {
                 type: 'WHATSAPP',
-                agent: { workspaceId: workspace.id }
+                agentId: data.agentId // Specific to this agent is better
             }
         });
 
@@ -433,13 +446,14 @@ export async function finishWhatsAppSetup(data: {
             await prisma.channel.update({
                 where: { id: existingChannel.id },
                 data: {
-                    agentId: data.agentId,
                     configJson: configJson as any,
                     isActive: true,
                     displayName: data.displayName
                 }
             });
         } else {
+            // Also check if this phoneNumberId is already registered in ANOTHER agent/channel of the SAME workspace
+            // (Optional: for now we allow duplicates if they are on different agents, but typically one phone = one agent)
             await prisma.channel.create({
                 data: {
                     agent: { connect: { id: data.agentId } },
