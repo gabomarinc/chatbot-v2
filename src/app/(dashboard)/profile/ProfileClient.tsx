@@ -64,7 +64,7 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
                 finalAvatarUrl = uploadResult.url || null;
             }
 
-            const result = await updateUserProfileWithTimezone(user.id, name, finalAvatarUrl || undefined, timezone);
+            const result = await updateUserProfileWithTimezone(user.id, name, finalAvatarUrl || undefined);
 
             if (result.error) {
                 setErrorMessage(result.error);
@@ -182,7 +182,8 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
                                 <p className="text-xs text-gray-500 mt-1">El email no puede ser modificado</p>
                             </div>
 
-                            {/* Timezone */}
+                            {/* Timezone (Disabled/Removed for now as it's not in DB) */}
+                            {/* 
                             <div>
                                 <label className="block text-sm text-gray-700 mb-2 font-medium flex items-center gap-2">
                                     <Calendar className="w-4 h-4" />
@@ -204,6 +205,7 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
                                     <option value="Europe/Madrid">Europa/Madrid (UTC+1)</option>
                                 </select>
                             </div>
+                            */}
 
                             {/* Messages */}
                             {errorMessage && (

@@ -323,12 +323,11 @@ export async function getUserStats(userId: string) {
     }
 }
 
-export async function updateUserProfileWithTimezone(userId: string, name?: string, avatarUrl?: string, timezone?: string) {
+export async function updateUserProfileWithTimezone(userId: string, name?: string, avatarUrl?: string) {
     try {
-        const updateData: { name?: string; image?: string; timezone?: string } = {}
+        const updateData: { name?: string; image?: string } = {}
         if (name !== undefined) updateData.name = name
         if (avatarUrl !== undefined) updateData.image = avatarUrl
-        if (timezone !== undefined) updateData.timezone = timezone
 
         await prisma.user.update({
             where: { id: userId },
