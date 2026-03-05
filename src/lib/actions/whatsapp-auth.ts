@@ -418,7 +418,8 @@ export async function finishWhatsAppSetup(data: {
         if (!agent) throw new Error('Agente no encontrado');
         const workspace = agent.workspace;
 
-        // Verify user has membership in THIS workspace
+        // Verify user has membership in THIS workspace OR is the OWNER
+        const isOwner = workspace.ownerId === sessionUserId;
         const membership = await prisma.workspaceMember.findFirst({
             where: {
                 userId: sessionUserId,
@@ -426,7 +427,10 @@ export async function finishWhatsAppSetup(data: {
             }
         });
 
-        if (!membership) throw new Error('No tienes acceso a este workspace');
+        if (!membership && !isOwner) {
+            console.error(`Access denied for user ${sessionUserId} to workspace ${workspace.id} (Agent: ${data.agentId})`);
+            throw new Error('No tienes acceso a este workspace');
+        }
 
         const existingChannel = await prisma.channel.findFirst({
             where: {

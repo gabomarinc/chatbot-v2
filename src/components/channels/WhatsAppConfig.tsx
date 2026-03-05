@@ -191,10 +191,13 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
         const targetAgent = stateAgent || storedAgent;
 
-        if (targetAgent && targetAgent !== formData.agentId) {
-            setFormData(prev => ({ ...prev, agentId: targetAgent }));
+        // Validar que el agente recuperado pertenezca a este workspace
+        const isValidAgent = agents.some(a => a.id === targetAgent);
+
+        if (isValidAgent && targetAgent !== formData.agentId) {
+            setFormData(prev => ({ ...prev, agentId: targetAgent as string }));
         }
-    }, [searchParams]);
+    }, [searchParams, agents]);
 
     useEffect(() => {
         if (existingChannel?.configJson?.wabaId && existingChannel?.configJson?.accessToken) {
@@ -315,7 +318,12 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                         appId={metaAppId}
                         agentId={formData.agentId}
                         configId={existingChannel?.configJson?.configId || "1388941242686989"}
-                        onSuccess={() => router.refresh()}
+                        onSuccess={() => {
+                            if (typeof window !== 'undefined') {
+                                sessionStorage.removeItem('wa_pending_agent_id');
+                            }
+                            router.refresh();
+                        }}
                     />
                 </div>
 
