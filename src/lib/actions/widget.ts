@@ -531,7 +531,7 @@ Reglas para cobrar (ESTRICTO):
 
                 // Add standard departments
                 systemPrompt += `- Departamento SALES: Ventas, cotizaciones, precios, comprar.\n`;
-                systemPrompt += `- Departamento SUPPORT: Problemas técnicos, errores, ayuda con el uso.\n`;
+                systemPrompt += `- Departamento ATENCIÓN: Problemas técnicos, errores, ayuda con el uso del producto o servicio.\n`;
                 systemPrompt += `- Departamento PERSONAL: Consultas generales o cuando no estés seguro.\n`;
 
                 // Add subdepartments dynamically to inform the bot about human specialties
@@ -628,7 +628,7 @@ Reglas para cobrar (ESTRICTO):
                         properties: {
                             departamento: {
                                 type: 'string',
-                                description: 'Departamento principal al que asignar (SALES, SUPPORT, PERSONAL o cualquier nombre de departamento personalizado configurado).'
+                                description: 'Departamento principal al que asignar (SALES, ATENCIÓN, PERSONAL o cualquier nombre de departamento personalizado configurado).'
                             },
                             subdepartamento: {
                                 type: 'string',
@@ -1168,8 +1168,8 @@ Reglas para cobrar (ESTRICTO):
                                     }
 
                                     if (members.length > 0) {
-                                        // Pick first member (could be improved with better load balancing)
-                                        const member = members[0];
+                                        // Pick a random member for load balancing (round-robin style)
+                                        const member = members[Math.floor(Math.random() * members.length)];
 
                                         await prisma.conversation.update({
                                             where: { id: conversation.id },
@@ -2019,8 +2019,8 @@ Reglas para cobrar (ESTRICTO):
                                 }
 
                                 if (members.length > 0) {
-                                    // Pick first member (could be improved with better load balancing)
-                                    const member = members[0];
+                                    // Pick a random member for load balancing (round-robin style)
+                                    const member = members[Math.floor(Math.random() * members.length)];
 
                                     await prisma.conversation.update({
                                         where: { id: conversation.id },

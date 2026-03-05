@@ -216,7 +216,7 @@ export function MemberDetailsModal({
     const getDepartmentLabel = (dept: string | null) => {
         switch (dept) {
             case 'SALES': return 'Comercial / Ventas';
-            case 'SUPPORT': return 'Soporte Técnico';
+            case 'SUPPORT': return 'Atención';
             case 'PERSONAL': return 'General / Personal';
             default: return 'General / Personal';
         }

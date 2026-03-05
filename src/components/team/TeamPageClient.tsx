@@ -122,7 +122,7 @@ export function TeamPageClient({ initialMembers, currentMemberCount, maxMembers,
             case 'SALES':
                 return 'Comercial';
             case 'SUPPORT':
-                return 'Soporte';
+                return 'Atención';
             case 'PERSONAL':
                 return 'General';
             default:

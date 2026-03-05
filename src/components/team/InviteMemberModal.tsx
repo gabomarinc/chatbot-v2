@@ -230,7 +230,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                                     : 'border-gray-100 hover:border-gray-200 text-gray-500'
                                     } disabled:opacity-50`}
                             >
-                                <div className="font-bold text-xs">SOPORTE</div>
+                                <div className="font-bold text-xs">ATENCIÓN</div>
                             </button>
                             <button
                                 type="button"
