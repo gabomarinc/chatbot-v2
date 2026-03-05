@@ -703,15 +703,31 @@ export async function getChannels() {
 }
 
 export async function createChannel(data: any) {
-    // Basic implementation, might need refinement based on schema
-    const workspace = await getUserWorkspace()
-    if (!workspace) throw new Error("Unauthorized")
+    const session = await auth();
+    const sessionUserId = session?.user?.id;
+    if (!sessionUserId) throw new Error("Unauthorized");
 
-    // Verify agent ownership
-    const agent = await prisma.agent.findFirst({
-        where: { id: data.agentId, workspaceId: workspace.id }
-    })
-    if (!agent) throw new Error("Unauthorized agent")
+    // 1. Get Workspace (Resolve via Agent ID for multi-workspace support)
+    const agent = await prisma.agent.findUnique({
+        where: { id: data.agentId },
+        include: { workspace: true }
+    });
+
+    if (!agent) throw new Error('Agente no encontrado');
+    const workspace = agent.workspace;
+
+    // Verify user has membership in THIS workspace OR is the OWNER
+    const isOwner = workspace.ownerId === sessionUserId;
+    const membership = await prisma.workspaceMember.findFirst({
+        where: {
+            userId: sessionUserId,
+            workspaceId: workspace.id
+        }
+    });
+
+    if (!membership && !isOwner) {
+        throw new Error('No tienes acceso a este workspace');
+    }
 
     const channel = await prisma.channel.create({
         data

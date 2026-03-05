@@ -109,17 +109,27 @@ export async function connectInstagramAccount(data: {
     try {
         console.log('Connect Instagram Account called with:', JSON.stringify(data, null, 2));
 
-        // 1. Get Workspace
-        // 1. Get Workspace (Robust lookup via membership)
-        const membership = await prisma.workspaceMember.findFirst({
-            where: { userId: session.user.id },
+        // 1. Get Workspace (Resolve via Agent ID for multi-workspace support)
+        const agent = await prisma.agent.findUnique({
+            where: { id: data.agentId },
             include: { workspace: true }
         });
-        const workspace = membership?.workspace;
 
-        if (!workspace) {
-            console.error('Workspace not found for user:', session.user.id);
-            throw new Error('Workspace not found');
+        if (!agent) throw new Error('Agente no encontrado');
+        const workspace = agent.workspace;
+
+        // Verify user has membership in THIS workspace OR is the OWNER
+        const isOwner = workspace.ownerId === session.user.id;
+        const membership = await prisma.workspaceMember.findFirst({
+            where: {
+                userId: session.user.id,
+                workspaceId: workspace.id
+            }
+        });
+
+        if (!membership && !isOwner) {
+            console.error(`Access denied for user ${session.user.id} to workspace ${workspace.id} (Agent: ${data.agentId})`);
+            throw new Error('No tienes acceso a este workspace');
         }
 
         // 2. Verify Token & Fetch Profile Data for Meta Review Display
