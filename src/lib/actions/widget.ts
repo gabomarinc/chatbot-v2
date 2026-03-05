@@ -549,15 +549,6 @@ Reglas para cobrar (ESTRICTO):
                     }
                 } catch (e) { console.error(e) }
 
-                // Add custom departments from "Ruteo Inteligente" (handoffTargets)
-                const handoffTargets = (agent as any).handoffTargets;
-                if (handoffTargets && Array.isArray(handoffTargets) && handoffTargets.length > 0) {
-                    systemPrompt += `\nDEPARTAMENTOS PERSONALIZADOS CONFIGURADOS:\n`;
-                    handoffTargets.forEach((target: any) => {
-                        systemPrompt += `- Departamento "${target.name}": ${target.description || 'Transferir aquí cuando corresponda.'} (Usa este nombre exacto en el parámetro departamento)\n`;
-                    });
-                }
-
                 systemPrompt += `\nAL LLAMAR A 'asignar_a_humano', el usuario será notificado y el sistema buscará al agente adecuado o enviará una notificación.\n`;
             }
 
@@ -1221,46 +1212,10 @@ Reglas para cobrar (ESTRICTO):
                                             assigned_to: member.user.name || member.user.email
                                         };
                                     } else {
-                                        // FALLBACK: If no member found, check if it's a custom handoff target from "Ruteo Inteligente"
-                                        const handoffTargets = (agent as any).handoffTargets;
-                                        const customTarget = Array.isArray(handoffTargets)
-                                            ? handoffTargets.find((t: any) => t.name.toLowerCase() === dept.toLowerCase())
-                                            : null;
-
-                                        if (customTarget) {
-                                            // Send email notification (Legacy "Ruteo Inteligente" behavior)
-                                            const { sendHandoffEmail } = await import('@/lib/email');
-                                            const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-                                            const link = `${appUrl}/chat?id=${conversation.id}`;
-
-                                            await sendHandoffEmail(
-                                                customTarget.email,
-                                                agent.name,
-                                                workspace.name,
-                                                link,
-                                                {
-                                                    name: conversation.contactName || 'Visitante',
-                                                    email: conversation.contactEmail || undefined
-                                                },
-                                                `[Ruteo Inteligente: ${customTarget.name}] ${(args as any).razon || 'El bot ha solicitado transferencia.'}`
-                                            );
-
-                                            // Mark as PENDING or PAUSE so bot stops responding
-                                            await prisma.conversation.update({
-                                                where: { id: conversation.id },
-                                                data: { isPaused: true, status: 'PENDING' }
-                                            });
-
-                                            toolResult = {
-                                                success: true,
-                                                message: `Se ha enviado una notificación al equipo de ${customTarget.name} (${customTarget.email}). Un agente te contactará pronto. El bot se ha pausado.`
-                                            };
-                                        } else {
-                                            toolResult = {
-                                                success: false,
-                                                error: `No hay agentes disponibles ni destinos de ruteo configurados para "${dept}".`
-                                            };
-                                        }
+                                        toolResult = {
+                                            success: false,
+                                            error: `No hay agentes disponibles en el workspace con el departamento "${dept}". Verifica la configuración del equipo.`
+                                        };
                                     }
                                 } catch (e: any) {
                                     console.error('[GEMINI] asignar_a_humano error:', e);
@@ -2072,46 +2027,10 @@ Reglas para cobrar (ESTRICTO):
                                         assigned_to: member.user.name || member.user.email
                                     };
                                 } else {
-                                    // FALLBACK: If no member found, check if it's a custom handoff target from "Ruteo Inteligente"
-                                    const handoffTargets = (agent as any).handoffTargets;
-                                    const customTarget = Array.isArray(handoffTargets)
-                                        ? handoffTargets.find((t: any) => t.name.toLowerCase() === dept.toLowerCase())
-                                        : null;
-
-                                    if (customTarget) {
-                                        // Send email notification (Legacy "Ruteo Inteligente" behavior)
-                                        const { sendHandoffEmail } = await import('@/lib/email');
-                                        const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-                                        const link = `${appUrl}/chat?id=${conversation.id}`;
-
-                                        await sendHandoffEmail(
-                                            customTarget.email,
-                                            agent.name,
-                                            workspace.name,
-                                            link,
-                                            {
-                                                name: conversation.contactName || 'Visitante',
-                                                email: conversation.contactEmail || undefined
-                                            },
-                                            `[Ruteo Inteligente: ${customTarget.name}] ${args.razon || 'El bot ha solicitado transferencia.'}`
-                                        );
-
-                                        // Mark as PENDING and PAUSE bot
-                                        await prisma.conversation.update({
-                                            where: { id: conversation.id },
-                                            data: { isPaused: true, status: 'PENDING' }
-                                        });
-
-                                        toolResult = {
-                                            success: true,
-                                            message: `Se ha enviado una notificación al equipo de ${customTarget.name} (${customTarget.email}). Un agente te contactará pronto. Bot pausado.`
-                                        };
-                                    } else {
-                                        toolResult = {
-                                            success: false,
-                                            error: `No hay agentes disponibles ni destinos de ruteo configurados para "${dept}".`
-                                        };
-                                    }
+                                    toolResult = {
+                                        success: false,
+                                        error: `No hay agentes disponibles en el workspace con el departamento "${dept}". Verifica la configuración del equipo.`
+                                    };
                                 }
                             } catch (e: any) {
                                 console.error('[OPENAI] asignar_a_humano error:', e);
