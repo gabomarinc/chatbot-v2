@@ -90,13 +90,12 @@ export function Sidebar() {
             )}>
                 {/* Logo & Close Button (Mobile) */}
                 <div className="p-8 flex items-center justify-between">
-                    <div className="flex items-center gap-3 group cursor-pointer">
+                    <div className="flex items-center group cursor-pointer">
                         <img
                             src="/logo-konsul-app.png"
                             alt="Kônsul"
                             className="h-10 w-auto object-contain transform group-hover:scale-105 transition-all duration-300"
                         />
-                        <div className="text-[10px] text-[#21AC96] font-bold uppercase tracking-widest bg-[#21AC96]/5 px-1.5 rounded-full inline-block animate-pulse">BETA v1.0</div>
                     </div>
                     <button
                         onClick={() => setIsOpen(false)}
