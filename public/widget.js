@@ -2,10 +2,10 @@
     // 1. Configuración
     const script = document.currentScript;
     const channelId = script.getAttribute('data-channel-id');
-    // In local dev, script.src might be blob or localhost. 
-    // For now we assume the widget is served from the same domain as the app.
-    // In production, you'd put the actual URL here.
-    const baseUrl = 'http://localhost:3000';
+
+    // Detect base URL from script src
+    const scriptSrc = script.src;
+    const baseUrl = scriptSrc.substring(0, scriptSrc.lastIndexOf('/'));
     const widgetUrl = `${baseUrl}/widget/${channelId}`;
 
     if (!channelId) {
