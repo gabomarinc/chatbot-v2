@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { signIn, auth } from '@/auth'
+import { uploadFileToR2 } from '@/lib/r2'
 
 const registerSchema = z.object({
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -346,4 +347,23 @@ export async function updateUserProfileWithTimezone(userId: string, name?: strin
 export async function getCurrentUser() {
     const session = await auth()
     return session?.user
+}
+
+export async function uploadUserAvatar(userId: string, formData: FormData) {
+    try {
+        const file = formData.get('file') as File;
+        if (!file) throw new Error("No file provided");
+
+        const session = await auth();
+        if (!session?.user || session.user.id !== userId) throw new Error("Unauthorized");
+
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const fileName = `user-avatar-${userId}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+        const avatarUrl = await uploadFileToR2(buffer, fileName, file.type);
+
+        return { success: true, url: avatarUrl };
+    } catch (error: any) {
+        console.error("User avatar upload failed:", error);
+        return { success: false, error: 'Ocurrió un error al subir la imagen. Inténtalo de nuevo.' };
+    }
 }

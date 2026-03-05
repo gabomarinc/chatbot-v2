@@ -302,7 +302,13 @@ export function Topbar() {
                         >
                             <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-2xl flex items-center justify-center text-white font-bold shadow-lg shadow-[#21AC96]/20 transform group-hover:rotate-6 group-hover:scale-105 transition-all duration-300 overflow-hidden relative">
                                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <Sparkles className="w-5 h-5 md:w-5 md:h-5" />
+                                {session?.user?.image ? (
+                                    <img src={session.user.image} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-white text-lg font-bold">
+                                        {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : session?.user?.email?.charAt(0).toUpperCase() || 'U'}
+                                    </span>
+                                )}
                             </div>
                             <div className="hidden md:flex flex-col items-start translate-x-0 group-hover:translate-x-1 transition-transform duration-300">
                                 <span className="text-sm text-gray-900 font-bold tracking-tight">{displayText}</span>

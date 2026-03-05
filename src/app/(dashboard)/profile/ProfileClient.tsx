@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Save, User, Mail, Calendar, TrendingUp, Bot, Radio, MessageSquare, Coins, AlertCircle, CheckCircle, Upload } from 'lucide-react';
-import { updateUserProfileWithTimezone } from '@/lib/actions/auth';
+import { updateUserProfileWithTimezone, uploadUserAvatar } from '@/lib/actions/auth';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -40,6 +40,7 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(user.image);
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,8 +49,23 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
         setErrorMessage(null);
 
         try {
-            const result = await updateUserProfileWithTimezone(user.id, name, avatarPreview || undefined, timezone);
-            
+            let finalAvatarUrl = avatarPreview;
+
+            if (avatarFile) {
+                const formData = new FormData();
+                formData.append('file', avatarFile);
+                const uploadResult = await uploadUserAvatar(user.id, formData);
+
+                if (!uploadResult.success) {
+                    setErrorMessage(uploadResult.error || 'Ocurrió un error al subir la imagen.');
+                    setIsSaving(false);
+                    return;
+                }
+                finalAvatarUrl = uploadResult.url || null;
+            }
+
+            const result = await updateUserProfileWithTimezone(user.id, name, finalAvatarUrl || undefined, timezone);
+
             if (result.error) {
                 setErrorMessage(result.error);
             } else {
@@ -73,7 +89,7 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // For now, we'll use a data URL. In production, you'd upload to R2/S3
+            setAvatarFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setAvatarPreview(reader.result as string);
@@ -109,19 +125,19 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
                     {/* Personal Information */}
                     <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
                         <h2 className="text-gray-900 mb-6 text-lg font-semibold">Información Personal</h2>
-                        
+
                         <form onSubmit={handleSave} className="space-y-6">
                             {/* Avatar */}
                             <div className="flex items-center gap-6">
                                 <div className="relative">
-                                    <div 
+                                    <div
                                         onClick={handleAvatarClick}
                                         className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#21AC96] to-[#1a8a78] flex items-center justify-center text-white text-3xl font-bold cursor-pointer hover:opacity-90 transition-opacity shadow-lg relative overflow-hidden group"
                                     >
                                         {avatarPreview ? (
-                                            <img 
-                                                src={avatarPreview} 
-                                                alt="Avatar" 
+                                            <img
+                                                src={avatarPreview}
+                                                alt="Avatar"
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
