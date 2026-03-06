@@ -375,54 +375,96 @@ export async function deleteUserAccount(userId: string) {
 
     try {
         await prisma.$transaction(async (tx) => {
-            // Unassign from any conversations
+            // Find all workspaces owned by the user
+            const workspaces = await tx.workspace.findMany({ where: { ownerId: userId } });
+
+            for (const workspace of workspaces) {
+                const wId = workspace.id;
+
+                // Find all agents in this workspace
+                const agents = await tx.agent.findMany({ where: { workspaceId: wId } });
+                const agentIds = agents.map(a => a.id);
+
+                if (agentIds.length > 0) {
+                    // Find all conversations
+                    const convs = await tx.conversation.findMany({ where: { agentId: { in: agentIds } } });
+                    const convIds = convs.map(c => c.id);
+
+                    if (convIds.length > 0) {
+                        // Delete scheduled follow ups and messages
+                        await tx.scheduledFollowUp.deleteMany({ where: { conversationId: { in: convIds } } });
+                        await tx.message.deleteMany({ where: { conversationId: { in: convIds } } });
+                        await tx.conversation.deleteMany({ where: { id: { in: convIds } } });
+                    }
+
+                    // Agent dependencies
+                    await tx.pendingQuestion.deleteMany({ where: { agentId: { in: agentIds } } });
+                    await tx.channel.deleteMany({ where: { agentId: { in: agentIds } } });
+                    await tx.intent.deleteMany({ where: { agentId: { in: agentIds } } });
+                    await tx.agentIntegration.deleteMany({ where: { agentId: { in: agentIds } } });
+                    await tx.agentMCPServer.deleteMany({ where: { agentId: { in: agentIds } } });
+                    await tx.integrationEvent.deleteMany({ where: { agentId: { in: agentIds } } });
+                    await tx.agentMedia.deleteMany({ where: { agentId: { in: agentIds } } });
+                    await tx.customFieldDefinition.deleteMany({ where: { agentId: { in: agentIds } } });
+
+                    // Knowledge Bases
+                    const kbs = await tx.knowledgeBase.findMany({ where: { agentId: { in: agentIds } } });
+                    const kbIds = kbs.map(k => k.id);
+                    if (kbIds.length > 0) {
+                        const sources = await tx.knowledgeSource.findMany({ where: { knowledgeBaseId: { in: kbIds } } });
+                        const sourceIds = sources.map(s => s.id);
+                        if (sourceIds.length > 0) {
+                            await tx.documentChunk.deleteMany({ where: { knowledgeSourceId: { in: sourceIds } } });
+                            await tx.knowledgeSource.deleteMany({ where: { id: { in: sourceIds } } });
+                        }
+                        await tx.knowledgeBase.deleteMany({ where: { id: { in: kbIds } } });
+                    }
+
+                    // Finally delete agents
+                    await tx.agent.deleteMany({ where: { workspaceId: wId } });
+                }
+
+                // Workspace dependencies
+                await tx.costTracking.deleteMany({ where: { workspaceId: wId } });
+                await tx.creditBalance.deleteMany({ where: { workspaceId: wId } });
+                await tx.payment.deleteMany({ where: { workspaceId: wId } });
+                await tx.subscription.deleteMany({ where: { workspaceId: wId } });
+                await tx.usageLog.deleteMany({ where: { workspaceId: wId } });
+                await tx.workspaceMember.deleteMany({ where: { workspaceId: wId } });
+
+                // Contacts
+                const contacts = await tx.contact.findMany({ where: { workspaceId: wId } });
+                const contactIds = contacts.map(c => c.id);
+                if (contactIds.length > 0) {
+                    await tx.contactActivity.deleteMany({ where: { contactId: { in: contactIds } } });
+                    await tx.transaction.deleteMany({ where: { contactId: { in: contactIds } } });
+                    await tx.contact.deleteMany({ where: { id: { in: contactIds } } });
+                }
+
+                await tx.paymentGatewayConfig.deleteMany({ where: { workspaceId: wId } });
+                await tx.prospectStatusColumn.deleteMany({ where: { workspaceId: wId } });
+                await tx.workspaceIntegration.deleteMany({ where: { workspaceId: wId } });
+
+                // Finally, delete workspace
+                await tx.workspace.delete({ where: { id: wId } });
+            }
+
+            // Remove user references in non-owned workspaces
+            await tx.workspaceMember.deleteMany({ where: { userId: userId } });
+            await tx.workspaceIntegration.deleteMany({ where: { userId: userId } });
+
             await tx.conversation.updateMany({
                 where: { assignedTo: userId },
                 data: { assignedTo: null }
             });
 
-            // Anonymize the user so they can't login, clear their PII, and make email reusable
-            const deletedEmail = `deleted_${userId}_${Date.now()}@konsul.digital`;
-            await tx.user.update({
-                where: { id: userId },
-                data: {
-                    name: 'Usuario Eliminado',
-                    email: deletedEmail,
-                    passwordHash: 'deleted',
-                    fcmToken: null,
-                    image: null
-                }
+            await tx.contactActivity.updateMany({
+                where: { userId: userId },
+                data: { userId: null }
             });
 
-            // Make their workspaces inactive or rename them to signify deletion
-            // Because full cascading deletion of workspaces is extremely complex without onDelete cascade set
-            await tx.workspace.updateMany({
-                where: { ownerId: userId },
-                data: { name: 'Workspace Eliminado' }
-            });
-
-            // Unlink their integrations
-            await tx.workspaceIntegration.deleteMany({
-                where: { userId }
-            });
-
-            // Delete user memberships
-            await tx.workspaceMember.deleteMany({
-                where: { userId }
-            });
-
-            // Inactivate their agents so they stop working
-            const workspaces = await tx.workspace.findMany({ where: { ownerId: userId } });
-            if (workspaces.length > 0) {
-                const agents = await tx.agent.findMany({ where: { workspaceId: { in: workspaces.map(w => w.id) } } });
-                if (agents.length > 0) {
-                    // Disable all channels connected to these agents
-                    await tx.channel.updateMany({
-                        where: { agentId: { in: agents.map(a => a.id) } },
-                        data: { isActive: false }
-                    });
-                }
-            }
+            // Delete User
+            await tx.user.delete({ where: { id: userId } });
         });
 
         return { success: true };
