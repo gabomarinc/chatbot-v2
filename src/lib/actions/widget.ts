@@ -512,6 +512,8 @@ Reglas para cobrar (ESTRICTO):
 5. Entrega el enlace al cliente y dile que puede completar su pago de forma segura${mentions.length > 0 ? ` (Aceptamos ${mentions.join(' y ')}).` : '.'}`;
                     })()}
 ` : ''}
+
+${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversación es a través de un chat de mensajería, SI tu respuesta es larga o tiene varios puntos, DEBES dividirla en múltiples mensajes usando el doble salto de línea (\\n\\n) como separador entre cada mensaje. El sistema se encargará de enviarlos como burbujas separadas. Evita párrafos muy densos.\n` : ''}
 `;
 
             const neonPrompt = hasNeon ? `\nBÚSQUEDA EN CATÁLOGO (NEON DB):
@@ -2516,19 +2518,43 @@ Reglas para cobrar (ESTRICTO):
                 tokensUsed = completion.usage?.total_tokens || 0;
             }
 
-            // 6. Save Agent Message (with image metadata if image was selected)
-            const agentMsg = await prisma.message.create({
-                data: {
-                    conversationId: conversation.id,
-                    role: 'AGENT',
-                    content: replyContent,
-                    metadata: selectedImage ? {
-                        type: 'image',
-                        url: selectedImage.url,
-                        altText: selectedImage.altText || null
-                    } : undefined
+            // 6. Save Agent Message (Splitting if enabled)
+            const agentMsgs = [];
+            if (agent.splitLongMessages && replyContent.includes('\n\n')) {
+                const parts = replyContent.split('\n\n').filter(p => p.trim());
+                console.log(`[WIDGET] Splitting message into ${parts.length} parts`);
+                for (let i = 0; i < parts.length; i++) {
+                    const msg = await prisma.message.create({
+                        data: {
+                            conversationId: conversation.id,
+                            role: 'AGENT',
+                            content: parts[i],
+                            metadata: (i === 0 && selectedImage) ? {
+                                type: 'image',
+                                url: selectedImage.url,
+                                altText: selectedImage.altText || null
+                            } : undefined
+                        }
+                    });
+                    agentMsgs.push(msg);
                 }
-            });
+            } else {
+                const agentMsg = await prisma.message.create({
+                    data: {
+                        conversationId: conversation.id,
+                        role: 'AGENT',
+                        content: replyContent,
+                        metadata: selectedImage ? {
+                            type: 'image',
+                            url: selectedImage.url,
+                            altText: selectedImage.altText || null
+                        } : undefined
+                    }
+                });
+                agentMsgs.push(agentMsg);
+            }
+
+            const agentMsg = agentMsgs[0]; // Return the first one as primary for legacy compatibility
 
             // 6.2 AUTOMATIC INSIGHTS: Trigger after 5 messages milestone
             if (conversation.contactId) {
@@ -2583,7 +2609,7 @@ Reglas para cobrar (ESTRICTO):
                 })
             ]);
 
-            return { userMsg, agentMsg };
+            return { userMsg, agentMsg, agentMsgs };
 
         } catch (error) {
             console.error("AI Error:", error);

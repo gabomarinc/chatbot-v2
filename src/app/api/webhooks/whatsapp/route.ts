@@ -103,12 +103,17 @@ export async function POST(req: NextRequest) {
 
           // Send response back to WhatsApp
           if (result.agentMsg) {
-            await sendWhatsAppMessage(
-              phoneNumberId,
-              config.accessToken,
-              senderNumber,
-              result.agentMsg.content
-            );
+            const msgsToSend = (result as any).agentMsgs || [result.agentMsg];
+            for (const msg of msgsToSend) {
+              if (msg?.content) {
+                await sendWhatsAppMessage(
+                  phoneNumberId,
+                  config.accessToken,
+                  senderNumber,
+                  msg.content
+                );
+              }
+            }
           }
         }
       }
@@ -152,12 +157,17 @@ export async function POST(req: NextRequest) {
 
               // Acknowledge receipt
               if (result.agentMsg) {
-                await sendWhatsAppMessage(
-                  phoneNumberId,
-                  config.accessToken,
-                  senderNumber,
-                  result.agentMsg.content
-                );
+                const msgsToSend = (result as any).agentMsgs || [result.agentMsg];
+                for (const msg of msgsToSend) {
+                  if (msg?.content) {
+                    await sendWhatsAppMessage(
+                      phoneNumberId,
+                      config.accessToken,
+                      senderNumber,
+                      msg.content
+                    );
+                  }
+                }
               }
             }
           }
@@ -200,12 +210,17 @@ export async function POST(req: NextRequest) {
 
               // Acknowledge receipt
               if (result.agentMsg) {
-                await sendWhatsAppMessage(
-                  phoneNumberId,
-                  config.accessToken,
-                  senderNumber,
-                  result.agentMsg.content
-                );
+                const msgsToSend = (result as any).agentMsgs || [result.agentMsg];
+                for (const msg of msgsToSend) {
+                  if (msg?.content) {
+                    await sendWhatsAppMessage(
+                      phoneNumberId,
+                      config.accessToken,
+                      senderNumber,
+                      msg.content
+                    );
+                  }
+                }
               }
             }
           }
@@ -260,12 +275,17 @@ export async function POST(req: NextRequest) {
 
               // 5. Send AI Response back to WhatsApp
               if (result.agentMsg) {
-                await sendWhatsAppMessage(
-                  phoneNumberId,
-                  config.accessToken,
-                  senderNumber,
-                  result.agentMsg.content
-                );
+                const msgsToSend = (result as any).agentMsgs || [result.agentMsg];
+                for (const msg of msgsToSend) {
+                  if (msg?.content) {
+                    await sendWhatsAppMessage(
+                      phoneNumberId,
+                      config.accessToken,
+                      senderNumber,
+                      msg.content
+                    );
+                  }
+                }
               }
             }
           }

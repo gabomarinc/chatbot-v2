@@ -530,18 +530,35 @@ export async function generateAgentReply(
   // Calculate credits
   creditsUsed = Math.ceil(tokensUsed / 100);
 
-  // Store agent reply
-  await prisma.message.create({
-    data: {
-      conversationId,
-      role: 'AGENT',
-      content: finalReply,
-      metadata: {
-        tokensUsed,
-        model: agent.model,
+  // Store agent reply (Splitting if enabled)
+  if (agent.splitLongMessages && finalReply.includes('\n\n')) {
+    const parts = finalReply.split('\n\n').filter(p => p.trim());
+    for (const part of parts) {
+      await prisma.message.create({
+        data: {
+          conversationId,
+          role: 'AGENT',
+          content: part,
+          metadata: {
+            tokensUsed,
+            model: agent.model,
+          },
+        },
+      });
+    }
+  } else {
+    await prisma.message.create({
+      data: {
+        conversationId,
+        role: 'AGENT',
+        content: finalReply,
+        metadata: {
+          tokensUsed,
+          model: agent.model,
+        },
       },
-    },
-  });
+    });
+  }
 
   // Update conversation last message time
   await prisma.conversation.update({
@@ -647,7 +664,7 @@ function buildSystemPrompt(agent: any, contextChunks: string[], hasAltaplaza: bo
   }
 
   if (agent.splitLongMessages) {
-    prompt += 'Si tu respuesta es muy larga, divídela en múltiples mensajes más cortos y fáciles de leer.\n\n';
+    prompt += 'IMPORTANTE: Divide tu respuesta en múltiples burbujas de chat usando el doble salto de línea (\\n\\n) como separador entre cada mensaje. Evita bloques de texto muy largos.\n\n';
   }
 
   if (agent.transferToHuman) {

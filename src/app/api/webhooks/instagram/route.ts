@@ -203,20 +203,31 @@ export async function POST(req: NextRequest) {
                         }
 
                         // Then send text if there's accompanying text
-                        if (result.agentMsg.content && result.agentMsg.content.trim()) {
-                            await sendInstagramMessage(
-                                config.pageAccessToken,
-                                senderId,
-                                result.agentMsg.content
-                            );
+                        if (result.agentMsg && result.agentMsg.content && result.agentMsg.content.trim()) {
+                            const msgsToWait = (result as any).agentMsgs || [result.agentMsg];
+                            for (const m of msgsToWait) {
+                                if (m?.content) {
+                                    await sendInstagramMessage(
+                                        config.pageAccessToken,
+                                        senderId,
+                                        m.content
+                                    );
+                                }
+                            }
                         }
                     } else {
                         // Send text only
-                        await sendInstagramMessage(
-                            config.pageAccessToken,
-                            senderId,
-                            result.agentMsg.content
-                        );
+                        // Support multiple bubbles if present
+                        const msgsToSend = result.agentMsgs || [result.agentMsg];
+                        for (const msg of msgsToSend) {
+                            if (msg?.content) {
+                                await sendInstagramMessage(
+                                    config.pageAccessToken,
+                                    senderId,
+                                    msg.content
+                                );
+                            }
+                        }
                     }
                 } else {
                     // Fallback if no agent message returned
@@ -270,11 +281,16 @@ export async function POST(req: NextRequest) {
                         });
 
                         if (result.agentMsg) {
-                            await sendInstagramMessage(
-                                config.pageAccessToken,
-                                senderId,
-                                result.agentMsg.content
-                            );
+                            const msgsToSend = (result as any).agentMsgs || [result.agentMsg];
+                            for (const msg of msgsToSend) {
+                                if (msg?.content) {
+                                    await sendInstagramMessage(
+                                        config.pageAccessToken,
+                                        senderId,
+                                        msg.content
+                                    );
+                                }
+                            }
                         }
                     }
                 } catch (e) {
@@ -311,7 +327,16 @@ export async function POST(req: NextRequest) {
                     });
 
                     if (result.agentMsg) {
-                        await sendInstagramMessage(config.pageAccessToken, senderId, result.agentMsg.content);
+                        const msgsToSend = (result as any).agentMsgs || [result.agentMsg];
+                        for (const msg of msgsToSend) {
+                            if (msg?.content) {
+                                await sendInstagramMessage(
+                                    config.pageAccessToken,
+                                    senderId,
+                                    msg.content
+                                );
+                            }
+                        }
                     }
                 }
             }
