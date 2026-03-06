@@ -662,3 +662,48 @@ export async function deleteWhatsAppTemplateAction(data: {
         return { error: error.message || 'Error al eliminar la plantilla' };
     }
 }
+
+/**
+ * Refreshes and saves the phone number for an existing WhatsApp channel
+ */
+export async function refreshWhatsAppPhoneInfo(channelId: string) {
+    try {
+        const channel = await prisma.channel.findUnique({
+            where: { id: channelId }
+        });
+
+        if (!channel || channel.type !== 'WHATSAPP') return { error: 'Canal no encontrado' };
+
+        const config = channel.configJson as any;
+        const accessToken = config?.accessToken;
+        const phoneNumberId = config?.phoneNumberId;
+
+        if (!accessToken || !phoneNumberId) return { error: 'Faltan credenciales' };
+
+        const response = await fetch(
+            `https://graph.facebook.com/${META_API_VERSION}/${phoneNumberId}?fields=display_phone_number&access_token=${accessToken}`
+        );
+        const data = await response.json();
+
+        if (response.ok && data.display_phone_number) {
+            const cleanNumber = data.display_phone_number.replace(/\D/g, '');
+
+            await prisma.channel.update({
+                where: { id: channelId },
+                data: {
+                    configJson: {
+                        ...config,
+                        phoneNumber: cleanNumber
+                    }
+                }
+            });
+
+            return { success: true, phoneNumber: cleanNumber };
+        }
+        return { error: 'No se pudo obtener el número de Meta' };
+    } catch (e: any) {
+        console.error('Error refreshing phone info:', e);
+        return { error: e.message || 'Error de red' };
+    }
+}
+

@@ -6,7 +6,7 @@ import { Loader2, Check, Phone, Copy, ArrowRight, ShieldCheck, Settings2, Info, 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { WhatsAppEmbeddedSignup } from './WhatsAppEmbeddedSignup';
-import { getWhatsAppTemplates, sendWhatsAppTemplateAction, deleteWhatsAppTemplateAction } from '@/lib/actions/whatsapp-auth';
+import { getWhatsAppTemplates, sendWhatsAppTemplateAction, deleteWhatsAppTemplateAction, refreshWhatsAppPhoneInfo } from '@/lib/actions/whatsapp-auth';
 import { useEffect } from 'react';
 import { TemplateManager } from './TemplateManager';
 import { Trash2, AlertCircle, Plus } from 'lucide-react';
@@ -209,6 +209,15 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     useEffect(() => {
         if (existingChannel?.configJson?.wabaId && existingChannel?.configJson?.accessToken) {
             fetchTemplates();
+        }
+
+        // Populate missing phone number for existing channels
+        if (existingChannel && !existingChannel.configJson?.phoneNumber && existingChannel.id) {
+            refreshWhatsAppPhoneInfo(existingChannel.id).then(res => {
+                if (res.success) {
+                    router.refresh(); // Refresh page to show the new number
+                }
+            });
         }
     }, []);
 
