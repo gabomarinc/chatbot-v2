@@ -174,6 +174,7 @@ export async function getConversationsByDate(date: Date) {
             }
         },
         include: {
+            contact: true,
             agent: {
                 select: {
                     id: true,
@@ -809,6 +810,7 @@ export async function getConversations(page: number = 1, pageSize: number = 20) 
                     email: true
                 }
             },
+            contact: true,
             messages: {
                 orderBy: { createdAt: 'desc' },
                 take: 1

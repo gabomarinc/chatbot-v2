@@ -23,6 +23,7 @@ interface Conversation {
     _count: {
         messages: number;
     };
+    contact?: { name: string | null };
 }
 
 interface ConversationsDayModalProps {
@@ -131,12 +132,12 @@ export function ConversationsDayModal({ isOpen, onClose, conversations, date, is
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4 flex-1">
                                                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#21AC96] to-[#1a8a78] flex items-center justify-center text-white font-bold shadow-lg shadow-[#21AC96]/20 group-hover:scale-110 transition-transform">
-                                                    {(conv.contactName || conv.externalId).charAt(0).toUpperCase()}
+                                                    {((conv as any).contact?.name || conv.contactName || conv.externalId).charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <h3 className="text-base font-extrabold text-gray-900 truncate">
-                                                            {conv.contactName || conv.externalId}
+                                                            {(conv as any).contact?.name || conv.contactName || conv.externalId}
                                                         </h3>
                                                     </div>
                                                     <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">

@@ -10,7 +10,7 @@ export default async function ChatPage({
 }) {
     const params = await searchParams;
     const session = await auth();
-    
+
     const [conversations, teamMembers, userRole] = await Promise.all([
         getConversations(),
         getTeamMembers(),
@@ -24,17 +24,18 @@ export default async function ChatPage({
         lastMessageAt: c.lastMessageAt,
         messages: c.messages,
         _count: c._count,
-        contactName: c.contactName,
+        contactName: c.contact?.name || c.contactName,
         externalId: c.externalId,
         status: c.status,
         channel: c.channel,
+        contact: c.contact,
         assignedTo: c.assignedTo,
         assignedUser: c.assignedUser
     }));
 
     return (
-        <ChatInterface 
-            initialConversations={initialConversations as any} 
+        <ChatInterface
+            initialConversations={initialConversations as any}
             initialConversationId={params.conversationId}
             teamMembers={teamMembers}
             currentUserId={session?.user?.id}

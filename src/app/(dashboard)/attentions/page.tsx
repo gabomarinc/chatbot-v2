@@ -49,16 +49,27 @@ export default async function AttentionsPage() {
                             <div key={conv.id} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#21AC96]/20 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-6 cursor-pointer">
                                 <div className="flex items-center gap-6">
                                     {/* Icon Channel */}
-                                    <div className="w-14 h-14 rounded-[1.25rem] bg-gray-50 flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform group-hover:bg-[#21AC96]/10 group-hover:text-[#21AC96] relative">
-                                        <Smartphone className="w-6 h-6" />
-                                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] shadow-sm border border-gray-100 overflow-hidden">
-                                            {conv.channel?.type === 'WHATSAPP' ? '📞' : '🌐'}
-                                        </div>
+                                    <div className={cn(
+                                        "w-14 h-14 rounded-[1.25rem] flex items-center justify-center transition-all group-hover:scale-110 relative overflow-hidden",
+                                        conv.channel?.type === 'WHATSAPP'
+                                            ? "bg-white border border-gray-100 p-2.5 shadow-sm"
+                                            : "bg-gray-50 text-gray-400 group-hover:bg-[#21AC96]/10 group-hover:text-[#21AC96]"
+                                    )}>
+                                        {conv.channel?.type === 'WHATSAPP' ? (
+                                            <img src="/whatsapp-icono.png" alt="WhatsApp" className="w-full h-full object-contain" />
+                                        ) : (
+                                            <>
+                                                <Smartphone className="w-6 h-6" />
+                                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center text-[10px] shadow-sm border border-gray-100 overflow-hidden">
+                                                    🌐
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
 
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-3 mb-1">
-                                            <span className="text-gray-900 font-extrabold text-lg tracking-tight">{conv.contactName || conv.externalId}</span>
+                                            <span className="text-gray-900 font-extrabold text-lg tracking-tight">{(conv as any).contact?.name || conv.contactName || conv.externalId}</span>
                                             <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold border", statusColors[conv.status])}>
                                                 {conv.status.replace('_', ' ')}
                                             </span>

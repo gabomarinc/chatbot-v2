@@ -37,6 +37,7 @@ interface Conversation {
     assignedTo?: string | null;
     assignedUser?: { id: string; name: string | null; email: string } | null;
     isPaused: boolean;
+    contact?: any;
 }
 
 interface TeamMember {
@@ -288,12 +289,16 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                             )}
                         >
                             <div className={cn(
-                                "w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-transform group-hover:scale-105 shadow-sm",
-                                selectedConvId === conv.id
-                                    ? "bg-gradient-to-br from-[#1E9A86] to-[#158571] text-white shadow-[#1E9A86]/20"
-                                    : "bg-gray-100 text-gray-500"
+                                "w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-transform group-hover:scale-105 shadow-sm overflow-hidden",
+                                conv.channel?.type === 'WHATSAPP'
+                                    ? "bg-white border border-gray-100 p-2.5"
+                                    : selectedConvId === conv.id
+                                        ? "bg-gradient-to-br from-[#1E9A86] to-[#158571] text-white shadow-[#1E9A86]/20"
+                                        : "bg-gray-100 text-gray-500"
                             )}>
-                                {conv.channel?.type === 'WHATSAPP' ? '📱' : '💬'}
+                                {conv.channel?.type === 'WHATSAPP' ? (
+                                    <img src="/whatsapp-icono.png" alt="WhatsApp" className="w-full h-full object-contain" />
+                                ) : '💬'}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-1">
@@ -302,7 +307,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                             "text-sm font-bold truncate block",
                                             selectedConvId === conv.id ? "text-gray-900" : "text-gray-700"
                                         )}>
-                                            {conv.contactName || conv.externalId}
+                                            {conv.contact?.name || conv.contactName || conv.externalId}
                                         </span>
                                         {conv.assignedUser && (
                                             <div className="mt-1">
@@ -367,11 +372,11 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                                 </button>
 
                                 <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-[#1E9A86] to-[#158571] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#1E9A86]/20 font-bold text-base md:text-lg">
-                                    {activeConversation.contactName?.charAt(0).toUpperCase() || '?'}
+                                    {(activeConversation.contact?.name || activeConversation.contactName || '?').charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
                                     <h3 className="text-gray-900 text-[13px] md:text-sm font-extrabold truncate max-w-[120px] md:max-w-none">
-                                        {activeConversation.contactName || activeConversation.externalId}
+                                        {activeConversation.contact?.name || activeConversation.contactName || activeConversation.externalId}
                                     </h3>
                                     <div className="flex items-center gap-2">
                                         <span className={cn(
@@ -604,7 +609,7 @@ export function ChatInterface({ initialConversations, initialConversationId, tea
                             <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-inner">
                                 👤
                             </div>
-                            <h3 className="text-gray-900 font-extrabold text-lg mb-1">{activeConversation.contactName || 'Desconocido'}</h3>
+                            <h3 className="text-gray-900 font-extrabold text-lg mb-1">{activeConversation.contact?.name || activeConversation.contactName || 'Desconocido'}</h3>
                             <p className="text-sm text-gray-500 font-medium">{activeConversation.externalId}</p>
                         </div>
 
