@@ -236,8 +236,67 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
+                {/* Account Deletion Settings */}
+                <div className="bg-white rounded-2xl p-8 border border-red-100 shadow-sm mt-8">
+                    <h2 className="text-red-600 mb-2 text-lg font-bold">Zona de Peligro</h2>
+                    <p className="text-gray-500 mb-6 text-sm">Estas acciones son irreversibles. Eliminar tu cuenta borrará todos tus agentes, canales, clientes y configuraciones permanentemente.</p>
+
+                    {!showDeleteConfirm ? (
+                        <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="flex items-center gap-2 px-6 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors font-bold cursor-pointer"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                            Eliminar mi cuenta y todos los datos
+                        </button>
+                    ) : (
+                        <div className="bg-red-50 p-6 rounded-xl border border-red-200">
+                            <h3 className="text-red-800 font-bold mb-2">¿Estás absolutamente seguro?</h3>
+                            <p className="text-red-600/80 text-sm mb-4">
+                                Esta acción <strong>no se puede deshacer</strong>. Para confirmar, escribe <strong>ELIMINAR MIS DATOS</strong> a continuación.
+                            </p>
+                            <input
+                                type="text"
+                                value={deleteInput}
+                                onChange={(e) => setDeleteInput(e.target.value)}
+                                placeholder="ELIMINAR MIS DATOS"
+                                className="w-full px-4 py-2.5 bg-white border border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all mb-4 uppercase placeholder:normal-case"
+                            />
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteConfirm(false);
+                                        setDeleteInput('');
+                                    }}
+                                    className="px-6 py-2.5 bg-white text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-bold cursor-pointer"
+                                    disabled={isDeletingAccount}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    disabled={isDeletingAccount || deleteInput !== 'ELIMINAR MIS DATOS'}
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletingAccount ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            Eliminando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-5 h-5" />
+                                            Eliminar cuenta permanentemente
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Save Button for Workspace Settings */}
-                <div className="flex justify-end">
+                <div className="flex justify-end pt-4">
                     <button className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium cursor-pointer">
                         <Save className="w-5 h-5" />
                         Guardar cambios
