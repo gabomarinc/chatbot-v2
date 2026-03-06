@@ -131,6 +131,27 @@ export async function assignConversation(conversationId: string, userId: string)
             }
         })
 
+        // Automate status change to "Asignado"
+        if (conversation.contactId) {
+            const currentStatus = (conversation.contact as any)?.prospectStatus;
+            if (!currentStatus || currentStatus === 'Nuevo') {
+                await prisma.contact.update({
+                    where: { id: conversation.contactId },
+                    data: { prospectStatus: 'Asignado' } as any
+                });
+
+                // Log activity
+                await prisma.contactActivity.create({
+                    data: {
+                        contactId: conversation.contactId,
+                        type: 'SYSTEM',
+                        content: `Movido de "${currentStatus || 'Nuevo'}" → "Asignado" (por asignación de chat)`,
+                        metadata: { prevStatus: currentStatus || 'Nuevo', newStatus: 'Asignado' }
+                    }
+                });
+            }
+        }
+
         // RE-FETCH conversation to ensure we have any contact info updated recently
         const refreshedConv = await prisma.conversation.findUnique({
             where: { id: conversationId },
@@ -385,6 +406,32 @@ export async function assumeConversation(conversationId: string) {
                 isPaused: false // Keep bot active even when taking control manually
             }
         })
+
+        // Automate status change to "Asignado"
+        const fullConv = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: { contact: true }
+        });
+
+        if (fullConv?.contactId) {
+            const currentStatus = (fullConv.contact as any)?.prospectStatus;
+            if (!currentStatus || currentStatus === 'Nuevo') {
+                await prisma.contact.update({
+                    where: { id: fullConv.contactId },
+                    data: { prospectStatus: 'Asignado' } as any
+                });
+
+                // Log activity
+                await prisma.contactActivity.create({
+                    data: {
+                        contactId: fullConv.contactId,
+                        type: 'SYSTEM',
+                        content: `Movido de "${currentStatus || 'Nuevo'}" → "Asignado" (por toma de control manual)`,
+                        metadata: { prevStatus: currentStatus || 'Nuevo', newStatus: 'Asignado' }
+                    }
+                });
+            }
+        }
 
         revalidatePath('/dashboard')
         revalidatePath('/chat')

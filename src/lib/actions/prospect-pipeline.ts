@@ -36,6 +36,30 @@ export async function getProspectPipelineData(agentId?: string) {
             await prisma.prospectStatusColumn.createMany({
                 data: DEFAULT_COLUMNS.map(c => ({ ...c, workspaceId: workspace.id }))
             })
+        } else {
+            // Check if we need to rename default columns for existing workspace
+            const enProceso = existingColumns.find(c => c.name === 'En Proceso' && c.isDefault);
+            if (enProceso) {
+                await prisma.prospectStatusColumn.update({
+                    where: { id: enProceso.id },
+                    data: { name: 'Asignado' }
+                });
+                await prisma.contact.updateMany({
+                    where: { workspaceId: workspace.id, prospectStatus: 'En Proceso' },
+                    data: { prospectStatus: 'Asignado' } as any
+                });
+            }
+            const flujoTerminado = existingColumns.find(c => c.name === 'Flujo Terminado' && c.isDefault);
+            if (flujoTerminado) {
+                await prisma.prospectStatusColumn.update({
+                    where: { id: flujoTerminado.id },
+                    data: { name: 'Finalizado' }
+                });
+                await prisma.contact.updateMany({
+                    where: { workspaceId: workspace.id, prospectStatus: 'Flujo Terminado' },
+                    data: { prospectStatus: 'Finalizado' } as any
+                });
+            }
         }
 
         const columns = await prisma.prospectStatusColumn.findMany({

@@ -1171,6 +1171,27 @@ Reglas para cobrar (ESTRICTO):
                                             }
                                         });
 
+                                        // Automate status change to "Asignado"
+                                        if (conversation.contactId) {
+                                            const currentStatus = (conversation.contact as any)?.prospectStatus;
+                                            if (!currentStatus || currentStatus === 'Nuevo') {
+                                                await prisma.contact.update({
+                                                    where: { id: conversation.contactId },
+                                                    data: { prospectStatus: 'Asignado' } as any
+                                                });
+
+                                                // Log activity
+                                                await prisma.contactActivity.create({
+                                                    data: {
+                                                        contactId: conversation.contactId,
+                                                        type: 'SYSTEM',
+                                                        content: `Transferido a humano → Movido de "${currentStatus || 'Nuevo'}" a "Asignado"`,
+                                                        metadata: { prevStatus: currentStatus || 'Nuevo', newStatus: 'Asignado', reason: 'Bot handover' }
+                                                    }
+                                                });
+                                            }
+                                        }
+
                                         // Send Assignment Email & Push Notification
                                         try {
                                             const { sendAssignmentEmail } = await import('@/lib/email');
@@ -1985,6 +2006,27 @@ Reglas para cobrar (ESTRICTO):
                                             isPaused: false // KEEP the bot active until human manually assumes control
                                         }
                                     });
+
+                                    // Automate status change to "Asignado"
+                                    if (conversation.contactId) {
+                                        const currentStatus = (conversation.contact as any)?.prospectStatus;
+                                        if (!currentStatus || currentStatus === 'Nuevo') {
+                                            await prisma.contact.update({
+                                                where: { id: conversation.contactId },
+                                                data: { prospectStatus: 'Asignado' } as any
+                                            });
+
+                                            // Log activity
+                                            await prisma.contactActivity.create({
+                                                data: {
+                                                    contactId: conversation.contactId,
+                                                    type: 'SYSTEM',
+                                                    content: `Transferido a humano → Movido de "${currentStatus || 'Nuevo'}" a "Asignado"`,
+                                                    metadata: { prevStatus: currentStatus || 'Nuevo', newStatus: 'Asignado', reason: 'Bot handover' }
+                                                }
+                                            });
+                                        }
+                                    }
 
                                     // Send Assignment Email & Push Notification
                                     try {
