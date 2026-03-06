@@ -13,6 +13,9 @@ export async function GET(request: Request) {
     const state = searchParams.get('state'); // agentId encoded in state
     const error = searchParams.get('error');
 
+    // Zoho sends the correct accounts-server in the callback URL - use it directly
+    const accountsServerFromZoho = searchParams.get('accounts-server');
+
     if (error) {
         return NextResponse.json({ error: `Zoho Auth Error: ${error}` }, { status: 400 });
     }
@@ -24,21 +27,25 @@ export async function GET(request: Request) {
     const agentId = state;
 
     try {
-        // Multi-Region Support
-        // We try multiple Zoho DCs because the code might have been issued by .eu, .in, etc.
-        const dcs = [
-            'https://accounts.zoho.com',
-            'https://accounts.zoho.eu',
-            'https://accounts.zoho.in',
-            'https://accounts.zoho.com.au',
-            'https://accounts.zoho.jp'
-        ];
-
         let tokens: any = null;
         let successfulDc = '';
 
+        // If Zoho told us which server to use, use it directly (most reliable)
+        // Otherwise fall back to trying all known DCs
+        const dcsToTry = accountsServerFromZoho
+            ? [accountsServerFromZoho]
+            : [
+                'https://accounts.zoho.com',
+                'https://accounts.zoho.eu',
+                'https://accounts.zoho.in',
+                'https://accounts.zoho.com.au',
+                'https://accounts.zoho.jp'
+            ];
+
+        console.log(`[Zoho OAuth] accounts-server from callback: ${accountsServerFromZoho || 'not provided, trying all DCs'}`);
+
         // Try each DC until one works
-        for (const dc of dcs) {
+        for (const dc of dcsToTry) {
             try {
                 console.log(`Attempting Zoho Token Exchange on ${dc}...`);
                 const tokenRes = await fetch(`${dc}/oauth/v2/token`, {
@@ -58,20 +65,22 @@ export async function GET(request: Request) {
                 if (!data.error) {
                     tokens = data;
                     successfulDc = dc;
-                    console.log(`Success on ${dc}!`);
+                    console.log(`[Zoho OAuth] Success on ${dc}!`);
                     break;
                 } else {
-                    console.log(`Failed on ${dc}:`, data.error);
+                    console.log(`[Zoho OAuth] Failed on ${dc}:`, data.error);
                 }
             } catch (e) {
-                console.error(`Error connecting to ${dc}`, e);
+                console.error(`[Zoho OAuth] Error connecting to ${dc}`, e);
             }
         }
 
         if (!tokens || tokens.error) {
-            console.error('Zoho Token Exchange Failed on all DCs');
+            console.error('[Zoho OAuth] Token Exchange Failed on all DCs. Last response:', tokens);
             return NextResponse.json({
-                error: 'Failed to authenticate with Zoho. Please ensure the region matches.'
+                error: 'Failed to authenticate with Zoho.',
+                detail: tokens?.error || 'No valid response from any Zoho DC',
+                accounts_server_used: accountsServerFromZoho || 'fallback-loop',
             }, { status: 400 });
         }
 
