@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { Save, AlertCircle, CheckCircle } from 'lucide-react';
-import { useSession } from 'next-auth/react';
-import { changePassword } from '@/lib/actions/auth';
+import { Save, AlertCircle, CheckCircle, Trash2, Loader2, LogOut } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { changePassword, deleteUserAccount } from '@/lib/actions/auth';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
     const { data: session } = useSession();
     const [workspaceName, setWorkspaceName] = useState('Mi Workspace');
     const [timezone, setTimezone] = useState('America/Panama');
     const [language, setLanguage] = useState('es');
-    
+
     // Password change states
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -19,11 +20,16 @@ export default function SettingsPage() {
     const [passwordError, setPasswordError] = useState<{ [key: string]: string[] } | null>(null);
     const [passwordSuccess, setPasswordSuccess] = useState(false);
 
+    // Delete Account states
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+    const [deleteInput, setDeleteInput] = useState('');
+
     const userEmail = session?.user?.email || '';
 
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!session?.user?.id) {
             setPasswordError({ form: ['Debes iniciar sesión para cambiar tu contraseña'] });
             return;
@@ -58,6 +64,31 @@ export default function SettingsPage() {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        if (deleteInput !== 'ELIMINAR MIS DATOS') {
+            toast.error('Debes escribir "ELIMINAR MIS DATOS" para confirmar');
+            return;
+        }
+
+        if (!session?.user?.id) return;
+
+        setIsDeletingAccount(true);
+        try {
+            const result = await deleteUserAccount(session.user.id);
+            if (result?.success) {
+                toast.success('Cuenta eliminada permanentemente');
+                await signOut({ callbackUrl: '/login' });
+            } else {
+                toast.error(result?.error || 'Error al eliminar la cuenta');
+                setIsDeletingAccount(false);
+            }
+        } catch (error) {
+            console.error('Delete account error:', error);
+            toast.error('Ocurrió un error inesperado');
+            setIsDeletingAccount(false);
+        }
+    };
+
     return (
         <div className="p-2">
             {/* Header */}
@@ -70,7 +101,7 @@ export default function SettingsPage() {
                 {/* Workspace Settings */}
                 <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
                     <h2 className="text-gray-900 mb-6 text-lg font-semibold">Configuración del Workspace</h2>
-                    
+
                     <div className="space-y-6">
                         <div>
                             <label className="block text-sm text-gray-700 mb-2 font-medium">Nombre del Workspace</label>
@@ -116,7 +147,7 @@ export default function SettingsPage() {
                 {/* Account Settings */}
                 <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
                     <h2 className="text-gray-900 mb-6 text-lg font-semibold">Configuración de la Cuenta</h2>
-                    
+
                     <div className="space-y-6">
                         <div>
                             <label className="block text-sm text-gray-700 mb-2 font-medium">Email</label>
@@ -138,9 +169,8 @@ export default function SettingsPage() {
                                         placeholder="Contraseña actual"
                                         value={currentPassword}
                                         onChange={(e) => setCurrentPassword(e.target.value)}
-                                        className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${
-                                            passwordError?.currentPassword ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
-                                        }`}
+                                        className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${passwordError?.currentPassword ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
+                                            }`}
                                     />
                                     {passwordError?.currentPassword && (
                                         <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -155,9 +185,8 @@ export default function SettingsPage() {
                                         placeholder="Nueva contraseña"
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
-                                        className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${
-                                            passwordError?.newPassword ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
-                                        }`}
+                                        className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${passwordError?.newPassword ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
+                                            }`}
                                     />
                                     {passwordError?.newPassword && (
                                         <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -172,9 +201,8 @@ export default function SettingsPage() {
                                         placeholder="Confirmar nueva contraseña"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${
-                                            passwordError?.confirmPassword ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
-                                        }`}
+                                        className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${passwordError?.confirmPassword ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
+                                            }`}
                                     />
                                     {passwordError?.confirmPassword && (
                                         <p className="text-xs text-red-600 mt-1 flex items-center gap-1">

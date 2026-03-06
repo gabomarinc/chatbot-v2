@@ -366,3 +366,68 @@ export async function uploadUserAvatar(userId: string, formData: FormData) {
         return { success: false, error: 'Ocurrió un error al subir la imagen. Inténtalo de nuevo.' };
     }
 }
+
+export async function deleteUserAccount(userId: string) {
+    const session = await auth();
+    if (!session?.user?.id || session.user.id !== userId) {
+        return { error: 'No autorizado' };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            // Unassign from any conversations
+            await tx.conversation.updateMany({
+                where: { assignedTo: userId },
+                data: { assignedTo: null }
+            });
+
+            // Anonymize the user so they can't login, clear their PII, and make email reusable
+            const deletedEmail = `deleted_${userId}_${Date.now()}@konsul.digital`;
+            await tx.user.update({
+                where: { id: userId },
+                data: {
+                    name: 'Usuario Eliminado',
+                    email: deletedEmail,
+                    passwordHash: 'deleted',
+                    fcmToken: null,
+                    image: null
+                }
+            });
+
+            // Make their workspaces inactive or rename them to signify deletion
+            // Because full cascading deletion of workspaces is extremely complex without onDelete cascade set
+            await tx.workspace.updateMany({
+                where: { ownerId: userId },
+                data: { name: 'Workspace Eliminado' }
+            });
+
+            // Unlink their integrations
+            await tx.workspaceIntegration.deleteMany({
+                where: { userId }
+            });
+
+            // Delete user memberships
+            await tx.workspaceMember.deleteMany({
+                where: { userId }
+            });
+
+            // Inactivate their agents so they stop working
+            const workspaces = await tx.workspace.findMany({ where: { ownerId: userId } });
+            if (workspaces.length > 0) {
+                const agents = await tx.agent.findMany({ where: { workspaceId: { in: workspaces.map(w => w.id) } } });
+                if (agents.length > 0) {
+                    // Disable all channels connected to these agents
+                    await tx.channel.updateMany({
+                        where: { agentId: { in: agents.map(a => a.id) } },
+                        data: { isActive: false }
+                    });
+                }
+            }
+        });
+
+        return { success: true };
+    } catch (err: any) {
+        console.error('Delete account error:', err);
+        return { error: 'Ocurrió un error al eliminar la cuenta' };
+    }
+}
