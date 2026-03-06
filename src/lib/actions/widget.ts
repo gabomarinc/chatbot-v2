@@ -531,10 +531,26 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
             if (channel.agent.transferToHuman) {
                 systemPrompt += `\nTRANSFERENCIA A HUMANO:\nTienes permiso para transferir esta conversación a un humano si el usuario lo solicita o si detectas una necesidad específica.\n`;
 
-                // Add standard departments
-                systemPrompt += `- Departamento SALES: Ventas, cotizaciones, precios, comprar.\n`;
-                systemPrompt += `- Departamento ATENCIÓN: Problemas técnicos, errores, ayuda con el uso del producto o servicio.\n`;
-                systemPrompt += `- Departamento PERSONAL: Consultas generales o cuando no estés seguro.\n`;
+                // Dynamic Department Injection: inform the bot about the EXACT departments available in this workspace
+                try {
+                    const availableMembers = await (prisma.workspaceMember as any).findMany({
+                        where: { workspaceId: workspace.id, department: { not: null } },
+                        select: { department: true }
+                    });
+
+                    const uniqueDepts = Array.from(new Set(availableMembers.map((m: any) => m.department))) as string[];
+                    if (uniqueDepts.length > 0) {
+                        systemPrompt += `\nDEPARTAMENTOS DISPONIBLES EN ESTA EMPRESA:\n`;
+                        uniqueDepts.forEach((dept) => {
+                            systemPrompt += `- Departamento ${dept}: Selecciona este departamento para transferir consultas relacionadas.\n`;
+                        });
+                        systemPrompt += `\nEs OBLIGATORIO usar uno de estos nombres exactos de departamento al llamar a 'asignar_a_humano'. Una vez que uses esta herramienta, el bot se PAUSARÁ y dejará de responder automáticamente.\n`;
+                    } else {
+                        // Fallback to legacy categories if no specific depts found
+                        systemPrompt += `- Departamento SALES: Ventas, cotizaciones, precios, comprar.\n`;
+                        systemPrompt += `- Departamento ATENCIÓN: Problemas técnicos, errores, ayuda con el uso del producto o servicio.\n`;
+                    }
+                } catch (e) { console.error(e) }
 
                 // Add subdepartments dynamically to inform the bot about human specialties
                 try {
@@ -1124,11 +1140,11 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                     const dept = (args as any).departamento;
                                     const subDept = (args as any).subdepartamento;
 
-                                    // Find members in this workspace with that department
+                                    // Find members in this workspace with that department (case-insensitive)
                                     let members = await (prisma.workspaceMember as any).findMany({
                                         where: {
                                             workspaceId: workspace.id,
-                                            department: dept as any,
+                                            department: { equals: dept, mode: 'insensitive' },
                                             ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
                                         },
                                         include: {
@@ -1136,16 +1152,23 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                         }
                                     });
 
-                                    // If subDept was provided but no member was found, fallback to department search
+                                    // Fallback 1: Broad search for Department if subDept was too specific
                                     if (subDept && members.length === 0) {
                                         members = await (prisma.workspaceMember as any).findMany({
                                             where: {
                                                 workspaceId: workspace.id,
-                                                department: dept as any
+                                                department: { equals: dept, mode: 'insensitive' }
                                             },
-                                            include: {
-                                                user: true
-                                            }
+                                            include: { user: true }
+                                        });
+                                    }
+
+                                    // Fallback 2: General fallback to ALL workspace members if Department name was hallucinated or incorrect
+                                    // (Ensures the conversation is assigned even if the AI used a synonym like "ventas" instead of "comercial")
+                                    if (members.length === 0) {
+                                        members = await (prisma.workspaceMember as any).findMany({
+                                            where: { workspaceId: workspace.id },
+                                            include: { user: true }
                                         });
                                     }
 
@@ -1168,8 +1191,8 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                             where: { id: conversation.id },
                                             data: {
                                                 assignedTo: member.userId,
-                                                status: 'OPEN',
-                                                isPaused: false // KEEP the bot active until human manually assumes control
+                                                status: 'PENDING', // Set to PENDING to indicate it needs human attention
+                                                isPaused: true // PAUSE the bot so the human can talk without interruptions
                                             }
                                         });
 
