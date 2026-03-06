@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createChannel, updateChannel } from '@/lib/actions/dashboard';
-import { Loader2, Check, Phone, Copy, ArrowRight, ShieldCheck, Settings2, Info, Zap, CheckCircle } from 'lucide-react';
+import { Loader2, Check, Phone, Copy, ArrowRight, ShieldCheck, Settings2, Info, Zap, CheckCircle, Smartphone } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { WhatsAppEmbeddedSignup } from './WhatsAppEmbeddedSignup';
@@ -367,6 +367,12 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                                 <h2 className="text-3xl font-black tracking-tight text-white leading-none">WhatsApp Cloud API</h2>
                                 <span className="px-3 py-1 bg-green-500 text-slate-900 text-[9px] font-black uppercase tracking-widest rounded-full">Official</span>
                             </div>
+                            {existingChannel?.configJson?.phoneNumber && (
+                                <div className="flex items-center gap-2 mb-3 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl w-fit">
+                                    <Smartphone className="w-4 h-4 text-green-400" />
+                                    <span className="text-slate-300 font-bold tracking-tight">+{existingChannel.configJson.phoneNumber}</span>
+                                </div>
+                            )}
                             <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-xl">
                                 Como <span className="text-white font-black italic">Meta Tech Provider Oficial</span>, garantizamos una integración directa, sin cargos ocultos y con el respaldo tecnológico de Meta.
                             </p>

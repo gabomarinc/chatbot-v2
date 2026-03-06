@@ -348,6 +348,7 @@ export async function handleEmbeddedSignupV2(data: {
                 accessToken: userAccessToken,
                 wabaId: availableAccounts[0].wabaId,
                 phoneNumberId: availableAccounts[0].phoneNumberId,
+                phoneNumber: availableAccounts[0].phoneNumber,
                 agentId: data.agentId,
                 displayName: availableAccounts[0].displayName,
                 sessionUserId: session.user.id
@@ -375,6 +376,7 @@ export async function finishWhatsAppSetup(data: {
     accessToken: string;
     wabaId: string;
     phoneNumberId: string;
+    phoneNumber?: string;
     agentId: string;
     displayName: string;
     sessionUserId?: string;
@@ -446,6 +448,7 @@ export async function finishWhatsAppSetup(data: {
         const configJson = {
             accessToken: data.accessToken,
             phoneNumberId: data.phoneNumberId,
+            phoneNumber: data.phoneNumber,
             wabaId: data.wabaId,
             verifyToken: Math.random().toString(36).substring(7)
         };
