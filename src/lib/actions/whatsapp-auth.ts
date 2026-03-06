@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-const META_API_VERSION = 'v20.0';
+const META_API_VERSION = 'v21.0';
 
 /**
  * Exchanges the temporary code for a long-lived user access token,
@@ -405,7 +405,11 @@ export async function finishWhatsAppSetup(data: {
             }
         );
         if (!subRes.ok) {
-            console.error('Webhook Subscription Failed:', await subRes.json());
+            const subData = await subRes.json();
+            console.error('Webhook Subscription Failed:', subData);
+            // This is a common error if the WABA ID or Token is wrong.
+            // But we don't necessarily want to block the whole setup if it's already working elsewhere.
+            // However, the error "Unsupported Get Request" usually means WABA ID is actually App ID or similar.
         }
 
         // 6. Save/Update Channel
@@ -500,14 +504,33 @@ async function getMetaAppSecret() {
  * Fetches message templates from Meta for a given WABA
  */
 export async function getWhatsAppTemplates(wabaId: string, accessToken: string) {
+    if (!wabaId || wabaId.trim() === '') {
+        return { error: 'WABA ID no proporcionado' };
+    }
+    const cleanWabaId = wabaId.trim();
+    const cleanToken = accessToken.trim();
+
     try {
         const response = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/${wabaId}/message_templates?access_token=${accessToken}`
+            `https://graph.facebook.com/${META_API_VERSION}/${cleanWabaId}/message_templates?access_token=${cleanToken}`,
+            { cache: 'no-store' }
         );
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error?.message || 'Failed to fetch templates');
+            const errorMsg = data.error?.message || 'Error desconocido de Meta';
+            console.error('Meta API Error (Templates):', data.error);
+
+            if (errorMsg.includes('Unsupported get request') || errorMsg.includes('does not exist')) {
+                return {
+                    error: `El ID de la cuenta WABA (${cleanWabaId}) no parece ser válido o no tienes permisos para gestionarlo en esta App de Meta. Revisa la configuración técnica.`
+                };
+            }
+            if (errorMsg.includes('token')) {
+                return { error: 'El Token de acceso ha expirado o es inválido. Intenta reconectar el canal.' };
+            }
+
+            throw new Error(errorMsg);
         }
 
         return { success: true, templates: data.data || [] };

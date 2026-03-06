@@ -87,10 +87,13 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
 
         if (!testTemplate) return;
 
-        const phoneNumberId = formData.phoneNumberId || existingChannel?.configJson?.phoneNumberId;
-        const accessToken = formData.accessToken || existingChannel?.configJson?.accessToken;
+        const phoneNumberId = (formData.phoneNumberId?.trim()) || existingChannel?.configJson?.phoneNumberId;
+        const accessToken = (formData.accessToken?.trim()) || existingChannel?.configJson?.accessToken;
 
-        if (!phoneNumberId || !accessToken) return;
+        if (!phoneNumberId || !accessToken) {
+            toast.error('Faltan credenciales (Phone ID o Token)');
+            return;
+        }
 
         setIsSendingTest(testTemplate.name);
         try {
@@ -163,10 +166,13 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     };
 
     const fetchTemplates = async () => {
-        const wabaId = formData.wabaId || existingChannel?.configJson?.wabaId;
-        const accessToken = formData.accessToken || existingChannel?.configJson?.accessToken;
+        const wabaId = (formData.wabaId?.trim()) || (existingChannel?.configJson?.wabaId?.trim());
+        const accessToken = (formData.accessToken?.trim()) || (existingChannel?.configJson?.accessToken?.trim());
 
-        if (!wabaId || !accessToken) return;
+        if (!wabaId || !accessToken) {
+            console.warn('Cannot fetch templates: missing WABA ID or Access Token');
+            return;
+        }
 
         setIsFetchingTemplates(true);
         try {
@@ -174,6 +180,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
             if (result.success) {
                 setTemplates(result.templates);
             } else {
+                // If it fails with "Unsupported get request", it's likely the WABA ID is actually an App ID or Phone ID.
                 toast.error(result.error || 'Error al obtener plantillas');
             }
         } catch (error) {
