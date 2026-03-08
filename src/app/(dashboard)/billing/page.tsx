@@ -62,6 +62,7 @@ export default async function BillingPage() {
             usagePercentage={usagePercentage}
             currentPeriodEnd={subscription?.currentPeriodEnd || new Date()}
             isActive={subscription?.status === 'active'}
+            isTrial={subscription?.isTrial || false}
         />
     );
 }

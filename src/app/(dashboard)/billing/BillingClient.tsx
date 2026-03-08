@@ -12,6 +12,7 @@ type BillingClientProps = {
     usagePercentage: number;
     currentPeriodEnd: Date;
     isActive: boolean;
+    isTrial?: boolean;
 };
 
 export default function BillingClient({
@@ -24,6 +25,7 @@ export default function BillingClient({
     usagePercentage,
     currentPeriodEnd,
     isActive,
+    isTrial = false,
 }: BillingClientProps) {
     const benefits = [
         `${creditsPerMonth.toLocaleString()} créditos mensuales incluidos`,
@@ -61,9 +63,16 @@ export default function BillingClient({
                                     <CheckCircle className="w-5 h-5 text-teal-100" />
                                     <span className="text-xs font-black uppercase tracking-widest text-teal-50">Estado de suscripción</span>
                                 </div>
-                                <h2 className="text-white mb-2 text-4xl font-black tracking-tight">{planName}</h2>
+                                <div className="flex items-center gap-4 mb-2">
+                                    <h2 className="text-white text-4xl font-black tracking-tight">{planName}</h2>
+                                    {isTrial && (
+                                        <div className="px-3 py-1 bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-amber-400/20 animate-pulse">
+                                            Periodo de Prueba
+                                        </div>
+                                    )}
+                                </div>
                                 <p className="text-teal-50/70 font-bold text-lg">
-                                    {isActive ? 'Tu suscripción está activa' : 'Suscripción inactiva'}
+                                    {isActive ? (isTrial ? 'Estás probando Kônsul' : 'Tu suscripción está activa') : 'Suscripción inactiva'}
                                 </p>
                             </div>
                             {isActive && (

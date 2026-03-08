@@ -432,6 +432,7 @@ model Subscription {
   workspaceId          String           @unique
   planId               String
   status               String           @default("active")
+  isTrial              Boolean          @default(false)
   stripeCustomerId     String?
   stripeSubscriptionId String?
   currentPeriodStart   DateTime         @default(now())

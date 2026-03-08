@@ -225,7 +225,7 @@ function LoginForm() {
 
     // Show normal login form
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-md mx-auto">
             <div className="text-center mb-10">
                 <h2 className="text-2xl font-bold text-gray-900 tracking-tight">¡Bienvenido de nuevo!</h2>
                 <p className="text-gray-500 text-sm mt-2 font-medium">Nos alegra verte otra vez por aquí</p>

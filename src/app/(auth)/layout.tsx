@@ -13,8 +13,8 @@ export default function AuthLayout({
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gradient-to-tl from-[#21AC96]/10 to-transparent rounded-full blur-3xl opacity-50"></div>
             </div>
 
-            <div className="w-full max-w-md p-6 relative z-10 animate-fade-in">
-                <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white/50 p-10 backdrop-blur-sm">
+            <div className="w-full h-full flex items-center justify-center p-6 relative z-10 animate-fade-in overflow-y-auto">
+                <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white p-6 md:p-10 backdrop-blur-sm mx-auto">
                     {/* Logo/Brand */}
                     <div className="flex flex-col items-center mb-10">
                         <img

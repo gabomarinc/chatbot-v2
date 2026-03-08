@@ -28,28 +28,28 @@ async function main() {
   // Crear planes de suscripción
   const planData = [
     {
-      name: "Freshie",
+      name: "Starter",
       type: "FRESHIE",
       monthlyPrice: 135,
-      creditsPerMonth: 5000,
-      maxAgents: 2,
+      creditsPerMonth: 2500,
+      maxAgents: 3,
       maxMembers: 4,
     },
     {
-      name: "Money Honey",
+      name: "Business",
       type: "MONEY_HONEY",
-      monthlyPrice: 315,
-      creditsPerMonth: 20000,
-      maxAgents: 5,
+      monthlyPrice: 245,
+      creditsPerMonth: 7500,
+      maxAgents: 6,
       maxMembers: 8,
     },
     {
-      name: "Wolf of Wallstreet",
+      name: "Enterprise",
       type: "WOLF_OF_WALLSTREET",
-      monthlyPrice: 575,
-      creditsPerMonth: 50000,
-      maxAgents: 10,
-      maxMembers: 16,
+      monthlyPrice: 475,
+      creditsPerMonth: 25000,
+      maxAgents: 12,
+      maxMembers: 20,
     },
   ];
 

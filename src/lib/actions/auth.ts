@@ -16,6 +16,8 @@ export async function registerUser(prevState: any, formData: FormData) {
     const name = formData.get('name') as string
     const email = formData.get('email') as string
     const password = formData.get('password') as string
+    const trial = formData.get('trial') === 'on'
+    const planType = (formData.get('planType') as string) || 'FRESHIE'
 
     const validatedFields = registerSchema.safeParse({
         name,
@@ -42,6 +44,17 @@ export async function registerUser(prevState: any, formData: FormData) {
 
         const hashedPassword = await bcrypt.hash(password, 10)
 
+        // Get the selected plan
+        const selectedPlan = await prisma.subscriptionPlan.findFirst({
+            where: { type: planType as any }
+        });
+
+        if (!selectedPlan) {
+            return {
+                error: { form: ['El plan seleccionado no es válido.'] },
+            }
+        }
+
         // Create user and a default workspace in a transaction
         await prisma.$transaction(async (tx) => {
             const user = await tx.user.create({
@@ -67,33 +80,32 @@ export async function registerUser(prevState: any, formData: FormData) {
                 },
             })
 
-            // Create a default credit balance
+            // Create a default credit balance (using the plan's monthly credits)
             await tx.creditBalance.create({
                 data: {
                     workspaceId: workspace.id,
-                    balance: 2500, // Initial credits from Freshie plan
+                    balance: selectedPlan.creditsPerMonth,
                 },
             })
 
-            // Get the Freshie plan (default for new users)
-            const freshiePlan = await tx.subscriptionPlan.findFirst({
-                where: { type: 'FRESHIE' }
-            });
-
-            if (freshiePlan) {
-                // Create a default subscription with Freshie plan
-                const nextMonth = new Date()
-                nextMonth.setMonth(nextMonth.getMonth() + 1)
-
-                await tx.subscription.create({
-                    data: {
-                        workspaceId: workspace.id,
-                        planId: freshiePlan.id,
-                        status: 'active',
-                        currentPeriodEnd: nextMonth,
-                    }
-                })
+            // Determine the period end date
+            const periodEnd = new Date()
+            if (trial) {
+                periodEnd.setDate(periodEnd.getDate() + 4)
+            } else {
+                periodEnd.setMonth(periodEnd.getMonth() + 1)
             }
+
+            // Create the subscription
+            await tx.subscription.create({
+                data: {
+                    workspaceId: workspace.id,
+                    planId: selectedPlan.id,
+                    status: 'active',
+                    isTrial: trial,
+                    currentPeriodEnd: periodEnd,
+                }
+            })
         })
 
         return { success: true }
