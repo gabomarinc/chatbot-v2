@@ -111,53 +111,59 @@ export default function RegisterPage() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto relative pb-10">
             {/* Trial Info Modal */}
             {showTrialModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[2rem] shadow-2xl shadow-black/20 p-6 md:p-10 max-w-md w-full relative overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="absolute top-[-20%] right-[-20%] w-[60%] h-[60%] bg-[#21AC96]/5 rounded-full blur-3xl"></div>
+                <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6 animate-in fade-in duration-500 overflow-y-auto isolate">
+                    {/* Decorative background elements for fullscreen feel */}
+                    <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-[#21AC96]/5 rounded-full blur-[100px] -mr-20 -mt-20 -z-10"></div>
+                    <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-[#21AC96]/5 rounded-full blur-[100px] -ml-20 -mb-20 -z-10"></div>
 
-                        <div className="relative z-10 text-center">
-                            <div className="w-16 h-16 bg-[#21AC96]/10 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-[#21AC96]/10">
-                                <CheckCircle2 className="w-8 h-8 text-[#21AC96]" />
+                    <div className="max-w-md w-full text-center space-y-8 animate-in zoom-in-95 duration-500">
+                        <div>
+                            <div className="w-20 h-20 bg-[#21AC96]/10 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#21AC96]/10 rotate-3 transition-transform hover:rotate-0 duration-500">
+                                <CheckCircle2 className="w-10 h-10 text-[#21AC96]" />
                             </div>
 
-                            <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">
-                                Prueba gratuita <span className="text-[#21AC96]">lista</span>
+                            <h3 className="text-4xl font-black text-gray-900 mb-4 tracking-tight leading-tight">
+                                Tu prueba gratuita <br /><span className="text-[#21AC96]">está lista</span>
                             </h3>
 
-                            <p className="text-gray-500 text-sm font-medium mb-6">
-                                Obtendrás <span className="text-gray-900 font-bold">4 días de acceso total</span> a todas las herramientas sin costo inicial.
+                            <p className="text-gray-500 text-lg font-medium leading-relaxed">
+                                Obtendrás <span className="text-gray-900 font-bold">4 días de acceso total</span> a todas las herramientas de Kônsul sin costo inicial.
                             </p>
+                        </div>
 
-                            <div className="space-y-3 mb-8">
-                                {[
-                                    'Acceso a todos los agentes IA',
-                                    'WhatsApp e integración Web',
-                                    'Sin permanencia obligatoria'
-                                ].map((feature, i) => (
-                                    <div key={i} className="flex items-center gap-3 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
-                                        <CheckCircle2 className="w-4 h-4 text-[#21AC96]" />
-                                        <span className="text-xs font-bold text-gray-700">{feature}</span>
+                        <div className="space-y-4">
+                            {[
+                                'Acceso a todos los agentes IA',
+                                'WhatsApp e integración Web',
+                                'Sin permanencia obligatoria'
+                            ].map((feature, i) => (
+                                <div key={i} className="flex items-center gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 group hover:border-[#21AC96]/20 transition-all duration-300">
+                                    <div className="w-6 h-6 bg-[#21AC96] rounded-lg flex items-center justify-center shadow-lg shadow-[#21AC96]/20 group-hover:scale-110 transition-transform">
+                                        <CheckCircle2 className="w-4 h-4 text-white" />
                                     </div>
-                                ))}
-                            </div>
+                                    <span className="text-sm font-black text-gray-700 tracking-tight">{feature}</span>
+                                </div>
+                            ))}
+                        </div>
 
+                        <div className="pt-4 space-y-4">
                             <button
                                 onClick={() => {
                                     setShowTrialModal(false);
                                     const form = document.querySelector('form');
                                     if (form) form.requestSubmit();
                                 }}
-                                className="w-full py-4 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-lg shadow-[#21AC96]/20 transition-all active:scale-[0.98] group flex items-center justify-center gap-2 h-14"
+                                className="w-full py-5 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-[#21AC96]/20 transition-all active:scale-[0.98] group flex items-center justify-center gap-3 h-16"
                             >
                                 Empezar prueba ahora
-                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </button>
 
                             <button
                                 onClick={() => setShowTrialModal(false)}
-                                className="mt-4 text-[10px] font-black text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-widest"
+                                className="text-[10px] font-black text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-[0.2em] py-2"
                             >
-                                Revisar planes
+                                Volver a revisar planes
                             </button>
                         </div>
                     </div>
