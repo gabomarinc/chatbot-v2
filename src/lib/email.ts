@@ -310,3 +310,89 @@ export async function sendAssignmentEmail(
 
 
 
+export async function sendWelcomeEmail(
+    email: string,
+    userName: string
+) {
+    try {
+        const resend = getResendClient();
+
+        const subject = `¡Bienvenido a Kônsul, ${userName.split(' ')[0]}! 🚀`;
+
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+                <div style="background: linear-gradient(135deg, #21AC96 0%, #1a8a78 100%); padding: 40px; text-align: center; border-radius: 24px 24px 0 0;">
+                    <img src="https://konsul.digital/icono-konsul.png" alt="Kônsul Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+                    <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.025em;">¡Bienvenido a la familia!</h1>
+                </div>
+                
+                <div style="background: #ffffff; padding: 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 24px 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <p style="font-size: 18px; color: #111827; margin-bottom: 24px; font-weight: 600;">
+                        Hola ${userName},
+                    </p>
+                    
+                    <p style="font-size: 16px; color: #4b5563; margin-bottom: 24px;">
+                        Es un gusto tenerte con nosotros. Has dado el primer paso para revolucionar la forma en que tu negocio interactúa con el mundo a través de la Inteligencia Artificial.
+                    </p>
+
+                    <div style="background-color: #f0fdfa; border-radius: 16px; padding: 24px; margin-bottom: 32px; border: 1px solid #ccfbf1;">
+                        <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900;">¿Qué puedes hacer ahora?</h3>
+                        <ul style="margin: 0; padding: 0; list-style: none;">
+                            <li style="margin-bottom: 12px; display: flex; align-items: flex-start; color: #374151; font-size: 15px;">
+                                <span style="color: #21AC96; margin-right: 8px; font-weight: bold;">•</span>
+                                <span>Crea tu primer <strong>Agente IA</strong> especializado.</span>
+                            </li>
+                            <li style="margin-bottom: 12px; display: flex; align-items: flex-start; color: #374151; font-size: 15px;">
+                                <span style="color: #21AC96; margin-right: 8px; font-weight: bold;">•</span>
+                                <span>Conecta tus canales: <strong>WhatsApp, Instagram y Web</strong>.</span>
+                            </li>
+                            <li style="margin-bottom: 0; display: flex; align-items: flex-start; color: #374151; font-size: 15px;">
+                                <span style="color: #21AC96; margin-right: 8px; font-weight: bold;">•</span>
+                                <span>Entrena a tu agente con tus propios documentos y enlaces.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 40px 0;">
+                        <a href="${APP_URL}/dashboard" 
+                           style="display: inline-block; background: #21AC96; color: white; padding: 18px 36px; text-decoration: none; border-radius: 14px; font-weight: 900; font-size: 16px; box-shadow: 0 10px 15px -3px rgba(33, 172, 150, 0.3); transition: all 0.3s ease;">
+                            Ir a mi Panel de Control
+                        </a>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #9ca3af; text-align: center; margin-top: 40px; border-top: 1px solid #f3f4f6; padding-top: 24px;">
+                        Si necesitas ayuda, simplemente responde a este correo. Estamos aquí para impulsarte.
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 32px; color: #9ca3af; font-size: 12px;">
+                    <p>© 2024 Kônsul. Todos los derechos reservados.</p>
+                </div>
+            </body>
+            </html>
+        `;
+
+        const { data, error } = await resend.emails.send({
+            from: FROM_EMAIL,
+            to: email,
+            subject,
+            html: htmlContent,
+        });
+
+        if (error) {
+            console.error('Welcome email error:', error);
+            return { success: false, error };
+        }
+
+        return { success: true, messageId: data?.id };
+    } catch (error) {
+        console.error('Error sending welcome email:', error);
+        return { success: false, error };
+    }
+}

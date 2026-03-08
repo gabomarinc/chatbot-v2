@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { signIn, auth } from '@/auth'
 import { uploadFileToR2 } from '@/lib/r2'
+import { sendWelcomeEmail } from '@/lib/email'
 
 const registerSchema = z.object({
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -107,6 +108,9 @@ export async function registerUser(prevState: any, formData: FormData) {
                 }
             })
         })
+
+        // Send welcome email (async, don't wait for it to finish)
+        sendWelcomeEmail(email, name).catch(err => console.error('Error sending welcome email:', err));
 
         return { success: true }
     } catch (err) {
