@@ -17,7 +17,7 @@ export async function registerUser(prevState: any, formData: FormData) {
     const name = formData.get('name') as string
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-    const trial = formData.get('trial') === 'on'
+    const trial = true // Mandatory 4-day trial for all new registrations
     const planType = (formData.get('planType') as string) || 'FRESHIE'
 
     const validatedFields = registerSchema.safeParse({
