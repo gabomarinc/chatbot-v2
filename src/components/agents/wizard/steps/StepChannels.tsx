@@ -206,35 +206,41 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
                 </div>
 
                 {/* Messenger */}
-                <div className={`p-5 rounded-2xl border-2 transition-all ${channels.messenger ? 'border-[#21AC96] bg-[#21AC96]/5' : 'border-gray-100 bg-white'}`}>
-                    <div className="flex items-center justify-between mb-4">
+                <div className="p-5 rounded-2xl border-2 transition-all border-gray-100 bg-gray-50 opacity-70">
+                    <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl ${channels.messenger ? 'bg-[#21AC96] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                            <div className="p-3 rounded-xl bg-gray-200 text-gray-400">
                                 <Facebook className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-900">Messenger</h3>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-gray-900">Messenger</h3>
+                                    <span className="text-[9px] uppercase tracking-wider bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-bold">Próximamente</span>
+                                </div>
                                 <p className="text-sm text-gray-500">Automatiza tu página de Facebook.</p>
                             </div>
                         </div>
-                        <Switch checked={channels.messenger} onCheckedChange={() => handleToggle('messenger')} />
+                        <Switch disabled checked={false} />
                     </div>
+                </div>
 
-                    {channels.messenger && (
-                        <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2">
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-4">
-                                <div className="w-10 h-10 bg-[#1877F2] rounded-lg flex items-center justify-center text-white shrink-0">
-                                    <Facebook className="w-5 h-5" />
+                {/* TikTok */}
+                <div className="p-5 rounded-2xl border-2 transition-all border-gray-100 bg-gray-50 opacity-70">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-gray-200 text-gray-400">
+                                <Smartphone className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-gray-900">TikTok</h3>
+                                    <span className="text-[9px] uppercase tracking-wider bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-bold">Próximamente</span>
                                 </div>
-                                <div>
-                                    <p className="text-xs font-bold text-gray-900">Integración Directa</p>
-                                    <p className="text-[10px] text-gray-500">
-                                        Podrás seleccionar tu Página de Facebook después de crear el agente.
-                                    </p>
-                                </div>
+                                <p className="text-sm text-gray-500">Respuestas automáticas en TikTok.</p>
                             </div>
                         </div>
-                    )}
+                        <Switch disabled checked={false} />
+                    </div>
                 </div>
             </div>
 
