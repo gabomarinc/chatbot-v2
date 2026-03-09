@@ -435,8 +435,7 @@ INSTRUCCIONES DE EJECUCIÓN (PRIORIDAD MÁXIMA):
 
 ${hasZoho ? `INSTRUCCIONES ZOHO CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_zoho_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes al final.
-- CAMPO DESCRIPTION: DEBES poner lo que el usuario busca en el campo 'Description' de Zoho.
-- NOTAS: USA 'add_zoho_note' para detalles específicos o requerimientos complejos.` : ''}
+- NOTAS (IMPORTANTE): USA SIEMPRE la herramienta 'add_zoho_note' para guardar el resumen de la conversación, lo que el usuario busca, y sus requerimientos. NO uses el campo 'Description' de create_zoho_lead para los resúmenes.` : ''}
 
 ${hasOdoo ? `INSTRUCCIONES ODOO CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_odoo_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes.
@@ -745,7 +744,7 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                 tools.push(
                     {
                         name: "create_zoho_lead",
-                        description: "Crea o actualiza un Lead en Zoho CRM. Úsala INMEDIATAMENTE cuando el usuario mencione su nombre o email. Pon en 'Description' lo que el usuario está buscando.",
+                        description: "Crea o actualiza un Lead en Zoho CRM. Úsala INMEDIATAMENTE cuando el usuario mencione su nombre o email. (NO uses el campo Description para resúmenes, usa add_zoho_note para eso).",
                         parameters: {
                             type: "object",
                             properties: {
@@ -753,7 +752,7 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                 LastName: { type: "string", description: "Apellido del lead" },
                                 Email: { type: "string", description: "Correo electrónico" },
                                 Phone: { type: "string", description: "Teléfono (opcional)" },
-                                Description: { type: "string", description: "Notas o descripción adicional sobre el lead (opcional)" }
+                                Description: { type: "string", description: "Solo usa en caso de un título muy corto. Para resúmenes usa add_zoho_note." }
                             },
                             required: []
                         }
