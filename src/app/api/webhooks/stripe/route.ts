@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
             case 'checkout.session.completed': {
                 const subscription = await stripe.subscriptions.retrieve(
                     session.subscription as string
-                );
+                ) as Stripe.Subscription;
 
                 const workspaceId = session.metadata?.workspaceId || subscription.metadata?.workspaceId;
                 const planType = session.metadata?.planType || subscription.metadata?.planType;
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
                         stripeCustomerId: subscription.customer as string,
                         status: subscription.status,
                         planId: plan.id,
-                        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
                         isTrial: subscription.status === 'trialing',
                     },
                     create: {
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
                         stripeCustomerId: subscription.customer as string,
                         status: subscription.status,
                         planId: plan.id,
-                        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
                         isTrial: subscription.status === 'trialing',
                     },
                 });
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
                         where: { id: dbSub.id },
                         data: {
                             status: subscription.status,
-                            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
                         }
                     });
                 }
