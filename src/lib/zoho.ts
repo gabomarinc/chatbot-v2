@@ -187,8 +187,8 @@ export async function addZohoNote(agentId: string, leadId: string, noteContent: 
 
     const body = {
         data: [{
-            Note_Title: 'Conversación con Bot',
-            Note_Content: noteContent,
+            Note_Title: 'Resumen de Kônsul',
+            Note_Content: `Resumen de Kônsul:\n\n${noteContent}`,
             se_module: 'Leads'
         }]
     };
