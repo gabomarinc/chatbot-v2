@@ -572,6 +572,9 @@ enum IntegrationProvider {
 }
 
 enum PlanType {
+  FRESHIE
+  MONEY_HONEY
+  WOLF_OF_WALLSTREET
   STARTER
   BUSINESS
   ENTERPRISE
