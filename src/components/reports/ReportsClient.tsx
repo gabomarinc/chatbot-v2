@@ -76,15 +76,15 @@ export function ReportsClient({
     retentionRate,
     npsData
 }: ReportsClientProps) {
-    const plan = workspaceInfo.plan?.type || 'FRESHIE';
+    const plan = workspaceInfo.plan?.type || 'STARTER';
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
     // Feature access levels
     const access = {
-        heatmap: plan !== 'FRESHIE',
-        agentBench: plan !== 'FRESHIE',
-        dataInsights: plan === 'WOLF_OF_WALLSTREET' || plan === 'CUSTOM'
+        heatmap: plan !== 'STARTER',
+        agentBench: plan !== 'STARTER',
+        dataInsights: plan === 'ENTERPRISE' || plan === 'CUSTOM'
     };
 
     const funnelChartData = [
@@ -303,13 +303,13 @@ export function ReportsClient({
                         <h1 className="text-gray-900 text-4xl font-black tracking-tight">Reporting Hub</h1>
                         <div className={cn(
                             "px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm border",
-                            plan === 'FRESHIE' ? "bg-white text-blue-600 border-blue-100" :
-                                plan === 'MONEY_HONEY' ? "bg-white text-purple-600 border-purple-100" :
+                            plan === 'STARTER' ? "bg-white text-blue-600 border-blue-100" :
+                                plan === 'BUSINESS' ? "bg-white text-purple-600 border-purple-100" :
                                     "bg-white text-amber-600 border-amber-100"
                         )}>
                             <div className={cn("w-2 h-2 rounded-full animate-pulse",
-                                plan === 'FRESHIE' ? "bg-blue-600" :
-                                    plan === 'MONEY_HONEY' ? "bg-purple-600" : "bg-amber-600"
+                                plan === 'STARTER' ? "bg-blue-600" :
+                                    plan === 'BUSINESS' ? "bg-purple-600" : "bg-amber-600"
                             )}></div>
                             PLAN {workspaceInfo.plan?.name || plan}
                         </div>

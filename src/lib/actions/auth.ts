@@ -7,6 +7,8 @@ import { signIn, auth } from '@/auth'
 import { uploadFileToR2 } from '@/lib/r2'
 import { sendWelcomeEmail } from '@/lib/email'
 
+import { stripe, PLAN_PRICE_IDS } from '@/lib/stripe'
+
 const registerSchema = z.object({
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
     email: z.string().email('Email inválido'),
@@ -17,8 +19,7 @@ export async function registerUser(prevState: any, formData: FormData) {
     const name = formData.get('name') as string
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-    const trial = true // Mandatory 4-day trial for all new registrations
-    const planType = (formData.get('planType') as string) || 'FRESHIE'
+    const planType = (formData.get('planType') as string) || 'STARTER'
 
     const validatedFields = registerSchema.safeParse({
         name,
@@ -45,7 +46,7 @@ export async function registerUser(prevState: any, formData: FormData) {
 
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        // Get the selected plan
+        // Get the selected plan to verify it exists
         const selectedPlan = await prisma.subscriptionPlan.findFirst({
             where: { type: planType as any }
         });
@@ -56,8 +57,15 @@ export async function registerUser(prevState: any, formData: FormData) {
             }
         }
 
+        const stripePriceId = (PLAN_PRICE_IDS as any)[planType];
+        if (!stripePriceId || stripePriceId.includes('placeholder')) {
+            return {
+                error: { form: ['Error en la configuración de Stripe. Contacta a soporte.'] },
+            }
+        }
+
         // Create user and a default workspace in a transaction
-        await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
             const user = await tx.user.create({
                 data: {
                     name,
@@ -81,38 +89,46 @@ export async function registerUser(prevState: any, formData: FormData) {
                 },
             })
 
-            // Create a default credit balance (using the plan's monthly credits)
+            // Create a default credit balance (initially 0 or minimal until payment confirmed)
             await tx.creditBalance.create({
                 data: {
                     workspaceId: workspace.id,
-                    balance: selectedPlan.creditsPerMonth,
+                    balance: 0,
                 },
             })
 
-            // Determine the period end date
-            const periodEnd = new Date()
-            if (trial) {
-                periodEnd.setDate(periodEnd.getDate() + 4)
-            } else {
-                periodEnd.setMonth(periodEnd.getMonth() + 1)
-            }
-
-            // Create the subscription
-            await tx.subscription.create({
-                data: {
-                    workspaceId: workspace.id,
-                    planId: selectedPlan.id,
-                    status: 'active',
-                    isTrial: trial,
-                    currentPeriodEnd: periodEnd,
-                }
-            })
+            return { userId: user.id, workspaceId: workspace.id };
         })
 
-        // Send welcome email (async, don't wait for it to finish)
+        // Create Stripe Checkout Session
+        const session = await stripe.checkout.sessions.create({
+            customer_email: email,
+            line_items: [
+                {
+                    price: stripePriceId,
+                    quantity: 1,
+                },
+            ],
+            mode: 'subscription',
+            subscription_data: {
+                trial_period_days: 4,
+                metadata: {
+                    workspaceId: result.workspaceId,
+                    planType: planType,
+                },
+            },
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/register?canceled=true`,
+            metadata: {
+                workspaceId: result.workspaceId,
+                userId: result.userId,
+            },
+        });
+
+        // Send welcome email (async)
         sendWelcomeEmail(email, name).catch(err => console.error('Error sending welcome email:', err));
 
-        return { success: true }
+        return { success: true, checkoutUrl: session.url }
     } catch (err) {
         console.error('Register error:', err)
         return {

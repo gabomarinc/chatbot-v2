@@ -68,11 +68,11 @@ export default function PlansManagementClient({ initialPlans }: { initialPlans: 
 
     const getPlanColor = (type: string) => {
         switch (type) {
-            case 'FRESHIE':
+            case 'STARTER':
                 return 'from-green-500 to-emerald-500';
-            case 'MONEY_HONEY':
+            case 'BUSINESS':
                 return 'from-[#21AC96] to-[#1a8a78]';
-            case 'WOLF_OF_WALLSTREET':
+            case 'ENTERPRISE':
                 return 'from-amber-500 to-orange-500';
             default:
                 return 'from-slate-500 to-gray-500';

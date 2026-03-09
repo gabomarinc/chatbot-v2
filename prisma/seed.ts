@@ -29,7 +29,7 @@ async function main() {
   const planData = [
     {
       name: "Starter",
-      type: "FRESHIE",
+      type: "STARTER",
       monthlyPrice: 135,
       creditsPerMonth: 2500,
       maxAgents: 3,
@@ -37,7 +37,7 @@ async function main() {
     },
     {
       name: "Business",
-      type: "MONEY_HONEY",
+      type: "BUSINESS",
       monthlyPrice: 245,
       creditsPerMonth: 7500,
       maxAgents: 6,
@@ -45,7 +45,7 @@ async function main() {
     },
     {
       name: "Enterprise",
-      type: "WOLF_OF_WALLSTREET",
+      type: "ENTERPRISE",
       monthlyPrice: 475,
       creditsPerMonth: 25000,
       maxAgents: 12,
@@ -122,7 +122,7 @@ async function main() {
 
   // Obtener el plan Freshie para asignar al workspace de prueba
   const freshiePlan = await prisma.subscriptionPlan.findFirst({
-    where: { type: 'FRESHIE' }
+    where: { type: 'STARTER' }
   });
 
   if (freshiePlan) {

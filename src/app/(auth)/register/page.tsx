@@ -11,13 +11,13 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<any>(null);
     const [success, setSuccess] = useState(false);
-    const [selectedPlan, setSelectedPlan] = useState('FRESHIE');
+    const [selectedPlan, setSelectedPlan] = useState('STARTER');
     const [isTrial] = useState(true); // Mandatory trial
     const [showTrialModal, setShowTrialModal] = useState(false);
 
     const plans = [
         {
-            id: 'FRESHIE',
+            id: 'STARTER',
             name: 'Starter',
             price: 135,
             description: 'Ideal para PYMES que inician a automatizar.',
@@ -29,7 +29,7 @@ export default function RegisterPage() {
             ]
         },
         {
-            id: 'MONEY_HONEY',
+            id: 'BUSINESS',
             name: 'Business',
             price: 245,
             description: 'El favorito de empresas listas para escalar.',
@@ -42,7 +42,7 @@ export default function RegisterPage() {
             popular: true
         },
         {
-            id: 'WOLF_OF_WALLSTREET',
+            id: 'ENTERPRISE',
             name: 'Enterprise',
             price: 475,
             description: 'Potencia total para tu negocio.',
@@ -82,10 +82,14 @@ export default function RegisterPage() {
                 setLoading(false);
                 setShowTrialModal(false);
             } else if (result?.success) {
-                setSuccess(true);
-                setTimeout(() => {
-                    router.push('/login');
-                }, 2000);
+                if (result.checkoutUrl) {
+                    window.location.href = result.checkoutUrl;
+                } else {
+                    setSuccess(true);
+                    setTimeout(() => {
+                        router.push('/login');
+                    }, 2000);
+                }
             }
         } catch (err) {
             setError({ form: ['Ocurrió un error al registrarse. Inténtalo de nuevo.'] });
