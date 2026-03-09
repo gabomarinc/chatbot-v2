@@ -149,26 +149,17 @@ export function StepChannels({ channels, webConfig, whatsappConfig, onChange, on
 
                     {channels.whatsapp && (
                         <div className="animate-in slide-in-from-top-2 border-t border-[#21AC96]/20 pt-4 mt-2">
-                            {agentId ? (
-                                <WhatsAppEmbeddedSignup
-                                    key={agentId}
-                                    appId={process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || ''}
-                                    configId="1388941242686989" // Tech Provider Config ID
-                                    agentId={agentId}
-                                    onSuccess={() => {
-                                        // Optional: Refresh or show success
-                                    }}
-                                />
-                            ) : (
-                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-4 opacity-50">
-                                    <div className="w-16 h-16 bg-[#1877F2]/10 text-[#1877F2] rounded-full flex items-center justify-center mx-auto">
-                                        <Facebook className="w-8 h-8" />
-                                    </div>
-                                    <p className="text-sm font-bold text-gray-500">
-                                        Creando agente para habilitar conexión...
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-4">
+                                <div className="w-10 h-10 bg-[#25D366] rounded-lg flex items-center justify-center text-white shrink-0">
+                                    <MessageCircle className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-gray-900">Integración Oficial</p>
+                                    <p className="text-[10px] text-gray-500">
+                                        Podrás conectar tu número oficial de WhatsApp en la configuración del agente una vez finalizada su creación.
                                     </p>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     )}
                 </div>
