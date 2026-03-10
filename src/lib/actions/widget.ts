@@ -574,11 +574,12 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                         select: { subDepartment: true }
                     });
 
-                    const uniqueSubDepts = Array.from(new Set(availableMembers.map((m: any) => m.subDepartment)));
+                    const uniqueSubDepts = Array.from(new Set(availableMembers.map((m: any) => m.subDepartment).filter(Boolean)));
                     if (uniqueSubDepts.length > 0) {
                         systemPrompt += `\nSUBDEPARTAMENTOS DISPONIBLES (NICHOS/ESPECIALIDADES):\n`;
                         systemPrompt += `El equipo tiene expertos en los siguientes nichos: ${uniqueSubDepts.join(', ')}.\n`;
-                        systemPrompt += `Si el usuario menciona o busca algo relacionado a estos nichos, DEBES incluir el parámetro 'subdepartamento' exacto al llamar a la herramienta 'asignar_a_humano'.\n`;
+                        systemPrompt += `REGRA DE ESPECIALIDAD: Solo usa el parámetro 'subdepartamento' si el requerimiento del usuario coincide EXACTAMENTE con uno de los nichos arriba. 
+- Por ejemplo, si el usuario pide un "Chatbot" o "Página Web" y el único nicho es "Aplicaciones Moviles", NO uses el parámetro 'subdepartamento', ya que no coinciden.\n`;
                     }
                 } catch (e) { console.error(e) }
 
@@ -1171,12 +1172,27 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                     // Find members in this workspace with that department
                                     let members = [];
                                     try {
+                                        // 0. Validate if subDept exists in this workspace to prevent AI hallucinations
+                                        let finalSubDept = subDept;
+                                        if (subDept) {
+                                            const subDeptExists = await (prisma.workspaceMember as any).findFirst({
+                                                where: {
+                                                    workspaceId: workspace.id,
+                                                    subDepartment: { equals: subDept, mode: 'insensitive' }
+                                                }
+                                            });
+                                            if (!subDeptExists) {
+                                                console.log(`[ASSIGNMENT] Subdept "${subDept}" not found, reverting to generalist.`);
+                                                finalSubDept = null;
+                                            }
+                                        }
+
                                         members = await (prisma.workspaceMember as any).findMany({
                                             where: {
                                                 workspaceId: workspace.id,
                                                 ...(sanitizedDept ? { department: sanitizedDept } : {}),
-                                                ...(subDept
-                                                    ? { subDepartment: { contains: subDept, mode: 'insensitive' } }
+                                                ...(finalSubDept
+                                                    ? { subDepartment: { equals: finalSubDept, mode: 'insensitive' } }
                                                     : { OR: [{ subDepartment: null }, { subDepartment: "" }] }
                                                 )
                                             },
