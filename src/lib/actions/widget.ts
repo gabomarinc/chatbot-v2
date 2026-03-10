@@ -550,7 +550,7 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                         systemPrompt += `\nEs OBLIGATORIO usar uno de estos nombres exactos de departamento al llamar a 'asignar_a_humano'. Una vez que uses esta herramienta, el bot se PAUSARÁ y dejará de responder automáticamente.\n`;
                     } else {
                         // Fallback to legacy categories if no specific depts found
-                        systemPrompt += `- Departamento SALES: Ventas, cotizaciones, precios, comprar.\n`;
+                        systemPrompt += `- Departamento COMERCIAL: Ventas, cotizaciones, precios, comprar.\n`;
                         systemPrompt += `- Departamento ATENCIÓN: Problemas técnicos, errores, ayuda con el uso del producto o servicio.\n`;
                     }
                 } catch (e) { console.error(e) }
@@ -640,7 +640,7 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                         properties: {
                             departamento: {
                                 type: 'string',
-                                description: 'Departamento principal al que asignar (SALES, ATENCIÓN, PERSONAL o cualquier nombre de departamento personalizado configurado).'
+                                description: 'Departamento principal al que asignar (COMERCIAL, ATENCIÓN, PERSONAL o cualquier nombre de departamento personalizado configurado).'
                             },
                             subdepartamento: {
                                 type: 'string',
@@ -1152,7 +1152,9 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                         'soporte': 'SUPPORT',
                                         'personal': 'PERSONAL'
                                     };
-                                    const sanitizedDept = deptMap[dept?.toLowerCase()] || (dept ? dept.toUpperCase() : null);
+                                    // Map input directly to canonical term if it's one of the unified ones
+                                    const canonicalDept = (dept?.toLowerCase() === 'ventas' || dept?.toLowerCase() === 'sales') ? 'comercial' : dept;
+                                    const sanitizedDept = deptMap[canonicalDept?.toLowerCase()] || (canonicalDept ? canonicalDept.toUpperCase() : null);
 
                                     // Find members in this workspace with that department
                                     let members = [];
@@ -2009,7 +2011,9 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                     'soporte': 'SUPPORT',
                                     'personal': 'PERSONAL'
                                 };
-                                const sanitizedDept = deptMap[dept?.toLowerCase()] || (dept ? dept.toUpperCase() : null);
+                                // Map input directly to canonical term if it's one of the unified ones
+                                const canonicalDept = (dept?.toLowerCase() === 'ventas' || dept?.toLowerCase() === 'sales') ? 'comercial' : dept;
+                                const sanitizedDept = deptMap[canonicalDept?.toLowerCase()] || (canonicalDept ? canonicalDept.toUpperCase() : null);
 
                                 // Find members in this workspace with that department
                                 let members = [];

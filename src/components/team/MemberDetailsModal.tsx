@@ -215,7 +215,7 @@ export function MemberDetailsModal({
 
     const getDepartmentLabel = (dept: string | null) => {
         switch (dept) {
-            case 'SALES': return 'Comercial / Ventas';
+            case 'SALES': return 'Comercial';
             case 'SUPPORT': return 'Atención';
             case 'PERSONAL': return 'General / Personal';
             default: return 'General / Personal';
@@ -337,7 +337,7 @@ export function MemberDetailsModal({
                                             onChange={e => setEditData({ ...editData, department: e.target.value as any })}
                                             className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 font-bold focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
                                         >
-                                            <option value="SALES">Comercial / Ventas</option>
+                                            <option value="SALES">Comercial</option>
                                             <option value="SUPPORT">Atención</option>
                                             <option value="PERSONAL">General / Personal</option>
                                         </select>
