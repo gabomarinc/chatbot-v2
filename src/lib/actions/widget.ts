@@ -1163,7 +1163,10 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                             where: {
                                                 workspaceId: workspace.id,
                                                 ...(sanitizedDept ? { department: sanitizedDept } : {}),
-                                                ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
+                                                ...(subDept
+                                                    ? { subDepartment: { contains: subDept, mode: 'insensitive' } }
+                                                    : { OR: [{ subDepartment: null }, { subDepartment: "" }] }
+                                                )
                                             },
                                             include: { user: true }
                                         });
@@ -1171,19 +1174,30 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                         console.error('[GEMINI] Error querying members by dept:', err);
                                     }
 
-                                    // Fallback 1: Broad search for Department if subDept was too specific
+                                    // Fallback 1: If searching for a specialized niche, but found NO ONE, look for generalists in that department
                                     if (subDept && members.length === 0) {
                                         members = await (prisma.workspaceMember as any).findMany({
                                             where: {
                                                 workspaceId: workspace.id,
-                                                department: { equals: dept, mode: 'insensitive' }
+                                                ...(sanitizedDept ? { department: sanitizedDept } : {}),
+                                                OR: [{ subDepartment: null }, { subDepartment: "" }]
                                             },
                                             include: { user: true }
                                         });
                                     }
 
-                                    // Fallback 2: General fallback to ALL workspace members if Department name was hallucinated or incorrect
-                                    // (Ensures the conversation is assigned even if the AI used a synonym like "ventas" instead of "comercial")
+                                    // Fallback 2: If still no members found, look for ANYONE in that department (ignoring subDepartment)
+                                    if (members.length === 0 && sanitizedDept) {
+                                        members = await (prisma.workspaceMember as any).findMany({
+                                            where: {
+                                                workspaceId: workspace.id,
+                                                department: sanitizedDept
+                                            },
+                                            include: { user: true }
+                                        });
+                                    }
+
+                                    // Fallback 3: General fallback to ALL workspace members if Department name was hallucinated or incorrect
                                     if (members.length === 0) {
                                         members = await (prisma.workspaceMember as any).findMany({
                                             where: { workspaceId: workspace.id },
