@@ -127,7 +127,8 @@ export async function assignConversation(conversationId: string, userId: string)
             where: { id: conversationId },
             data: {
                 assignedTo: userId,
-                assignedAt: new Date()
+                assignedAt: new Date(),
+                isPaused: true // PAUSE bot on assignment
             }
         })
 
@@ -403,7 +404,7 @@ export async function assumeConversation(conversationId: string) {
             data: {
                 assignedTo: session.user.id,
                 assignedAt: new Date(),
-                isPaused: false // Keep bot active even when taking control manually
+                isPaused: true // PAUSE bot when assuming control
             }
         })
 

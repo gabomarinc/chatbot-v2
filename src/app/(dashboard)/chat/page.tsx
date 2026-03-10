@@ -30,7 +30,8 @@ export default async function ChatPage({
         channel: c.channel,
         contact: c.contact,
         assignedTo: c.assignedTo,
-        assignedUser: c.assignedUser
+        assignedUser: c.assignedUser,
+        isPaused: c.isPaused
     }));
 
     return (
