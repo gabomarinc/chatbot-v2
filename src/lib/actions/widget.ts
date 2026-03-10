@@ -571,15 +571,28 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                 try {
                     const availableMembers = await (prisma.workspaceMember as any).findMany({
                         where: { workspaceId: workspace.id, subDepartment: { not: null } },
-                        select: { subDepartment: true }
+                        select: { subDepartment: true, specialties: true }
                     });
 
                     const uniqueSubDepts = Array.from(new Set(availableMembers.map((m: any) => m.subDepartment).filter(Boolean)));
-                    if (uniqueSubDepts.length > 0) {
+                    if (availableMembers.length > 0) {
                         systemPrompt += `\nSUBDEPARTAMENTOS DISPONIBLES (NICHOS/ESPECIALIDADES):\n`;
-                        systemPrompt += `El equipo tiene expertos en los siguientes nichos: ${uniqueSubDepts.join(', ')}.\n`;
-                        systemPrompt += `REGRA DE ESPECIALIDAD: Solo usa el parámetro 'subdepartamento' si el requerimiento del usuario coincide EXACTAMENTE con uno de los nichos arriba. 
-- Por ejemplo, si el usuario pide un "Chatbot" o "Página Web" y el único nicho es "Aplicaciones Moviles", NO uses el parámetro 'subdepartamento', ya que no coinciden.\n`;
+
+                        // Group by subDepartment to list specialties
+                        const subDeptMap: Record<string, string[]> = {};
+                        availableMembers.forEach((m: any) => {
+                            if (!subDeptMap[m.subDepartment]) subDeptMap[m.subDepartment] = [];
+                            if (m.specialties) subDeptMap[m.subDepartment].push(m.specialties);
+                        });
+
+                        Object.entries(subDeptMap).forEach(([name, specs]) => {
+                            systemPrompt += `- ${name}: Especialista en ${specs.length > 0 ? specs.join(', ') : 'temas generales de este nicho'}.\n`;
+                        });
+
+                        systemPrompt += `\nREGRA DE ESPECIALIDAD:
+1. Solo usa el parámetro 'subdepartamento' si el requerimiento del usuario coincide con el NOMBRE del nicho o sus PALABRAS CLAVE arriba.
+2. La IA entiende sinónimos: Si el usuario pide "un app", "una ap" o "plataforma móvil" y el nicho es "Aplicaciones Móviles" con especialidad "Apps", DEBES usar ese subdepartamento.
+3. EXCLUSIÓN: Si el usuario pide algo que NO está en la lista de especialidades de los nichos (ej: "Chatbot" o "Web" y solo hay "Apps"), NO uses subdepartamento y deja que el equipo GENERAL atienda al cliente.\n`;
                     }
                 } catch (e) { console.error(e) }
 

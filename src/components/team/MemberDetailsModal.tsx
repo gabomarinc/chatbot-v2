@@ -27,6 +27,7 @@ interface MemberStats {
         role: 'OWNER' | 'MANAGER' | 'AGENT';
         department: 'SUPPORT' | 'SALES' | 'PERSONAL' | null;
         subDepartment: string | null;
+        specialties: string | null;
         joinedAt: Date;
         lastLoginAt: Date | null;
     };
@@ -80,7 +81,8 @@ export function MemberDetailsModal({
         email: '',
         role: 'AGENT' as 'MANAGER' | 'AGENT',
         department: 'PERSONAL' as 'SUPPORT' | 'SALES' | 'PERSONAL',
-        subDepartment: ''
+        subDepartment: '',
+        specialties: ''
     });
 
     useEffect(() => {
@@ -103,7 +105,8 @@ export function MemberDetailsModal({
                     email: result.member.email || '',
                     role: result.member.role as any,
                     department: (result.member.department as any) || 'PERSONAL',
-                    subDepartment: result.member.subDepartment || ''
+                    subDepartment: result.member.subDepartment || '',
+                    specialties: result.member.specialties || ''
                 });
             }
         } catch (err) {
@@ -122,7 +125,8 @@ export function MemberDetailsModal({
                 email: editData.email,
                 role: editData.role,
                 department: editData.department,
-                subDepartment: editData.subDepartment.trim() || null
+                subDepartment: editData.subDepartment.trim() || null,
+                specialties: editData.specialties.trim() || null
             });
 
             if (result.error) {
@@ -347,15 +351,29 @@ export function MemberDetailsModal({
                                                 value={editData.subDepartment}
                                                 onChange={e => setEditData({ ...editData, subDepartment: e.target.value })}
                                                 placeholder="Subdepartamento (opcional)"
-                                                className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
+                                                className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#21AC96] focus:border-transparent mb-2"
                                             />
+                                            <textarea
+                                                value={editData.specialties}
+                                                onChange={e => setEditData({ ...editData, specialties: e.target.value })}
+                                                placeholder="Palabras clave / Especialidades (ej: Apps, Android, iOS, Chatbots...)"
+                                                className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#21AC96] focus:border-transparent h-20"
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-1 italic">Guía para el Bot: Define qué temas atiende este especialista.</p>
                                         </div>
                                     </div>
                                 ) : (
                                     <>
                                         <p className="text-lg font-extrabold text-[#21AC96]">{getDepartmentLabel(stats.member.department)}</p>
-                                        {stats.member.subDepartment && (
-                                            <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-wide">{stats.member.subDepartment}</p>
+                                        {(stats.member.subDepartment || stats.member.specialties) && (
+                                            <div className="mt-1 space-y-1">
+                                                {stats.member.subDepartment && (
+                                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{stats.member.subDepartment}</p>
+                                                )}
+                                                {stats.member.specialties && (
+                                                    <p className="text-[11px] text-gray-400 leading-tight italic line-clamp-2">Expertiz: {stats.member.specialties}</p>
+                                                )}
+                                            </div>
                                         )}
                                     </>
                                 )}
