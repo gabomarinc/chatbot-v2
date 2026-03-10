@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Link as LinkIcon, FileText, Video, File, Plus, Search, Database, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,21 @@ export function AddSourceModal({ isOpen, isLoading = false, onClose, onAdd }: Ad
         fileName: ''
     });
     const [isUploading, setIsUploading] = useState(false);
+
+    // Reset form when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setFormData({
+                url: '',
+                text: '',
+                updateInterval: 'NEVER',
+                crawlSubpages: false,
+                fileContent: '',
+                fileName: ''
+            });
+            setIsUploading(false);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
