@@ -268,7 +268,9 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
     const webhookUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/whatsapp`;
 
     // Automatic Setup Mode (Default if App ID exists and Manual Mode not requested)
-    if (metaAppId && !showManual && !existingChannel) {
+    // We show this if it's a new channel OR if it doesn't have a valid accessToken yet
+    const hasCredentials = !!existingChannel?.configJson?.accessToken;
+    if (metaAppId && !showManual && (!existingChannel || !hasCredentials)) {
 
         return (
             <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
@@ -629,7 +631,7 @@ export function WhatsAppConfig({ agents, existingChannel, metaAppId, defaultAgen
                     </form>
 
                     {/* Back to Simple Mode Link */}
-                    {metaAppId && !existingChannel && (
+                    {metaAppId && (
                         <div className="text-center">
                             <button
                                 onClick={() => setShowManual(false)}

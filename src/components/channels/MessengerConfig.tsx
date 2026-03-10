@@ -137,7 +137,8 @@ export function MessengerConfig({ agents, initialAgentId, initialChannelId, meta
     }
 
     // Automatic Setup Mode (Default if App ID exists and Manual Mode not requested)
-    if (metaAppId && !showManual && !existingChannel) {
+    const hasCredentials = !!existingChannel?.configJson?.pageAccessToken;
+    if (metaAppId && !showManual && (!existingChannel || !hasCredentials)) {
         return (
             <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
                 {/* Header */}
@@ -335,7 +336,7 @@ export function MessengerConfig({ agents, initialAgentId, initialChannelId, meta
                     </form>
 
                     {/* Back to Simple Mode Link */}
-                    {metaAppId && !existingChannel && (
+                    {metaAppId && (
                         <div className="text-center">
                             <button
                                 onClick={() => setShowManual(false)}
