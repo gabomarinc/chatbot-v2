@@ -20,6 +20,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
     const [role, setRole] = useState<'MANAGER' | 'AGENT'>('AGENT');
     const [department, setDepartment] = useState<'SUPPORT' | 'SALES' | 'PERSONAL'>('SUPPORT');
     const [subDepartment, setSubDepartment] = useState('');
+    const [specialties, setSpecialties] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -56,7 +57,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
 
         setIsLoading(true);
         try {
-            const result = await inviteTeamMember(name.trim(), email.trim().toLowerCase(), role, department, subDepartment.trim() || undefined);
+            const result = await inviteTeamMember(name.trim(), email.trim().toLowerCase(), role, department, subDepartment.trim() || undefined, specialties.trim() || undefined);
 
             if (result.error) {
                 setError(result.error);
@@ -65,6 +66,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                 setName('');
                 setEmail('');
                 setSubDepartment('');
+                setSpecialties('');
                 setTimeout(() => {
                     onClose();
                     if (onSuccess) {
@@ -88,6 +90,7 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
             setRole('AGENT');
             setDepartment('SUPPORT');
             setSubDepartment('');
+            setSpecialties('');
             setError(null);
             setSuccess(false);
             onClose();
@@ -260,6 +263,21 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                             />
                             <p className="text-[10px] text-gray-400 mt-1">Específica si este rol atiende a un nicho en particular de este departamento.</p>
                         </div>
+
+                        {/* Specialties Input */}
+                        <div className="mt-4">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">
+                                Palabras Clave / Expertiz (IA)
+                            </label>
+                            <textarea
+                                value={specialties}
+                                onChange={(e) => setSpecialties(e.target.value)}
+                                placeholder="Ej: Apps, Android, iOS, React Native"
+                                disabled={isLoading}
+                                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96] focus:border-transparent transition-all disabled:opacity-50 h-20"
+                            />
+                            <p className="text-[10px] text-gray-400 mt-1 italic">Dile al Bot qué temas atiende. (Ej: Si el usuario pide "una app", la IA sabrá que debe buscar a este especialista).</p>
+                        </div>
                     </div>
 
                     {/* Error Message */}
@@ -307,8 +325,8 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 
