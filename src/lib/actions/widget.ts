@@ -432,18 +432,22 @@ INSTRUCCIONES DE EJECUCIÓN (PRIORIDAD MÁXIMA):
 2. LIMITACIÓN: Solo usa el contexto de arriba.
 3. ESTILO: Mantén un tono ${styleDescription} y profesional.
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente.
+7. CALIFICACIÓN Y TRASPASO (CRÍTICO): Si el usuario ha proporcionado su nombre y al menos un método de contacto (teléfono o correo), o ha respondido a las preguntas clave del negocio mostrando interés real (ej: presupuesto, zona de interés para comprar), se considera un LEAD CALIFICADO. En este caso, DEBES llamar a 'asignar_a_humano' inmediatamente después de guardar los datos en el CRM. NO sigas respondiendo como bot indefinidamente; el objetivo final es que un humano tome el control lo antes posible una vez calificado el lead. Suena más profesional ser transferido pronto que charlar con un bot para siempre.
 
 ${hasZoho ? `INSTRUCCIONES ZOHO CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_zoho_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes al final.
+- CALIFICACIÓN: Tan pronto tengas Nombre y Email/Teléfono, llama a 'asignar_a_humano' con departamento 'SALES' (o el correspondiente).
 - NOTAS (IMPORTANTE): USA SIEMPRE la herramienta 'add_zoho_note' para guardar el resumen de la conversación, lo que el usuario busca, y sus requerimientos. NO uses el campo 'Description' de create_zoho_lead para los resúmenes.` : ''}
 
 ${hasOdoo ? `INSTRUCCIONES ODOO CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_odoo_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes.
+- CALIFICACIÓN: Si tienes los datos de contacto, usa 'asignar_a_humano' para que el equipo de ventas atienda al cliente.
 - CAMPO DESCRIPTION: DEBES poner lo que el usuario busca en el campo 'description' de Odoo.
 - NOTAS: USA 'add_odoo_note' para guardar requerimientos adicionales.` : ''}
 
 ${hasHubSpot ? `INSTRUCCIONES HUBSPOT CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_hubspot_contact' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés).
+- CALIFICACIÓN: Tras guardar los datos, transfiere al humano con 'asignar_a_humano'.
 - CAMPO DESCRIPTION: DEBES poner lo que el usuario busca en el campo 'description' de la herramienta. Esto creará una nota automática.
 - NOTAS: USA 'add_hubspot_note' para guardar requerimientos específicos adicionales.` : ''}
 
@@ -1986,7 +1990,7 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                 let members = await (prisma.workspaceMember as any).findMany({
                                     where: {
                                         workspaceId: workspace.id,
-                                        department: dept as any,
+                                        department: { equals: dept, mode: 'insensitive' },
                                         ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
                                     },
                                     include: {
@@ -1999,11 +2003,20 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                     members = await (prisma.workspaceMember as any).findMany({
                                         where: {
                                             workspaceId: workspace.id,
-                                            department: dept as any
+                                            department: { equals: dept, mode: 'insensitive' }
                                         },
                                         include: {
                                             user: true
                                         }
+                                    });
+                                }
+
+                                // Fallback 2: General fallback to ALL workspace members if Department name was hallucinated or incorrect
+                                // (Ensures the conversation is assigned even if the AI used a synonym like "ventas" instead of "SALES")
+                                if (members.length === 0) {
+                                    members = await (prisma.workspaceMember as any).findMany({
+                                        where: { workspaceId: workspace.id },
+                                        include: { user: true }
                                     });
                                 }
 
@@ -2026,8 +2039,8 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                         where: { id: conversation.id },
                                         data: {
                                             assignedTo: member.userId,
-                                            status: 'OPEN',
-                                            isPaused: false // KEEP the bot active until human manually assumes control
+                                            status: 'PENDING', // Set to PENDING to indicate it needs human attention
+                                            isPaused: true // PAUSE the bot so the human MUST take over
                                         }
                                     });
 
