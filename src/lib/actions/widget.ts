@@ -125,6 +125,7 @@ export async function sendWidgetMessage(data: {
             const updates: any = { lastMessageAt: new Date() };
             if (conversation.status === 'CLOSED') {
                 updates.status = 'OPEN';
+                updates.isPaused = false; // RESUME BOT on new session
                 updates.npsScore = null;
                 updates.npsComment = null;
                 console.log(`[WIDGET] Reopening conversation ${conversation.id} for user ${data.visitorId}`);
@@ -545,7 +546,11 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                     if (uniqueDepts.length > 0) {
                         systemPrompt += `\nDEPARTAMENTOS DISPONIBLES EN ESTA EMPRESA:\n`;
                         uniqueDepts.forEach((dept) => {
-                            systemPrompt += `- Departamento ${dept}: Selecciona este departamento para transferir consultas relacionadas.\n`;
+                            // Humanize the enum for the AI to follow the "COMERCIAL" unification
+                            let humanName = dept;
+                            if (dept === 'SALES') humanName = 'COMERCIAL';
+                            if (dept === 'SUPPORT') humanName = 'ATENCIÓN';
+                            systemPrompt += `- Departamento ${humanName}: Selecciona este departamento para transferir consultas relacionadas.\n`;
                         });
                         systemPrompt += `\nEs OBLIGATORIO usar uno de estos nombres exactos de departamento al llamar a 'asignar_a_humano'. Una vez que uses esta herramienta, el bot se PAUSARÁ y dejará de responder automáticamente.\n`;
                     } else {
