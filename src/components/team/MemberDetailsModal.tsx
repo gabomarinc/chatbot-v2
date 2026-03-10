@@ -345,21 +345,57 @@ export function MemberDetailsModal({
                                             <option value="SUPPORT">Atención</option>
                                             <option value="PERSONAL">General / Personal</option>
                                         </select>
-                                        <div>
+                                        <div className="space-y-3">
                                             <input
                                                 type="text"
                                                 value={editData.subDepartment}
                                                 onChange={e => setEditData({ ...editData, subDepartment: e.target.value })}
                                                 placeholder="Subdepartamento (opcional)"
-                                                className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#21AC96] focus:border-transparent mb-2"
+                                                className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
                                             />
-                                            <textarea
-                                                value={editData.specialties}
-                                                onChange={e => setEditData({ ...editData, specialties: e.target.value })}
-                                                placeholder="Palabras clave / Especialidades (ej: Apps, Android, iOS, Chatbots...)"
-                                                className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#21AC96] focus:border-transparent h-20"
-                                            />
-                                            <p className="text-[10px] text-gray-400 mt-1 italic">Guía para el Bot: Define qué temas atiende este especialista.</p>
+
+                                            {/* Tags Input for Specialities */}
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nueva palabra clave (ej: Apps)"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ',') {
+                                                            e.preventDefault();
+                                                            const val = e.currentTarget.value.trim();
+                                                            if (val) {
+                                                                const currentTags = editData.specialties ? editData.specialties.split('|') : [];
+                                                                if (!currentTags.includes(val)) {
+                                                                    setEditData({
+                                                                        ...editData,
+                                                                        specialties: currentTags.length > 0 ? [...currentTags, val].join('|') : val
+                                                                    });
+                                                                }
+                                                                e.currentTarget.value = '';
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#21AC96] focus:border-transparent"
+                                                />
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {editData.specialties.split('|').filter(Boolean).map((tag, i) => (
+                                                        <div key={i} className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 rounded-md text-[10px] font-bold border border-gray-200">
+                                                            <span>{tag}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newTags = editData.specialties.split('|').filter(t => t !== tag);
+                                                                    setEditData({ ...editData, specialties: newTags.join('|') });
+                                                                }}
+                                                                className="hover:text-red-500"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 mt-1 italic leading-tight">Presiona Enter para agregar etiquetas de expertiz para el Bot.</p>
                                         </div>
                                     </div>
                                 ) : (
@@ -371,7 +407,13 @@ export function MemberDetailsModal({
                                                     <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{stats.member.subDepartment}</p>
                                                 )}
                                                 {stats.member.specialties && (
-                                                    <p className="text-[11px] text-gray-400 leading-tight italic line-clamp-2">Expertiz: {stats.member.specialties}</p>
+                                                    <div className="flex flex-wrap gap-1 mt-2">
+                                                        {stats.member.specialties.split('|').filter(Boolean).map((tag, i) => (
+                                                            <span key={i} className="px-1.5 py-0.5 bg-[#21AC96]/10 text-[#21AC96] rounded-md text-[9px] font-extrabold uppercase tracking-wide border border-[#21AC96]/20">
+                                                                {tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
                                         )}

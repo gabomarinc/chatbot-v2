@@ -266,17 +266,66 @@ export function InviteMemberModal({ isOpen, onClose, currentMemberCount, maxMemb
 
                         {/* Specialties Input */}
                         <div className="mt-4">
-                            <label className="block text-xs font-bold text-gray-500 mb-1">
+                            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
                                 Palabras Clave / Expertiz (IA)
                             </label>
-                            <textarea
-                                value={specialties}
-                                onChange={(e) => setSpecialties(e.target.value)}
-                                placeholder="Ej: Apps, Android, iOS, React Native"
-                                disabled={isLoading}
-                                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#21AC96] focus:border-transparent transition-all disabled:opacity-50 h-20"
-                            />
-                            <p className="text-[10px] text-gray-400 mt-1 italic">Dile al Bot qué temas atiende. (Ej: Si el usuario pide "una app", la IA sabrá que debe buscar a este especialista).</p>
+
+                            {/* Tags Input Container */}
+                            <div className="space-y-3">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Nueva palabra clave (ej: Apps)"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ',') {
+                                                e.preventDefault();
+                                                const val = e.currentTarget.value.trim();
+                                                if (val) {
+                                                    const currentTags = specialties ? specialties.split('|') : [];
+                                                    if (!currentTags.includes(val)) {
+                                                        setSpecialties(currentTags.length > 0 ? [...currentTags, val].join('|') : val);
+                                                    }
+                                                    e.currentTarget.value = '';
+                                                }
+                                            }
+                                        }}
+                                        disabled={isLoading}
+                                        className="w-full px-4 py-3 bg-white border-2 border-[#21AC96]/30 rounded-2xl text-sm focus:outline-none focus:border-[#21AC96] focus:ring-4 focus:ring-[#21AC96]/10 transition-all placeholder:text-gray-400"
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-50 border border-gray-200 rounded-md">Enter</kbd>
+                                    </div>
+                                </div>
+
+                                {/* Tags List */}
+                                <div className="flex flex-wrap gap-2">
+                                    {specialties.split('|').filter(Boolean).map((tag, i) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-100 shadow-sm rounded-xl group animate-in fade-in zoom-in-95 duration-200"
+                                        >
+                                            <span className="text-xs font-bold text-gray-700">{tag}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const newTags = specialties.split('|').filter(t => t !== tag);
+                                                    setSpecialties(newTags.join('|'));
+                                                }}
+                                                className="p-0.5 hover:bg-red-50 hover:text-red-500 text-gray-400 rounded-md transition-all"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {(!specialties || specialties.split('|').filter(Boolean).length === 0) && (
+                                        <p className="text-[11px] text-gray-400 italic px-1">Presiona Enter para agregar etiquetas...</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <p className="text-[10px] text-gray-400 mt-3 leading-relaxed">
+                                <span className="font-bold text-[#21AC96]">Tip del Bot:</span> Si el usuario pide "una app", la IA buscará a este especialista si tiene el tag "Apps".
+                            </p>
                         </div>
                     </div>
 
