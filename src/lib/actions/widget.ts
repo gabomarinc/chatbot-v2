@@ -1143,17 +1143,31 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                     const dept = (args as any).departamento;
                                     const subDept = (args as any).subdepartamento;
 
-                                    // Find members in this workspace with that department (case-insensitive)
-                                    let members = await (prisma.workspaceMember as any).findMany({
-                                        where: {
-                                            workspaceId: workspace.id,
-                                            department: { equals: dept, mode: 'insensitive' },
-                                            ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
-                                        },
-                                        include: {
-                                            user: true
-                                        }
-                                    });
+                                    const deptMap: Record<string, any> = {
+                                        'ventas': 'SALES',
+                                        'comercial': 'SALES',
+                                        'sales': 'SALES',
+                                        'atención': 'SUPPORT',
+                                        'atencion': 'SUPPORT',
+                                        'soporte': 'SUPPORT',
+                                        'personal': 'PERSONAL'
+                                    };
+                                    const sanitizedDept = deptMap[dept?.toLowerCase()] || (dept ? dept.toUpperCase() : null);
+
+                                    // Find members in this workspace with that department
+                                    let members = [];
+                                    try {
+                                        members = await (prisma.workspaceMember as any).findMany({
+                                            where: {
+                                                workspaceId: workspace.id,
+                                                ...(sanitizedDept ? { department: sanitizedDept } : {}),
+                                                ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
+                                            },
+                                            include: { user: true }
+                                        });
+                                    } catch (err) {
+                                        console.error('[GEMINI] Error querying members by dept:', err);
+                                    }
 
                                     // Fallback 1: Broad search for Department if subDept was too specific
                                     if (subDept && members.length === 0) {
@@ -1986,29 +2000,45 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                 const dept = args.departamento;
                                 const subDept = args.subdepartamento;
 
-                                // Find members in this workspace with that department
-                                let members = await (prisma.workspaceMember as any).findMany({
-                                    where: {
-                                        workspaceId: workspace.id,
-                                        department: { equals: dept, mode: 'insensitive' },
-                                        ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
-                                    },
-                                    include: {
-                                        user: true
-                                    }
-                                });
+                                const deptMap: Record<string, any> = {
+                                    'ventas': 'SALES',
+                                    'comercial': 'SALES',
+                                    'sales': 'SALES',
+                                    'atención': 'SUPPORT',
+                                    'atencion': 'SUPPORT',
+                                    'soporte': 'SUPPORT',
+                                    'personal': 'PERSONAL'
+                                };
+                                const sanitizedDept = deptMap[dept?.toLowerCase()] || (dept ? dept.toUpperCase() : null);
 
-                                // If subDept was provided but no member was found, fallback to department search
-                                if (subDept && members.length === 0) {
+                                // Find members in this workspace with that department
+                                let members = [];
+                                try {
                                     members = await (prisma.workspaceMember as any).findMany({
                                         where: {
                                             workspaceId: workspace.id,
-                                            department: { equals: dept, mode: 'insensitive' }
+                                            ...(sanitizedDept ? { department: sanitizedDept } : {}),
+                                            ...(subDept ? { subDepartment: { contains: subDept, mode: 'insensitive' } } : {})
                                         },
-                                        include: {
-                                            user: true
-                                        }
+                                        include: { user: true }
                                     });
+                                } catch (err) {
+                                    console.error('[OPENAI] Error querying members by dept:', err);
+                                }
+
+                                // If subDept was provided but no member was found, fallback to department search
+                                if (subDept && members.length === 0) {
+                                    try {
+                                        members = await (prisma.workspaceMember as any).findMany({
+                                            where: {
+                                                workspaceId: workspace.id,
+                                                ...(sanitizedDept ? { department: sanitizedDept } : {})
+                                            },
+                                            include: { user: true }
+                                        });
+                                    } catch (err) {
+                                        console.error('[OPENAI] Fallback query error:', err);
+                                    }
                                 }
 
                                 // Fallback 2: General fallback to ALL workspace members if Department name was hallucinated or incorrect
