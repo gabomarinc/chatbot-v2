@@ -602,6 +602,7 @@ export async function createAgentFromWizard(data: {
             channelsToCreate.push({
                 type: 'WEBCHAT',
                 displayName: 'Chat Web',
+                isActive: true,
                 config: {
                     title: webConfig.title || agent.name, // Fallback to agent name
                     welcomeMessage: webConfig.welcomeMessage || '¡Hola! ¿En qué puedo ayudarte?',
@@ -613,18 +614,37 @@ export async function createAgentFromWizard(data: {
         if (data.channels.whatsapp) {
             // If config is provided (legacy or future), use it. Otherwise create empty/pending channel.
             const waConfig = data.whatsappConfig;
+            const hasCredentials = waConfig?.accessToken && waConfig?.phoneNumberId;
+
             channelsToCreate.push({
                 type: 'WHATSAPP',
                 displayName: 'WhatsApp',
-                config: waConfig ? {
+                isActive: !!hasCredentials,
+                config: hasCredentials ? {
                     phoneNumberId: waConfig.phoneNumberId,
                     accessToken: waConfig.accessToken,
                     verifyToken: waConfig.verifyToken
                 } : {}
             });
         }
-        if (data.channels.instagram) channelsToCreate.push({ type: 'INSTAGRAM', displayName: 'Instagram', config: {} });
-        if (data.channels.messenger) channelsToCreate.push({ type: 'MESSENGER', displayName: 'Messenger', config: {} });
+
+        if (data.channels.instagram) {
+            channelsToCreate.push({
+                type: 'INSTAGRAM',
+                displayName: 'Instagram',
+                isActive: false, // Always placeholder in wizard
+                config: {}
+            });
+        }
+
+        if (data.channels.messenger) {
+            channelsToCreate.push({
+                type: 'MESSENGER',
+                displayName: 'Messenger',
+                isActive: false, // Always placeholder in wizard
+                config: {}
+            });
+        }
 
         for (const ch of channelsToCreate) {
             try {
@@ -633,7 +653,7 @@ export async function createAgentFromWizard(data: {
                         agentId: agent.id,
                         type: ch.type as any,
                         displayName: ch.displayName,
-                        isActive: true,
+                        isActive: ch.isActive ?? false,
                         configJson: ch.config // SAVE CONFIG HERE
                     }
                 });
@@ -738,26 +758,22 @@ export async function updateAgentWizard(agentId: string, data: {
         // For WhatsApp, Instagram, Messenger, we mainly check if they need to be active
         // Connection happens via Embedded Signup which creates the channel, but we ensure 'isActive' here.
 
-        const ensureChannel = async (type: 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER', displayName: string, shouldBeActive: boolean) => {
+        const ensureChannel = async (type: 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER', displayName: string, shouldBeIncluded: boolean) => {
             const existing = agent.channels.find(c => c.type === type);
-            if (shouldBeActive) {
-                if (existing) {
-                    if (!existing.isActive) await prisma.channel.update({ where: { id: existing.id }, data: { isActive: true } });
-                } else {
-                    // Create empty placeholder if it doesn't exist? 
-                    // For the "Connect" flow, we prefer the connection to create it.
-                    // BUT if user just toggles it ON in wizard but doesn't connect, should we create it?
-                    // Yes, so it shows up in dashboard list as "Pending".
+            if (shouldBeIncluded) {
+                if (!existing) {
                     await prisma.channel.create({
                         data: {
                             agentId: agent.id,
                             type,
                             displayName,
-                            isActive: true,
+                            isActive: false, // New placeholders are always inactive
                             configJson: {}
                         }
                     });
                 }
+                // If exists, we don't modify isActive. 
+                // If it's active (connected), cool. If not, it stays inactive until connected.
             } else {
                 if (existing) await prisma.channel.update({ where: { id: existing.id }, data: { isActive: false } });
             }
