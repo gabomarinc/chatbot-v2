@@ -433,7 +433,13 @@ INSTRUCCIONES DE EJECUCIÓN (PRIORIDAD MÁXIMA):
 2. LIMITACIÓN: Solo usa el contexto de arriba.
 3. ESTILO: Mantén un tono ${styleDescription} y profesional.
 6. EXTRACCIÓN DE DATOS: Si el usuario menciona su nombre o correo electrónico, extráelos y guárdalos internamente.
-7. CALIFICACIÓN Y TRASPASO (CRÍTICO): Si el usuario ha proporcionado su nombre y al menos un método de contacto (teléfono o correo), o ha respondido a las preguntas clave del negocio mostrando interés real (ej: presupuesto, zona de interés para comprar), se considera un LEAD CALIFICADO. En este caso, DEBES llamar a 'asignar_a_humano' inmediatamente después de guardar los datos en el CRM. NO sigas respondiendo como bot indefinidamente; el objetivo final es que un humano tome el control lo antes posible una vez calificado el lead. Suena más profesional ser transferido pronto que charlar con un bot para siempre.
+7. CALIFICACIÓN Y TRASPASO (REGLA DE HIERRO): Si el usuario ha proporcionado su NOMBRE y al menos un método de CONTACTO (teléfono o correo), se considera un LEAD CALIFICADO. 
+   - REGLA DE ORO DE ASIGNACIÓN: En el MISMO MOMENTO que recibas estos datos, DEBES obligatoriamente:
+     1. Guardarlos usando 'update_contact' (y el CRM correspondiente si está activo).
+     2. Llamar a 'asignar_a_humano' inmediatamente.
+     3. Informar al usuario que ha sido transferido.
+   - PROHIBICIÓN: NUNCA digas que "alguien se pondrá en contacto" o que "estás transfiriendo" si NO estás llamando a la herramienta 'asignar_a_humano' en ese mismo bloque de respuesta. Decir que transfieres sin usar la herramienta es un fallo crítico del sistema.
+   - PRIORIDAD: Una vez calificado el lead, tu prioridad absoluta es el traspaso. No sigas haciendo preguntas innecesarias ni charlando. Transferir pronto es más profesional.
 
 ${hasZoho ? `INSTRUCCIONES ZOHO CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_zoho_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes al final.
@@ -479,6 +485,7 @@ CRITICAL INSTRUCTIONS FOR DATA SAVING:
 2. IF the user provides their Name, Email, Phone, or ANY data matching the CUSTOM FIELDS defined above, you MUST call 'update_contact' IMMEDIATELY.
 3. DO NOT just acknowledge data in text. You MUST call the tool to save it.
 4. If you fail to call the tool, the data is lost.
+5. MANDATORY HANDOVER: If you have Name + Contact (Email/Phone), you MUST call 'asignar_a_humano' NOW. No exceptions.
 
 - Map user input to the *exact* custom field keys defined above (e.g. if field is "salary", map "5000" to "salary").
 5. FINALIZACIÓN DE ATENCIÓN: Solo usa 'finalizar_atencion' cuando el usuario ya no tenga dudas y la consulta haya sido resuelta. NO la uses si hay una cita agendada hoy o pendiente, o si el usuario dijo que volvería con una consulta específica mas tarde.
