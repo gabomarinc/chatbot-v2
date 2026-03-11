@@ -83,7 +83,7 @@ export default function AuthLayout({
 
                 {/* Footer Copyright */}
                 <div className="p-8 text-center lg:text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    © 2024 Kônsul — La nueva era de la atención al cliente.
+                    © 2026 Kônsul — La nueva era de la prospección y atención al cliente.
                 </div>
             </div>
         </div>
