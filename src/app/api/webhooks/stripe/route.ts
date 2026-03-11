@@ -100,6 +100,37 @@ export async function POST(req: NextRequest) {
                 }
                 break;
             }
+
+            case 'invoice.paid': {
+                const invoice = event.data.object as any;
+                
+                // Only process recurring subscription payments
+                if (invoice.subscription && invoice.billing_reason === 'subscription_cycle') {
+                    const subscription = await stripe.subscriptions.retrieve(
+                        invoice.subscription as string
+                    );
+
+                    // Find subscription in DB
+                    const dbSub = await prisma.subscription.findFirst({
+                        where: { stripeSubscriptionId: subscription.id },
+                        include: { plan: true }
+                    });
+
+                    if (dbSub && dbSub.plan) {
+                        console.log(`[Stripe Webhook] Resetting credits for workspace ${dbSub.workspaceId} (Plan: ${dbSub.plan.name})`);
+                        
+                        // Reset credits to plan amount (Non-cumulative)
+                        await prisma.creditBalance.update({
+                            where: { workspaceId: dbSub.workspaceId },
+                            data: {
+                                balance: dbSub.plan.creditsPerMonth,
+                                lastResetAt: new Date()
+                            }
+                        });
+                    }
+                }
+                break;
+            }
         }
 
         return NextResponse.json({ received: true });

@@ -4,12 +4,32 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Providers } from "@/components/providers/SessionProvider";
 import { SidebarProvider } from "@/components/providers/SidebarProvider";
 import { PushNotificationManager } from "@/components/notifications/PushNotificationManager";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { SubscriptionGuard } from "@/components/billing/SubscriptionGuard";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const session = await auth();
+    if (!session?.user?.id) redirect("/login");
+
+    // Fetch workspace and subscription
+    const workspace = await prisma.workspace.findFirst({
+        where: { 
+            OR: [
+                { ownerId: session.user.id },
+                { members: { some: { userId: session.user.id } } }
+            ]
+        },
+        include: { subscription: true }
+    });
+
+    const isInactive = !workspace?.subscription || (workspace.subscription.status !== 'active' && workspace.subscription.status !== 'trialing');
+
     return (
         <Providers>
             <SidebarProvider>
@@ -18,6 +38,8 @@ export default function DashboardLayout({
                     <div className="flex-1 flex flex-col overflow-hidden w-full relative">
                         <Topbar />
                         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50 pb-24 md:pb-6 touch-pan-y">
+                            {/* Guard to handle redirection based on pathname */}
+                            {isInactive && <SubscriptionGuard />}
                             {children}
                         </main>
                         <BottomNav />

@@ -48,7 +48,7 @@ export async function sendWidgetMessage(data: {
             const agent = await prisma.agent.findUnique({
                 where: { id: data.agentId },
                 include: {
-                    workspace: { include: { creditBalance: true, paymentConfigs: true } },
+                    workspace: { include: { creditBalance: true, paymentConfigs: true, subscription: true } },
                     integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT', 'NEON_CATALOG', 'ALTAPLAZA'] as any }, enabled: true } },
                     intents: { where: { enabled: true } },
                     customFieldDefinitions: true
@@ -68,7 +68,7 @@ export async function sendWidgetMessage(data: {
                 include: {
                     agent: {
                         include: {
-                            workspace: { include: { creditBalance: true, paymentConfigs: true } },
+                            workspace: { include: { creditBalance: true, paymentConfigs: true, subscription: true } },
                             integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT', 'NEON_CATALOG', 'ALTAPLAZA'] as any }, enabled: true } },
                             intents: { where: { enabled: true } },
                             customFieldDefinitions: true
@@ -91,7 +91,16 @@ export async function sendWidgetMessage(data: {
         const creditBalance = workspace.creditBalance;
         const model = agent.model;
 
-        // 2. Credit Check
+        // 2. Subscription & Credit Check
+        const subscription = workspace.subscription;
+        
+        // Block if subscription is not active/trialing (security block)
+        if (!subscription || (subscription.status !== 'active' && subscription.status !== 'trialing')) {
+            console.log(`Workspace ${workspace.id} has invalid subscription status: ${subscription?.status}`);
+            throw new Error("Subscription inactive or unpaid. Please check your billing settings.");
+        }
+
+        // Check credits
         if (!creditBalance || creditBalance.balance <= 0) {
             console.log(`Workspace ${workspace.id} has insufficient credits.`);
             throw new Error("Insufficient credits");
