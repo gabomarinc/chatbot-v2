@@ -180,21 +180,19 @@ export default function RegisterPage() {
                 </div>
             )}
 
-            <div className="text-center mb-10">
-                <h2 className="text-4xl font-black text-gray-900 tracking-tight leading-tight">Crea tu cuenta profesional</h2>
-                <div className="mt-4 inline-flex items-center gap-3 bg-[#21AC96]/5 border border-[#21AC96]/20 px-5 py-2 rounded-2xl">
-                    <div className="w-6 h-6 bg-[#21AC96] rounded-lg flex items-center justify-center shadow-lg shadow-[#21AC96]/20">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <p className="text-[10px] font-black text-gray-900 tracking-tight uppercase">4 DÍAS DE FREE TRIAL INCLUIDO EN TODO</p>
+            <div className="text-center mb-8">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">Crea tu cuenta profesional</h2>
+                <div className="mt-3 inline-flex items-center gap-2 bg-[#21AC96]/5 border border-[#21AC96]/10 px-4 py-1.5 rounded-xl">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#21AC96]" />
+                    <p className="text-[9px] font-black text-gray-900 tracking-tight uppercase">4 DÍAS DE FREE TRIAL INCLUIDO</p>
                 </div>
             </div>
 
             {step === 1 ? (
                 <div className="w-full space-y-8 animate-in fade-in zoom-in-95 duration-500">
                     <div className="flex items-center justify-between mb-2 px-4">
-                        <h3 className="text-2xl font-black text-gray-900 tracking-tight">Selecciona tu plan</h3>
-                        <div className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.15em] bg-[#21AC96] text-white shadow-md shadow-[#21AC96]/10">
+                        <h3 className="text-xl font-black text-gray-900 tracking-tight">Selecciona tu plan</h3>
+                        <div className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] bg-[#21AC96] text-white shadow-md shadow-[#21AC96]/10">
                             Trial Activo
                         </div>
                     </div>
@@ -207,224 +205,190 @@ export default function RegisterPage() {
                                     setSelectedPlan(plan.id);
                                     setStep(2);
                                 }}
-                                className={`relative flex flex-col p-8 rounded-[2.5rem] border-[3px] transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] h-full ${selectedPlan === plan.id
-                                    ? 'border-[#21AC96] bg-[#21AC96]/5 shadow-2xl shadow-[#21AC96]/10'
-                                    : 'border-transparent bg-white hover:border-[#21AC96]/20 shadow-sm'
+                                className={`relative flex flex-col p-6 rounded-[2rem] border-[3px] transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] h-full ${selectedPlan === plan.id
+                                    ? 'border-[#21AC96] bg-[#21AC96]/5 shadow-xl shadow-[#21AC96]/5'
+                                    : 'border-white bg-white hover:border-[#21AC96]/20 shadow-sm'
                                     }`}
                             >
                                 {plan.popular && (
-                                    <div className="absolute -top-4 left-8 px-5 py-2 bg-[#21AC96] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg shadow-[#21AC96]/20 z-10">
+                                    <div className="absolute -top-3 left-6 px-4 py-1.5 bg-[#21AC96] text-white text-[9px] font-black uppercase tracking-[0.15em] rounded-full shadow-lg z-10">
                                         Más popular
                                     </div>
                                 )}
 
-                                <div className="mb-6 flex justify-between items-start">
+                                <div className="mb-4 flex justify-between items-start">
                                     <div>
-                                        <h4 className={`text-2xl font-black ${selectedPlan === plan.id ? 'text-[#21AC96]' : 'text-gray-900 group-hover:text-[#21AC96]'} transition-colors tracking-tight mb-1`}>
+                                        <h4 className={`text-xl font-black ${selectedPlan === plan.id ? 'text-[#21AC96]' : 'text-gray-900 group-hover:text-[#21AC96]'} transition-colors tracking-tight mb-1`}>
                                             {plan.name}
                                         </h4>
-                                        <p className="text-gray-500 text-[11px] font-medium leading-relaxed max-w-[200px]">{plan.description}</p>
+                                        <p className="text-gray-500 text-[10px] font-medium leading-tight max-w-[150px]">{plan.description}</p>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-3xl font-black text-gray-900 leading-none">${plan.price}</div>
-                                        <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">/mes</div>
+                                        <div className="text-2xl font-black text-gray-900 leading-none">${plan.price}</div>
+                                        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">/mes</div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 mb-8 flex-grow">
+                                <div className="space-y-2 mb-6 flex-grow">
                                     {plan.features.map((feature, i) => (
-                                        <div key={i} className="flex items-center gap-3">
-                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${selectedPlan === plan.id ? 'bg-[#21AC96]/10' : 'bg-gray-100'}`}>
-                                                <CheckCircle2 className={`w-3 h-3 ${selectedPlan === plan.id ? 'text-[#21AC96]' : 'text-gray-400'}`} />
+                                        <div key={i} className="flex items-center gap-2">
+                                            <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${selectedPlan === plan.id ? 'bg-[#21AC96]/10' : 'bg-gray-100'}`}>
+                                                <CheckCircle2 className={`w-2.5 h-2.5 ${selectedPlan === plan.id ? 'text-[#21AC96]' : 'text-gray-400'}`} />
                                             </div>
-                                            <span className="text-xs text-gray-600 font-bold tracking-tight">{feature}</span>
+                                            <span className="text-[10px] text-gray-600 font-bold tracking-tight">{feature}</span>
                                         </div>
                                     ))}
                                 </div>
 
                                 <button 
-                                    className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all ${
+                                    className={`w-full py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.15em] transition-all ${
                                         selectedPlan === plan.id 
-                                        ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20' 
+                                        ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/10' 
                                         : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600'
                                     }`}
                                 >
-                                    Elegir Plan {plan.name}
+                                    Elegir Plan
                                 </button>
                             </div>
                         ))}
                     </div>
 
-                    <div className="text-center pt-8">
-                        <Link href="/login" className="text-xs font-black text-gray-400 hover:text-gray-600 uppercase tracking-[0.2em] transition-colors">
+                    <div className="text-center pt-4">
+                        <Link href="/login" className="text-[10px] font-black text-gray-400 hover:text-gray-600 uppercase tracking-[0.15em] transition-colors">
                             Regresar a inicio de sesión
                         </Link>
                     </div>
                 </div>
             ) : (
-                <div className="max-w-[1200px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                        {/* Left Side: Brand & Plan Info */}
-                        <div className="lg:col-span-6 space-y-10">
-                            <div className="text-center lg:text-left space-y-6">
-                                <div className="inline-flex flex-col items-center lg:items-start group transition-transform hover:scale-105 duration-300">
-                                    <div className="w-16 h-16 bg-[#21AC96] rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-[#21AC96]/20 rotate-3 group-hover:rotate-0 transition-all duration-500 mb-4">
-                                        <CheckCircle2 className="w-8 h-8 text-white" />
-                                    </div>
-                                    <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none mb-1">Kônsul</h1>
-                                    <p className="text-gray-400 font-bold text-xs uppercase tracking-[0.3em]">Plataforma de Agentes IA</p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h2 className="text-5xl lg:text-6xl font-black text-gray-900 tracking-tighter leading-[1] mb-2">Crea tu cuenta <br/><span className="text-[#21AC96]">profesional</span></h2>
-                                    <div className="inline-flex items-center gap-3 bg-[#21AC96]/5 border border-[#21AC96]/20 px-4 py-2 rounded-2xl">
-                                        <div className="w-5 h-5 bg-[#21AC96] rounded flex items-center justify-center">
-                                            <CheckCircle2 className="w-3 h-3 text-white" />
-                                        </div>
-                                        <p className="text-[10px] font-black text-gray-900 tracking-tight uppercase">4 DÍAS DE PRUEBA INCLUIDO</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/50 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/5 transition-all duration-500">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center font-black text-xl text-gray-900 border border-gray-100 shadow-inner group-hover:scale-110 transition-transform">
+                <div className="max-w-[1000px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-400">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                        {/* Left Side: Selected Plan Compact Card */}
+                        <div className="space-y-4">
+                            <div className="bg-white p-6 rounded-[2rem] border-2 border-gray-100 shadow-xl shadow-gray-100/50">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-[#21AC96] rounded-xl flex items-center justify-center font-black text-lg text-white shadow-lg shadow-[#21AC96]/20">
                                             {currentPlan?.name[0]}
                                         </div>
                                         <div>
-                                            <h4 className="font-black text-gray-900 text-lg tracking-tight leading-tight">Plan {currentPlan?.name}</h4>
-                                            <div className="flex items-center gap-2 mt-1">
+                                            <h4 className="font-black text-gray-900 text-base tracking-tight leading-tight">Plan {currentPlan?.name}</h4>
+                                            <div className="flex items-center gap-2 mt-0.5">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] animate-pulse"></div>
-                                                <p className="text-[9px] text-[#21AC96] font-black uppercase tracking-widest">Plan Seleccionado</p>
+                                                <p className="text-[8px] text-[#21AC96] font-black uppercase tracking-widest">Plan Seleccionado</p>
                                             </div>
                                         </div>
                                     </div>
                                     <button 
                                         onClick={() => setStep(1)}
-                                        className="text-[10px] font-black text-[#21AC96] hover:text-[#1a8a78] uppercase tracking-wider px-4 py-2 bg-[#21AC96]/5 hover:bg-[#21AC96]/10 rounded-xl transition-all"
+                                        className="text-[9px] font-black text-gray-400 hover:text-[#21AC96] uppercase tracking-widest px-3 py-1.5 bg-gray-50 hover:bg-[#21AC96]/5 rounded-lg transition-all"
                                     >
                                         Cambiar
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-y-4 gap-x-6 mb-8">
-                                    {currentPlan?.features.map((feature, i) => (
+                                <div className="grid grid-cols-1 gap-y-3 mb-6">
+                                    {currentPlan?.features.slice(0, 4).map((feature, i) => (
                                         <div key={i} className="flex items-center gap-3">
-                                            <div className="w-5 h-5 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0">
-                                                <CheckCircle2 className="w-3 h-3 text-[#21AC96]" />
-                                            </div>
-                                            <span className="text-[11px] text-gray-600 font-bold tracking-tight leading-tight">{feature}</span>
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-[#21AC96]" />
+                                            <span className="text-[11px] text-gray-600 font-bold tracking-tight">{feature}</span>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="pt-8 border-t border-gray-50 flex items-center justify-between">
+                                <div className="pt-6 border-t border-gray-50 flex items-center justify-between">
                                     <div>
-                                        <span className="text-4xl font-black text-gray-900 leading-none">${currentPlan?.price}</span>
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">/mes</span>
+                                        <span className="text-3xl font-black text-gray-900 leading-none">${currentPlan?.price}</span>
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">/mes</span>
                                     </div>
-                                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-2xl border border-amber-100">
-                                        <div className="w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
-                                            <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-                                        </div>
-                                        <span className="text-[10px] text-amber-900 font-black uppercase tracking-tight">4 días de acceso total gratis</span>
+                                    <div className="px-3 py-1.5 bg-amber-50 text-amber-700 text-[9px] font-black uppercase tracking-tight rounded-lg border border-amber-100">
+                                        4 días de prueba
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div className="bg-[#21AC96]/5 p-4 rounded-2xl border border-[#21AC96]/10">
+                                <p className="text-[10px] text-gray-500 font-bold leading-relaxed text-center">
+                                    No se realizará ningún cobro hoy. <br />
+                                    <span className="text-[#21AC96]">Tu prueba gratuita comienza ahora.</span>
+                                </p>
+                            </div>
                         </div>
 
-                        {/* Right Side: Form */}
-                        <div className="lg:col-span-6 bg-gray-50/50 rounded-[4rem] p-12 lg:p-16 border-2 border-white shadow-2xl shadow-gray-200/50 backdrop-blur-md">
-                            <form onSubmit={handleSubmit} className="space-y-8">
-                                <div className="mb-8">
-                                    <h3 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Tus datos</h3>
-                                    <p className="text-gray-500 text-sm font-medium tracking-tight">Completa tu registro para empezar ahora mismo.</p>
+                        {/* Right Side: Form Compact */}
+                        <div className="bg-gray-50 p-8 lg:p-10 rounded-[2.5rem] border border-gray-100">
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div className="mb-4">
+                                    <h3 className="text-xl font-black text-gray-900 mb-1 tracking-tight">Tus datos</h3>
+                                    <p className="text-gray-500 text-[11px] font-medium tracking-tight">Registra tu cuenta ahora.</p>
                                 </div>
 
                                 {error?.form && (
-                                    <div className="bg-red-50 border border-red-100 text-red-600 px-5 py-4 rounded-[1.5rem] text-[12px] flex items-center gap-3 animate-shake shadow-sm mb-6">
-                                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                    <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-xl text-[10px] flex items-center gap-2 animate-shake">
+                                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                                         <span className="font-bold">{error.form[0]}</span>
                                     </div>
                                 )}
 
-                                <div className="group space-y-2">
-                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 transition-colors group-focus-within:text-[#21AC96]">Nombre completo</label>
-                                    <div className="relative isolate">
-                                        <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
-                                            <User className="w-5 h-5" />
-                                        </div>
+                                <div className="group space-y-1.5">
+                                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-[0.1em] ml-1">Nombre completo</label>
+                                    <div className="relative">
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#21AC96]" />
                                         <input
                                             name="name"
                                             type="text"
                                             required
-                                            className={`block w-full pl-14 pr-6 py-5 bg-white border-2 ${error?.name ? 'border-red-300' : 'border-gray-100'} rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] shadow-sm hover:border-[#21AC96]/30 transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-sm`}
+                                            className="block w-full pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-xl focus:outline-none focus:border-[#21AC96] text-gray-900 placeholder:text-gray-400 font-bold text-xs transition-all"
                                             placeholder="Juan Pérez"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="group space-y-2">
-                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 transition-colors group-focus-within:text-[#21AC96]">Email corporativo</label>
-                                    <div className="relative isolate">
-                                        <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
-                                            <Mail className="w-5 h-5" />
-                                        </div>
+                                <div className="group space-y-1.5">
+                                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-[0.1em] ml-1">Email</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#21AC96]" />
                                         <input
-                                        name="email"
-                                        type="email"
-                                        required
-                                        className={`block w-full pl-14 pr-6 py-5 bg-white border-2 ${error?.email ? 'border-red-300' : 'border-gray-100'} rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] shadow-sm hover:border-[#21AC96]/30 transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-sm`}
-                                        placeholder="nombre@empresa.com"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="group space-y-2">
-                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 transition-colors group-focus-within:text-[#21AC96]">Contraseña</label>
-                                <div className="relative isolate">
-                                    <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
-                                        <Lock className="w-5 h-5" />
+                                            name="email"
+                                            type="email"
+                                            required
+                                            className="block w-full pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-xl focus:outline-none focus:border-[#21AC96] text-gray-900 placeholder:text-gray-400 font-bold text-xs transition-all"
+                                            placeholder="nombre@empresa.com"
+                                        />
                                     </div>
-                                    <input
-                                        name="password"
-                                        type="password"
-                                        required
-                                        className={`block w-full pl-14 pr-6 py-5 bg-white border-2 ${error?.password ? 'border-red-300' : 'border-gray-100'} rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] shadow-sm hover:border-[#21AC96]/30 transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-sm`}
-                                        placeholder="••••••••"
-                                    />
                                 </div>
-                            </div>
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full relative overflow-hidden group/btn flex items-center justify-center gap-3 py-6 px-8 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-[1.5rem] font-black text-[14px] uppercase tracking-[0.25em] shadow-2xl shadow-[#21AC96]/30 transition-all active:scale-[0.98] disabled:opacity-70 mt-4 h-20"
-                            >
-                                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
-                                {loading ? (
-                                    <Loader2 className="w-7 h-7 animate-spin relative z-10" />
-                                ) : (
-                                    <>
-                                        <span className="relative z-10">Crear mi cuenta</span>
-                                        <ArrowRight className="w-7 h-7 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
-                                    </>
-                                )}
-                            </button>
-                        </form>
+                                <div className="group space-y-1.5">
+                                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-[0.1em] ml-1">Contraseña</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#21AC96]" />
+                                        <input
+                                            name="password"
+                                            type="password"
+                                            required
+                                            className="block w-full pl-10 pr-4 py-3 bg-white border border-gray-100 rounded-xl focus:outline-none focus:border-[#21AC96] text-gray-900 placeholder:text-gray-400 font-bold text-xs transition-all"
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
+                                </div>
 
-                        <div className="text-center pt-10 border-t border-gray-100/50 mt-10">
-                            <p className="text-sm text-gray-500 font-bold">
-                                ¿Ya tienes una cuenta?{' '}
-                                <Link href="/login" className="text-[#21AC96] font-black hover:underline underline-offset-4 ml-1">
-                                    Inicia sesión
-                                </Link>
-                            </p>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full flex items-center justify-center gap-2 py-4 px-6 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-xl font-black text-[11px] uppercase tracking-[0.15em] shadow-lg shadow-[#21AC96]/10 transition-all active:scale-[0.98] disabled:opacity-70 mt-4"
+                                >
+                                    {loading ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <span>Crear cuenta</span>
+                                            <ArrowRight className="w-4 h-4" />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
-            </div>
             )}
         </div>
     );
