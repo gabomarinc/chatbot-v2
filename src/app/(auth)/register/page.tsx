@@ -254,84 +254,144 @@ export default function RegisterPage() {
                             </div>
                         ))}
                     </div>
+
+                    <div className="text-center pt-8">
+                        <Link href="/login" className="text-xs font-black text-gray-400 hover:text-gray-600 uppercase tracking-[0.2em] transition-colors">
+                            Regresar a inicio de sesión
+                        </Link>
+                    </div>
                 </div>
             ) : (
-                <div className="max-w-xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="mb-6 flex items-center justify-between bg-white p-4 rounded-[2rem] border border-gray-100 shadow-sm">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-[#21AC96]/10 rounded-2xl flex items-center justify-center font-black text-[#21AC96]">
-                                {currentPlan?.name[0]}
+                <div className="max-w-[1200px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                        {/* Left Side: Brand & Plan Info */}
+                        <div className="lg:col-span-6 space-y-10">
+                            <div className="text-center lg:text-left space-y-6">
+                                <div className="inline-flex flex-col items-center lg:items-start group transition-transform hover:scale-105 duration-300">
+                                    <div className="w-16 h-16 bg-[#21AC96] rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-[#21AC96]/20 rotate-3 group-hover:rotate-0 transition-all duration-500 mb-4">
+                                        <CheckCircle2 className="w-8 h-8 text-white" />
+                                    </div>
+                                    <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none mb-1">Kônsul</h1>
+                                    <p className="text-gray-400 font-bold text-xs uppercase tracking-[0.3em]">Plataforma de Agentes IA</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h2 className="text-5xl lg:text-6xl font-black text-gray-900 tracking-tighter leading-[1] mb-2">Crea tu cuenta <br/><span className="text-[#21AC96]">profesional</span></h2>
+                                    <div className="inline-flex items-center gap-3 bg-[#21AC96]/5 border border-[#21AC96]/20 px-4 py-2 rounded-2xl">
+                                        <div className="w-5 h-5 bg-[#21AC96] rounded flex items-center justify-center">
+                                            <CheckCircle2 className="w-3 h-3 text-white" />
+                                        </div>
+                                        <p className="text-[10px] font-black text-gray-900 tracking-tight uppercase">4 DÍAS DE PRUEBA INCLUIDO</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="font-black text-gray-900 text-sm">Plan {currentPlan?.name} seleccionado</h4>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">${currentPlan?.price}/mes • 4 Días Gratis</p>
+
+                            <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/50 relative overflow-hidden group hover:shadow-2xl hover:shadow-[#21AC96]/5 transition-all duration-500">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center font-black text-xl text-gray-900 border border-gray-100 shadow-inner group-hover:scale-110 transition-transform">
+                                            {currentPlan?.name[0]}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-gray-900 text-lg tracking-tight leading-tight">Plan {currentPlan?.name}</h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#21AC96] animate-pulse"></div>
+                                                <p className="text-[9px] text-[#21AC96] font-black uppercase tracking-widest">Plan Seleccionado</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setStep(1)}
+                                        className="text-[10px] font-black text-[#21AC96] hover:text-[#1a8a78] uppercase tracking-wider px-4 py-2 bg-[#21AC96]/5 hover:bg-[#21AC96]/10 rounded-xl transition-all"
+                                    >
+                                        Cambiar
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-y-4 gap-x-6 mb-8">
+                                    {currentPlan?.features.map((feature, i) => (
+                                        <div key={i} className="flex items-center gap-3">
+                                            <div className="w-5 h-5 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0">
+                                                <CheckCircle2 className="w-3 h-3 text-[#21AC96]" />
+                                            </div>
+                                            <span className="text-[11px] text-gray-600 font-bold tracking-tight leading-tight">{feature}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="pt-8 border-t border-gray-50 flex items-center justify-between">
+                                    <div>
+                                        <span className="text-4xl font-black text-gray-900 leading-none">${currentPlan?.price}</span>
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">/mes</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-2xl border border-amber-100">
+                                        <div className="w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center">
+                                            <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                                        </div>
+                                        <span className="text-[10px] text-amber-900 font-black uppercase tracking-tight">4 días de acceso total gratis</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <button 
-                            onClick={() => setStep(1)}
-                            className="text-[10px] font-black text-[#21AC96] hover:underline uppercase tracking-wider px-4"
-                        >
-                            Cambiar
-                        </button>
-                    </div>
 
-                    <div className="bg-gray-100/30 rounded-[3rem] p-10 border border-gray-200/50 backdrop-blur-sm">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div>
-                                <h3 className="text-2xl font-black text-gray-900 mb-1 tracking-tight">Tus datos</h3>
-                                <p className="text-gray-500 text-xs font-medium tracking-tight">Completa tu registro para empezar.</p>
-                            </div>
-
-                            {error?.form && (
-                                <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-[1.25rem] text-[11px] flex items-center gap-3 animate-shake shadow-sm mb-4">
-                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                    <span className="font-bold">{error.form[0]}</span>
+                        {/* Right Side: Form */}
+                        <div className="lg:col-span-6 bg-gray-50/50 rounded-[4rem] p-12 lg:p-16 border-2 border-white shadow-2xl shadow-gray-200/50 backdrop-blur-md">
+                            <form onSubmit={handleSubmit} className="space-y-8">
+                                <div className="mb-8">
+                                    <h3 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Tus datos</h3>
+                                    <p className="text-gray-500 text-sm font-medium tracking-tight">Completa tu registro para empezar ahora mismo.</p>
                                 </div>
-                            )}
 
-                            <div className="group space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-[#21AC96]">Nombre completo</label>
-                                <div className="relative isolate">
-                                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
-                                        <User className="w-5 h-5" />
+                                {error?.form && (
+                                    <div className="bg-red-50 border border-red-100 text-red-600 px-5 py-4 rounded-[1.5rem] text-[12px] flex items-center gap-3 animate-shake shadow-sm mb-6">
+                                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                        <span className="font-bold">{error.form[0]}</span>
                                     </div>
-                                    <input
-                                        name="name"
-                                        type="text"
-                                        required
-                                        className={`block w-full pl-12 pr-5 py-4 bg-white border-2 ${error?.name ? 'border-red-300' : 'border-gray-100'} rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-xs`}
-                                        placeholder="Juan Pérez"
-                                    />
+                                )}
+
+                                <div className="group space-y-2">
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 transition-colors group-focus-within:text-[#21AC96]">Nombre completo</label>
+                                    <div className="relative isolate">
+                                        <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
+                                            <User className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            name="name"
+                                            type="text"
+                                            required
+                                            className={`block w-full pl-14 pr-6 py-5 bg-white border-2 ${error?.name ? 'border-red-300' : 'border-gray-100'} rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] shadow-sm hover:border-[#21AC96]/30 transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-sm`}
+                                            placeholder="Juan Pérez"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="group space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-[#21AC96]">Email</label>
-                                <div className="relative isolate">
-                                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
-                                        <Mail className="w-5 h-5" />
-                                    </div>
-                                    <input
+                                <div className="group space-y-2">
+                                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 transition-colors group-focus-within:text-[#21AC96]">Email corporativo</label>
+                                    <div className="relative isolate">
+                                        <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
+                                            <Mail className="w-5 h-5" />
+                                        </div>
+                                        <input
                                         name="email"
                                         type="email"
                                         required
-                                        className={`block w-full pl-12 pr-5 py-4 bg-white border-2 ${error?.email ? 'border-red-300' : 'border-gray-100'} rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-xs`}
+                                        className={`block w-full pl-14 pr-6 py-5 bg-white border-2 ${error?.email ? 'border-red-300' : 'border-gray-100'} rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] shadow-sm hover:border-[#21AC96]/30 transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-sm`}
                                         placeholder="nombre@empresa.com"
                                     />
                                 </div>
                             </div>
 
                             <div className="group space-y-2">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 transition-colors group-focus-within:text-[#21AC96]">Contraseña</label>
+                                <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 transition-colors group-focus-within:text-[#21AC96]">Contraseña</label>
                                 <div className="relative isolate">
-                                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
+                                    <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] transition-all duration-300 z-10">
                                         <Lock className="w-5 h-5" />
                                     </div>
                                     <input
                                         name="password"
                                         type="password"
                                         required
-                                        className={`block w-full pl-12 pr-5 py-4 bg-white border-2 ${error?.password ? 'border-red-300' : 'border-gray-100'} rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-xs`}
+                                        className={`block w-full pl-14 pr-6 py-5 bg-white border-2 ${error?.password ? 'border-red-300' : 'border-gray-100'} rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] shadow-sm hover:border-[#21AC96]/30 transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-bold text-sm`}
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -340,30 +400,31 @@ export default function RegisterPage() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full relative overflow-hidden group/btn flex items-center justify-center gap-3 py-5 px-6 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-2xl shadow-[#21AC96]/20 transition-all active:scale-[0.98] disabled:opacity-70 mt-4 h-16"
+                                className="w-full relative overflow-hidden group/btn flex items-center justify-center gap-3 py-6 px-8 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-[1.5rem] font-black text-[14px] uppercase tracking-[0.25em] shadow-2xl shadow-[#21AC96]/30 transition-all active:scale-[0.98] disabled:opacity-70 mt-4 h-20"
                             >
                                 <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
                                 {loading ? (
-                                    <Loader2 className="w-6 h-6 animate-spin relative z-10" />
+                                    <Loader2 className="w-7 h-7 animate-spin relative z-10" />
                                 ) : (
                                     <>
-                                        <span className="relative z-10">Crear cuenta ahora</span>
-                                        <ArrowRight className="w-6 h-6 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
+                                        <span className="relative z-10">Crear mi cuenta</span>
+                                        <ArrowRight className="w-7 h-7 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
                                     </>
                                 )}
                             </button>
                         </form>
 
-                        <div className="text-center pt-8 border-t border-gray-100/50 mt-8">
-                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">
-                                ¿Ya tienes cuenta?{' '}
-                                <Link href="/login" className="text-[#21AC96] font-black hover:underline ml-1">
+                        <div className="text-center pt-10 border-t border-gray-100/50 mt-10">
+                            <p className="text-sm text-gray-500 font-bold">
+                                ¿Ya tienes una cuenta?{' '}
+                                <Link href="/login" className="text-[#21AC96] font-black hover:underline underline-offset-4 ml-1">
                                     Inicia sesión
                                 </Link>
                             </p>
                         </div>
                     </div>
                 </div>
+            </div>
             )}
         </div>
     );
