@@ -17,6 +17,18 @@ export default function RegisterPage() {
 
     const plans = [
         {
+            id: 'BASIC',
+            name: 'Basic',
+            price: 75,
+            description: 'La opción esencial para empezar.',
+            features: [
+                'Hasta 1,200 mensajes al mes',
+                '1 Agente IA',
+                '2 Usuarios de equipo',
+                'Panel de analítica básica'
+            ]
+        },
+        {
             id: 'STARTER',
             name: 'Starter',
             price: 135,

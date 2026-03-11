@@ -573,6 +573,7 @@ enum IntegrationProvider {
 }
 
 enum PlanType {
+  BASIC
   FRESHIE
   MONEY_HONEY
   WOLF_OF_WALLSTREET

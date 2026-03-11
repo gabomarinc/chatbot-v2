@@ -28,6 +28,14 @@ async function main() {
   // Crear planes de suscripción
   const planData = [
     {
+      name: "Basic",
+      type: "BASIC",
+      monthlyPrice: 75,
+      creditsPerMonth: 1200,
+      maxAgents: 1,
+      maxMembers: 2,
+    },
+    {
       name: "Starter",
       type: "STARTER",
       monthlyPrice: 135,
