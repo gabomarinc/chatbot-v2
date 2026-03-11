@@ -225,31 +225,29 @@ function LoginForm() {
 
     // Show normal login form
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-md mx-auto">
-            <div className="text-center mb-10">
-                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">¡Bienvenido de nuevo!</h2>
-                <p className="text-gray-500 text-sm mt-2 font-medium">Nos alegra verte otra vez por aquí</p>
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-[400px] mx-auto">
+            <div className="text-center mb-8">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-none mb-2">¡Bienvenido de nuevo!</h2>
+                <p className="text-gray-400 text-xs font-black uppercase tracking-[0.2em]">Nos alegra verte otra vez</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
-                    <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-2xl text-sm flex items-center gap-3 animate-shake shadow-sm">
-                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                        <span className="font-medium">{error}</span>
+                    <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-[10px] flex items-center gap-2 animate-shake">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span className="font-bold">{error}</span>
                     </div>
                 )}
 
                 <div className="group space-y-1.5">
-                    <label className="text-sm font-bold text-gray-700 ml-1 transition-colors group-focus-within:text-[#21AC96]">Email</label>
-                    <div className="relative isolate">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] group-focus-within:scale-110 transition-all duration-300 z-10">
-                            <Mail className="w-5 h-5" />
-                        </div>
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-[0.1em] ml-1">Email</label>
+                    <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#21AC96]" />
                         <input
                             name="email"
                             type="email"
                             required
-                            className="block w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] focus:bg-white transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-medium"
+                            className="block w-full pl-10 pr-4 py-3.5 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#21AC96] text-gray-900 placeholder:text-gray-400 font-bold text-xs transition-all"
                             placeholder="nombre@empresa.com"
                         />
                     </div>
@@ -257,26 +255,24 @@ function LoginForm() {
 
                 <div className="group space-y-1.5">
                     <div className="flex justify-between items-center px-1">
-                        <label className="text-sm font-bold text-gray-700 transition-colors group-focus-within:text-[#21AC96]">Contraseña</label>
-                        <button type="button" className="text-xs font-bold text-[#21AC96] hover:text-[#1a8a78] transition-colors">¿Olvidaste tu contraseña?</button>
+                        <label className="text-[9px] font-black text-gray-500 uppercase tracking-[0.1em]">Contraseña</label>
+                        <button type="button" className="text-[8px] font-black text-[#21AC96] hover:text-[#1a8a78] uppercase tracking-[0.05em] transition-colors">¿Olvidaste tu contraseña?</button>
                     </div>
-                    <div className="relative isolate">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#21AC96] group-focus-within:scale-110 transition-all duration-300 z-10">
-                            <Lock className="w-5 h-5" />
-                        </div>
+                    <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#21AC96]" />
                         <input
                             name="password"
                             type={showPassword ? "text" : "password"}
                             required
-                            className="block w-full pl-11 pr-11 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#21AC96]/5 focus:border-[#21AC96] focus:bg-white transition-all duration-300 text-gray-900 placeholder:text-gray-400 font-medium"
+                            className="block w-full pl-10 pr-10 py-3.5 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#21AC96] text-gray-900 placeholder:text-gray-400 font-bold text-xs transition-all"
                             placeholder="••••••••"
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#21AC96] transition-colors z-20"
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#21AC96] transition-colors"
                         >
-                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                     </div>
                 </div>
@@ -284,26 +280,24 @@ function LoginForm() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full relative overflow-hidden group/btn flex items-center justify-center gap-2 py-4 px-4 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-2xl font-bold shadow-xl shadow-[#21AC96]/20 transition-all duration-300 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+                    className="w-full flex items-center justify-center gap-2 py-4 px-6 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-xl font-black text-[11px] uppercase tracking-[0.15em] shadow-lg shadow-[#21AC96]/10 transition-all active:scale-[0.98] disabled:opacity-70 mt-4 h-14"
                 >
-                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
                     {loading ? (
-                        <Loader2 className="w-5 h-5 animate-spin relative z-10" />
+                        <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                         <>
-                            <span className="relative z-10">Iniciar sesión</span>
-                            <ArrowRight className="w-5 h-5 relative z-10 group-hover/btn:translate-x-1 transition-transform" />
+                            <span>Iniciar sesión</span>
+                            <ArrowRight className="w-4 h-4" />
                         </>
                     )}
                 </button>
             </form>
 
-            <div className="text-center pt-4">
-                <p className="text-sm text-gray-500 font-medium">
+            <div className="text-center pt-6 border-t border-gray-50">
+                <p className="text-[11px] text-gray-500 font-bold">
                     ¿No tienes una cuenta?{' '}
-                    <Link href="/register" className="text-[#21AC96] font-bold hover:text-[#1a8a78] transition-colors inline-flex items-center gap-1 group/link">
+                    <Link href="/register" className="text-[#21AC96] font-black hover:underline underline-offset-4 ml-1">
                         Crea una gratis
-                        <ArrowRight className="w-3 h-3 group-hover/link:translate-x-0.5 transition-transform" />
                     </Link>
                 </p>
             </div>
