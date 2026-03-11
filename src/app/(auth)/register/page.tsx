@@ -122,7 +122,7 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-6xl mx-auto relative pb-10">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1400px] mx-auto relative pb-10">
             {/* Trial Info Modal */}
             {showTrialModal && (
                 <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6 animate-in fade-in duration-500 overflow-y-auto isolate">
@@ -191,15 +191,15 @@ export default function RegisterPage() {
             </div>
 
             {step === 1 ? (
-                <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                    <div className="flex items-center justify-between mb-2">
+                <div className="w-full space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="flex items-center justify-between mb-2 px-4">
                         <h3 className="text-2xl font-black text-gray-900 tracking-tight">Selecciona tu plan</h3>
                         <div className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.15em] bg-[#21AC96] text-white shadow-md shadow-[#21AC96]/10">
                             Trial Activo
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
                         {plans.map((plan) => (
                             <div
                                 key={plan.id}
