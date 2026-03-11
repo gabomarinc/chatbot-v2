@@ -91,14 +91,17 @@ export async function sendWidgetMessage(data: {
         const creditBalance = workspace.creditBalance;
         const model = agent.model;
 
-        // 2. Subscription & Credit Check
+        // 2. Subscription & Credit Check (Subscription check temporarily disabled)
         const subscription = workspace.subscription;
         
-        // Block if subscription is not active/trialing (security block)
-        if (!subscription || (subscription.status !== 'active' && subscription.status !== 'trialing')) {
+        /* 
+        // Temporarily disabled blocking
+        const isInactive = false; // !workspace?.subscription || (workspace.subscription.status !== 'active' && workspace.subscription.status !== 'trialing');
+        if (isInactive) {
             console.log(`Workspace ${workspace.id} has invalid subscription status: ${subscription?.status}`);
             throw new Error("Subscription inactive or unpaid. Please check your billing settings.");
         }
+        */
 
         // Check credits
         if (!creditBalance || creditBalance.balance <= 0) {

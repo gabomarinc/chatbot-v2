@@ -28,7 +28,8 @@ export default async function DashboardLayout({
         include: { subscription: true }
     });
 
-    const isInactive = !workspace?.subscription || (workspace.subscription.status !== 'active' && workspace.subscription.status !== 'trialing');
+    // Temporarily disabled blocking by user request
+    const isInactive = false; // !workspace?.subscription || (workspace.subscription.status !== 'active' && workspace.subscription.status !== 'trialing');
 
     return (
         <Providers>

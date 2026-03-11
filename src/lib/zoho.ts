@@ -147,7 +147,7 @@ export async function createZohoLead(agentId: string, leadData: {
     const method = leadIdToUpdate ? 'PUT' : 'POST';
     const finalUrl = leadIdToUpdate ? `${endpoint}/${leadIdToUpdate}` : endpoint;
 
-    console.log(`[ZOHO] ${method} Lead ${leadIdToUpdate || ''}`);
+    console.log(`[ZOHO] ${method} Lead ${leadIdToUpdate || ''}. Payload:`, JSON.stringify(body));
 
     const res = await fetch(finalUrl, {
         method: method,
@@ -159,6 +159,7 @@ export async function createZohoLead(agentId: string, leadData: {
     });
 
     const json = await res.json();
+    console.log(`[ZOHO] Lead response:`, JSON.stringify(json));
 
     // Check for Zoho API Errors
     if (json.data && json.data[0].status === 'error') {
@@ -189,11 +190,14 @@ export async function addZohoNote(agentId: string, leadId: string, noteContent: 
         data: [{
             Note_Title: 'Resumen de Kônsul',
             Note_Content: `Resumen de Kônsul:\n\n${noteContent}`,
-            se_module: 'Leads'
+            se_module: 'Leads',
+            Parent_Id: {
+                id: leadId
+            }
         }]
     };
 
-    console.log(`[ZOHO] Adding note to Lead ${leadId}`);
+    console.log(`[ZOHO] Adding note to Lead ${leadId}. Endpoint: ${endpoint}`);
 
     const res = await fetch(endpoint, {
         method: 'POST',
@@ -205,6 +209,7 @@ export async function addZohoNote(agentId: string, leadId: string, noteContent: 
     });
 
     const json = await res.json();
+    console.log(`[ZOHO] Note response:`, JSON.stringify(json));
 
     if (json.data && json.data[0]?.status === 'error') {
         throw new Error(`Zoho Note Error: ${json.data[0].message}`);
