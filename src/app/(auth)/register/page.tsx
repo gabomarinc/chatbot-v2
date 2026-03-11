@@ -122,7 +122,7 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1000px] mx-auto relative">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1200px] mx-auto relative">
             {/* Trial Info Modal */}
             {showTrialModal && (
                 <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6 animate-in fade-in duration-500 overflow-y-auto isolate">

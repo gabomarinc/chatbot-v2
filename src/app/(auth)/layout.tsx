@@ -10,7 +10,7 @@ export default function AuthLayout({
     return (
         <div className="min-h-screen flex bg-white font-sans selection:bg-[#21AC96]/10 selection:text-[#21AC96]">
             {/* Left Side: Marketing/Emotional (Visible only on lg) */}
-            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#21AC96]">
+            <div className="hidden lg:flex lg:w-[30%] relative overflow-hidden bg-[#21AC96]">
                 <img 
                     src="/auth-bg.png" 
                     alt="Kônsul AI Platform" 
@@ -20,39 +20,39 @@ export default function AuthLayout({
                 {/* Gradient Overlay for legibility */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#21AC96] via-[#21AC96]/40 to-transparent"></div>
                 
-                <div className="relative z-10 w-full h-full flex flex-col justify-end p-20 text-white">
+                <div className="relative z-10 w-full h-full flex flex-col justify-end p-12 text-white">
                     <div className="mb-10 animate-in fade-in slide-in-from-left-8 duration-700 delay-100">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 mb-6 group hover:bg-white/20 transition-all cursor-default">
                             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Más que un Chatbot</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Kônsul AI</span>
                         </div>
                         
-                        <h2 className="text-5xl font-black tracking-tighter leading-none mb-6 max-w-md">
-                            Un <span className="text-white/80">Hub</span> con chatbots, donde optimizas tus <span className="italic underline underline-offset-8 decoration-white/30">Leads</span> de WhatsApp Business
+                        <h2 className="text-3xl font-black tracking-tighter leading-tight mb-6 max-w-xs">
+                            Un <span className="text-white/80">Hub</span> con chatbots, donde optimizas tus <span className="italic underline underline-offset-8 decoration-white/30">Leads</span> de WhatsApp
                         </h2>
                         
-                        <p className="text-lg font-medium text-white/80 max-w-sm leading-relaxed">
-                            Centraliza tus leads de WhatsApp, Instagram, Facebook y Web en una sola herramienta. <br/><br/>
-                            <span className="text-white font-bold">Automatiza tus ventas</span> con Agentes IA que prospectan, aprenden y convierten reuniones o ventas.
+                        <p className="text-sm font-medium text-white/80 max-w-xs leading-relaxed">
+                            Centraliza tus leads de WhatsApp e Instagram. <br/><br/>
+                            <span className="text-white font-bold">Automatiza tus ventas</span> con Agentes IA que prospectan y convierten.
                         </p>
                     </div>
                     
-                    <div className="flex items-center gap-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                        <div className="space-y-1">
-                            <p className="text-3xl font-black">2.5k+</p>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Ventas Cerradas</p>
+                    <div className="flex items-center gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                        <div className="space-y-0.5">
+                            <p className="text-2xl font-black">2.5k+</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Ventas</p>
                         </div>
-                        <div className="w-px h-10 bg-white/10"></div>
-                        <div className="space-y-1">
-                            <p className="text-3xl font-black">98%</p>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Satisfacción IA</p>
+                        <div className="w-px h-8 bg-white/10"></div>
+                        <div className="space-y-0.5">
+                            <p className="text-2xl font-black">98%</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Fidelidad</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Right Side: Form Content */}
-            <div className="w-full lg:w-1/2 flex flex-col min-h-screen relative bg-gray-50/50">
+            <div className="w-full lg:w-[70%] flex flex-col min-h-screen relative bg-gray-50/50">
                 {/* Mobile Header (Hidden on lg) */}
                 <div className="lg:hidden p-8 flex flex-col items-center">
                     <img
