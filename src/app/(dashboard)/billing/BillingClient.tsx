@@ -230,10 +230,14 @@ export default function BillingClient({
                                     <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Tarjeta Predeterminada</span>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-xl font-black tracking-widest tracking-[0.2em]">•••• {cardDetails?.last4 || '4242'}</p>
+                                    <p className="text-xl font-black tracking-widest tracking-[0.2em]">
+                                        {cardDetails ? `•••• ${cardDetails.last4}` : '•••• •••• •••• ••••'}
+                                    </p>
                                     <div className="flex justify-between items-center pt-2">
                                         <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Expira</p>
-                                        <p className="text-sm font-bold opacity-80">{cardDetails ? `${cardDetails.expMonth}/${cardDetails.expYear.toString().slice(-2)}` : '12/25'}</p>
+                                        <p className="text-sm font-bold opacity-80">
+                                            {cardDetails ? `${cardDetails.expMonth}/${cardDetails.expYear.toString().slice(-2)}` : '•• / ••'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
