@@ -44,6 +44,7 @@ export default function BillingClient({
     const [isLoadingPortal, setIsLoadingPortal] = useState(false);
     const [isLoadingCredits, setIsLoadingCredits] = useState<number | null>(null);
     const [customAmount, setCustomAmount] = useState<string>('');
+    const [selectedPlanDetails, setSelectedPlanDetails] = useState<string | null>(null);
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -76,13 +77,13 @@ export default function BillingClient({
                 'Hasta 2,500 mensajes al mes',
                 '3 Agentes IA activos',
                 '6 Usuarios de equipo',
-                'Integración con Web, WhatsApp, Instagram y FB',
+                'Integración con Web, WhatsApp, Instagram y Facebook',
                 'Procesamiento de notas de voz e imágenes',
-                'Conexión con calendarios',
-                'Filtrado de prospectos por campos',
-                'WhatsApp masivo oficial (META)',
-                'Revisión de 1 bandeja de email',
-                'Paguelo Facil y Yappy comercial (BETA)',
+                'Conexión con calendarios para agendamientos',
+                'Filtrado de prospectos por campos personalizados',
+                'Capacidad de envío de WhatsApp masivos de forma oficial con META',
+                'Función de análisis y revisión de 1 bandeja de email',
+                'Conexión con Paguelo Facil y Yappy comercial para cobros (BETA)',
                 'Soporte por Email y Chat',
                 'Panel de analítica avanzada'
             ]
@@ -93,13 +94,13 @@ export default function BillingClient({
                 'Hasta 7,500 mensajes al mes',
                 '6 Agentes IA activos',
                 '12 Usuarios de equipo',
-                'Integración con Web, WhatsApp, Instagram y FB',
+                'Integración con Web, WhatsApp, Instagram y Facebook',
                 'Procesamiento de notas de voz e imágenes',
-                'Conexión con calendarios',
-                'Filtrado de prospectos por campos',
-                'WhatsApp masivo oficial (META)',
-                'Revisión de 1 bandeja de email',
-                'Paguelo Facil y Yappy comercial (BETA)',
+                'Conexión con calendarios para agendamientos',
+                'Filtrado de prospectos por campos personalizados',
+                'Capacidad de envío de WhatsApp masivos de forma oficial con META',
+                'Función de análisis y revisión de 1 bandeja de email',
+                'Conexión con Paguelo Facil y Yappy comercial para cobros (BETA)',
                 'Soporte prioritario por Email y Chat',
                 'Panel de analítica avanzada'
             ]
@@ -110,14 +111,14 @@ export default function BillingClient({
                 'Hasta 25,000 mensajes al mes',
                 '12 Agentes IA activos',
                 '20 Usuarios de equipo',
-                'Integración con Web, WhatsApp, Instagram y FB',
+                'Integración con Web, WhatsApp, Instagram y Facebook',
                 'Procesamiento de notas de voz e imágenes',
-                'Conexión con calendarios',
-                'Filtrado de prospectos por campos',
-                'WhatsApp masivo oficial (META)',
-                'Revisión de 1 bandeja de email',
-                'Paguelo Facil y Yappy comercial (BETA)',
-                'Soporte por Email, Chat y Videollamada',
+                'Conexión con calendarios para agendamientos',
+                'Filtrado de prospectos por campos personalizados',
+                'Capacidad de envío de WhatsApp masivos de forma oficial con META',
+                'Función de análisis y revisión de 1 bandeja de email',
+                'Conexión con Paguelo Facil y Yappy comercial para cobros (BETA)',
+                'Soporte prioritario por Email, Chat y videollamada',
                 'Panel de analítica avanzada'
             ]
         }
@@ -218,11 +219,6 @@ export default function BillingClient({
                                 </div>
                                 <div className="flex items-center gap-4 mb-2">
                                     <h2 className="text-white text-4xl font-black tracking-tight">{planName}</h2>
-                                    {isTrial && (
-                                        <div className="px-3 py-1 bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-amber-400/20 animate-pulse">
-                                            Periodo de Prueba
-                                        </div>
-                                    )}
                                     {isOverdue && (
                                         <div className="px-3 py-1 bg-white text-red-600 text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
                                             Pago Pendiente
@@ -476,7 +472,7 @@ export default function BillingClient({
             {isPlansModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsPlansModalOpen(false)}></div>
-                    <div className="relative bg-[#F3F4F6] w-full max-w-6xl max-h-[95vh] overflow-y-auto rounded-[2.5rem] shadow-2xl p-6 md:p-8 animate-in zoom-in-95 duration-200">
+                    <div className="relative bg-[#F3F4F6] w-full max-w-6xl max-h-[95vh] overflow-y-auto rounded-[2.5rem] shadow-2xl p-6 md:p-10 animate-in zoom-in-95 duration-200">
                         <button 
                             onClick={() => setIsPlansModalOpen(false)}
                             className="absolute top-8 right-8 p-2 bg-white rounded-full text-gray-400 hover:text-gray-900 transition-colors z-10"
@@ -484,12 +480,11 @@ export default function BillingClient({
                             <X className="w-6 h-6" />
                         </button>
 
-                        <div className="mb-8">
-                            {/* Header removed for compactness */}
-                        </div>
-
                         {/* Top: Basic Plan Horizontal */}
-                        <div className={`mb-8 bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border shadow-sm transition-transform hover:scale-[1.01] ${currentPlanKey === 'BASIC' ? 'border-[#21AC96] bg-teal-50/10' : 'border-gray-100'}`}>
+                        <div 
+                            onClick={() => setSelectedPlanDetails('BASIC')}
+                            className={`mb-8 bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border-2 shadow-sm transition-all hover:scale-[1.01] cursor-pointer ${currentPlanKey === 'BASIC' ? 'border-[#21AC96] bg-teal-50/10' : 'border-gray-100 hover:border-[#21AC96]/50'}`}
+                        >
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-1">
                                     <h3 className="text-2xl font-black text-gray-900">Basic</h3>
@@ -511,6 +506,9 @@ export default function BillingClient({
                                         <CheckCircle className="w-3.5 h-3.5 text-[#21AC96]" />
                                         2 Usuarios de equipo
                                     </div>
+                                    <div className="flex items-center gap-1 text-[10px] text-[#21AC96] font-bold uppercase underline decoration-2 underline-offset-4 ml-auto">
+                                        Ver todos los detalles
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-8">
@@ -519,14 +517,17 @@ export default function BillingClient({
                                 </div>
                                 <button 
                                     disabled={isLoadingPortal}
-                                    onClick={handleOpenPortal}
-                                    className={`px-8 py-4 rounded-2xl font-black text-sm transition-transform active:scale-95 flex items-center gap-2 ${
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenPortal();
+                                    }}
+                                    className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 border-2 ${
                                         currentPlanKey === 'BASIC' 
-                                        ? 'bg-white text-[#21AC96] border-2 border-[#21AC96] shadow-md' 
-                                        : 'bg-[#1e293b] text-white hover:bg-black'
+                                        ? 'bg-white text-[#21AC96] border-[#21AC96] shadow-md' 
+                                        : 'bg-white text-[#21AC96] border-[#21AC96] hover:bg-[#21AC96] hover:text-white'
                                     }`}
                                 >
-                                    {isLoadingPortal ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                    {isLoadingPortal && currentPlanKey === 'BASIC' ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                     {getPlanButtonText('BASIC')}
                                 </button>
                             </div>
@@ -535,6 +536,7 @@ export default function BillingClient({
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {[
                                 { 
+                                    key: 'STARTER',
                                     name: 'Starter', 
                                     price: 135, 
                                     desc: 'Ideal para PYMES que inician a automatizar.', 
@@ -542,15 +544,12 @@ export default function BillingClient({
                                     bullets: [
                                         'Hasta 2,500 mensajes al mes',
                                         '3 Agente IA',
-                                        '6 Usuarios de equipo',
-                                        'Integración con Web, WhatsApp, FB',
-                                        'Procesamiento de voz e imágenes',
-                                        'Conexión con calendarios',
-                                        'Envío masivo oficial META',
+                                        '4 Usuarios de equipo',
                                         'Panel de analítica avanzada'
                                     ]
                                 },
                                 { 
+                                    key: 'BUSINESS',
                                     name: 'Business', 
                                     price: 245, 
                                     desc: 'El favorito de empresas listas para escalar.', 
@@ -558,15 +557,12 @@ export default function BillingClient({
                                     bullets: [
                                         'Hasta 7,500 mensajes al mes',
                                         '6 Agente IA',
-                                        '12 Usuarios de equipo',
-                                        'Integración completa',
-                                        'Procesamiento de voz e imágenes',
-                                        'Conexión con calendarios',
-                                        'Envío masivo oficial META',
-                                        'Soporte prioritario Chat/Email'
+                                        '8 Usuarios de equipo',
+                                        'Soporte prioritario Email/Chat'
                                     ]
                                 },
                                 { 
+                                    key: 'ENTERPRISE',
                                     name: 'Enterprise', 
                                     price: 475, 
                                     desc: 'Potencia total para tu negocio.', 
@@ -575,21 +571,21 @@ export default function BillingClient({
                                         'Hasta 25,000 mensajes al mes',
                                         '12 Agente IA',
                                         '20 Usuarios de equipo',
-                                        'Integración completa',
-                                        'Procesamiento de voz e imágenes',
-                                        'Conexión con calendarios',
-                                        'Envío masivo oficial META',
-                                        'Soporte Chat/Email/Video'
+                                        'Soporte avanzado'
                                     ]
                                 }
                             ].map((plan) => (
-                                <div key={plan.name} className={`relative bg-white rounded-[2.5rem] p-8 flex flex-col border-2 transition-all hover:translate-y-[-8px] ${plan.popular || plan.name.toUpperCase() === currentPlanKey ? 'border-[#21AC96] shadow-xl' : 'border-transparent shadow-sm'} ${plan.name.toUpperCase() === currentPlanKey ? 'bg-teal-50/5' : ''}`}>
-                                    {plan.popular && plan.name.toUpperCase() !== currentPlanKey && (
+                                <div 
+                                    key={plan.name} 
+                                    onClick={() => setSelectedPlanDetails(plan.key)}
+                                    className={`relative bg-white rounded-[2.5rem] p-8 flex flex-col border-2 transition-all hover:translate-y-[-8px] cursor-pointer ${plan.popular || plan.key === currentPlanKey ? 'border-[#21AC96] shadow-xl' : 'border-gray-100 shadow-sm hover:border-[#21AC96]/50'} ${plan.key === currentPlanKey ? 'bg-teal-50/5' : ''}`}
+                                >
+                                    {plan.popular && plan.key !== currentPlanKey && (
                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#21AC96] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
                                             MÁS POPULAR
                                         </div>
                                     )}
-                                    {plan.name.toUpperCase() === currentPlanKey && (
+                                    {plan.key === currentPlanKey && (
                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1e293b] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg border-2 border-white">
                                             TU PLAN ACTUAL
                                         </div>
@@ -600,31 +596,81 @@ export default function BillingClient({
                                         <p className="text-gray-500 text-[13px] font-medium leading-relaxed">{plan.desc}</p>
                                     </div>
                                     
-                                    <div className="space-y-3 mb-6 flex-1">
+                                    <div className="space-y-4 mb-8 flex-1">
                                         {plan.bullets.map((bullet, i) => (
                                             <div key={i} className="flex items-start gap-3">
-                                                <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.name.toUpperCase() === currentPlanKey || plan.popular ? 'text-[#21AC96]' : 'text-gray-300'}`} />
+                                                <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.key === currentPlanKey || plan.popular ? 'text-[#21AC96]' : 'text-gray-300'}`} />
                                                 <span className="text-[13px] text-gray-600 font-bold leading-tight">{bullet}</span>
                                             </div>
                                         ))}
+                                        <div className="pt-2 text-[10px] text-[#21AC96] font-black uppercase tracking-widest underline decoration-2 underline-offset-4">
+                                            Ver todos los beneficios
+                                        </div>
                                     </div>
 
                                     <button 
                                         disabled={isLoadingPortal}
-                                        onClick={handleOpenPortal}
-                                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                                            plan.name.toUpperCase() === currentPlanKey
-                                            ? 'bg-transparent text-[#21AC96] border-2 border-[#21AC96] hover:bg-[#21AC96]/5'
-                                            : plan.popular 
-                                                ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20' 
-                                                : 'bg-[#1e293b] text-white hover:bg-black'
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenPortal();
+                                        }}
+                                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 border-2 ${
+                                            plan.key === currentPlanKey
+                                            ? 'bg-transparent text-[#21AC96] border-[#21AC96] hover:bg-[#21AC96]/5'
+                                            : 'bg-white text-[#21AC96] border-[#21AC96] hover:bg-[#21AC96] hover:text-white'
                                         }`}
                                     >
-                                        {isLoadingPortal && plan.name.toUpperCase() === currentPlanKey ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                                        {getPlanButtonText(plan.name.toUpperCase())}
+                                        {isLoadingPortal && plan.key === currentPlanKey ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                        {getPlanButtonText(plan.key)}
                                     </button>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Detalles del Plan */}
+            {selectedPlanDetails && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setSelectedPlanDetails(null)}></div>
+                    <div className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-8 md:p-12 animate-in zoom-in-95 duration-200 overflow-hidden">
+                        <button 
+                            onClick={() => setSelectedPlanDetails(null)}
+                            className="absolute top-8 right-8 p-2 text-gray-400 hover:text-gray-900 transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <div className="mb-8 text-center">
+                            <h2 className="text-4xl font-black text-gray-900 mb-2">{selectedPlanDetails}</h2>
+                            <p className="text-[#21AC96] text-5xl font-black">
+                                ${PLAN_DETAILS[selectedPlanDetails as keyof typeof PLAN_DETAILS]?.price}
+                                <span className="text-base font-bold text-gray-400 ml-1">USD/mes</span>
+                            </p>
+                        </div>
+
+                        <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-4 custom-scrollbar">
+                            {PLAN_DETAILS[selectedPlanDetails as keyof typeof PLAN_DETAILS]?.benefits.map((benefit, i) => (
+                                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100 group transition-colors hover:bg-teal-50/30 hover:border-teal-100">
+                                    <div className="w-6 h-6 bg-[#21AC96] rounded-lg flex items-center justify-center flex-shrink-0 shadow-md shadow-[#21AC96]/20">
+                                        <CheckCircle className="w-4 h-4 text-white" />
+                                    </div>
+                                    <span className="text-sm text-gray-700 font-bold leading-snug">{benefit}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-10">
+                            <button
+                                onClick={() => {
+                                    setSelectedPlanDetails(null);
+                                    handleOpenPortal();
+                                }}
+                                className="w-full py-5 bg-[#21AC96] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-xl shadow-[#21AC96]/30 hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                                {selectedPlanDetails === currentPlanKey ? 'Ir a mi panel de pagos' : 'Cambiar a este plan'}
+                            </button>
                         </div>
                     </div>
                 </div>
