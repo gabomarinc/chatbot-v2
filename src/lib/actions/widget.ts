@@ -48,7 +48,7 @@ export async function sendWidgetMessage(data: {
             const agent = await prisma.agent.findUnique({
                 where: { id: data.agentId },
                 include: {
-                    workspace: { include: { creditBalance: true, paymentConfigs: true, subscription: true } },
+                    workspace: { include: { owner: true, creditBalance: true, paymentConfigs: true, subscription: true } },
                     integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT', 'NEON_CATALOG', 'ALTAPLAZA'] as any }, enabled: true } },
                     intents: { where: { enabled: true } },
                     customFieldDefinitions: true
@@ -68,7 +68,7 @@ export async function sendWidgetMessage(data: {
                 include: {
                     agent: {
                         include: {
-                            workspace: { include: { creditBalance: true, paymentConfigs: true, subscription: true } },
+                            workspace: { include: { owner: true, creditBalance: true, paymentConfigs: true, subscription: true } },
                             integrations: { where: { provider: { in: ['GOOGLE_CALENDAR', 'ZOHO', 'ODOO', 'HUBSPOT', 'NEON_CATALOG', 'ALTAPLAZA'] as any }, enabled: true } },
                             intents: { where: { enabled: true } },
                             customFieldDefinitions: true
@@ -91,17 +91,31 @@ export async function sendWidgetMessage(data: {
         const creditBalance = workspace.creditBalance;
         const model = agent.model;
 
-        // 2. Subscription & Credit Check (Subscription check temporarily disabled)
+        // 2. Subscription & Credit Check
         const subscription = workspace.subscription;
-        
-        /* 
-        // Temporarily disabled blocking
-        const isInactive = false; // !workspace?.subscription || (workspace.subscription.status !== 'active' && workspace.subscription.status !== 'trialing');
+        const owner = workspace.owner;
+
+        // Whitelist for internal/test accounts
+        const whitelist = [
+            'altaplaza@konsul.cloud',
+            'omar@konsul.digital',
+            'omar@konsul.cloud',
+            'demos@konsul.cloud',
+            'somos@konsul.digital'
+        ];
+
+        const ownerEmail = owner.email?.toLowerCase();
+        const isWhitelisted = ownerEmail && whitelist.includes(ownerEmail);
+        const isSuperAdmin = owner.role === 'SUPER_ADMIN';
+
+        // Allow active, trialing and past_due (grace period)
+        const allowedStatuses = ['active', 'trialing', 'past_due'];
+        const isInactive = !isWhitelisted && !isSuperAdmin && (!subscription || !allowedStatuses.includes(subscription.status));
+
         if (isInactive) {
             console.log(`Workspace ${workspace.id} has invalid subscription status: ${subscription?.status}`);
             throw new Error("Subscription inactive or unpaid. Please check your billing settings.");
         }
-        */
 
         // Check credits
         if (!creditBalance || creditBalance.balance <= 0) {

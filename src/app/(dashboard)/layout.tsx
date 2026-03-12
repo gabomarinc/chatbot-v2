@@ -28,8 +28,22 @@ export default async function DashboardLayout({
         include: { subscription: true }
     });
 
-    // Temporarily disabled blocking by user request
-    const isInactive = false; // !workspace?.subscription || (workspace.subscription.status !== 'active' && workspace.subscription.status !== 'trialing');
+    // Whitelist for internal/test accounts
+    const whitelist = [
+        'altaplaza@konsul.cloud',
+        'omar@konsul.digital',
+        'omar@konsul.cloud',
+        'demos@konsul.cloud',
+        'somos@konsul.digital'
+    ];
+
+    const userEmail = session.user.email?.toLowerCase();
+    const isWhitelisted = userEmail && whitelist.includes(userEmail);
+    const isSuperAdmin = session.user.role === 'SUPER_ADMIN';
+
+    // Allow active, trialing and past_due (grace period)
+    const allowedStatuses = ['active', 'trialing', 'past_due'];
+    const isInactive = !isWhitelisted && !isSuperAdmin && (!workspace?.subscription || !allowedStatuses.includes(workspace.subscription.status));
 
     return (
         <Providers>
