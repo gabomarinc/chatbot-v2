@@ -284,14 +284,60 @@ export async function buyCredits(amount: number) {
         where: { workspaceId: workspace.id }
     });
 
-    if (!subscription?.stripeCustomerId) {
-        throw new Error('Debes tener una suscripción activa para comprar créditos extras');
+    // Ensure credit balance record exists before allowing purchase
+    await prisma.creditBalance.upsert({
+        where: { workspaceId: workspace.id },
+        update: {},
+        create: {
+            workspaceId: workspace.id,
+            balance: 0,
+        }
+    });
+
+    let stripeCustomerId = subscription?.stripeCustomerId;
+
+    // If no customer ID exists, try to find one by email or create it
+    if (!stripeCustomerId) {
+        console.log(`[BUY CREDITS] No customer ID found for workspace ${workspace.id}, searching by email: ${session.user.email}`);
+        const customers = await stripe.customers.list({
+            email: session.user.email as string,
+            limit: 1
+        });
+
+        if (customers.data.length > 0) {
+            stripeCustomerId = customers.data[0].id;
+            // Save it to subscription if we have one, otherwise we'll just use it for this session
+            if (subscription) {
+                await prisma.subscription.update({
+                    where: { id: subscription.id },
+                    data: { stripeCustomerId }
+                });
+            }
+        } else {
+            console.log(`[BUY CREDITS] Creating new Stripe customer for ${session.user.email}`);
+            const customer = await stripe.customers.create({
+                email: session.user.email as string,
+                name: session.user.name || workspace.name,
+                metadata: {
+                    workspaceId: workspace.id,
+                    isWhitelist: 'true'
+                }
+            });
+            stripeCustomerId = customer.id;
+            
+            // If subscription exists but no customer ID, store it
+            if (subscription) {
+                await prisma.subscription.update({
+                    where: { id: subscription.id },
+                    data: { stripeCustomerId }
+                });
+            }
+        }
     }
 
     // Determine price
     // If it's a standard pack, use fixed price, otherwise use $0.05 per credit
     const pack = CREDIT_PACKS.find(p => p.amount === amount);
-    const unitPriceInCents = pack ? (pack.price / pack.amount) * 100 : 5; // 5 cents per credit
     const totalPriceInCents = pack ? pack.price * 100 : Math.round(amount * 5);
 
     if (totalPriceInCents < 50) { // Stripe minimum is $0.50
@@ -299,7 +345,7 @@ export async function buyCredits(amount: number) {
     }
 
     const checkoutSession = await stripe.checkout.sessions.create({
-        customer: subscription.stripeCustomerId,
+        customer: stripeCustomerId,
         line_items: [
             {
                 price_data: {
