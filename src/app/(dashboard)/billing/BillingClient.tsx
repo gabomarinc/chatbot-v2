@@ -17,6 +17,12 @@ type BillingClientProps = {
     isActive: boolean;
     isOverdue?: boolean;
     isTrial?: boolean;
+    cardDetails?: {
+        last4: string;
+        brand: string;
+        expMonth: number;
+        expYear: number;
+    } | null;
 };
 
 export default function BillingClient({
@@ -31,6 +37,7 @@ export default function BillingClient({
     isActive,
     isOverdue = false,
     isTrial = false,
+    cardDetails,
 }: BillingClientProps) {
     const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
@@ -216,14 +223,17 @@ export default function BillingClient({
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
                             <div className="relative z-10">
                                 <div className="flex justify-between items-start mb-10">
-                                    <CreditCard className={`w-10 h-10 ${isOverdue ? 'animate-pulse text-white' : 'opacity-60'}`} />
+                                    <div className="flex flex-col items-start gap-1">
+                                        <CreditCard className={`w-10 h-10 ${isOverdue ? 'animate-pulse text-white' : 'opacity-60'}`} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-2">{cardDetails?.brand || 'TARJETA'}</span>
+                                    </div>
                                     <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Tarjeta Predeterminada</span>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-xl font-black tracking-widest tracking-[0.2em]">•••• 4242</p>
+                                    <p className="text-xl font-black tracking-widest tracking-[0.2em]">•••• {cardDetails?.last4 || '4242'}</p>
                                     <div className="flex justify-between items-center pt-2">
                                         <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Expira</p>
-                                        <p className="text-sm font-bold opacity-80">12/25</p>
+                                        <p className="text-sm font-bold opacity-80">{cardDetails ? `${cardDetails.expMonth}/${cardDetails.expYear.toString().slice(-2)}` : '12/25'}</p>
                                     </div>
                                 </div>
                             </div>

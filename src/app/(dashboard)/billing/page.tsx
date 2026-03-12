@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import BillingClient from './BillingClient';
 import { canViewBilling } from '@/lib/actions/team';
+import { stripe } from '@/lib/stripe';
+import Stripe from 'stripe';
 
 export default async function BillingPage() {
     const session = await auth();
@@ -55,6 +57,29 @@ export default async function BillingPage() {
     const currentPeriodEnd = subscription?.currentPeriodEnd || new Date();
     const isOverdue = status === 'past_due' || (subscription?.currentPeriodEnd && subscription.currentPeriodEnd < new Date());
 
+    // Fetch card details from Stripe if customer exists
+    let cardDetails = null;
+    if (subscription?.stripeCustomerId) {
+        try {
+            const customer = await stripe.customers.retrieve(subscription.stripeCustomerId, {
+                expand: ['invoice_settings.default_payment_method']
+            }) as Stripe.Customer;
+
+            const paymentMethod = customer.invoice_settings?.default_payment_method as Stripe.PaymentMethod;
+            
+            if (paymentMethod?.card) {
+                cardDetails = {
+                    last4: paymentMethod.card.last4,
+                    brand: paymentMethod.card.brand,
+                    expMonth: paymentMethod.card.exp_month,
+                    expYear: paymentMethod.card.exp_year,
+                };
+            }
+        } catch (error) {
+            console.error('Error fetching Stripe card details:', error);
+        }
+    }
+
     return (
         <BillingClient
             planName={plan?.name || 'Sin Plan'}
@@ -68,6 +93,7 @@ export default async function BillingPage() {
             isActive={status === 'active' || status === 'trialing' || status === 'past_due'}
             isOverdue={!!isOverdue}
             isTrial={subscription?.isTrial || false}
+            cardDetails={cardDetails}
         />
     );
 }
