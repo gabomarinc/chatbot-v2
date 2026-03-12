@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { SubscriptionGuard } from "@/components/billing/SubscriptionGuard";
+import { PaymentOverdueBanner } from "@/components/billing/PaymentOverdueBanner";
 
 export default async function DashboardLayout({
     children,
@@ -42,8 +43,12 @@ export default async function DashboardLayout({
     const isSuperAdmin = session.user.role === 'SUPER_ADMIN';
 
     // Allow active, trialing and past_due (grace period)
+    const status = workspace?.subscription?.status;
     const allowedStatuses = ['active', 'trialing', 'past_due'];
-    const isInactive = !isWhitelisted && !isSuperAdmin && (!workspace?.subscription || !allowedStatuses.includes(workspace.subscription.status));
+    const isInactive = !isWhitelisted && !isSuperAdmin && (!workspace?.subscription || !allowedStatuses.includes(status || ''));
+    
+    // Check specifically for overdue status to show the soft-block banner
+    const isOverdue = status === 'past_due';
 
     return (
         <Providers>
@@ -55,7 +60,11 @@ export default async function DashboardLayout({
                         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50 pb-24 md:pb-6 touch-pan-y">
                             {/* Guard to handle redirection based on pathname */}
                             {isInactive && <SubscriptionGuard />}
-                            {children}
+                            
+                            <div className="max-w-[1600px] mx-auto w-full">
+                                {isOverdue && <PaymentOverdueBanner />}
+                                {children}
+                            </div>
                         </main>
                         <BottomNav />
                         <PushNotificationManager />
