@@ -13,7 +13,7 @@ export default function RegisterPage() {
     const [error, setError] = useState<any>(null);
     const [success, setSuccess] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState('STARTER');
-    const [showTrialModal, setShowTrialModal] = useState(false);
+    const [selectedPlanDetails, setSelectedPlanDetails] = useState<any>(null);
 
     const plans = [
         {
@@ -22,10 +22,18 @@ export default function RegisterPage() {
             price: 75,
             description: 'La opción esencial para empezar.',
             features: [
-                'Hasta 1,200 mensajes al mes',
-                '1 Agente IA',
+                '1,200 mensajes mensuales',
+                '1 Agente IA activo',
                 '2 Usuarios de equipo',
-                'Panel de analítica básica'
+                'Soporte por Email'
+            ],
+            benefits: [
+                '1,200 mensajes mensuales incluidos',
+                '1 Agente IA activo',
+                '2 Usuarios de equipo',
+                'Entrenamientos ilimitados',
+                'Soporte por Email',
+                'Acceso a integraciones básicas'
             ]
         },
         {
@@ -35,8 +43,22 @@ export default function RegisterPage() {
             description: 'Ideal para PYMES que inician a automatizar.',
             features: [
                 'Hasta 2,500 mensajes al mes',
-                '3 Agente IA',
-                '4 Usuarios de equipo',
+                '3 Agentes IA activos',
+                '6 Usuarios de equipo',
+                'WhatsApp CRM'
+            ],
+            benefits: [
+                'Hasta 2,500 mensajes al mes',
+                '3 Agentes IA activos',
+                '6 Usuarios de equipo',
+                'Integración con Web, WhatsApp, Instagram y Facebook',
+                'Procesamiento de notas de voz e imágenes',
+                'Conexión con calendarios para agendamientos',
+                'Filtrado de prospectos por campos personalizados',
+                'Capacidad de envío de WhatsApp masivos de forma oficial con META',
+                'Función de análisis y revisión de 1 bandeja de email',
+                'Conexión con Paguelo Facil y Yappy comercial para cobros (BETA)',
+                'Soporte por Email y Chat',
                 'Panel de analítica avanzada'
             ]
         },
@@ -47,9 +69,23 @@ export default function RegisterPage() {
             description: 'El favorito de empresas listas para escalar.',
             features: [
                 'Hasta 7,500 mensajes al mes',
-                '6 Agente IA',
-                '8 Usuarios de equipo',
-                'Soporte prioritario por Email y Chat'
+                '6 Agentes IA activos',
+                '12 Usuarios de equipo',
+                'Soporte Prioritario'
+            ],
+            benefits: [
+                'Hasta 7,500 mensajes al mes',
+                '6 Agentes IA activos',
+                '12 Usuarios de equipo',
+                'Integración con Web, WhatsApp, Instagram y Facebook',
+                'Procesamiento de notas de voz e imágenes',
+                'Conexión con calendarios para agendamientos',
+                'Filtrado de prospectos por campos personalizados',
+                'Capacidad de envío de WhatsApp masivos de forma oficial con META',
+                'Función de análisis y revisión de 1 bandeja de email',
+                'Conexión con Paguelo Facil y Yappy comercial para cobros (BETA)',
+                'Soporte prioritario por Email y Chat',
+                'Panel de analítica avanzada'
             ],
             popular: true
         },
@@ -60,9 +96,22 @@ export default function RegisterPage() {
             description: 'Potencia total para tu negocio.',
             features: [
                 'Hasta 25,000 mensajes al mes',
-                '12 Agente IA',
+                '12 Agentes IA activos',
+                'Soporte VIP 24/7'
+            ],
+            benefits: [
+                'Hasta 25,000 mensajes al mes',
+                '12 Agentes IA activos',
                 '20 Usuarios de equipo',
-                'Soporte por Email, Chat y videollamada'
+                'Integración con Web, WhatsApp, Instagram y Facebook',
+                'Procesamiento de notas de voz e imágenes',
+                'Conexión con calendarios para agendamientos',
+                'Filtrado de prospectos por campos personalizados',
+                'Capacidad de envío de WhatsApp masivos de forma oficial con META',
+                'Función de análisis y revisión de 1 bandeja de email',
+                'Conexión con Paguelo Facil y Yappy comercial para cobros (BETA)',
+                'Soporte prioritario por Email, Chat y videollamada',
+                'Panel de analítica avanzada'
             ]
         }
     ];
@@ -71,11 +120,6 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
-        if (!showTrialModal) {
-            setShowTrialModal(true);
-            return;
-        }
 
         setLoading(true);
         setError(null);
@@ -90,7 +134,6 @@ export default function RegisterPage() {
             if (result?.error) {
                 setError(result.error);
                 setLoading(false);
-                setShowTrialModal(false);
             } else if (result?.success) {
                 if (result.checkoutUrl) {
                     window.location.href = result.checkoutUrl;
@@ -123,57 +166,60 @@ export default function RegisterPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1200px] mx-auto relative">
-            {/* Trial Info Modal */}
-            {showTrialModal && (
-                <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6 animate-in fade-in duration-500 overflow-y-auto isolate">
-                    <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-[#21AC96]/5 rounded-full blur-[100px] -mr-20 -mt-20 -z-10"></div>
-                    <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-[#21AC96]/5 rounded-full blur-[100px] -ml-20 -mb-20 -z-10"></div>
-
-                    <div className="max-w-md w-full text-center space-y-8 animate-in zoom-in-95 duration-500">
-                        <div>
-                            <div className="w-20 h-20 bg-[#21AC96]/10 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#21AC96]/10 rotate-3 transition-transform hover:rotate-0 duration-500">
-                                <CheckCircle2 className="w-10 h-10 text-[#21AC96]" />
-                            </div>
-                            <h3 className="text-4xl font-black text-gray-900 mb-4 tracking-tight leading-tight">
-                                Tu prueba gratuita <br /><span className="text-[#21AC96]">está lista</span>
-                            </h3>
-                            <p className="text-gray-500 text-lg font-medium leading-relaxed">
-                                Obtendrás <span className="text-gray-900 font-bold">4 días de acceso total</span> a todas las herramientas de Kônsul sin costo inicial.
-                            </p>
-                        </div>
-
-                        <div className="space-y-4">
-                            {[
-                                'Acceso a todos los agentes IA',
-                                'WhatsApp e integración Web',
-                                'Sin permanencia obligatoria'
-                            ].map((feature, i) => (
-                                <div key={i} className="flex items-center gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 group hover:border-[#21AC96]/20 transition-all duration-300">
-                                    <div className="w-6 h-6 bg-[#21AC96] rounded-lg flex items-center justify-center shadow-lg shadow-[#21AC96]/20 group-hover:scale-110 transition-transform">
-                                        <CheckCircle2 className="w-4 h-4 text-white" />
-                                    </div>
-                                    <span className="text-sm font-black text-gray-700 tracking-tight">{feature}</span>
+            {/* Plan Details Modal */}
+            {selectedPlanDetails && (
+                <div 
+                    className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+                    onClick={() => setSelectedPlanDetails(null)}
+                >
+                    <div 
+                        className="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="p-8 pb-4 flex justify-between items-start">
+                            <div>
+                                <h3 className="text-3xl font-black text-gray-900 tracking-tight leading-none mb-2">
+                                    Plan {selectedPlanDetails.name}
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl font-black text-[#21AC96]">${selectedPlanDetails.price}</span>
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">/mes</span>
                                 </div>
-                            ))}
+                            </div>
+                            <button 
+                                onClick={() => setSelectedPlanDetails(null)}
+                                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                            >
+                                <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div className="px-8 py-4 overflow-y-auto flex-grow">
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Lo que incluye este plan:</p>
+                            <div className="grid grid-cols-1 gap-y-4">
+                                {selectedPlanDetails.benefits.map((benefit: string, i: number) => (
+                                    <div key={i} className="flex items-start gap-4 group">
+                                        <div className="w-6 h-6 rounded-lg bg-[#21AC96]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#21AC96] transition-colors">
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-[#21AC96] group-hover:text-white transition-colors" />
+                                        </div>
+                                        <span className="text-sm text-gray-700 font-bold leading-tight pt-0.5">{benefit}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
-                        <div className="pt-4 space-y-4">
+                        <div className="p-8 pt-4">
                             <button
                                 onClick={() => {
-                                    setShowTrialModal(false);
-                                    const form = document.querySelector('form');
-                                    if (form) form.requestSubmit();
+                                    setSelectedPlan(selectedPlanDetails.id);
+                                    setSelectedPlanDetails(null);
+                                    setStep(2);
                                 }}
-                                className="w-full py-5 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-[#21AC96]/20 transition-all active:scale-[0.98] group flex items-center justify-center gap-3 h-16"
+                                className="w-full py-5 bg-[#21AC96] hover:bg-[#1a8a78] text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-[#21AC96]/20 transition-all active:scale-[0.98]"
                             >
-                                Empezar prueba ahora
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </button>
-                            <button
-                                onClick={() => setShowTrialModal(false)}
-                                className="text-[10px] font-black text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-[0.2em] py-2"
-                            >
-                                Volver a revisar datos
+                                Seleccionar este plan
                             </button>
                         </div>
                     </div>
@@ -182,30 +228,19 @@ export default function RegisterPage() {
 
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">Crea tu cuenta profesional</h2>
-                <div className="mt-3 inline-flex items-center gap-2 bg-[#21AC96]/5 border border-[#21AC96]/10 px-4 py-1.5 rounded-xl">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#21AC96]" />
-                    <p className="text-[9px] font-black text-gray-900 tracking-tight uppercase">4 DÍAS DE FREE TRIAL INCLUIDO</p>
-                </div>
             </div>
 
             {step === 1 ? (
                 <div className="w-full space-y-8 animate-in fade-in zoom-in-95 duration-500">
                     <div className="flex items-center justify-between mb-2 px-4">
                         <h3 className="text-xl font-black text-gray-900 tracking-tight">Selecciona tu plan</h3>
-                        <div className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] bg-[#21AC96] text-white shadow-md shadow-[#21AC96]/10">
-                            Trial Activo
-                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
                         {plans.map((plan) => (
                             <div
                                 key={plan.id}
-                                onClick={() => {
-                                    setSelectedPlan(plan.id);
-                                    setStep(2);
-                                }}
-                                className={`relative flex flex-col p-6 rounded-[2rem] border-[3px] transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] h-full ${selectedPlan === plan.id
+                                className={`relative flex flex-col p-6 rounded-[2rem] border-[3px] transition-all group h-full ${selectedPlan === plan.id
                                     ? 'border-[#21AC96] bg-[#21AC96]/5 shadow-xl shadow-[#21AC96]/5'
                                     : 'border-white bg-white hover:border-[#21AC96]/20 shadow-sm'
                                     }`}
@@ -238,13 +273,27 @@ export default function RegisterPage() {
                                             <span className="text-[10px] text-gray-600 font-bold tracking-tight">{feature}</span>
                                         </div>
                                     ))}
+                                    
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedPlanDetails(plan);
+                                        }}
+                                        className="text-[9px] font-black text-[#21AC96] hover:underline uppercase mt-2 tracking-widest"
+                                    >
+                                        Ver detalles
+                                    </button>
                                 </div>
 
                                 <button 
+                                    onClick={() => {
+                                        setSelectedPlan(plan.id);
+                                        setStep(2);
+                                    }}
                                     className={`w-full py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.15em] transition-all ${
                                         selectedPlan === plan.id 
                                         ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/10' 
-                                        : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600'
+                                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
                                     }`}
                                 >
                                     Elegir Plan
@@ -300,16 +349,13 @@ export default function RegisterPage() {
                                         <span className="text-3xl font-black text-gray-900 leading-none">${currentPlan?.price}</span>
                                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">/mes</span>
                                     </div>
-                                    <div className="px-3 py-1.5 bg-amber-50 text-amber-700 text-[9px] font-black uppercase tracking-tight rounded-lg border border-amber-100">
-                                        4 días de prueba
-                                    </div>
                                 </div>
                             </div>
                             
                             <div className="bg-[#21AC96]/5 p-4 rounded-2xl border border-[#21AC96]/10">
                                 <p className="text-[10px] text-gray-500 font-bold leading-relaxed text-center">
                                     No se realizará ningún cobro hoy. <br />
-                                    <span className="text-[#21AC96]">Tu prueba gratuita comienza ahora.</span>
+                                    <span className="text-[#21AC96]">Comienza a automatizar ahora.</span>
                                 </p>
                             </div>
                         </div>
