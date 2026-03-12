@@ -69,7 +69,7 @@ export default async function DashboardLayout({
                             {isInactive && <SubscriptionGuard />}
                             
                             <div className="max-w-[1600px] mx-auto w-full">
-                                {isOverdue && !isInactive && <PaymentOverdueBanner />}
+                                {isOverdue && !isInactive && <PaymentOverdueBanner dueDate={currentPeriodEnd || undefined} />}
                                 {children}
                             </div>
                         </main>
