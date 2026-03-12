@@ -356,13 +356,21 @@ export default function BillingClient({
                                 className="w-full pl-6 pr-6 py-4 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:outline-none focus:bg-white focus:border-[#21AC96] transition-all font-black text-sm"
                             />
                         </div>
-                        <div className="flex items-center gap-3 px-6 py-4 bg-[#21AC96]/5 rounded-2xl border border-[#21AC96]/10">
-                            <Zap className="w-4 h-4 text-[#21AC96]" />
-                            <span className="text-sm text-[#21AC96] font-black uppercase tracking-widest">$0.05 por crédito</span>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-3 px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <Zap className="w-4 h-4 text-gray-400" />
+                                <span className="text-sm text-gray-500 font-black uppercase tracking-widest">$0.05 <span className="text-[10px] opacity-60">por crédito</span></span>
+                            </div>
+                            {customAmount && parseInt(customAmount) > 0 && (
+                                <div className="flex items-center gap-3 px-6 py-4 bg-[#21AC96]/5 rounded-2xl border border-[#21AC96]/20 animate-in fade-in slide-in-from-left-4 duration-500">
+                                    <span className="text-xs text-[#21AC96] font-bold uppercase tracking-widest">Total:</span>
+                                    <span className="text-lg text-[#21AC96] font-black">${(parseInt(customAmount) * 0.05).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <button 
-                        disabled={isLoadingCredits !== null || !customAmount}
+                        disabled={isLoadingCredits !== null || !customAmount || parseInt(customAmount) <= 0}
                         onClick={() => handleBuyCredits(parseInt(customAmount))}
                         className="w-full md:w-auto px-12 py-4 bg-[#21AC96] text-white rounded-[1.25rem] hover:bg-[#1a8a78] transition-all font-black text-xs uppercase tracking-widest shadow-xl shadow-[#21AC96]/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
                     >
