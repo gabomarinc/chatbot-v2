@@ -1,9 +1,10 @@
 "use client"
 
-import { CheckCircle, CreditCard, Zap, AlertCircle, Calendar, ArrowRight, Loader2 } from 'lucide-react';
-import { useState } from 'react';
-import { createCustomerPortal } from '@/lib/actions/billing';
+import { CheckCircle, CreditCard, Zap, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { createCustomerPortal, buyCredits } from '@/lib/actions/billing';
 import { toast } from 'sonner';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 type BillingClientProps = {
     planName: string;
@@ -40,6 +41,21 @@ export default function BillingClient({
     cardDetails,
 }: BillingClientProps) {
     const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+    const [isLoadingCredits, setIsLoadingCredits] = useState<number | null>(null);
+    const [customAmount, setCustomAmount] = useState<string>('');
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (searchParams.get('success')) {
+            toast.success("¡Créditos añadidos con éxito!");
+            router.replace('/billing');
+        }
+        if (searchParams.get('canceled')) {
+            toast.error("Compra cancelada");
+            router.replace('/billing');
+        }
+    }, [searchParams, router]);
 
     const benefits = [
         `${creditsPerMonth.toLocaleString()} créditos mensuales incluidos`,
@@ -72,16 +88,32 @@ export default function BillingClient({
         }
     };
 
+    const handleBuyCredits = async (amount: number) => {
+        if (!amount || amount <= 0) {
+            toast.error("Por favor ingresa un monto válido");
+            return;
+        }
+        try {
+            setIsLoadingCredits(amount);
+            const result = await buyCredits(amount);
+            if (result.url) {
+                window.location.href = result.url;
+            }
+        } catch (error: any) {
+            toast.error(error.message || "No se pudo iniciar la compra");
+        } finally {
+            setIsLoadingCredits(null);
+        }
+    };
+
     return (
         <div className="p-4 md:p-2 max-w-[1600px] mx-auto animate-fade-in relative">
-            {/* Header */}
             <div className="mb-10">
                 <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight mb-2">Facturación</h1>
                 <p className="text-gray-500 font-medium leading-relaxed">Gestiona tu suscripción y créditos</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Subscription Status */}
                 <div className={`md:col-span-2 rounded-[2rem] p-8 md:p-10 text-white shadow-xl relative overflow-hidden transition-all duration-500 ${
                     isOverdue 
                     ? 'bg-gradient-to-br from-red-600 via-red-800 to-black shadow-red-900/20' 
@@ -148,7 +180,6 @@ export default function BillingClient({
                     </div>
                 </div>
 
-                {/* Credit Balance */}
                 <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                     <div>
                         <div className="flex items-start justify-between mb-8">
@@ -183,7 +214,6 @@ export default function BillingClient({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Plan Benefits */}
                 <div className="md:col-span-2 bg-white rounded-[2rem] p-8 md:p-10 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)]">
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-10 h-10 bg-[#21AC96]/5 rounded-xl flex items-center justify-center">
@@ -209,7 +239,6 @@ export default function BillingClient({
                     </div>
                 </div>
 
-                {/* Payment Method */}
                 <div className="relative overflow-hidden bg-white rounded-[2rem] p-8 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)] flex flex-col">
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
@@ -255,17 +284,10 @@ export default function BillingClient({
                             {isLoadingPortal ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                             {isOverdue ? 'Saldar Deuda ahora' : 'Actualizar método'}
                         </button>
-                        
-                        {isOverdue && (
-                            <p className="text-[10px] text-red-500 font-bold text-center animate-pulse">
-                                Al actualizar tu tarjeta, Stripe intentará cobrar la factura pendiente automáticamente.
-                            </p>
-                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Buy Extra Credits */}
             <div className="relative overflow-hidden bg-white rounded-[2rem] p-8 md:p-12 border border-gray-100 shadow-[20px_0_40px_rgba(0,0,0,0.02)]">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-10">
                     <div>
@@ -308,11 +330,14 @@ export default function BillingClient({
                                     <p className="text-xl text-gray-900 font-black tracking-tight">${pack.price} <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">USD</span></p>
                                 </div>
                                 <button
-                                    className={`w-full px-6 py-4 rounded-[1.25rem] text-xs font-black uppercase tracking-widest transition-all cursor-pointer active:scale-95 ${pack.popular
+                                    disabled={isLoadingCredits !== null}
+                                    onClick={() => handleBuyCredits(pack.amount)}
+                                    className={`w-full px-6 py-4 rounded-[1.25rem] text-xs font-black uppercase tracking-widest transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 ${pack.popular
                                         ? 'bg-[#21AC96] text-white hover:bg-[#1a8a78] shadow-lg shadow-[#21AC96]/20'
                                         : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                                         }`}
                                 >
+                                    {isLoadingCredits === pack.amount ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                     Comprar
                                 </button>
                             </div>
@@ -325,6 +350,8 @@ export default function BillingClient({
                         <div className="relative w-full sm:w-64">
                             <input
                                 type="number"
+                                value={customAmount}
+                                onChange={(e) => setCustomAmount(e.target.value)}
                                 placeholder="Carga personalizada..."
                                 className="w-full pl-6 pr-6 py-4 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:outline-none focus:bg-white focus:border-[#21AC96] transition-all font-black text-sm"
                             />
@@ -334,7 +361,12 @@ export default function BillingClient({
                             <span className="text-sm text-[#21AC96] font-black uppercase tracking-widest">$0.05 por crédito</span>
                         </div>
                     </div>
-                    <button className="w-full md:w-auto px-12 py-4 bg-[#21AC96] text-white rounded-[1.25rem] hover:bg-[#1a8a78] transition-all font-black text-xs uppercase tracking-widest shadow-xl shadow-[#21AC96]/20 active:scale-95 cursor-pointer">
+                    <button 
+                        disabled={isLoadingCredits !== null || !customAmount}
+                        onClick={() => handleBuyCredits(parseInt(customAmount))}
+                        className="w-full md:w-auto px-12 py-4 bg-[#21AC96] text-white rounded-[1.25rem] hover:bg-[#1a8a78] transition-all font-black text-xs uppercase tracking-widest shadow-xl shadow-[#21AC96]/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                        {isLoadingCredits === parseInt(customAmount) ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                         Comprar ahora
                     </button>
                 </div>

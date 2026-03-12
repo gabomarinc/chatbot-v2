@@ -265,3 +265,63 @@ export async function createCustomerPortal() {
 
     return { url: portalSession.url };
 }
+
+const CREDIT_PACKS = [
+    { amount: 500, price: 25 },
+    { amount: 1000, price: 50 },
+    { amount: 2000, price: 95 },
+    { amount: 5000, price: 150 },
+];
+
+export async function buyCredits(amount: number) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error('No autorizado');
+
+    const workspace = await getUserWorkspace();
+    if (!workspace) throw new Error('Workspace no encontrado');
+
+    const subscription = await prisma.subscription.findUnique({
+        where: { workspaceId: workspace.id }
+    });
+
+    if (!subscription?.stripeCustomerId) {
+        throw new Error('Debes tener una suscripción activa para comprar créditos extras');
+    }
+
+    // Determine price
+    // If it's a standard pack, use fixed price, otherwise use $0.05 per credit
+    const pack = CREDIT_PACKS.find(p => p.amount === amount);
+    const unitPriceInCents = pack ? (pack.price / pack.amount) * 100 : 5; // 5 cents per credit
+    const totalPriceInCents = pack ? pack.price * 100 : Math.round(amount * 5);
+
+    if (totalPriceInCents < 50) { // Stripe minimum is $0.50
+        throw new Error('El monto mínimo de compra es de $0.50 USD');
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+        customer: subscription.stripeCustomerId,
+        line_items: [
+            {
+                price_data: {
+                    currency: 'usd',
+                    product_data: {
+                        name: `${amount.toLocaleString()} Créditos Extras - Kônsul`,
+                        description: `Compra única de créditos para el workspace ${workspace.name}`,
+                    },
+                    unit_amount: totalPriceInCents,
+                },
+                quantity: 1,
+            },
+        ],
+        mode: 'payment',
+        metadata: {
+            workspaceId: workspace.id,
+            type: 'credits',
+            amount: amount.toString(),
+        },
+        success_url: `${process.env.NEXTAUTH_URL}/billing?success=true`,
+        cancel_url: `${process.env.NEXTAUTH_URL}/billing?canceled=true`,
+    });
+
+    return { url: checkoutSession.url };
+}

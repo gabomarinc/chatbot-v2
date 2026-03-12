@@ -25,17 +25,34 @@ export async function POST(req: NextRequest) {
     try {
         switch (event.type) {
             case 'checkout.session.completed': {
-                const subscription = await stripe.subscriptions.retrieve(
-                    session.subscription as string
-                ) as Stripe.Subscription;
-
-                const workspaceId = session.metadata?.workspaceId || subscription.metadata?.workspaceId;
-                const planType = session.metadata?.planType || subscription.metadata?.planType;
-
+                const workspaceId = session.metadata?.workspaceId;
+                const type = session.metadata?.type;
+                
                 if (!workspaceId) {
                     console.error('No workspaceId found in session metadata');
                     return NextResponse.json({ error: 'No workspaceId' }, { status: 400 });
                 }
+
+                if (type === 'credits') {
+                    const amount = parseInt(session.metadata?.amount || '0');
+                    console.log(`[Stripe Webhook] Adding ${amount} credits to workspace ${workspaceId}`);
+                    
+                    await prisma.creditBalance.update({
+                        where: { workspaceId },
+                        data: {
+                            balance: { increment: amount }
+                        }
+                    });
+                    
+                    return NextResponse.json({ received: true });
+                }
+
+                // Subscription logic
+                const subscription = await stripe.subscriptions.retrieve(
+                    session.subscription as string
+                ) as Stripe.Subscription;
+
+                const planType = session.metadata?.planType || subscription.metadata?.planType;
 
                 // Get the plan from DB
                 const plan = await prisma.subscriptionPlan.findFirst({
