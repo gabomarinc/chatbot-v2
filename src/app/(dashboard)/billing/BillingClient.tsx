@@ -140,6 +140,21 @@ export default function BillingClient({
         'Conexión ilimitada de canales',
     ];
 
+    const getPlanPriority = (key: string) => {
+        const priorities: Record<string, number> = { 'BASIC': 1, 'STARTER': 2, 'BUSINESS': 3, 'ENTERPRISE': 4 };
+        return priorities[key] || 0;
+    };
+
+    const getPlanButtonText = (planKey: string) => {
+        if (planKey === currentPlanKey) return 'Mi plan actual';
+        
+        const currentPriority = getPlanPriority(currentPlanKey);
+        const targetPriority = getPlanPriority(planKey);
+        
+        if (targetPriority > currentPriority) return 'Mejorar Plan';
+        return 'Cambiar a este plan';
+    };
+
     const formatDate = (date: Date) => {
         return new Date(date).toLocaleDateString('es-ES', {
             day: '2-digit',
@@ -475,9 +490,14 @@ export default function BillingClient({
                         </div>
 
                         {/* Top: Basic Plan Horizontal */}
-                        <div className="mb-8 bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-gray-100 shadow-sm transition-transform hover:scale-[1.01]">
+                        <div className={`mb-8 bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border shadow-sm transition-transform hover:scale-[1.01] ${currentPlanKey === 'BASIC' ? 'border-[#21AC96] bg-teal-50/10' : 'border-gray-100'}`}>
                             <div className="flex-1">
-                                <h3 className="text-2xl font-black text-gray-900 mb-1">Basic</h3>
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h3 className="text-2xl font-black text-gray-900">Basic</h3>
+                                    {currentPlanKey === 'BASIC' && (
+                                        <span className="px-2 py-0.5 bg-[#21AC96] text-white text-[8px] font-black uppercase rounded-md">Tu Plan</span>
+                                    )}
+                                </div>
                                 <p className="text-gray-500 text-sm font-medium">Ideal para quienes no tienen mucho volumen de consultas o leads.</p>
                                 <div className="flex flex-wrap gap-4 mt-4">
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-800 rounded-xl text-xs font-black">
@@ -502,8 +522,17 @@ export default function BillingClient({
                                     </div>
                                     <p className="text-4xl font-black text-gray-900">$75 <span className="text-sm font-bold text-gray-400">/mes</span></p>
                                 </div>
-                                <button className="px-8 py-4 bg-[#1e293b] text-white rounded-2xl font-black text-sm transition-transform active:scale-95 hover:bg-black">
-                                    Comenzar Ahora
+                                <button 
+                                    disabled={isLoadingPortal}
+                                    onClick={handleOpenPortal}
+                                    className={`px-8 py-4 rounded-2xl font-black text-sm transition-transform active:scale-95 flex items-center gap-2 ${
+                                        currentPlanKey === 'BASIC' 
+                                        ? 'bg-white text-[#21AC96] border-2 border-[#21AC96] shadow-md' 
+                                        : 'bg-[#1e293b] text-white hover:bg-black'
+                                    }`}
+                                >
+                                    {isLoadingPortal ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                    {getPlanButtonText('BASIC')}
                                 </button>
                             </div>
                         </div>
@@ -559,10 +588,15 @@ export default function BillingClient({
                                     ]
                                 }
                             ].map((plan) => (
-                                <div key={plan.name} className={`relative bg-white rounded-[2.5rem] p-8 flex flex-col border-2 transition-all hover:translate-y-[-8px] ${plan.popular ? 'border-[#21AC96] shadow-xl' : 'border-transparent shadow-sm'}`}>
-                                    {plan.popular && (
+                                <div key={plan.name} className={`relative bg-white rounded-[2.5rem] p-8 flex flex-col border-2 transition-all hover:translate-y-[-8px] ${plan.popular || plan.name.toUpperCase() === currentPlanKey ? 'border-[#21AC96] shadow-xl' : 'border-transparent shadow-sm'} ${plan.name.toUpperCase() === currentPlanKey ? 'bg-teal-50/5' : ''}`}>
+                                    {plan.popular && plan.name.toUpperCase() !== currentPlanKey && (
                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#21AC96] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
                                             MÁS POPULAR
+                                        </div>
+                                    )}
+                                    {plan.name.toUpperCase() === currentPlanKey && (
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#1e293b] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg border-2 border-white">
+                                            TU PLAN ACTUAL
                                         </div>
                                     )}
                                     <div className="mb-6">
@@ -578,14 +612,25 @@ export default function BillingClient({
                                     <div className="space-y-4 mb-8 flex-1">
                                         {plan.bullets.map((bullet, i) => (
                                             <div key={i} className="flex items-start gap-3">
-                                                <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.popular ? 'text-[#21AC96]' : 'text-gray-300'}`} />
+                                                <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.name.toUpperCase() === currentPlanKey || plan.popular ? 'text-[#21AC96]' : 'text-gray-300'}`} />
                                                 <span className="text-[13px] text-gray-600 font-bold leading-tight">{bullet}</span>
                                             </div>
                                         ))}
                                     </div>
 
-                                    <button className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${plan.popular ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20' : 'bg-[#1e293b] text-white hover:bg-black'}`}>
-                                        Comenzar Ahora
+                                    <button 
+                                        disabled={isLoadingPortal}
+                                        onClick={handleOpenPortal}
+                                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                                            plan.name.toUpperCase() === currentPlanKey
+                                            ? 'bg-transparent text-[#21AC96] border-2 border-[#21AC96] hover:bg-[#21AC96]/5'
+                                            : plan.popular 
+                                                ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20' 
+                                                : 'bg-[#1e293b] text-white hover:bg-black'
+                                        }`}
+                                    >
+                                        {isLoadingPortal && plan.name.toUpperCase() === currentPlanKey ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                        {getPlanButtonText(plan.name.toUpperCase())}
                                     </button>
                                 </div>
                             ))}
