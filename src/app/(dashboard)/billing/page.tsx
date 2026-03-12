@@ -1,10 +1,12 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import BillingClient from './BillingClient';
 import { canViewBilling } from '@/lib/actions/team';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
+import { Loader2 } from 'lucide-react';
 
 export default async function BillingPage() {
     const session = await auth();
@@ -111,19 +113,26 @@ export default async function BillingPage() {
     }
 
     return (
-        <BillingClient
-            planName={plan?.name || 'Sin Plan'}
-            planPrice={plan?.monthlyPrice || 0}
-            maxAgents={plan?.maxAgents || 0}
-            creditsPerMonth={creditsPerMonth}
-            creditsRemaining={creditsRemaining}
-            creditsUsed={creditsUsed}
-            usagePercentage={usagePercentage}
-            currentPeriodEnd={currentPeriodEnd}
-            isActive={status === 'active' || status === 'trialing' || status === 'past_due'}
-            isOverdue={!!isOverdue}
-            isTrial={subscription?.isTrial || false}
-            cardDetails={cardDetails}
-        />
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="w-8 h-8 animate-spin text-[#21AC96]" />
+                <p className="text-gray-500 font-bold animate-pulse">Cargando facturación...</p>
+            </div>
+        }>
+            <BillingClient
+                planName={plan?.name || 'Plan Gratuito'}
+                planPrice={plan?.monthlyPrice || 0}
+                maxAgents={plan?.maxAgents || 1}
+                creditsPerMonth={creditsPerMonth}
+                creditsRemaining={creditsRemaining}
+                creditsUsed={creditsUsed}
+                usagePercentage={usagePercentage}
+                currentPeriodEnd={currentPeriodEnd}
+                isActive={status === 'active' || status === 'trialing' || status === 'past_due'}
+                isOverdue={!!isOverdue}
+                isTrial={subscription?.isTrial || false}
+                cardDetails={cardDetails}
+            />
+        </Suspense>
     );
 }
