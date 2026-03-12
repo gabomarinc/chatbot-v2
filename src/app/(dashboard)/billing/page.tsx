@@ -57,7 +57,10 @@ export default async function BillingPage() {
 
     const status = subscription?.status || 'inactive';
     const currentPeriodEnd = subscription?.currentPeriodEnd || new Date();
-    const isOverdue = status === 'past_due' || (subscription?.currentPeriodEnd && subscription.currentPeriodEnd < new Date());
+    
+    // Whitelisted accounts are those without a stripeSubscriptionId
+    const isWhitelisted = !subscription?.stripeSubscriptionId;
+    const isOverdue = !isWhitelisted && (status === 'past_due' || (subscription?.currentPeriodEnd && subscription.currentPeriodEnd < new Date()));
 
     // Fetch card details from Stripe if customer exists
     let cardDetails = null;
