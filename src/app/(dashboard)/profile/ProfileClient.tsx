@@ -184,7 +184,7 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
                                 />
                                 <p className="text-xs text-gray-500 mt-1">El email no puede ser modificado</p>
                             </div>
-
+ 
                             {/* Timezone (Disabled/Removed for now as it's not in DB) */}
                             {/* 
                             <div>
