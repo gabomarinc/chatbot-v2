@@ -43,12 +43,19 @@ export default async function DashboardLayout({
     const isSuperAdmin = session.user.role === 'SUPER_ADMIN';
 
     // Allow active, trialing and past_due (grace period)
-    const status = workspace?.subscription?.status;
+    const subscription = workspace?.subscription;
+    const status = subscription?.status;
+    const currentPeriodEnd = subscription?.currentPeriodEnd;
+    const now = new Date();
+
     const allowedStatuses = ['active', 'trialing', 'past_due'];
-    const isInactive = !isWhitelisted && !isSuperAdmin && (!workspace?.subscription || !allowedStatuses.includes(status || ''));
+    const isInactive = !isWhitelisted && !isSuperAdmin && (!subscription || !allowedStatuses.includes(status || ''));
     
     // Check specifically for overdue status to show the soft-block banner
-    const isOverdue = status === 'past_due';
+    // It's overdue if status is 'past_due' OR if the date has passed
+    const isOverdue = status === 'past_due' || (currentPeriodEnd && currentPeriodEnd < now);
+
+    console.log(`[SUBSCRIPTION DEBUG] Workspace: ${workspace?.name}, Status: ${status}, IsOverdue: ${isOverdue}, End: ${currentPeriodEnd}`);
 
     return (
         <Providers>
@@ -62,7 +69,7 @@ export default async function DashboardLayout({
                             {isInactive && <SubscriptionGuard />}
                             
                             <div className="max-w-[1600px] mx-auto w-full">
-                                {isOverdue && <PaymentOverdueBanner />}
+                                {isOverdue && !isInactive && <PaymentOverdueBanner />}
                                 {children}
                             </div>
                         </main>
