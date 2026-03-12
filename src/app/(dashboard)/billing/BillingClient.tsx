@@ -476,7 +476,7 @@ export default function BillingClient({
             {isPlansModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsPlansModalOpen(false)}></div>
-                    <div className="relative bg-[#F3F4F6] w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] shadow-2xl p-6 md:p-10 animate-in zoom-in-95 duration-200">
+                    <div className="relative bg-[#F3F4F6] w-full max-w-6xl max-h-[95vh] overflow-y-auto rounded-[2.5rem] shadow-2xl p-6 md:p-8 animate-in zoom-in-95 duration-200">
                         <button 
                             onClick={() => setIsPlansModalOpen(false)}
                             className="absolute top-8 right-8 p-2 bg-white rounded-full text-gray-400 hover:text-gray-900 transition-colors z-10"
@@ -484,9 +484,8 @@ export default function BillingClient({
                             <X className="w-6 h-6" />
                         </button>
 
-                        <div className="text-center mb-12">
-                            <h2 className="text-3xl font-black text-gray-900 mb-2">Nuestros Planes</h2>
-                            <p className="text-gray-500 font-bold">Escala tu negocio con la potencia de la Inteligencia Artificial</p>
+                        <div className="mb-8">
+                            {/* Header removed for compactness */}
                         </div>
 
                         {/* Top: Basic Plan Horizontal */}
@@ -516,10 +515,6 @@ export default function BillingClient({
                             </div>
                             <div className="flex items-center gap-8">
                                 <div className="text-right">
-                                    <div className="px-3 py-1 bg-[#21AC96] text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-1 flex items-center gap-1">
-                                        <CheckCircle className="w-3 h-3" />
-                                        Incluye 4 días gratis
-                                    </div>
                                     <p className="text-4xl font-black text-gray-900">$75 <span className="text-sm font-bold text-gray-400">/mes</span></p>
                                 </div>
                                 <button 
@@ -599,17 +594,13 @@ export default function BillingClient({
                                             TU PLAN ACTUAL
                                         </div>
                                     )}
-                                    <div className="mb-6">
-                                        <h3 className="text-2xl font-black text-gray-900 mb-2">{plan.name}</h3>
-                                        <p className="text-4xl font-black text-gray-900 mb-1">${plan.price} <span className="text-sm font-bold text-gray-400">/mes</span></p>
-                                        <div className="w-fit px-3 py-1 bg-[#21AC96] text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-4 flex items-center gap-1">
-                                            <CheckCircle className="w-3 h-3" />
-                                            Incluye 4 días gratis
-                                        </div>
+                                    <div className="mb-4">
+                                        <h3 className="text-2xl font-black text-gray-900 mb-1">{plan.name}</h3>
+                                        <p className="text-4xl font-black text-gray-900 mb-2">${plan.price} <span className="text-sm font-bold text-gray-400">/mes</span></p>
                                         <p className="text-gray-500 text-[13px] font-medium leading-relaxed">{plan.desc}</p>
                                     </div>
                                     
-                                    <div className="space-y-4 mb-8 flex-1">
+                                    <div className="space-y-3 mb-6 flex-1">
                                         {plan.bullets.map((bullet, i) => (
                                             <div key={i} className="flex items-start gap-3">
                                                 <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.name.toUpperCase() === currentPlanKey || plan.popular ? 'text-[#21AC96]' : 'text-gray-300'}`} />
