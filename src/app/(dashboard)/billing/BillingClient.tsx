@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle, CreditCard, Zap, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, CreditCard, Zap, AlertCircle, Loader2, X, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createCustomerPortal, buyCredits } from '@/lib/actions/billing';
 import { toast } from 'sonner';
@@ -40,6 +40,7 @@ export default function BillingClient({
     isTrial = false,
     cardDetails,
 }: BillingClientProps) {
+    const [isPlansModalOpen, setIsPlansModalOpen] = useState(false);
     const [isLoadingPortal, setIsLoadingPortal] = useState(false);
     const [isLoadingCredits, setIsLoadingCredits] = useState<number | null>(null);
     const [customAmount, setCustomAmount] = useState<string>('');
@@ -57,13 +58,86 @@ export default function BillingClient({
         }
     }, [searchParams, router]);
 
-    const benefits = [
+    const PLAN_DETAILS = {
+        'BASIC': {
+            price: 75,
+            benefits: [
+                '1,200 mensajes mensuales incluidos',
+                '1 Agente IA activo',
+                '2 Usuarios de equipo',
+                'Entrenamientos ilimitados',
+                'Soporte por Email',
+                'Acceso a integraciones básicas'
+            ]
+        },
+        'STARTER': {
+            price: 135,
+            benefits: [
+                'Hasta 2,500 mensajes al mes',
+                '3 Agentes IA activos',
+                '6 Usuarios de equipo',
+                'Integración con Web, WhatsApp, Instagram y FB',
+                'Procesamiento de notas de voz e imágenes',
+                'Conexión con calendarios',
+                'Filtrado de prospectos por campos',
+                'WhatsApp masivo oficial (META)',
+                'Revisión de 1 bandeja de email',
+                'Paguelo Facil y Yappy comercial (BETA)',
+                'Soporte por Email y Chat',
+                'Panel de analítica avanzada'
+            ]
+        },
+        'BUSINESS': {
+            price: 245,
+            benefits: [
+                'Hasta 7,500 mensajes al mes',
+                '6 Agentes IA activos',
+                '12 Usuarios de equipo',
+                'Integración con Web, WhatsApp, Instagram y FB',
+                'Procesamiento de notas de voz e imágenes',
+                'Conexión con calendarios',
+                'Filtrado de prospectos por campos',
+                'WhatsApp masivo oficial (META)',
+                'Revisión de 1 bandeja de email',
+                'Paguelo Facil y Yappy comercial (BETA)',
+                'Soporte prioritario por Email y Chat',
+                'Panel de analítica avanzada'
+            ]
+        },
+        'ENTERPRISE': {
+            price: 475,
+            benefits: [
+                'Hasta 25,000 mensajes al mes',
+                '12 Agentes IA activos',
+                '20 Usuarios de equipo',
+                'Integración con Web, WhatsApp, Instagram y FB',
+                'Procesamiento de notas de voz e imágenes',
+                'Conexión con calendarios',
+                'Filtrado de prospectos por campos',
+                'WhatsApp masivo oficial (META)',
+                'Revisión de 1 bandeja de email',
+                'Paguelo Facil y Yappy comercial (BETA)',
+                'Soporte por Email, Chat y Videollamada',
+                'Panel de analítica avanzada'
+            ]
+        }
+    };
+
+    // Mapping for whitelist or legacy plans to normalized names
+    const normalizedPlanName = (name: string) => {
+        const n = name.toUpperCase();
+        if (n.includes('BUSINESS')) return 'BUSINESS';
+        if (n.includes('ENTERPRISE')) return 'ENTERPRISE';
+        if (n.includes('STARTER')) return 'STARTER';
+        if (n.includes('BASIC')) return 'BASIC';
+        return 'STARTER'; // Default/Fallback
+    };
+
+    const currentPlanKey = normalizedPlanName(planName);
+    const benefits = PLAN_DETAILS[currentPlanKey as keyof typeof PLAN_DETAILS]?.benefits || [
         `${creditsPerMonth.toLocaleString()} créditos mensuales incluidos`,
         `Hasta ${maxAgents} agentes activos`,
         'Conexión ilimitada de canales',
-        'Soporte prioritario 24/7',
-        'Entrenamientos ilimitados',
-        'Acceso a todas las integraciones',
     ];
 
     const formatDate = (date: Date) => {
@@ -233,8 +307,12 @@ export default function BillingClient({
                     </div>
 
                     <div className="mt-10 pt-8 border-t border-gray-100 flex justify-center sm:justify-start">
-                        <button className="px-8 py-3.5 text-[#21AC96] border-2 border-[#21AC96]/10 rounded-[1.25rem] hover:bg-[#21AC96]/5 hover:border-[#21AC96]/20 transition-all font-black text-xs uppercase tracking-widest cursor-pointer active:scale-95">
+                        <button 
+                            onClick={() => setIsPlansModalOpen(true)}
+                            className="px-8 py-3.5 text-[#21AC96] border-2 border-[#21AC96]/10 rounded-[1.25rem] hover:bg-[#21AC96]/5 hover:border-[#21AC96]/20 transition-all font-black text-xs uppercase tracking-widest cursor-pointer active:scale-95 flex items-center gap-2"
+                        >
                             Ver todos los planes
+                            <ExternalLink className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
@@ -379,6 +457,142 @@ export default function BillingClient({
                     </button>
                 </div>
             </div>
+            {/* Modal de Planes */}
+            {isPlansModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsPlansModalOpen(false)}></div>
+                    <div className="relative bg-[#F3F4F6] w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] shadow-2xl p-6 md:p-10 animate-in zoom-in-95 duration-200">
+                        <button 
+                            onClick={() => setIsPlansModalOpen(false)}
+                            className="absolute top-8 right-8 p-2 bg-white rounded-full text-gray-400 hover:text-gray-900 transition-colors z-10"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-black text-gray-900 mb-2">Nuestros Planes</h2>
+                            <p className="text-gray-500 font-bold">Escala tu negocio con la potencia de la Inteligencia Artificial</p>
+                        </div>
+
+                        {/* Top: Basic Plan Horizontal */}
+                        <div className="mb-8 bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border border-gray-100 shadow-sm transition-transform hover:scale-[1.01]">
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-black text-gray-900 mb-1">Basic</h3>
+                                <p className="text-gray-500 text-sm font-medium">Ideal para quienes no tienen mucho volumen de consultas o leads.</p>
+                                <div className="flex flex-wrap gap-4 mt-4">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-800 rounded-xl text-xs font-black">
+                                        <CheckCircle className="w-3.5 h-3.5 text-[#21AC96]" />
+                                        1,200 mensajes/mes
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-800 rounded-xl text-xs font-black">
+                                        <CheckCircle className="w-3.5 h-3.5 text-[#21AC96]" />
+                                        1 Agente IA
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50 text-teal-800 rounded-xl text-xs font-black">
+                                        <CheckCircle className="w-3.5 h-3.5 text-[#21AC96]" />
+                                        2 Usuarios de equipo
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-8">
+                                <div className="text-right">
+                                    <div className="px-3 py-1 bg-[#21AC96] text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-1 flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3" />
+                                        Incluye 4 días gratis
+                                    </div>
+                                    <p className="text-4xl font-black text-gray-900">$75 <span className="text-sm font-bold text-gray-400">/mes</span></p>
+                                </div>
+                                <button className="px-8 py-4 bg-[#1e293b] text-white rounded-2xl font-black text-sm transition-transform active:scale-95 hover:bg-black">
+                                    Comenzar Ahora
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {[
+                                { 
+                                    name: 'Starter', 
+                                    price: 135, 
+                                    desc: 'Ideal para PYMES que inician a automatizar.', 
+                                    popular: false,
+                                    bullets: [
+                                        'Hasta 2,500 mensajes al mes',
+                                        '3 Agente IA',
+                                        '6 Usuarios de equipo',
+                                        'Integración con Web, WhatsApp, FB',
+                                        'Procesamiento de voz e imágenes',
+                                        'Conexión con calendarios',
+                                        'Envío masivo oficial META',
+                                        'Panel de analítica avanzada'
+                                    ]
+                                },
+                                { 
+                                    name: 'Business', 
+                                    price: 245, 
+                                    desc: 'El favorito de empresas listas para escalar.', 
+                                    popular: true,
+                                    bullets: [
+                                        'Hasta 7,500 mensajes al mes',
+                                        '6 Agente IA',
+                                        '12 Usuarios de equipo',
+                                        'Integración completa',
+                                        'Procesamiento de voz e imágenes',
+                                        'Conexión con calendarios',
+                                        'Envío masivo oficial META',
+                                        'Soporte prioritario Chat/Email'
+                                    ]
+                                },
+                                { 
+                                    name: 'Enterprise', 
+                                    price: 475, 
+                                    desc: 'Potencia total para tu negocio.', 
+                                    popular: false,
+                                    bullets: [
+                                        'Hasta 25,000 mensajes al mes',
+                                        '12 Agente IA',
+                                        '20 Usuarios de equipo',
+                                        'Integración completa',
+                                        'Procesamiento de voz e imágenes',
+                                        'Conexión con calendarios',
+                                        'Envío masivo oficial META',
+                                        'Soporte Chat/Email/Video'
+                                    ]
+                                }
+                            ].map((plan) => (
+                                <div key={plan.name} className={`relative bg-white rounded-[2.5rem] p-8 flex flex-col border-2 transition-all hover:translate-y-[-8px] ${plan.popular ? 'border-[#21AC96] shadow-xl' : 'border-transparent shadow-sm'}`}>
+                                    {plan.popular && (
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#21AC96] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
+                                            MÁS POPULAR
+                                        </div>
+                                    )}
+                                    <div className="mb-6">
+                                        <h3 className="text-2xl font-black text-gray-900 mb-2">{plan.name}</h3>
+                                        <p className="text-4xl font-black text-gray-900 mb-1">${plan.price} <span className="text-sm font-bold text-gray-400">/mes</span></p>
+                                        <div className="w-fit px-3 py-1 bg-[#21AC96] text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-4 flex items-center gap-1">
+                                            <CheckCircle className="w-3 h-3" />
+                                            Incluye 4 días gratis
+                                        </div>
+                                        <p className="text-gray-500 text-[13px] font-medium leading-relaxed">{plan.desc}</p>
+                                    </div>
+                                    
+                                    <div className="space-y-4 mb-8 flex-1">
+                                        {plan.bullets.map((bullet, i) => (
+                                            <div key={i} className="flex items-start gap-3">
+                                                <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.popular ? 'text-[#21AC96]' : 'text-gray-300'}`} />
+                                                <span className="text-[13px] text-gray-600 font-bold leading-tight">{bullet}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <button className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 ${plan.popular ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20' : 'bg-[#1e293b] text-white hover:bg-black'}`}>
+                                        Comenzar Ahora
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
