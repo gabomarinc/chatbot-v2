@@ -61,23 +61,53 @@ export default async function BillingPage() {
     let cardDetails = null;
     if (subscription?.stripeCustomerId) {
         try {
+            console.log(`[BILLING DEBUG] Fetching card for customer: ${subscription.stripeCustomerId}`);
+            
+            // 1. Try to get it from the customer default
             const customer = await stripe.customers.retrieve(subscription.stripeCustomerId, {
                 expand: ['invoice_settings.default_payment_method']
             }) as Stripe.Customer;
 
-            const paymentMethod = customer.invoice_settings?.default_payment_method as Stripe.PaymentMethod;
+            let paymentMethod = customer.invoice_settings?.default_payment_method as Stripe.PaymentMethod;
+            
+            // 2. If not on customer, try to get it from the actual subscription if we have an ID
+            if (!paymentMethod && subscription.stripeSubscriptionId) {
+                console.log(`[BILLING DEBUG] No customer default PM, checking subscription: ${subscription.stripeSubscriptionId}`);
+                const stripeSub = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId, {
+                    expand: ['default_payment_method']
+                });
+                paymentMethod = stripeSub.default_payment_method as Stripe.PaymentMethod;
+            }
+
+            // 3. If still not found, get the most recent payment method attached to the customer
+            if (!paymentMethod) {
+                console.log(`[BILLING DEBUG] No explicit default PM, listing payment methods`);
+                const paymentMethods = await stripe.paymentMethods.list({
+                    customer: subscription.stripeCustomerId,
+                    type: 'card',
+                    limit: 1
+                });
+                if (paymentMethods.data.length > 0) {
+                    paymentMethod = paymentMethods.data[0];
+                }
+            }
             
             if (paymentMethod?.card) {
+                console.log(`[BILLING DEBUG] Found card: **** ${paymentMethod.card.last4}`);
                 cardDetails = {
                     last4: paymentMethod.card.last4,
-                    brand: paymentMethod.card.brand,
+                    brand: paymentMethod.card.brand.toUpperCase(),
                     expMonth: paymentMethod.card.exp_month,
                     expYear: paymentMethod.card.exp_year,
                 };
+            } else {
+                console.log(`[BILLING DEBUG] No card found in payment method or no payment method found`);
             }
         } catch (error) {
-            console.error('Error fetching Stripe card details:', error);
+            console.error('[BILLING ERROR] Error fetching Stripe card details:', error);
         }
+    } else {
+        console.log(`[BILLING DEBUG] No stripeCustomerId for this workspace`);
     }
 
     return (
