@@ -51,6 +51,10 @@ export default async function BillingPage() {
     const usagePercentage = Math.min((creditsUsed / creditsPerMonth) * 100, 100);
     const creditsRemaining = Math.max(creditBalance?.balance || 0, 0);
 
+    const status = subscription?.status || 'inactive';
+    const currentPeriodEnd = subscription?.currentPeriodEnd || new Date();
+    const isOverdue = status === 'past_due' || (subscription?.currentPeriodEnd && subscription.currentPeriodEnd < new Date());
+
     return (
         <BillingClient
             planName={plan?.name || 'Sin Plan'}
@@ -60,8 +64,9 @@ export default async function BillingPage() {
             creditsRemaining={creditsRemaining}
             creditsUsed={creditsUsed}
             usagePercentage={usagePercentage}
-            currentPeriodEnd={subscription?.currentPeriodEnd || new Date()}
-            isActive={subscription?.status === 'active'}
+            currentPeriodEnd={currentPeriodEnd}
+            isActive={status === 'active' || status === 'trialing' || status === 'past_due'}
+            isOverdue={!!isOverdue}
             isTrial={subscription?.isTrial || false}
         />
     );

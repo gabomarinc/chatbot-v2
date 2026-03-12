@@ -2,7 +2,9 @@
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { stripe } from '@/lib/stripe';
 import { redirect } from 'next/navigation';
+import { getUserWorkspace } from './workspace';
 
 // Verify SUPER_ADMIN access
 async function verifySuperAdmin() {
@@ -238,4 +240,28 @@ export async function updateSubscriptionPlan(
     });
 
     return { success: true, plan };
+}
+
+// Create Stripe Customer Portal session
+export async function createCustomerPortal() {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error('No autorizado');
+
+    const workspace = await getUserWorkspace();
+    if (!workspace) throw new Error('Workspace no encontrado');
+
+    const subscription = await prisma.subscription.findUnique({
+        where: { workspaceId: workspace.id }
+    });
+
+    if (!subscription?.stripeCustomerId) {
+        throw new Error('No se encontró configuración de Stripe para este workspace');
+    }
+
+    const portalSession = await stripe.billingPortal.sessions.create({
+        customer: subscription.stripeCustomerId,
+        return_url: `${process.env.NEXTAUTH_URL}/billing`,
+    });
+
+    return { url: portalSession.url };
 }

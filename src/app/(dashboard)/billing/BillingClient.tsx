@@ -1,6 +1,9 @@
 "use client"
 
-import { CheckCircle, CreditCard, Zap } from 'lucide-react';
+import { CheckCircle, CreditCard, Zap, AlertCircle, Calendar, ArrowRight, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { createCustomerPortal } from '@/lib/actions/billing';
+import { toast } from 'sonner';
 
 type BillingClientProps = {
     planName: string;
@@ -12,6 +15,7 @@ type BillingClientProps = {
     usagePercentage: number;
     currentPeriodEnd: Date;
     isActive: boolean;
+    isOverdue?: boolean;
     isTrial?: boolean;
 };
 
@@ -25,8 +29,11 @@ export default function BillingClient({
     usagePercentage,
     currentPeriodEnd,
     isActive,
+    isOverdue = false,
     isTrial = false,
 }: BillingClientProps) {
+    const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+
     const benefits = [
         `${creditsPerMonth.toLocaleString()} créditos mensuales incluidos`,
         `Hasta ${maxAgents} agentes activos`,
@@ -44,8 +51,22 @@ export default function BillingClient({
         });
     };
 
+    const handleOpenPortal = async () => {
+        try {
+            setIsLoadingPortal(true);
+            const result = await createCustomerPortal();
+            if (result.url) {
+                window.location.href = result.url;
+            }
+        } catch (error: any) {
+            toast.error(error.message || "No se pudo abrir el portal de pagos");
+        } finally {
+            setIsLoadingPortal(false);
+        }
+    };
+
     return (
-        <div className="p-4 md:p-2 max-w-[1600px] mx-auto animate-fade-in">
+        <div className="p-4 md:p-2 max-w-[1600px] mx-auto animate-fade-in relative">
             {/* Header */}
             <div className="mb-10">
                 <h1 className="text-gray-900 text-3xl font-extrabold tracking-tight mb-2">Facturación</h1>
@@ -54,13 +75,17 @@ export default function BillingClient({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 {/* Subscription Status */}
-                <div className="md:col-span-2 bg-gradient-to-br from-[#21AC96] to-[#1a8a78] rounded-[2rem] p-8 md:p-10 text-white shadow-xl shadow-[#21AC96]/10 relative overflow-hidden">
+                <div className={`md:col-span-2 rounded-[2rem] p-8 md:p-10 text-white shadow-xl relative overflow-hidden transition-all duration-500 ${
+                    isOverdue 
+                    ? 'bg-gradient-to-br from-red-600 via-red-800 to-black shadow-red-900/20' 
+                    : 'bg-gradient-to-br from-[#21AC96] to-[#1a8a78] shadow-[#21AC96]/10'
+                }`}>
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                     <div className="relative z-10">
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-10">
                             <div>
                                 <div className="flex items-center gap-2.5 mb-4 px-3 py-1.5 bg-white/10 rounded-xl w-fit backdrop-blur-md border border-white/10">
-                                    <CheckCircle className="w-5 h-5 text-teal-100" />
+                                    {isOverdue ? <AlertCircle className="w-5 h-5 text-red-200" /> : <CheckCircle className="w-5 h-5 text-teal-100" />}
                                     <span className="text-xs font-black uppercase tracking-widest text-teal-50">Estado de suscripción</span>
                                 </div>
                                 <div className="flex items-center gap-4 mb-2">
@@ -70,25 +95,46 @@ export default function BillingClient({
                                             Periodo de Prueba
                                         </div>
                                     )}
+                                    {isOverdue && (
+                                        <div className="px-3 py-1 bg-white text-red-600 text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
+                                            Pago Pendiente
+                                        </div>
+                                    )}
                                 </div>
-                                <p className="text-teal-50/70 font-bold text-lg">
-                                    {isActive ? (isTrial ? 'Estás probando Kônsul' : 'Tu suscripción está activa') : 'Suscripción inactiva'}
+                                <p className={`font-bold text-lg ${isOverdue ? 'text-red-200' : 'text-teal-50/70'}`}>
+                                    {isOverdue 
+                                        ? 'Acción requerida: Tu pago ha fallado' 
+                                        : isActive 
+                                            ? (isTrial ? 'Estás probando Kônsul' : 'Tu suscripción está activa') 
+                                            : 'Suscripción inactiva'}
                                 </p>
                             </div>
-                            {isActive && (
+                            {isActive && !isOverdue && (
                                 <div className="px-5 py-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 w-fit">
                                     <p className="text-xs text-white font-black uppercase tracking-widest">Renovación automática</p>
                                 </div>
+                            )}
+                            {isOverdue && (
+                                <button 
+                                    onClick={handleOpenPortal}
+                                    disabled={isLoadingPortal}
+                                    className="px-6 py-3 bg-white text-red-600 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                >
+                                    {isLoadingPortal ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                                    Regularizar Pago
+                                </button>
                             )}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-8 border-t border-white/10">
                             <div>
-                                <p className="text-xs text-teal-100/60 mb-2 font-black uppercase tracking-widest">Próximo cobro</p>
+                                <p className={`text-xs mb-2 font-black uppercase tracking-widest ${isOverdue ? 'text-red-200/60' : 'text-teal-100/60'}`}>
+                                    {isOverdue ? 'Pago atrasado desde' : 'Próximo cobro'}
+                                </p>
                                 <p className="text-xl text-white font-black">{formatDate(currentPeriodEnd)}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-teal-100/60 mb-2 font-black uppercase tracking-widest">Monto</p>
+                                <p className={`text-xs mb-2 font-black uppercase tracking-widest ${isOverdue ? 'text-red-200/60' : 'text-teal-100/60'}`}>Monto</p>
                                 <p className="text-xl text-white font-black">${planPrice.toFixed(2)} USD <span className="text-sm font-bold opacity-60">/ mes</span></p>
                             </div>
                         </div>
@@ -166,11 +212,11 @@ export default function BillingClient({
                     </div>
 
                     <div className="flex-1 space-y-6">
-                        <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-[1.5rem] p-6 text-white shadow-xl shadow-indigo-500/10 relative overflow-hidden group">
+                        <div className={`rounded-[1.5rem] p-6 text-white shadow-xl relative overflow-hidden group transition-all duration-500 ${isOverdue ? 'bg-gradient-to-br from-red-500 to-red-700' : 'bg-gradient-to-br from-indigo-500 to-indigo-700'}`}>
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
                             <div className="relative z-10">
                                 <div className="flex justify-between items-start mb-10">
-                                    <CreditCard className="w-10 h-10 opacity-60" />
+                                    <CreditCard className={`w-10 h-10 ${isOverdue ? 'animate-pulse text-white' : 'opacity-60'}`} />
                                     <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Tarjeta Predeterminada</span>
                                 </div>
                                 <div className="space-y-1">
@@ -183,9 +229,24 @@ export default function BillingClient({
                             </div>
                         </div>
 
-                        <button className="w-full px-6 py-4 text-gray-700 border-2 border-gray-100 rounded-[1.25rem] hover:bg-gray-50 hover:border-gray-200 transition-all text-xs font-black uppercase tracking-widest cursor-pointer active:scale-95">
-                            Actualizar método
+                        <button 
+                            onClick={handleOpenPortal}
+                            disabled={isLoadingPortal}
+                            className={`w-full px-6 py-4 rounded-[1.25rem] transition-all text-xs font-black uppercase tracking-widest cursor-pointer active:scale-95 flex items-center justify-center gap-2 ${
+                                isOverdue 
+                                ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-900/20' 
+                                : 'text-gray-700 border-2 border-gray-100 hover:bg-gray-50 hover:border-gray-200'
+                            }`}
+                        >
+                            {isLoadingPortal ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                            {isOverdue ? 'Saldar Deuda ahora' : 'Actualizar método'}
                         </button>
+                        
+                        {isOverdue && (
+                            <p className="text-[10px] text-red-500 font-bold text-center animate-pulse">
+                                Al actualizar tu tarjeta, Stripe intentará cobrar la factura pendiente automáticamente.
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
