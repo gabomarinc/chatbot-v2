@@ -2445,7 +2445,7 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                         } else if (name === "create_zoho_lead") {
                             console.log('[OPENAI] Tool create_zoho_lead called with:', args);
                             try {
-                                const { createZohoLead } = await import('@/lib/zoho');
+                                const { createZohoLead, addZohoNote } = await import('@/lib/zoho');
 
                                 // Retrieve stored Lead ID from metadata
                                 const meta = (conversation.metadata as any) || {};
@@ -2468,7 +2468,33 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                     }
                                 }
 
-                                // Debug logging in metadata
+                                // AUTOMATIC NOTE CREATION: 
+                                // As soon as we have a Lead ID, we MUST add a note with the current context 
+                                // to satisfy the USER requirement of "immediate notes".
+                                if (newLeadId) {
+                                    try {
+                                        console.log('[OPENAI] Auto-adding initial/update note to Zoho for Lead:', newLeadId);
+                                        // Reconstruct a brief summary for the note
+                                        const lastMessages = history.slice(-5).map((m: any) => `${m.role === 'user' ? 'Usuario' : 'Bot'}: ${m.content}`).join('\n');
+                                        const noteContent = `Sincronización Automática:\n\nDatos capturados: ${JSON.stringify(args)}\n\nÚltimos mensajes:\n${lastMessages}`;
+                                        await addZohoNote(channel.agentId, newLeadId, noteContent);
+                                        
+                                        // Log success in metadata
+                                        await prisma.conversation.update({
+                                            where: { id: conversation.id },
+                                            data: { 
+                                                metadata: { 
+                                                    ...(conversation.metadata as any), 
+                                                    lastZohoNoteSync: { timestamp: new Date().toISOString(), status: 'SUCCESS (AUTO)' } 
+                                                } 
+                                            } as any
+                                        });
+                                    } catch (noteError) {
+                                        console.error('[OPENAI] Auto-note failed (non-critical):', noteError);
+                                    }
+                                }
+
+                                // Debug logging in metadata for the Lead Sync
                                 try {
                                     await prisma.conversation.update({
                                         where: { id: conversation.id },
