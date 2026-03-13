@@ -37,19 +37,21 @@ export default function AuthLayout({
                             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Kônsul AI</span>
                         </div>
                         
-                        <h2 className="text-3xl font-black tracking-tighter leading-tight mb-6 min-h-[4em]">
-                            Un Hub con chatbots, donde optimizas tus <br/>
-                            <span className="italic underline underline-offset-8 decoration-white/30">Leads</span> de <br/>
-                            <span className="text-white inline-flex flex-col h-[1.2em] overflow-hidden whitespace-nowrap">
-                                <span 
-                                    className="transition-transform duration-500 ease-in-out"
-                                    style={{ transform: `translateY(-${platformIndex * 100}%)` }}
+                        <h2 className="text-4xl font-black tracking-tighter leading-[1.1] mb-8">
+                            Un Hub con chatbots, <br/>donde optimizas tus <br/>
+                            <span className="italic underline underline-offset-[12px] decoration-white/30">Leads</span> de <br/>
+                            <div className="h-[1.2em] overflow-hidden relative mt-4">
+                                <div 
+                                    className="transition-transform duration-700 ease-in-out"
+                                    style={{ transform: `translateY(-${platformIndex * 25}%)` }}
                                 >
                                     {platforms.map((p, i) => (
-                                        <span key={i} className="block h-[1.2em] leading-tight">{p}</span>
+                                        <div key={i} className="h-[1.2em] flex items-center text-white whitespace-nowrap">
+                                            {p}
+                                        </div>
                                     ))}
-                                </span>
-                            </span>
+                                </div>
+                            </div>
                         </h2>
                         
                         <p className="text-sm font-medium text-white/80 max-w-xs leading-relaxed">
