@@ -483,7 +483,7 @@ export default function BillingClient({
                         {/* Top: Basic Plan Horizontal */}
                         <div 
                             onClick={() => setSelectedPlanDetails('BASIC')}
-                            className={`mb-8 bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border-2 shadow-sm transition-all hover:scale-[1.01] cursor-pointer ${currentPlanKey === 'BASIC' ? 'border-[#21AC96] bg-teal-50/10' : 'border-gray-100 hover:border-[#21AC96]/50'}`}
+                            className={`mb-8 bg-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 border-2 shadow-sm transition-all hover:scale-[1.01] cursor-pointer ${currentPlanKey === 'BASIC' ? 'border-[#21AC96] bg-teal-50/10' : 'border-[#21AC96]/10 hover:border-[#21AC96]/50'}`}
                         >
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-1">
@@ -578,7 +578,7 @@ export default function BillingClient({
                                 <div 
                                     key={plan.name} 
                                     onClick={() => setSelectedPlanDetails(plan.key)}
-                                    className={`relative bg-white rounded-[2.5rem] p-8 flex flex-col border-2 transition-all hover:translate-y-[-8px] cursor-pointer ${plan.popular || plan.key === currentPlanKey ? 'border-[#21AC96] shadow-xl' : 'border-gray-100 shadow-sm hover:border-[#21AC96]/50'} ${plan.key === currentPlanKey ? 'bg-teal-50/5' : ''}`}
+                                    className={`relative bg-white rounded-[2.5rem] p-8 flex flex-col border-2 transition-all hover:translate-y-[-8px] cursor-pointer ${plan.popular || plan.key === currentPlanKey ? 'border-[#21AC96] shadow-xl' : 'border-[#21AC96]/10 shadow-sm hover:border-[#21AC96]/50'} ${plan.key === currentPlanKey ? 'bg-teal-50/5' : ''}`}
                                 >
                                     {plan.popular && plan.key !== currentPlanKey && (
                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#21AC96] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">

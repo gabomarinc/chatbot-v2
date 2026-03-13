@@ -242,7 +242,7 @@ export default function RegisterPage() {
                                 key={plan.id}
                                 className={`relative flex flex-col p-6 rounded-[2rem] border-[3px] transition-all group h-full ${selectedPlan === plan.id
                                     ? 'border-[#21AC96] bg-[#21AC96]/5 shadow-xl shadow-[#21AC96]/5'
-                                    : 'border-white bg-white hover:border-[#21AC96]/20 shadow-sm'
+                                    : 'border-[#21AC96]/10 bg-white hover:border-[#21AC96]/30 shadow-sm'
                                     }`}
                             >
                                 {plan.popular && (
@@ -290,10 +290,10 @@ export default function RegisterPage() {
                                         setSelectedPlan(plan.id);
                                         setStep(2);
                                     }}
-                                    className={`w-full py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.15em] transition-all ${
+                                    className={`w-full py-3 rounded-xl font-black text-[9px] uppercase tracking-[0.15em] transition-all border-2 ${
                                         selectedPlan === plan.id 
-                                        ? 'bg-[#21AC96] text-white shadow-lg shadow-[#21AC96]/10' 
-                                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+                                        ? 'bg-[#21AC96] text-white border-[#21AC96] shadow-lg shadow-[#21AC96]/10' 
+                                        : 'bg-white text-[#21AC96] border-[#21AC96] hover:bg-[#21AC96] hover:text-white shadow-sm'
                                     }`}
                                 >
                                     Elegir Plan
