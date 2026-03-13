@@ -470,12 +470,12 @@ INSTRUCCIONES DE EJECUCIÓN (PRIORIDAD MÁXIMA):
 ${hasZoho ? `INSTRUCCIONES ESTRATÉGICAS ZOHO CRM:
 - ACTUALIZACIÓN PROACTIVA: Usa 'create_zoho_lead' INMEDIATAMENTE al detectar Nombre, Email o Teléfono. No esperes.
 - CALIFICACIÓN Y TRASPASO: Al tener contacto completo, usa 'asignar_a_humano'.
-- NOTAS ESTRATÉGICAS (OBLIGATORIO): Cada vez que uses 'add_zoho_note', el contenido DEBE seguir esta estructura profesional:
-    1. RESUMEN EJECUTIVO: Quién es el prospecto y qué busca en una frase.
-    2. INTERESES DETALLADOS: Lista los productos, servicios o características que le atraen.
-    3. NIVEL DE URGENCIA/INTERÉS: (Bajo, Medio, Alto) Basado en su lenguaje.
-    4. RECOMENDACIÓN PARA EL HUMANO: Indica qué debería decirle el vendedor al retomar el caso.
-- IMPORTANTE: Evita enviar notas vacías o con solo un "hola". Espera a tener contexto real para generar este reporte de valor.` : ''}
+- NOTAS ESTRATÉGICAS (OBLIGATORIO): Cada vez que uses 'add_zoho_note', el contenido DEBE ser un reporte profesional:
+    1. RESUMEN EJECUTIVO: Quién es y qué busca. (Ej: "Gilberto busca automatizar ventas para su lavandería").
+    2. PUNTOS DE DOLOR Y CONTEXTO: Qué problemas tiene hoy. (Ej: "Pierde clientes semanalmente por falta de respuesta").
+    3. INTERESES Y PRECIOS: Qué consultó específicamente. (Ej: "Preguntó por el Plan Starter de $135").
+    4. RECOMENDACIÓN: Qué debería decirle el vendedor. (Ej: "Llamar para coordinar demo enfocada en evitar pérdida de prospectos").
+- IMPORTANTE: Envía la nota en cuanto tengas puntos de valor, no esperes al final. No uses lenguaje técnico ni JSON en las notas.` : ''}
 
 ${hasOdoo ? `INSTRUCCIONES ODOO CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_odoo_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes.
@@ -2478,8 +2478,14 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                 // to satisfy the USER requirement of "immediate notes".
                                 if (newLeadId) {
                                     try {
-                                        console.log('[OPENAI] Auto-adding capture note to Zoho for Lead:', newLeadId);
-                                        const noteContent = `Captura Técnica Automática (Kônsul Sync):\n\nDATOS DEL TURN:\n${JSON.stringify(args, null, 2)}\n\n(La IA generará un Resumen Ejecutivo detallado en breve según avance la conversación).`;
+                                        console.log('[OPENAI] Auto-adding clean capture note to Zoho for Lead:', newLeadId);
+                                        const noteContent = `Registro Inicial de Prospecto:\n` +
+                                            `${args.FirstName || args.LastName ? `- Nombre: ${args.FirstName || ''} ${args.LastName || ''}\n` : ''}` +
+                                            `${args.Email ? `- Email: ${args.Email}\n` : ''}` +
+                                            `${args.Phone ? `- Teléfono: ${args.Phone}\n` : ''}` +
+                                            `--- \n` +
+                                            `Nota: La IA está analizando los puntos de dolor y requerimientos para generar el informe ejecutivo detallado.`;
+                                        
                                         await addZohoNote(channel.agentId, newLeadId, noteContent);
                                         
                                         // Log success in metadata
@@ -2488,7 +2494,7 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                             data: { 
                                                 metadata: { 
                                                     ...(conversation.metadata as any), 
-                                                    lastZohoNoteSync: { timestamp: new Date().toISOString(), status: 'SUCCESS (AUTO_CAPTURE)' } 
+                                                    lastZohoNoteSync: { timestamp: new Date().toISOString(), status: 'SUCCESS (CLEAN_CAPTURE)' } 
                                                 } 
                                             } as any
                                         });
