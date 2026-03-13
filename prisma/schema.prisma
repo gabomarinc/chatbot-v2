@@ -44,6 +44,7 @@ model Workspace {
   payments      Payment[]
   subscription  Subscription?
   usageLogs     UsageLog[]
+  timezone      String?           @default("America/Panama")
   owner         User              @relation(fields: [ownerId], references: [id])
   members       WorkspaceMember[]
   contacts      Contact[]         // Added relation

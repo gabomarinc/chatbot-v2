@@ -11,10 +11,9 @@ import { toast } from 'sonner';
 export default function SettingsPage() {
     const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
-    const [workspace, setWorkspace] = useState<{ id: string, name: string, role: string } | null>(null);
+    const [workspace, setWorkspace] = useState<{ id: string, name: string, role: string, timezone?: string | null } | null>(null);
     const [workspaceName, setWorkspaceName] = useState('');
     const [timezone, setTimezone] = useState('America/Panama');
-    const [language, setLanguage] = useState('es');
 
     // Password change states
     const [currentPassword, setCurrentPassword] = useState('');
@@ -36,8 +35,9 @@ export default function SettingsPage() {
             try {
                 const info = await getWorkspaceInfo();
                 if (info) {
-                    setWorkspace({ id: info.id, name: info.name, role: info.role });
+                    setWorkspace({ id: info.id, name: info.name, role: info.role, timezone: info.timezone });
                     setWorkspaceName(info.name);
+                    if (info.timezone) setTimezone(info.timezone);
                 }
             } catch (error) {
                 console.error("Error fetching workspace info:", error);
@@ -54,7 +54,10 @@ export default function SettingsPage() {
         if (!workspace?.id) return;
         setIsSavingWorkspace(true);
         try {
-            const result = await updateWorkspaceSettings(workspace.id, { name: workspaceName });
+            const result = await updateWorkspaceSettings(workspace.id, { 
+                name: workspaceName,
+                timezone: timezone 
+            });
             if (result.success) {
                 toast.success('Configuración del workspace guardada');
             } else {
@@ -208,25 +211,6 @@ export default function SettingsPage() {
                                         <option value="America/Santiago">🇨🇱 América/Santiago (UTC-3)</option>
                                         <option value="America/Buenos_Aires">🇦🇷 América/Buenos Aires (UTC-3)</option>
                                     </select>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Idioma de Interfaz</label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {['es', 'en', 'pt'].map((lang) => (
-                                        <button
-                                            key={lang}
-                                            onClick={() => setLanguage(lang)}
-                                            className={`px-4 py-4 rounded-2xl text-sm font-black transition-all border ${
-                                                language === lang 
-                                                ? 'bg-[#21AC96] border-[#21AC96] text-white shadow-lg shadow-[#21AC96]/20' 
-                                                : 'bg-white border-slate-100 text-slate-500 hover:bg-slate-50'
-                                            }`}
-                                        >
-                                            {lang === 'es' ? 'Español' : lang === 'en' ? 'English' : 'Português'}
-                                        </button>
-                                    ))}
                                 </div>
                             </div>
 

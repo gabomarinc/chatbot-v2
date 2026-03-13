@@ -77,6 +77,7 @@ export async function getWorkspaceInfo() {
         } : null,
         membersCount,
         agentsCount,
+        timezone: workspace.timezone,
     }
 }
 
