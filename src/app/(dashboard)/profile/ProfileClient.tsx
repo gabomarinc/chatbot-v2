@@ -109,22 +109,25 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
     };
 
     return (
-        <div className="max-w-6xl mx-auto pb-12">
-            {/* Hero Section with Mesh Gradient */}
-            <div className="relative h-48 md:h-64 rounded-[2.5rem] overflow-hidden mb-16 shadow-2xl shadow-[#21AC96]/10">
-                <div className="absolute inset-0 bg-[#21AC96] bg-gradient-to-br from-[#21AC96] via-[#1a8a78] to-[#125e52]"></div>
-                <div className="absolute inset-0 opacity-30 mix-blend-overlay">
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full fill-white">
-                        <polygon points="0,100 100,0 100,100" />
-                    </svg>
+        <div className="max-w-6xl mx-auto pb-12 px-4 md:px-0">
+            {/* Hero Section Container */}
+            <div className="relative mb-24 md:mb-32">
+                {/* Background Background with Mesh Gradient */}
+                <div className="absolute inset-0 h-48 md:h-64 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-[#21AC96]/10">
+                    <div className="absolute inset-0 bg-[#21AC96] bg-gradient-to-br from-[#21AC96] via-[#1a8a78] to-[#125e52]"></div>
+                    <div className="absolute inset-0 opacity-30 mix-blend-overlay">
+                        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full fill-white">
+                            <polygon points="0,100 100,0 100,100" />
+                        </svg>
+                    </div>
                 </div>
                 
-                {/* User Hero Content */}
-                <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 flex flex-col md:flex-row items-end gap-6">
-                    <div className="relative group shrink-0 -mb-20 md:-mb-12">
+                {/* User Content Overlapping the bottom edge */}
+                <div className="relative pt-32 md:pt-44 px-8 md:px-12 flex flex-col md:flex-row items-end gap-6">
+                    <div className="relative group shrink-0">
                         <div 
                             onClick={handleAvatarClick}
-                            className="w-32 h-32 md:w-36 md:h-36 rounded-3xl border-4 border-white bg-white shadow-2xl relative overflow-hidden cursor-pointer active:scale-95 transition-all"
+                            className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] border-[6px] border-white bg-white shadow-2xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:shadow-[#21AC96]/20"
                         >
                             {avatarPreview ? (
                                 <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
@@ -137,19 +140,22 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
                                 <Upload className="w-8 h-8 text-white animate-bounce" />
                             </div>
                         </div>
+                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[#21AC96] rounded-xl border-4 border-white flex items-center justify-center shadow-lg">
+                            <CheckCircle className="w-4 h-4 text-white" />
+                        </div>
                         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                     </div>
                     
-                    <div className="flex-1 text-white pb-2 text-center md:text-left">
-                        <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2 drop-shadow-md">
+                    <div className="flex-1 pb-4 text-center md:text-left">
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tight mb-3 text-gray-900 drop-shadow-sm">
                             ¡Hola, {user.name?.split(' ')[0] || 'Usuario'}!
                         </h1>
-                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 opacity-90">
-                            <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                            <span className="bg-[#21AC96] text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#21AC96]/20">
                                 {getRoleLabel(stats.workspaceRole)}
                             </span>
-                            <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 px-3 py-1 bg-black/10 rounded-full border border-white/10">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                            <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 px-4 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm text-gray-500">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                                 Online
                             </span>
                         </div>
