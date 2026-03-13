@@ -506,7 +506,8 @@ export default function BillingClient({
                                         <CheckCircle className="w-3.5 h-3.5 text-[#21AC96]" />
                                         2 Usuarios de equipo
                                     </div>
-                                    <div className="flex items-center gap-1 text-[10px] text-[#21AC96] font-bold uppercase underline decoration-2 underline-offset-4 ml-auto">
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#21AC96]/10 text-[9px] text-[#21AC96] font-black uppercase tracking-widest rounded-lg ml-auto hover:bg-[#21AC96]/20 transition-all">
+                                        <AlertCircle className="w-3 h-3" />
                                         Ver todos los detalles
                                     </div>
                                 </div>
@@ -603,7 +604,8 @@ export default function BillingClient({
                                                 <span className="text-[13px] text-gray-600 font-bold leading-tight">{bullet}</span>
                                             </div>
                                         ))}
-                                        <div className="pt-2 text-[10px] text-[#21AC96] font-black uppercase tracking-widest underline decoration-2 underline-offset-4">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#21AC96]/10 text-[9px] text-[#21AC96] font-black uppercase tracking-widest rounded-lg hover:bg-[#21AC96]/20 transition-all mt-2">
+                                            <AlertCircle className="w-3 h-3" />
                                             Ver todos los beneficios
                                         </div>
                                     </div>

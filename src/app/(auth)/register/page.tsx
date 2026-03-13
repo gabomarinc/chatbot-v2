@@ -279,8 +279,9 @@ export default function RegisterPage() {
                                             e.stopPropagation();
                                             setSelectedPlanDetails(plan);
                                         }}
-                                        className="text-[9px] font-black text-[#21AC96] hover:underline uppercase mt-2 tracking-widest"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#21AC96]/5 hover:bg-[#21AC96]/10 text-[9px] font-black text-[#21AC96] uppercase mt-2 tracking-widest rounded-lg transition-all"
                                     >
+                                        <AlertCircle className="w-3 h-3" />
                                         Ver detalles
                                     </button>
                                 </div>
