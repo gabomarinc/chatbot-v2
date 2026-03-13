@@ -384,6 +384,71 @@ export async function generateContactInsights(contactId: string, force: boolean 
             }
         });
 
+        // ========================================
+        // SYNC WITH CRM (Zoho)
+        // ========================================
+        try {
+            // Find an agent with Zoho integration enabled among those involved in the conversation
+            const zohoIntegration = await prisma.agentIntegration.findFirst({
+                where: {
+                    agentId: { in: agentIds as string[] },
+                    provider: 'ZOHO',
+                    enabled: true
+                }
+            });
+
+            if (zohoIntegration) {
+                console.log(`[CRM-SYNC] Zoho integration found for agent ${zohoIntegration.agentId}. Syncing insights...`);
+                
+                const { createZohoLead, addZohoNote } = await import('@/lib/zoho');
+                
+                // 1. Try to find an existing zohoLeadId in the metadata of any conversation
+                let zohoLeadId = null;
+                for (const conv of contact.conversations) {
+                    const meta = (conv.metadata as any) || {};
+                    if (meta.zohoLeadId) {
+                        zohoLeadId = meta.zohoLeadId;
+                        break;
+                    }
+                }
+
+                // 2. Prepare Lead Data for Sync
+                const leadData = {
+                    FirstName: updatedContact.name?.split(' ')[0] || 'Lead',
+                    LastName: updatedContact.name?.split(' ').slice(1).join(' ') || 'Konsul',
+                    Email: updatedContact.email || undefined,
+                    Phone: updatedContact.phone || undefined,
+                    Description: newInsights.summary // Resumen Ejecutivo in Description
+                };
+
+                // 3. Create or Update Lead in Zoho
+                const zohoRes = await createZohoLead(zohoIntegration.agentId, leadData, zohoLeadId || undefined);
+                const finalLeadId = zohoRes.data?.[0]?.details?.id || zohoLeadId;
+
+                if (finalLeadId) {
+                    // 4. Add the Summary as a Note
+                    const noteContent = `RESUMEN EJECUTIVO (IA):\n${newInsights.summary}\n\nLEAD SCORE: ${newInsights.leadScore}/100`;
+                    await addZohoNote(zohoIntegration.agentId, finalLeadId, noteContent);
+
+                    // 5. If we found a NEW lead ID, update the metadata of the latest conversation to store it
+                    if (finalLeadId !== zohoLeadId) {
+                        const lastConv = contact.conversations[contact.conversations.length - 1];
+                        if (lastConv) {
+                            const currentMeta = (lastConv.metadata as any) || {};
+                            await prisma.conversation.update({
+                                where: { id: lastConv.id },
+                                data: { metadata: { ...currentMeta, zohoLeadId: finalLeadId } }
+                            });
+                        }
+                    }
+                    console.log(`[CRM-SYNC] Zoho sync successful for lead ${finalLeadId}`);
+                }
+            }
+        } catch (crmError) {
+            console.error('[CRM-SYNC] Error syncing to Zoho:', crmError);
+            // We don't fail the whole action if CRM sync fails, as the internal update was successful
+        }
+
         revalidatePath('/contacts');
         return { success: true, contact: updatedContact };
     } catch (error: any) {

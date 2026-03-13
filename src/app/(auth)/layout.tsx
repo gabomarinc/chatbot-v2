@@ -7,10 +7,20 @@ export default function AuthLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const [platformIndex, setPlatformIndex] = React.useState(0);
+    const platforms = ["WhatsApp Business", "Instagram", "Tu Sitio Web", "y mucho más"];
+
+    React.useEffect(() => {
+        const interval = setInterval(() => {
+            setPlatformIndex((prev) => (prev + 1) % platforms.length);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <div className="min-h-screen flex bg-white font-sans selection:bg-[#21AC96]/10 selection:text-[#21AC96]">
             {/* Left Side: Marketing/Emotional (Visible only on lg) */}
-            <div className="hidden lg:flex lg:w-[30%] relative overflow-hidden bg-[#21AC96]">
+            <div className="hidden lg:flex lg:w-[32%] relative overflow-hidden bg-[#21AC96] shrink-0">
                 <img 
                     src="/auth-bg.png" 
                     alt="Kônsul AI Platform" 
@@ -20,15 +30,26 @@ export default function AuthLayout({
                 {/* Gradient Overlay for legibility */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#21AC96] via-[#21AC96]/40 to-transparent"></div>
                 
-                <div className="relative z-10 w-full h-full flex flex-col justify-end p-12 text-white">
-                    <div className="mb-10 animate-in fade-in slide-in-from-left-8 duration-700 delay-100">
+                <div className="relative z-10 w-full h-full flex flex-col justify-end p-10 text-white">
+                    <div className="mb-12 animate-in fade-in slide-in-from-left-8 duration-700 delay-100">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 mb-6 group hover:bg-white/20 transition-all cursor-default">
                             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
                             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Kônsul AI</span>
                         </div>
                         
-                        <h2 className="text-3xl font-black tracking-tighter leading-tight mb-6 max-w-xs">
-                            Un <span className="text-white/80">Hub</span> con chatbots, donde optimizas tus <span className="italic underline underline-offset-8 decoration-white/30">Leads</span> de WhatsApp
+                        <h2 className="text-3xl font-black tracking-tighter leading-tight mb-6 min-h-[4em]">
+                            Un Hub con chatbots, donde optimizas tus <br/>
+                            <span className="italic underline underline-offset-8 decoration-white/30">Leads</span> de <br/>
+                            <span className="text-white inline-flex flex-col h-[1.2em] overflow-hidden whitespace-nowrap">
+                                <span 
+                                    className="transition-transform duration-500 ease-in-out"
+                                    style={{ transform: `translateY(-${platformIndex * 100}%)` }}
+                                >
+                                    {platforms.map((p, i) => (
+                                        <span key={i} className="block h-[1.2em] leading-tight">{p}</span>
+                                    ))}
+                                </span>
+                            </span>
                         </h2>
                         
                         <p className="text-sm font-medium text-white/80 max-w-xs leading-relaxed">
@@ -37,15 +58,21 @@ export default function AuthLayout({
                         </p>
                     </div>
                     
-                    <div className="flex items-center gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                        <div className="space-y-0.5">
-                            <p className="text-2xl font-black">2.5k+</p>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Ventas</p>
+                    {/* Stats Section */}
+                    <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-all">
+                            <p className="text-2xl font-black mb-1">78%</p>
+                            <p className="text-[10px] leading-tight font-medium text-white/80">de los leads compran al primero que contesta.</p>
                         </div>
-                        <div className="w-px h-8 bg-white/10"></div>
-                        <div className="space-y-0.5">
-                            <p className="text-2xl font-black">98%</p>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-white/60">Fidelidad</p>
+                        
+                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-all">
+                            <p className="text-2xl font-black mb-1">89%</p>
+                            <p className="text-[10px] leading-tight font-medium text-white/80">De aumento en retención y conversión de clientes.</p>
+                        </div>
+                        
+                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-all">
+                            <p className="text-2xl font-black mb-1">4X</p>
+                            <p className="text-[10px] leading-tight font-medium text-white/80">En aumento de la capacidad de cada vendedor.</p>
                         </div>
                     </div>
                 </div>

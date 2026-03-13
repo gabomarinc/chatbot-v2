@@ -128,7 +128,8 @@ export async function assignConversation(conversationId: string, userId: string)
             data: {
                 assignedTo: userId,
                 assignedAt: new Date(),
-                isPaused: true // PAUSE bot on assignment
+                isPaused: true, // PAUSE bot on assignment
+                status: 'PENDING' // Indicar que necesita atención humana
             }
         })
 
@@ -404,7 +405,8 @@ export async function assumeConversation(conversationId: string) {
             data: {
                 assignedTo: session.user.id,
                 assignedAt: new Date(),
-                isPaused: true // PAUSE bot when assuming control
+                isPaused: true, // PAUSE bot when assuming control
+                status: 'PENDING'
             }
         })
 
@@ -478,7 +480,10 @@ export async function unpauseBot(conversationId: string) {
 
         await prisma.conversation.update({
             where: { id: conversationId },
-            data: { isPaused: false }
+            data: { 
+                isPaused: false,
+                status: 'OPEN'
+            }
         })
 
         revalidatePath('/dashboard')
@@ -544,7 +549,8 @@ export async function delegateToBot(conversationId: string) {
             data: {
                 assignedTo: null,
                 assignedAt: null,
-                isPaused: false
+                isPaused: false,
+                status: 'OPEN'
             }
         })
 

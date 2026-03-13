@@ -45,7 +45,7 @@ export default function RegisterPage() {
                 'Hasta 2,500 mensajes al mes',
                 '3 Agentes IA activos',
                 '6 Usuarios de equipo',
-                'WhatsApp CRM'
+                'Soporte (2 Canales)'
             ],
             benefits: [
                 'Hasta 2,500 mensajes al mes',
@@ -71,7 +71,7 @@ export default function RegisterPage() {
                 'Hasta 7,500 mensajes al mes',
                 '6 Agentes IA activos',
                 '12 Usuarios de equipo',
-                'Soporte Prioritario'
+                'Soporte Prioritario (2 Canales)'
             ],
             benefits: [
                 'Hasta 7,500 mensajes al mes',
@@ -97,7 +97,8 @@ export default function RegisterPage() {
             features: [
                 'Hasta 25,000 mensajes al mes',
                 '12 Agentes IA activos',
-                'Soporte VIP 24/7'
+                '20 Usuarios de equipo',
+                'Soporte Prioritario(3 Canales)'
             ],
             benefits: [
                 'Hasta 25,000 mensajes al mes',
@@ -227,7 +228,7 @@ export default function RegisterPage() {
             )}
 
             <div className="text-center mb-10">
-                <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">Crea tu cuenta profesional</h2>
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">Automatiza y Vende Más</h2>
                 <div className="mt-5 inline-flex items-center gap-2.5 bg-[#21AC96]/10 border border-[#21AC96]/20 px-6 py-2.5 rounded-full shadow-[0_4px_20px_rgba(33,172,150,0.08)] transition-all hover:scale-[1.02] cursor-default animate-in slide-in-from-top-2 duration-700">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#21AC96]" />
                     <span className="text-[10px] font-black text-gray-900 tracking-[0.2em] uppercase">4 DÍAS DE PRUEBA GRATIS INCLUIDOS</span>
