@@ -110,53 +110,54 @@ export default function ProfileClient({ user, stats, initialTimezone }: ProfileC
 
     return (
         <div className="max-w-6xl mx-auto pb-12 px-4 md:px-0">
-            {/* Hero Section Container */}
-            <div className="relative mb-24 md:mb-32">
-                {/* Background Background with Mesh Gradient */}
-                <div className="absolute inset-0 h-48 md:h-64 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-[#21AC96]/10">
-                    <div className="absolute inset-0 bg-[#21AC96] bg-gradient-to-br from-[#21AC96] via-[#1a8a78] to-[#125e52]"></div>
-                    <div className="absolute inset-0 opacity-30 mix-blend-overlay">
-                        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full fill-white">
-                            <polygon points="0,100 100,0 100,100" />
-                        </svg>
-                    </div>
+            {/* Integrated Hero Section */}
+            <div className="relative h-64 md:h-80 rounded-[3rem] overflow-hidden mb-12 shadow-2xl shadow-[#21AC96]/20 bg-[#21AC96]">
+                {/* Background Mesh Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#21AC96] via-[#1a8a78] to-[#125e52]"></div>
+                <div className="absolute inset-0 opacity-30 mix-blend-overlay">
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full fill-white">
+                        <polygon points="0,100 100,0 100,100" />
+                    </svg>
                 </div>
                 
-                {/* User Content Overlapping the bottom edge */}
-                <div className="relative pt-32 md:pt-44 px-8 md:px-12 flex flex-col md:flex-row items-end gap-6">
+                {/* Content Inside the Hero */}
+                <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 flex flex-col md:flex-row items-end gap-8 z-10">
                     <div className="relative group shrink-0">
                         <div 
                             onClick={handleAvatarClick}
-                            className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] border-[6px] border-white bg-white shadow-2xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:shadow-[#21AC96]/20"
+                            className="w-32 h-32 md:w-44 md:h-44 rounded-[2.5rem] border-4 border-white/20 bg-white shadow-2xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:scale-105"
                         >
                             {avatarPreview ? (
                                 <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-4xl font-black text-gray-400">
+                                <div className="w-full h-full bg-gradient-to-br from-white to-gray-100 flex items-center justify-center text-5xl font-black text-[#21AC96]/40">
                                     {user.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
                                 </div>
                             )}
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300">
-                                <Upload className="w-8 h-8 text-white animate-bounce" />
+                                <Upload className="w-10 h-10 text-white animate-pulse" />
                             </div>
                         </div>
-                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[#21AC96] rounded-xl border-4 border-white flex items-center justify-center shadow-lg">
-                            <CheckCircle className="w-4 h-4 text-white" />
+                        <div className="absolute -bottom-1 -right-1 w-10 h-10 bg-white rounded-2xl border-4 border-[#21AC96] flex items-center justify-center shadow-lg">
+                            <CheckCircle className="w-5 h-5 text-[#21AC96]" />
                         </div>
                         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                     </div>
                     
                     <div className="flex-1 pb-4 text-center md:text-left">
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tight mb-3 text-gray-900 drop-shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/10 mb-4">
+                            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                            <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">En línea ahora</span>
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-4 drop-shadow-xl">
                             ¡Hola, {user.name?.split(' ')[0] || 'Usuario'}!
                         </h1>
-                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                            <span className="bg-[#21AC96] text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#21AC96]/20">
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                            <span className="bg-white text-[#21AC96] px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-black/10">
                                 {getRoleLabel(stats.workspaceRole)}
                             </span>
-                            <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 px-4 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm text-gray-500">
-                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                Online
+                            <span className="bg-white/10 backdrop-blur-md text-white/90 border border-white/10 px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest">
+                                Workspace: {stats.workspaceName || 'Cargando...'}
                             </span>
                         </div>
                     </div>
