@@ -94,7 +94,7 @@ export async function createZohoLead(agentId: string, leadData: {
     const endpoint = `${apiDomain}/crm/v2/Leads`;
     let leadIdToUpdate = zohoLeadId;
 
-    // 1. Search Logic if ID is missing
+    // 1. Search Logic if ID is missing (Check both Email and Phone)
     if (!leadIdToUpdate && leadData.Email) {
         try {
             const searchRes = await fetch(`${endpoint}/search?email=${encodeURIComponent(leadData.Email)}`, {
@@ -127,27 +127,27 @@ export async function createZohoLead(agentId: string, leadData: {
 
     // 2. Prepare Payload
     const data: any = {
-        Email: leadData.Email,
-        Phone: leadData.Phone,
-        Description: leadData.Description,
-        Lead_Source: 'Konsul Bot'
+        Email: leadData.Email || undefined,
+        Phone: leadData.Phone || undefined,
+        Description: leadData.Description || undefined,
+        Lead_Source: 'Kônsul Bot' // Slightly more professional name
     };
 
-    // Only set names if provided or creating new
+    // Standard Zoho API names: First_Name, Last_Name
     if (leadData.FirstName) data.First_Name = leadData.FirstName;
     if (leadData.LastName) data.Last_Name = leadData.LastName;
 
-    // For CREATE, enforce defaults
+    // For CREATE, enforce defaults if missing
     if (!leadIdToUpdate) {
         if (!data.First_Name) data.First_Name = 'Lead';
-        if (!data.Last_Name) data.Last_Name = 'Konsul';
+        if (!data.Last_Name) data.Last_Name = 'Kônsul';
     }
 
     const body = { data: [data] };
     const method = leadIdToUpdate ? 'PUT' : 'POST';
     const finalUrl = leadIdToUpdate ? `${endpoint}/${leadIdToUpdate}` : endpoint;
 
-    console.log(`[ZOHO] ${method} Lead ${leadIdToUpdate || ''}. Payload:`, JSON.stringify(body));
+    console.log(`[ZOHO] ${method} Lead ${leadIdToUpdate || 'NEW'}. Payload:`, JSON.stringify(body));
 
     const res = await fetch(finalUrl, {
         method: method,
@@ -159,14 +159,16 @@ export async function createZohoLead(agentId: string, leadData: {
     });
 
     const json = await res.json();
-    console.log(`[ZOHO] Lead response:`, JSON.stringify(json));
+    console.log(`[ZOHO] Lead response status: ${res.status}. Data:`, JSON.stringify(json));
 
-    // Check for Zoho API Errors
-    if (json.data && json.data[0].status === 'error') {
-        throw new Error(`Zoho Error: ${json.data[0].message} (${json.data[0].code})`);
+    // Handle standard Zoho errors
+    if (json.data && json.data[0]?.status === 'error') {
+        const error = json.data[0];
+        console.error('[ZOHO] Lead error details:', error);
+        throw new Error(`Zoho Error: ${error.message} (${error.code})`);
     }
 
-    if (json.code === 'INVALID_TOKEN') {
+    if (json.code === 'INVALID_TOKEN' || (json.data && json.data[0]?.code === 'INVALID_TOKEN')) {
         throw new Error('Zoho Token Invalid. Please reconnect integration.');
     }
 
@@ -184,20 +186,23 @@ export async function addZohoNote(agentId: string, leadId: string, noteContent: 
         apiDomain = `https://${apiDomain}`;
     }
 
+    // Endpoint for adding a note to a specific lead
     const endpoint = `${apiDomain}/crm/v2/Leads/${leadId}/Notes`;
 
+    /** 
+     * Zoho CRM V2 Notes API for sub-resource:
+     * Requirement: Note_Title and Note_Content
+     * Note: We don't strictly need Parent_Id here because it's in the URL
+     */
     const body = {
         data: [{
             Note_Title: 'Resumen de Kônsul',
-            Note_Content: `Resumen de Kônsul:\n\n${noteContent}`,
-            se_module: 'Leads',
-            Parent_Id: {
-                id: leadId
-            }
+            Note_Content: noteContent,
+            $se_module: 'Leads' // Standard field names often use $ prefix in metadata
         }]
     };
 
-    console.log(`[ZOHO] Adding note to Lead ${leadId}. Endpoint: ${endpoint}`);
+    console.log(`[ZOHO] Adding note to Lead ${leadId}. Endpoint: ${endpoint}. Payload:`, JSON.stringify(body));
 
     const res = await fetch(endpoint, {
         method: 'POST',
@@ -209,10 +214,16 @@ export async function addZohoNote(agentId: string, leadId: string, noteContent: 
     });
 
     const json = await res.json();
-    console.log(`[ZOHO] Note response:`, JSON.stringify(json));
+    console.log(`[ZOHO] Note response status: ${res.status}. Data:`, JSON.stringify(json));
 
     if (json.data && json.data[0]?.status === 'error') {
-        throw new Error(`Zoho Note Error: ${json.data[0].message}`);
+        const error = json.data[0];
+        console.error('[ZOHO] Note error details:', error);
+        throw new Error(`Zoho Note Error: ${error.message} (${error.code})`);
+    }
+
+    if (res.status !== 201 && res.status !== 200) {
+        console.warn(`[ZOHO] Note creation returned unexpected status ${res.status}:`, json);
     }
 
     return json;

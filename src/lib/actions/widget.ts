@@ -2454,8 +2454,9 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                 const res = await createZohoLead(channel.agentId, args, currentLeadId);
 
                                 // Save new Lead ID if created/found
+                                let newLeadId = currentLeadId;
                                 if (res.data && res.data[0]?.details?.id) {
-                                    const newLeadId = res.data[0].details.id;
+                                    newLeadId = res.data[0].details.id;
                                     if (newLeadId && newLeadId !== currentLeadId) {
                                         console.log('[OPENAI] Saving new Zoho Lead ID to metadata:', newLeadId);
                                         await prisma.conversation.update({
@@ -2467,9 +2468,34 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                     }
                                 }
 
+                                // Debug logging in metadata
+                                try {
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { 
+                                            metadata: { 
+                                                ...(conversation.metadata as any), 
+                                                lastZohoLeadSync: { timestamp: new Date().toISOString(), status: 'SUCCESS', leadId: newLeadId } 
+                                            } 
+                                        } as any
+                                    });
+                                } catch (e) {}
+
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] createZohoLead error:', e);
+                                // Log error in metadata
+                                try {
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { 
+                                            metadata: { 
+                                                ...(conversation.metadata as any), 
+                                                lastZohoLeadSync: { timestamp: new Date().toISOString(), status: 'ERROR', message: e.message } 
+                                            } 
+                                        } as any
+                                    });
+                                } catch (err) {}
                                 toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "add_zoho_note") {
@@ -2477,15 +2503,41 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                             try {
                                 const meta = (conversation.metadata as any) || {};
                                 const leadId = meta.zohoLeadId;
-                                if (!leadId) throw new Error("No Lead ID found. Create a lead first.");
+                                if (!leadId) throw new Error("No Lead ID found. Create a lead first with create_zoho_lead.");
 
                                 const { addZohoNote } = await import('@/lib/zoho');
                                 const { logIntegrationEvent } = await import('@/lib/integrations-logger');
                                 const res = await addZohoNote(channel.agentId, leadId, (args as any).noteContent);
                                 await logIntegrationEvent(channel.agentId, 'ZOHO', 'ADD_NOTE', 'SUCCESS');
+
+                                // Debug logging in metadata
+                                try {
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { 
+                                            metadata: { 
+                                                ...(conversation.metadata as any), 
+                                                lastZohoNoteSync: { timestamp: new Date().toISOString(), status: 'SUCCESS' } 
+                                            } 
+                                        } as any
+                                    });
+                                } catch (e) {}
+
                                 toolResult = { success: true, api_response: res };
                             } catch (e: any) {
                                 console.error('[OPENAI] addZohoNote error:', e);
+                                // Log error in metadata
+                                try {
+                                    await prisma.conversation.update({
+                                        where: { id: conversation.id },
+                                        data: { 
+                                            metadata: { 
+                                                ...(conversation.metadata as any), 
+                                                lastZohoNoteSync: { timestamp: new Date().toISOString(), status: 'ERROR', message: e.message } 
+                                            } 
+                                        } as any
+                                    });
+                                } catch (err) {}
                                 toolResult = { success: false, error: e.message };
                             }
                         } else if (name === "create_zoho_task") {
