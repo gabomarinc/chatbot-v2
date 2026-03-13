@@ -467,10 +467,15 @@ INSTRUCCIONES DE EJECUCIÓN (PRIORIDAD MÁXIMA):
    - PROHIBICIÓN: NUNCA digas que "alguien se pondrá en contacto" o que "estás transfiriendo" si NO estás llamando a la herramienta 'asignar_a_humano' en ese mismo bloque de respuesta. Decir que transfieres sin usar la herramienta es un fallo crítico del sistema.
    - PRIORIDAD: Una vez calificado el lead, tu prioridad absoluta es el traspaso. No sigas haciendo preguntas innecesarias ni charlando. Transferir pronto es más profesional.
 
-${hasZoho ? `INSTRUCCIONES ZOHO CRM:
-- ACTUALIZACIÓN CONTINUA: USA 'create_zoho_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes al final.
-- CALIFICACIÓN: Tan pronto tengas Nombre y Email/Teléfono, llama a 'asignar_a_humano' con departamento 'SALES' (o el correspondiente).
-- NOTAS (IMPORTANTE): USA SIEMPRE la herramienta 'add_zoho_note' para guardar el resumen de la conversación, lo que el usuario busca, y sus requerimientos. NO uses el campo 'Description' de create_zoho_lead para los resúmenes.` : ''}
+${hasZoho ? `INSTRUCCIONES ESTRATÉGICAS ZOHO CRM:
+- ACTUALIZACIÓN PROACTIVA: Usa 'create_zoho_lead' INMEDIATAMENTE al detectar Nombre, Email o Teléfono. No esperes.
+- CALIFICACIÓN Y TRASPASO: Al tener contacto completo, usa 'asignar_a_humano'.
+- NOTAS ESTRATÉGICAS (OBLIGATORIO): Cada vez que uses 'add_zoho_note', el contenido DEBE seguir esta estructura profesional:
+    1. RESUMEN EJECUTIVO: Quién es el prospecto y qué busca en una frase.
+    2. INTERESES DETALLADOS: Lista los productos, servicios o características que le atraen.
+    3. NIVEL DE URGENCIA/INTERÉS: (Bajo, Medio, Alto) Basado en su lenguaje.
+    4. RECOMENDACIÓN PARA EL HUMANO: Indica qué debería decirle el vendedor al retomar el caso.
+- IMPORTANTE: Evita enviar notas vacías o con solo un "hola". Espera a tener contexto real para generar este reporte de valor.` : ''}
 
 ${hasOdoo ? `INSTRUCCIONES ODOO CRM:
 - ACTUALIZACIÓN CONTINUA: USA 'create_odoo_lead' CADA VEZ que el usuario mencione un dato nuevo (nombre, email, teléfono o interés). No esperes.
@@ -2473,10 +2478,8 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                 // to satisfy the USER requirement of "immediate notes".
                                 if (newLeadId) {
                                     try {
-                                        console.log('[OPENAI] Auto-adding initial/update note to Zoho for Lead:', newLeadId);
-                                        // Reconstruct a brief summary for the note
-                                        const lastMessages = history.slice(-5).map((m: any) => `${m.role === 'user' ? 'Usuario' : 'Bot'}: ${m.content}`).join('\n');
-                                        const noteContent = `Sincronización Automática:\n\nDatos capturados: ${JSON.stringify(args)}\n\nÚltimos mensajes:\n${lastMessages}`;
+                                        console.log('[OPENAI] Auto-adding capture note to Zoho for Lead:', newLeadId);
+                                        const noteContent = `Captura Técnica Automática (Kônsul Sync):\n\nDATOS DEL TURN:\n${JSON.stringify(args, null, 2)}\n\n(La IA generará un Resumen Ejecutivo detallado en breve según avance la conversación).`;
                                         await addZohoNote(channel.agentId, newLeadId, noteContent);
                                         
                                         // Log success in metadata
@@ -2485,7 +2488,7 @@ ${agent.splitLongMessages ? `\nIMPORTANTE (DIVIDIR MENSAJES): Como esta conversa
                                             data: { 
                                                 metadata: { 
                                                     ...(conversation.metadata as any), 
-                                                    lastZohoNoteSync: { timestamp: new Date().toISOString(), status: 'SUCCESS (AUTO)' } 
+                                                    lastZohoNoteSync: { timestamp: new Date().toISOString(), status: 'SUCCESS (AUTO_CAPTURE)' } 
                                                 } 
                                             } as any
                                         });
